@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">MySoftPOS</string>
+
+    <!-- Welcome Screen -->
+    <string name="welcome_title">Trỷ lý đắc lực cho mọi cửa hàng</string>
+    <string name="welcome_description">Quét mã dễ dàng, thanh toán nhanh gọn, giảng và quản lý mọi thứ cực kỳ thuận tiện</string>
+    <string name="welcome_button">Đăng nhập</string>
+    <string name="welcome_footer">Bạn chưa có tài khoản?</string>
+    <string name="welcome_register">Đăng ký</string>
+</resources>
