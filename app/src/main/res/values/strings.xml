@@ -7,4 +7,87 @@
     <string name="welcome_button">Đăng nhập</string>
     <string name="welcome_footer">Bạn chưa có tài khoản?</string>
     <string name="welcome_register">Đăng ký</string>
+
+    <!-- Login Screen -->
+    <string name="login_title">Đăng nhập</string>
+    <string name="login_description">Dùng tên đăng nhập và mật khẩu của bạn để đăng nhập</string>
+    <string name="login_username_label">Tên đăng nhập</string>
+    <string name="login_username_hint">Nhập tên đăng nhập</string>
+    <string name="login_password_label">Mật khẩu</string>
+    <string name="login_password_hint">Nhập mật khẩu</string>
+    <string name="login_forgot_password">Quên mật khẩu</string>
+    <string name="login_button">Tiếp tục</string>
+
+    <!-- Register Screen -->
+    <string name="register_title">Đăng ký</string>
+    <string name="register_description">Tạo tài khoản mới để bắt đầu sử dụng dịch vụ</string>
+    <string name="register_account_type">Loại tài khoản</string>
+    <string name="register_personal">Hộ kinh doanh</string>
+    <string name="register_business">Doanh nghiệp</string>
+    <string name="register_account_number">Số tài khoản</string>
+    <string name="register_account_number_hint">Nhập số tài khoản</string>
+    <string name="register_bank_name">Ngân hàng</string>
+    <string name="register_bank_name_hint">Nhập tên ngân hàng</string>
+    <string name="register_account_name">Tên tài khoản</string>
+    <string name="register_account_name_hint">Nhập tên chủ tài khoản</string>
+    <string name="register_password">Mật khẩu</string>
+    <string name="register_password_hint">Nhập mật khẩu</string>
+    <string name="register_confirm_password">Xác nhận mật khẩu</string>
+    <string name="register_confirm_password_hint">Nhập lại mật khẩu</string>
+    <string name="register_terms_text">Bằng việc Đăng ký, bạn đã đồng ý với Điều khoản và Điều kiện cũng Chính sách bảo mật của Techcombank ePOS</string>
+    <string name="register_button">Đăng ký</string>
+
+    <!-- Forgot Password Screen -->
+    <string name="forgot_password_title">Đổi mật khẩu</string>
+    <string name="forgot_password_description">Mật khẩu cần có ít nhất 8 ký tự, bao gồm chữ hoa và chữ thường</string>
+    <string name="forgot_password_new">Mật khẩu mới</string>
+    <string name="forgot_password_confirm">Nhập lại mật khẩu mới</string>
+    <string name="forgot_password_hint">········</string>
+    <string name="forgot_password_button">Xác nhận</string>
+
+    <!-- Common -->
+    <string name="back">Quay lại</string>
+
+    <!-- SoftPOS - Settings Screen -->
+    <string name="settings_title">Cài đặt</string>
+    <string name="settings_connection_group">Kết nối</string>
+    <string name="settings_server_ip">IP Server</string>
+    <string name="settings_server_ip_hint">192.168.1.100</string>
+    <string name="settings_port">Port</string>
+    <string name="settings_port_hint">8583</string>
+    <string name="settings_timeout">Timeout (ms)</string>
+    <string name="settings_timeout_hint">30000</string>
+    <string name="settings_identity_group">Định danh</string>
+    <string name="settings_terminal_id">Terminal ID (TID)</string>
+    <string name="settings_terminal_id_hint">12345678</string>
+    <string name="settings_merchant_id">Merchant ID (MID)</string>
+    <string name="settings_merchant_id_hint">MERCHANT001</string>
+    <string name="settings_security_group">Bảo mật</string>
+    <string name="settings_encrypt_pin">Mã hóa PIN (Encrypt PIN)</string>
+    <string name="settings_save_button">Lưu cấu hình</string>
+    <string name="settings_ping_button">Ping thử (Echo Test)</string>
+
+    <!-- SoftPOS - Dashboard Screen -->
+    <string name="dashboard_title">My ePOS</string>
+    <string name="dashboard_status_online">Kết nối</string>
+    <string name="dashboard_status_offline">Mất kết nối</string>
+    <string name="dashboard_purchase">Thanh toán</string>
+    <string name="dashboard_void">Hủy giao dịch</string>
+    <string name="dashboard_refund">Hoàn tiền</string>
+    <string name="dashboard_history">Lịch sử</string>
+    <string name="dashboard_logon">Logon</string>
+    <string name="dashboard_settings">Cài đặt</string>
+
+    <!-- Home tabs (like screenshot) -->
+    <string name="store_name">Cửa hàng số 1</string>
+    <string name="store_subtitle">Quầy thanh toán tầng 1</string>
+    <string name="tab_orders">Đơn hàng</string>
+    <string name="tab_revenue">Doanh thu</string>
+    <string name="tab_my_qr">My QR</string>
+    <string name="tab_orders_placeholder">Danh sách đơn hàng (đang phát triển)</string>
+    <string name="tab_revenue_placeholder">Báo cáo doanh thu (đang phát triển)</string>
+    <string name="amount_hint">Nhập số tiền</string>
+    <string name="more_info">Thông tin mở rộng</string>
+    <string name="done">Xong</string>
+
 </resources>

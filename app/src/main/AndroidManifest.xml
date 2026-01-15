@@ -33,6 +33,21 @@
             android:name=".RegisterActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:label="@string/settings_title" />
+
+        <activity
+            android:name=".MainDashboardActivity"
+            android:exported="false"
+            android:label="@string/dashboard_title" />
+
+        <activity
+            android:name=".HomeTabsActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+
     </application>
 
 </manifest>

@@ -1,17 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+
     <!-- Base application theme. -->
     <style name="Theme.MySoftPOS" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary_dark</item>
         <item name="colorOnPrimary">@color/white</item>
+
         <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/teal_200</item>
-        <item name="colorSecondaryVariant">@color/teal_700</item>
-        <item name="colorOnSecondary">@color/black</item>
-        <!-- Status bar color. -->
+        <item name="colorSecondary">@color/primary_light</item>
+        <item name="colorSecondaryVariant">@color/primary_dark</item>
+        <item name="colorOnSecondary">@color/white</item>
+
+        <!-- Status bar / system UI -->
         <item name="android:statusBarColor">@color/white</item>
         <item name="android:windowLightStatusBar">true</item>
-        <!-- Customize your theme here. -->
+
+        <!-- Optional: prevent tools warning in some layouts -->
+        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
     </style>
+
+    <!-- Keypad styles (for Amount/PIN entry) -->
+    <style name="KeypadKey">
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:background">@drawable/bg_keypad_key</item>
+        <item name="android:gravity">center</item>
+        <item name="android:layout_margin">4dp</item>
+        <item name="android:layout_columnWeight">1</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_width">0dp</item>
+    </style>
+
+    <style name="KeypadKeyIcon">
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+        <item name="android:scaleType">centerInside</item>
+        <item name="android:padding">16dp</item>
+        <item name="android:background">@drawable/bg_keypad_key</item>
+        <item name="android:layout_margin">4dp</item>
+        <item name="android:layout_columnWeight">1</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_width">0dp</item>
+        <!-- Note: ImageView uses android:tint (not 'tint'). -->
+        <item name="android:tint">@color/text_secondary</item>
+    </style>
+
+    <style name="KeypadDone">
+        <item name="android:enabled">false</item>
+        <item name="android:focusable">false</item>
+        <item name="android:clickable">false</item>
+        <item name="android:alpha">0.5</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:background">@drawable/bg_keypad_key</item>
+        <item name="android:gravity">center</item>
+        <item name="android:layout_margin">4dp</item>
+        <item name="android:layout_columnWeight">1</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_width">0dp</item>
+    </style>
+
+    <style name="KeypadKeySpacer">
+        <item name="android:enabled">false</item>
+        <item name="android:focusable">false</item>
+        <item name="android:clickable">false</item>
+        <item name="android:alpha">0.0</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:layout_margin">4dp</item>
+        <item name="android:layout_columnWeight">1</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_width">0dp</item>
+    </style>
+
 </resources>

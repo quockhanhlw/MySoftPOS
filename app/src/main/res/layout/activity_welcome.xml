@@ -28,7 +28,7 @@
                 android:contentDescription="@string/welcome_title"
                 android:scaleType="centerInside"
                 android:padding="40dp"
-                android:src="@drawable/logo" />
+                android:src="@drawable/softpos" />
 
         </androidx.cardview.widget.CardView>
 

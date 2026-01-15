@@ -2,7 +2,6 @@ package com.example.mysoftpos;
 
 import android.app.Dialog;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -11,6 +10,7 @@ import android.text.method.HideReturnsTransformationMethod;
 import android.text.method.LinkMovementMethod;
 import android.text.method.PasswordTransformationMethod;
 import android.text.style.ClickableSpan;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.CheckBox;
@@ -21,14 +21,18 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+
 public class RegisterActivity extends AppCompatActivity {
 
-    private ImageView btnBack;
     private RadioGroup rgAccountType;
-    private RadioButton rbPersonal, rbBusiness;
     private EditText etAccountNumber;
     private EditText etBankName;
     private EditText etAccountName;
@@ -38,7 +42,6 @@ public class RegisterActivity extends AppCompatActivity {
     private ImageView btnShowConfirmPassword;
     private CheckBox cbTerms;
     private TextView tvTermsText;
-    private CardView btnRegister;
 
     private boolean isPasswordVisible = false;
     private boolean isConfirmPasswordVisible = false;
@@ -49,10 +52,9 @@ public class RegisterActivity extends AppCompatActivity {
         setContentView(R.layout.activity_register);
 
         // Initialize views
-        btnBack = findViewById(R.id.btnBack);
+        ImageView btnBack = findViewById(R.id.btnBack);
         rgAccountType = findViewById(R.id.rgAccountType);
-        rbPersonal = findViewById(R.id.rbPersonal);
-        rbBusiness = findViewById(R.id.rbBusiness);
+        RadioButton rbPersonal = findViewById(R.id.rbPersonal);
         etAccountNumber = findViewById(R.id.etAccountNumber);
         etBankName = findViewById(R.id.etBankName);
         etAccountName = findViewById(R.id.etAccountName);
@@ -62,7 +64,7 @@ public class RegisterActivity extends AppCompatActivity {
         btnShowConfirmPassword = findViewById(R.id.btnShowConfirmPassword);
         cbTerms = findViewById(R.id.cbTerms);
         tvTermsText = findViewById(R.id.tvTermsText);
-        btnRegister = findViewById(R.id.btnRegister);
+        CardView btnRegister = findViewById(R.id.btnRegister);
 
         // Set default selection
         rbPersonal.setChecked(true);
@@ -90,12 +92,12 @@ public class RegisterActivity extends AppCompatActivity {
         // Clickable span for "Điều khoản & Điều kiện"
         ClickableSpan termsSpan = new ClickableSpan() {
             @Override
-            public void onClick(View widget) {
+            public void onClick(@NonNull View widget) {
                 showTermsDialog();
             }
 
             @Override
-            public void updateDrawState(TextPaint ds) {
+            public void updateDrawState(@NonNull TextPaint ds) {
                 super.updateDrawState(ds);
                 ds.setColor(Color.parseColor("#4A9EFF"));
                 ds.setUnderlineText(false);
@@ -105,12 +107,12 @@ public class RegisterActivity extends AppCompatActivity {
         // Clickable span for "Chính sách bảo mật"
         ClickableSpan privacySpan = new ClickableSpan() {
             @Override
-            public void onClick(View widget) {
+            public void onClick(@NonNull View widget) {
                 showPrivacyDialog();
             }
 
             @Override
-            public void updateDrawState(TextPaint ds) {
+            public void updateDrawState(@NonNull TextPaint ds) {
                 super.updateDrawState(ds);
                 ds.setColor(Color.parseColor("#4A9EFF"));
                 ds.setUnderlineText(false);
@@ -130,26 +132,24 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void showTermsDialog() {
-        Dialog dialog = new Dialog(this);
+        Dialog dialog = new Dialog(this, android.R.style.Theme_Light_NoTitleBar_Fullscreen);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.dialog_terms);
-        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         dialog.setCanceledOnTouchOutside(true);
 
         TextView tvDialogTitle = dialog.findViewById(R.id.tvDialogTitle);
         TextView tvDialogContent = dialog.findViewById(R.id.tvDialogContent);
 
-        tvDialogTitle.setText("Điều khoản & Điều kiện");
+        tvDialogTitle.setText("Dieu khoan & Dieu kien");
         tvDialogContent.setText(getTermsContent());
 
         dialog.show();
     }
 
     private void showPrivacyDialog() {
-        Dialog dialog = new Dialog(this);
+        Dialog dialog = new Dialog(this, android.R.style.Theme_Light_NoTitleBar_Fullscreen);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.dialog_terms);
-        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         dialog.setCanceledOnTouchOutside(true);
 
         TextView tvDialogTitle = dialog.findViewById(R.id.tvDialogTitle);
@@ -162,72 +162,28 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private String getTermsContent() {
-        return "ĐIỀU KHOẢN & ĐIỀU KIỆN SỬ DỤNG DỊCH VỤ\n\n" +
-                "1. GIỚI THIỆU\n" +
-                "Điều khoản và Điều kiện này quy định việc sử dụng dịch vụ MySoftPOS do Techcombank cung cấp.\n\n" +
-                "2. CHẤP NHẬN ĐIỀU KHOẢN\n" +
-                "Bằng việc đăng ký và sử dụng dịch vụ, bạn đồng ý tuân thủ các điều khoản và điều kiện này.\n\n" +
-                "3. QUYỀN VÀ TRÁCH NHIỆM\n" +
-                "- Người dùng có trách nhiệm bảo mật thông tin tài khoản\n" +
-                "- Người dùng phải cung cấp thông tin chính xác khi đăng ký\n" +
-                "- Không được sử dụng dịch vụ cho mục đích bất hợp pháp\n\n" +
-                "4. THANH TOÁN VÀ PHÍ DỊCH VỤ\n" +
-                "- Phí dịch vụ sẽ được công bố rõ ràng trước khi giao dịch\n" +
-                "- Mọi giao dịch đều tuân thủ quy định của Ngân hàng Nhà nước\n\n" +
-                "5. BẢO MẬT THÔNG TIN\n" +
-                "- Techcombank cam kết bảo mật thông tin khách hàng\n" +
-                "- Thông tin chỉ được sử dụng cho mục đích cung cấp dịch vụ\n\n" +
-                "6. GIỚI HẠN TRÁCH NHIỆM\n" +
-                "- Techcombank không chịu trách nhiệm cho thiệt hại gián tiếp\n" +
-                "- Người dùng tự chịu trách nhiệm về việc sử dụng dịch vụ\n\n" +
-                "7. THAY ĐỔI ĐIỀU KHOẢN\n" +
-                "Techcombank có quyền thay đổi điều khoản và sẽ thông báo trước cho người dùng.\n\n" +
-                "8. LIÊN HỆ\n" +
-                "Mọi thắc mắc vui lòng liên hệ: support@techcombank.com.vn hoặc hotline: 1800-588-822";
+        return readRawTextFile(R.raw.terms_conditions);
     }
 
     private String getPrivacyContent() {
-        return "CHÍNH SÁCH BẢO MẬT\n\n" +
-                "1. THU THẬP THÔNG TIN\n" +
-                "Chúng tôi thu thập các thông tin sau:\n" +
-                "- Thông tin cá nhân: Họ tên, số điện thoại, email\n" +
-                "- Thông tin tài khoản ngân hàng\n" +
-                "- Thông tin giao dịch\n" +
-                "- Dữ liệu sử dụng ứng dụng\n\n" +
-                "2. MỤC ĐÍCH SỬ DỤNG\n" +
-                "Thông tin được sử dụng để:\n" +
-                "- Cung cấp và cải thiện dịch vụ\n" +
-                "- Xác thực danh tính người dùng\n" +
-                "- Xử lý giao dịch thanh toán\n" +
-                "- Gửi thông báo quan trọng\n" +
-                "- Phân tích và nghiên cứu thị trường\n\n" +
-                "3. CHIA SẺ THÔNG TIN\n" +
-                "Chúng tôi cam kết:\n" +
-                "- Không bán thông tin cá nhân cho bên thứ ba\n" +
-                "- Chỉ chia sẻ khi có yêu cầu pháp lý\n" +
-                "- Bảo vệ thông tin bằng các biện pháp kỹ thuật cao\n\n" +
-                "4. BẢO MẬT DỮ LIỆU\n" +
-                "- Mã hóa dữ liệu truyền tải (SSL/TLS)\n" +
-                "- Lưu trữ an toàn trên hệ thống bảo mật\n" +
-                "- Kiểm soát truy cập nghiêm ngặt\n" +
-                "- Sao lưu định kỳ\n\n" +
-                "5. QUYỀN CỦA NGƯỜI DÙNG\n" +
-                "Bạn có quyền:\n" +
-                "- Truy cập và xem thông tin cá nhân\n" +
-                "- Yêu cầu chỉnh sửa thông tin không chính xác\n" +
-                "- Xóa tài khoản và dữ liệu\n" +
-                "- Từ chối nhận thông tin marketing\n\n" +
-                "6. COOKIES VÀ THEO DÕI\n" +
-                "- Sử dụng cookies để cải thiện trải nghiệm\n" +
-                "- Có thể tắt cookies trong cài đặt trình duyệt\n\n" +
-                "7. BẢO MẬT TRẺ EM\n" +
-                "Dịch vụ dành cho người từ đủ 18 tuổi trở lên.\n\n" +
-                "8. CẬP NHẬT CHÍNH SÁCH\n" +
-                "Chính sách có thể được cập nhật. Chúng tôi sẽ thông báo về những thay đổi quan trọng.\n\n" +
-                "9. LIÊN HỆ\n" +
-                "Email: privacy@techcombank.com.vn\n" +
-                "Hotline: 1800-588-822\n" +
-                "Địa chỉ: Tòa nhà Techcombank, Hà Nội";
+        return readRawTextFile(R.raw.privacy_policy);
+    }
+
+    private String readRawTextFile(int resourceId) {
+        try {
+            InputStream inputStream = getResources().openRawResource(resourceId);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+            StringBuilder content = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                content.append(line).append("\n");
+            }
+            reader.close();
+            return content.toString().trim();
+        } catch (Exception e) {
+            Log.e("RegisterActivity", "Error reading raw text file", e);
+            return "Khong the tai noi dung. Vui long thu lai sau.";
+        }
     }
 
     private void togglePasswordVisibility() {

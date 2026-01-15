@@ -1,0 +1,41 @@
+﻿CHÍNH SÁCH BẢO MẬT
+1. THU THẬP THÔNG TIN
+Chúng tôi thu thập các thông tin sau:
+- Thông tin cá nhân: Họ tên, số điện thoại, email
+- Thông tin tài khoản ngân hàng
+- Thông tin giao dịch
+- Dữ liệu sử dụng ứng dụng
+2. MỤC ĐÍCH SỬ DỤNG
+Thông tin được sử dụng để:
+- Cung cấp và cải thiện dịch vụ
+- Xác thực danh tính người dùng
+- Xử lý giao dịch thanh toán
+- Gửi thông báo quan trọng
+- Phân tích và nghiên cứu thị trường
+3. CHIA SẺ THÔNG TIN
+Chúng tôi cam kết:
+- Không bán thông tin cá nhân cho bên thứ ba
+- Chỉ chia sẻ khi có yêu cầu pháp lý
+- Bảo vệ thông tin bằng các biện pháp kỹ thuật cao
+4. BẢO MẬT DỮ LIỆU
+- Mã hóa dữ liệu truyền tải (SSL/TLS)
+- Lưu trữ an toàn trên hệ thống bảo mật
+- Kiểm soát truy cập nghiêm ngặt
+- Sao lưu định kỳ
+5. QUYỀN CỦA NGƯỜI DÙNG
+Bạn có quyền:
+- Truy cập và xem thông tin cá nhân
+- Yêu cầu chỉnh sửa thông tin không chính xác
+- Xóa tài khoản và dữ liệu
+- Từ chối nhận thông tin marketing
+6. COOKIES VÀ THEO DÕI
+- Sử dụng cookies để cải thiện trải nghiệm
+- Có thể tắt cookies trong cài đặt trình duyệt
+7. BẢO MẬT TRẺ EM
+Dịch vụ dành cho người từ đủ 18 tuổi trở lên.
+8. CẬP NHẬT CHÍNH SÁCH
+Chính sách có thể được cập nhật. Chúng tôi sẽ thông báo về những thay đổi quan trọng.
+9. LIÊN HỆ
+Email: privacy@techcombank.com.vn
+Hotline: 1800-588-822
+Địa chỉ: Tòa nhà Techcombank, Hà Nội
