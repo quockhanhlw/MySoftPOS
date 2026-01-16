@@ -90,4 +90,21 @@
     <string name="more_info">Thông tin mở rộng</string>
     <string name="done">Xong</string>
 
+    <!-- Purchase - Amount Screen -->
+    <string name="purchase_amount_title">Nhập số tiền</string>
+    <string name="purchase_amount_subtitle">Nhập số tiền đi hihi</string>
+    <string name="purchase_amount_timer">hihi</string>
+    <string name="purchase_amount_send_to">Gửi tới giao dịch</string>
+    <string name="purchase_amount_currency">đ</string>
+
+    <!-- Payment Success -->
+    <string name="payment_success">Giao dịch thành công</string>
+
+    <!-- Card Fields -->
+    <string name="card_pan">Số thẻ</string>
+    <string name="card_expiry">Hết hạn</string>
+    <string name="card_cvv">Mã bảo mật</string>
+    <string name="hint_yymm">YYMM</string>
+    <string name="hint_cvv">CVV</string>
+
 </resources>

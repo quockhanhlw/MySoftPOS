@@ -2,6 +2,7 @@ package com.example.mysoftpos.iso8583;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -23,11 +24,12 @@ public final class IsoPacker {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         // MTI
-        out.writeBytes(msg.getMti().getBytes(cs));
+        byte[] mtiBytes = msg.getMti().getBytes(cs);
+        out.write(mtiBytes, 0, mtiBytes.length);
 
         // Bitmap
         byte[] bitmap = IsoBitmapUtil.buildBitmap(msg.getFieldNumbers());
-        out.writeBytes(bitmap);
+        out.write(bitmap, 0, bitmap.length);
 
         // Fields in ascending order
         Set<Integer> ordered = new TreeSet<>(msg.getFieldNumbers());
@@ -37,7 +39,8 @@ public final class IsoPacker {
             if (value == null) {
                 continue;
             }
-            out.writeBytes(encodeField(def, value, cs));
+            byte[] encoded = encodeField(def, value, cs);
+            out.write(encoded, 0, encoded.length);
         }
 
         return out.toByteArray();
@@ -73,12 +76,12 @@ public final class IsoPacker {
             if (len > 99) {
                 throw new IllegalArgumentException("Field " + def.field + " LLVAR length > 99: " + len);
             }
-            prefix = String.format("%02d", len);
+            prefix = String.format(Locale.US, "%02d", len);
         } else if (def.lenType == IsoSpec.LenType.LLLVAR) {
             if (len > 999) {
                 throw new IllegalArgumentException("Field " + def.field + " LLLVAR length > 999: " + len);
             }
-            prefix = String.format("%03d", len);
+            prefix = String.format(Locale.US, "%03d", len);
         } else {
             throw new IllegalStateException("Unknown lenType: " + def.lenType);
         }
@@ -90,4 +93,3 @@ public final class IsoPacker {
         return result;
     }
 }
-

@@ -1,19 +1,12 @@
 package com.example.mysoftpos;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
 public class MainDashboardActivity extends AppCompatActivity {
-
-    private TextView tvConnectionStatus;
-    private View vStatusIndicator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,8 +14,6 @@ public class MainDashboardActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main_dashboard);
 
         // Initialize views
-        tvConnectionStatus = findViewById(R.id.tvConnectionStatus);
-        vStatusIndicator = findViewById(R.id.vStatusIndicator);
         CardView cardPurchase = findViewById(R.id.cardPurchase);
         CardView cardVoid = findViewById(R.id.cardVoid);
         CardView cardRefund = findViewById(R.id.cardRefund);
@@ -30,71 +21,40 @@ public class MainDashboardActivity extends AppCompatActivity {
         CardView cardLogon = findViewById(R.id.cardLogon);
         CardView cardSettings = findViewById(R.id.cardSettings);
 
-        // Check connection status
-        checkConnectionStatus();
-
         // Set click listeners
         cardPurchase.setOnClickListener(v -> {
-            Toast.makeText(this, "Thanh toán - Coming soon", Toast.LENGTH_SHORT).show();
-            // TODO: Start AmountEntryActivity
+            Intent intent = new Intent(MainDashboardActivity.this, PurchaseAmountActivity.class);
+            startActivity(intent);
         });
 
         cardVoid.setOnClickListener(v -> {
-            Toast.makeText(this, "Hủy giao dịch - Coming soon", Toast.LENGTH_SHORT).show();
-            // TODO: Start VoidActivity
+            // TODO: Start Void/Reversal flow (RRN/STAN original data)
+            android.widget.Toast.makeText(this, "Hủy/Đảo - Coming soon", android.widget.Toast.LENGTH_SHORT).show();
         });
 
         cardRefund.setOnClickListener(v -> {
-            Toast.makeText(this, "Hoàn tiền - Coming soon", Toast.LENGTH_SHORT).show();
-            // TODO: Start RefundActivity
+            android.widget.Toast.makeText(this, "Hoàn tiền - Coming soon", android.widget.Toast.LENGTH_SHORT).show();
         });
 
         cardHistory.setOnClickListener(v -> {
-            Toast.makeText(this, "Lịch sử - Coming soon", Toast.LENGTH_SHORT).show();
-            // TODO: Start HistoryLogActivity
+            android.widget.Toast.makeText(this, "Lịch sử - Coming soon", android.widget.Toast.LENGTH_SHORT).show();
         });
 
         cardLogon.setOnClickListener(v -> {
-            Toast.makeText(this, "Logon - Coming soon", Toast.LENGTH_SHORT).show();
-            // TODO: Perform Logon (0800)
+            android.widget.Toast.makeText(this, "Logon - Coming soon", android.widget.Toast.LENGTH_SHORT).show();
         });
 
         cardSettings.setOnClickListener(v -> {
-            try {
-                Intent intent = new Intent(MainDashboardActivity.this,
-                    Class.forName("com.example.mysoftpos.SettingsActivity"));
-                startActivity(intent);
-            } catch (ClassNotFoundException e) {
-                Toast.makeText(this, "Loi: Khong tim thay Settings", Toast.LENGTH_SHORT).show();
-            }
+            Intent intent = new Intent(MainDashboardActivity.this, SettingsActivity.class);
+            startActivity(intent);
         });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        checkConnectionStatus();
+        // no-op: header removed
     }
 
-    private void checkConnectionStatus() {
-        // Check if configuration exists
-        SharedPreferences prefs = getSharedPreferences("SoftPOSConfig", MODE_PRIVATE);
-        String ip = prefs.getString("server_ip", "");
-        String port = prefs.getString("port", "");
-        boolean configured = !ip.isEmpty() && !port.isEmpty();
-        updateConnectionStatus(configured);
-    }
-
-    private void updateConnectionStatus(boolean connected) {
-
-        if (connected) {
-            tvConnectionStatus.setText(R.string.dashboard_status_online);
-            vStatusIndicator.setBackgroundResource(R.drawable.status_indicator);
-            vStatusIndicator.setBackgroundTintList(getColorStateList(R.color.status_online));
-        } else {
-            tvConnectionStatus.setText(R.string.dashboard_status_offline);
-            vStatusIndicator.setBackgroundResource(R.drawable.status_indicator);
-            vStatusIndicator.setBackgroundTintList(getColorStateList(R.color.status_offline));
-        }
-    }
+    // remove checkConnectionStatus/updateConnectionStatus
 }

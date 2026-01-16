@@ -96,7 +96,8 @@ public final class IsoSpec {
             case IsoField.ICC_DATA_55:
                 return new FieldDef(55, LenType.LLLVAR, 999, ContentType.HEX_BYTES);
             case IsoField.RESERVED_PRIVATE_60:
-                return new FieldDef(60, LenType.LLLVAR, 999, ContentType.ASCII);
+                // NAPAS: ans...060, LLLVAR
+                return new FieldDef(60, LenType.LLLVAR, 60, ContentType.ASCII);
             case IsoField.ORIGINAL_DATA_ELEMENTS_90:
                 return new FieldDef(90, LenType.FIXED, 42, ContentType.ASCII);
             case IsoField.MAC_128:

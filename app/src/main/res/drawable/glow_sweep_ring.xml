@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Base faint ring -->
+    <item>
+        <shape android:shape="oval">
+            <size android:width="280dp" android:height="280dp" />
+            <solid android:color="@android:color/transparent" />
+            <stroke android:width="6dp" android:color="#1A2ED3FF" />
+        </shape>
+    </item>
+
+    <!-- Sweep highlight ring: rotate this view to get a moving light trail -->
+    <item>
+        <shape android:shape="oval">
+            <size android:width="280dp" android:height="280dp" />
+            <solid android:color="@android:color/transparent" />
+            <stroke android:width="10dp">
+                <gradient
+                    android:type="sweep"
+                    android:useLevel="false"
+                    android:startColor="#002ED3FF"
+                    android:centerColor="#FF2ED3FF"
+                    android:endColor="#002ED3FF" />
+            </stroke>
+        </shape>
+    </item>
+</layer-list>
+

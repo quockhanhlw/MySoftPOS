@@ -44,9 +44,29 @@
             android:label="@string/dashboard_title" />
 
         <activity
+            android:name=".PurchaseAmountActivity"
+            android:exported="false"
+            android:label="Purchase" />
+
+        <activity
+            android:name=".PurchaseCardActivity"
+            android:exported="false"
+            android:label="Card" />
+
+        <activity
+            android:name=".IsoMessagePreviewActivity"
+            android:exported="false"
+            android:label="ISO8583" />
+
+        <activity
             android:name=".HomeTabsActivity"
             android:exported="false"
             android:label="@string/app_name" />
+
+        <activity
+            android:name=".PaymentSuccessActivity"
+            android:exported="false"
+            android:label="Success" />
 
     </application>
 

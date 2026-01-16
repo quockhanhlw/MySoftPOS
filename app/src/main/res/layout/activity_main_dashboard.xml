@@ -6,71 +6,7 @@
     android:background="@color/background"
     android:orientation="vertical">
 
-    <!-- Header -->
-    <androidx.cardview.widget.CardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:cardElevation="4dp"
-        app:cardCornerRadius="0dp"
-        app:cardBackgroundColor="@color/primary">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:gravity="center_vertical">
-
-            <!-- Logo Icon -->
-            <ImageView
-                android:id="@+id/ivLogo"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:src="@drawable/logo"
-                android:contentDescription="Logo"
-                android:scaleType="centerInside" />
-
-            <!-- App Name -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:layout_marginStart="12dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/dashboard_title"
-                    android:textColor="@color/white"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvConnectionStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/dashboard_status_offline"
-                    android:textColor="@color/white"
-                    android:textSize="12sp"
-                    android:alpha="0.8"
-                    android:layout_marginTop="2dp" />
-
-            </LinearLayout>
-
-            <!-- Status Indicator -->
-            <View
-                android:id="@+id/vStatusIndicator"
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:background="@drawable/status_indicator"
-                android:layout_marginEnd="4dp" />
-
-        </LinearLayout>
-
-    </androidx.cardview.widget.CardView>
-
-    <!-- Dashboard Grid -->
+    <!-- Dashboard Grid (no header) -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -81,7 +17,7 @@
             android:layout_height="wrap_content"
             android:columnCount="2"
             android:rowCount="3"
-            android:padding="16dp"
+            android:padding="24dp"
             android:alignmentMode="alignBounds"
             android:columnOrderPreserved="false">
 
