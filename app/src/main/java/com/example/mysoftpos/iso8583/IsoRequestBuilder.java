@@ -51,14 +51,18 @@ public final class IsoRequestBuilder {
     }
 
     /**
-     * Build Void request (cashier void).
+     * Build Void request (NAPAS Void flow).
      *
-     * Business rule:
-     * - MTI = 0200
+     * Per provided flow diagram:
+     * - MTI = 0420 (Void Advice)
+     * - Response MTI = 0430
+     *
+     * Business rule in this project:
      * - F3 Processing Code MUST be 020000
      */
     public static IsoMessage buildVoid(TransactionContext c) {
-        IsoMessage m = new IsoMessage("0200");
+        // NAPAS void advice MTI
+        IsoMessage m = new IsoMessage("0420");
 
         m.setField(IsoField.PAN_2, c.pan2);
         m.setField(IsoField.PROCESSING_CODE_3, "020000");
@@ -88,15 +92,18 @@ public final class IsoRequestBuilder {
     }
 
     /**
-     * Build Reversal request (auto reversal on timeout).
+     * Build Reversal request (NAPAS Reversal Advice flow).
      *
-     * Business rule:
-     * - MTI = 0400
+     * Per provided flow diagram (initiated from ACQ):
+     * - Reversal Advice Request MTI = 0420
+     * - Reversal Advice Response MTI = 0430
      */
     public static IsoMessage buildReversal(TransactionContext c) {
-        IsoMessage m = new IsoMessage("0400");
+        // NAPAS reversal advice MTI
+        IsoMessage m = new IsoMessage("0420");
 
         m.setField(IsoField.PAN_2, c.pan2);
+        // For reversal advice, allow using original processing code if provided, else default purchase code
         m.setField(IsoField.PROCESSING_CODE_3, normalizeProcCode6OrDefault(c.processingCode3, "000000"));
         m.setField(IsoField.AMOUNT_4, normalizeAmount12(c.amount4));
         m.setField(IsoField.TRANSMISSION_DATETIME_7, c.transmissionDt7);

@@ -5,7 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** * Validates required/conditional fields presence and NAPAS formatting rules.
+/**
+ * Validates required/conditional fields presence and NAPAS formatting rules.
  * Combines "NapasFieldSpecConfig" (Format) and Business Logic (Rules).
  */
 public final class IsoValidator {
@@ -47,8 +48,10 @@ public final class IsoValidator {
     }
 
     /**
-     * Validate VOID/REVERSAL transaction (MTI 0400/0420).
-     * Enforce: MUST have F37 (RRN) + F90 (Original Data Elements).
+     * Validate VOID/REVERSAL Advice transaction for NAPAS.
+     * Diagram-based MTI:
+     * - Request MTI: 0420
+     * - Response MTI: 0430
      */
     public static void validateReversal(IsoMessage msg) {
         // 1. Format check based on Spec
@@ -81,8 +84,60 @@ public final class IsoValidator {
     }
 
     /**
-     * Generic validator using NapasFieldSpecConfig.
+     * Validate PURCHASE response per NAPAS flow diagram: 0200 -> 0210.
+     * Minimal requirements enforced for simulator:
+     * - MTI must be 0210
+     * - Must contain DE39 (Response Code)
+     * - Validate present fields against {@link NapasFieldSpecConfig}
      */
+    public static void validatePurchaseResponse(IsoMessage response) {
+        if (response == null) throw new IllegalArgumentException("response == null");
+        validateResponseAgainstNapasSpec(response.getMti(), response.getFields(), "PURCHASE-RESP");
+
+        if (!"0210".equals(response.getMti())) {
+            throw new IllegalStateException("PURCHASE response MTI must be 0210, got: " + response.getMti());
+        }
+        requireNotBlank(response, 39, "PURCHASE response requires F39 (Response Code)");
+    }
+
+    /**
+     * Validate VOID/REVERSAL ADVICE response per NAPAS flow diagram: 0420 -> 0430.
+     * Minimal requirements enforced for simulator:
+     * - MTI must be 0430
+     * - Must contain DE39 (Response Code)
+     * - Validate present fields against {@link NapasFieldSpecConfig}
+     */
+    public static void validateAdviceResponse(IsoMessage response) {
+        if (response == null) throw new IllegalArgumentException("response == null");
+        validateResponseAgainstNapasSpec(response.getMti(), response.getFields(), "ADVICE-RESP");
+
+        if (!"0430".equals(response.getMti())) {
+            throw new IllegalStateException("ADVICE response MTI must be 0430, got: " + response.getMti());
+        }
+        requireNotBlank(response, 39, "ADVICE response requires F39 (Response Code)");
+    }
+
+    /**
+     * Validate a response based on the original request MTI (diagram based).
+     * - 0200 -> 0210
+     * - 0420 -> 0430
+     */
+    public static void validateResponseByRequest(IsoMessage request, IsoMessage response) {
+        if (request == null) throw new IllegalArgumentException("request == null");
+        if (response == null) throw new IllegalArgumentException("response == null");
+
+        String reqMti = request.getMti();
+        if ("0200".equals(reqMti)) {
+            validatePurchaseResponse(response);
+            return;
+        }
+        if ("0420".equals(reqMti)) {
+            validateAdviceResponse(response);
+            return;
+        }
+        throw new IllegalStateException("Unsupported request MTI for response validation: " + reqMti);
+    }
+
     public static void validateAgainstNapasSpec(String mti, Map<Integer, String> fields, boolean validateMti, String contextName) {
         if (validateMti) {
             NapasFieldSpecConfig.FieldSpec mtiSpec = NapasFieldSpecConfig.get(0);
@@ -172,7 +227,10 @@ public final class IsoValidator {
 
     /**
      * Logic check for Processing Code (F3) vs MTI.
-     * UPDATED: Accepts 0420/0430 for Void/Reversal as per NAPAS Spec Part I.
+     *
+     * Diagram-based:
+     * - Purchase request: MTI 0200, F3=000000
+     * - Void/Reversal advice request: MTI 0420, F3 in {000000,020000} (depends on original txn)
      */
     private static void validateProcessingCodeByContext(IsoMessage msg, String name) {
         String mti = msg.getMti();
@@ -181,28 +239,30 @@ public final class IsoValidator {
             throw new IllegalStateException(name + " F3 must be 6n. Got: " + f3);
         }
 
-        boolean hasF90 = msg.hasField(IsoField.ORIGINAL_DATA_ELEMENTS_90) && !isBlank(msg.getField(IsoField.ORIGINAL_DATA_ELEMENTS_90));
+        boolean hasF90 = msg.hasField(IsoField.ORIGINAL_DATA_ELEMENTS_90)
+                && !isBlank(msg.getField(IsoField.ORIGINAL_DATA_ELEMENTS_90));
 
         if ("0200".equals(mti)) {
             if (hasF90) {
-                // MTI 0200 + F90 -> Treat as Void (Legacy) -> Require F3=020000
-                if (!"020000".equals(f3)) {
-                    throw new IllegalStateException(name + " VOID requires F3=020000 (MTI=0200 with F90). Got: " + f3);
-                }
-            } else {
-                // Purchase
-                if (!"000000".equals(f3)) {
-                    throw new IllegalStateException(name + " PURCHASE requires F3=000000 (MTI=0200 without F90). Got: " + f3);
-                }
+                // Prevent legacy mixing: 0200 should not be used for void/reversal in diagram-based mode
+                throw new IllegalStateException(name + " invalid MTI=0200 with F90 in NAPAS advice mode. Use MTI=0420.");
             }
+            // Purchase
+            if (!"000000".equals(f3)) {
+                throw new IllegalStateException(name + " PURCHASE requires F3=000000 (MTI=0200). Got: " + f3);
+            }
+            return;
         }
-        // NAPAS Reversal/Void uses 0420 (Advice), standard ISO uses 0400. We accept both.
-        else if ("0400".equals(mti) || "0420".equals(mti)) {
-            // Reversal Advice (allow same processing code as original purchase or void)
+
+        if ("0420".equals(mti)) {
+            // Advice request: allow both purchase-code and void-code depending on original txn
             if (!("000000".equals(f3) || "020000".equals(f3))) {
-                throw new IllegalStateException(name + " REVERSAL/VOID (MTI=" + mti + ") requires F3=000000 or 020000. Got: " + f3);
+                throw new IllegalStateException(name + " ADVICE (MTI=0420) requires F3=000000 or 020000. Got: " + f3);
             }
+            return;
         }
+
+        throw new IllegalStateException(name + " unsupported MTI for request validation: " + mti);
     }
 
     private static void requireCardData(IsoMessage msg, String name) {
@@ -309,6 +369,11 @@ public final class IsoValidator {
             if (!reserved2.equals("00000000000")) throw new IllegalStateException(name + " F60 UPI reserved(5-15) must be 00000000000");
             if (!channel.matches("\\d{2}")) throw new IllegalStateException(name + " F60 UPI channel must be 2 digits");
             if (!exp.matches("\\d{3}")) throw new IllegalStateException(name + " F60 UPI exponent must be 3 digits");
+
+            // Sanity checks (avoid unused vars warnings + enforce digit semantics)
+            if (!cap.matches("[0-6]")) throw new IllegalStateException(name + " F60 UPI capability invalid: " + cap);
+            if (!status.matches("[0-2]")) throw new IllegalStateException(name + " F60 UPI txn status invalid: " + status);
+            if (!init.matches("[0-9]")) throw new IllegalStateException(name + " F60 UPI initiation invalid: " + init);
         }
     }
 

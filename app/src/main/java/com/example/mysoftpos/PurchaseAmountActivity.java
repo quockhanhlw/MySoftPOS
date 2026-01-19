@@ -27,25 +27,28 @@ public class PurchaseAmountActivity extends AppCompatActivity {
         etAmount.addTextChangedListener(new AmountInputFormatter(null));
 
         btnNext.setOnClickListener(v -> {
-            String raw = etAmount.getText() == null ? "" : etAmount.getText().toString();
-            String d;
+            String raw = etAmount.getText() == null ? "" : etAmount.getText().toString().trim();
+
+            final String digits;
             try {
-                d = PurchaseFlowData.normalizeAmountDigits(raw);
+                digits = PurchaseFlowData.normalizeAmountDigits(raw);
             } catch (Exception e) {
                 Toast.makeText(this, "Số tiền không hợp lệ", Toast.LENGTH_SHORT).show();
                 etAmount.requestFocus();
                 return;
             }
 
-            if (d.isEmpty() || "0".equals(d)) {
+            // normalize leading zeros for business validation
+            String normalized = digits.replaceFirst("^0+(?!$)", "");
+            if (normalized.isEmpty() || "0".equals(normalized)) {
                 Toast.makeText(this, "Vui lòng nhập số tiền hợp lệ", Toast.LENGTH_SHORT).show();
                 etAmount.requestFocus();
                 return;
             }
 
-            long amount;
+            final long amount;
             try {
-                amount = Long.parseLong(d);
+                amount = Long.parseLong(normalized);
             } catch (Exception e) {
                 Toast.makeText(this, "Số tiền không hợp lệ", Toast.LENGTH_SHORT).show();
                 etAmount.requestFocus();
@@ -60,15 +63,16 @@ public class PurchaseAmountActivity extends AppCompatActivity {
 
             final String f4;
             try {
-                f4 = PurchaseFlowData.toIsoAmount12FromDigits(d);
+                // ensure strictly 12n
+                f4 = PurchaseFlowData.toIsoAmount12FromDigits(normalized);
             } catch (Exception e) {
-                Toast.makeText(this, "Lỗi format F4: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Lỗi format số tiền", Toast.LENGTH_SHORT).show();
                 etAmount.requestFocus();
                 return;
             }
 
             Intent i = new Intent(this, PurchaseCardActivity.class);
-            i.putExtra(PurchaseFlowData.EXTRA_AMOUNT_DIGITS, d);
+            i.putExtra(PurchaseFlowData.EXTRA_AMOUNT_DIGITS, normalized);
             i.putExtra(PurchaseFlowData.EXTRA_AMOUNT_F4, f4);
             startActivity(i);
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);

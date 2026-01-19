@@ -38,8 +38,8 @@ public class PurchaseCardActivity extends AppCompatActivity {
         setContentView(R.layout.activity_purchase_card);
 
         String f4 = getIntent().getStringExtra(PurchaseFlowData.EXTRA_AMOUNT_F4);
-        if (f4 == null) {
-            Toast.makeText(this, "Missing amount", Toast.LENGTH_SHORT).show();
+        if (f4 == null || !f4.matches("\\d{12}")) {
+            Toast.makeText(this, "Số tiền không hợp lệ", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -66,7 +66,7 @@ public class PurchaseCardActivity extends AppCompatActivity {
                 return;
             }
             if (expiry.length() > 4) {
-                etExpiry.setError("Tối đa 4 số (YYMM)");
+                etExpiry.setError("Tối đa 4 số YYMM");
                 return;
             }
             if (cvv.length() > 4) {
@@ -78,16 +78,23 @@ public class PurchaseCardActivity extends AppCompatActivity {
                 etPan.setError("Nhập số thẻ");
                 return;
             }
-            // PAN common range (ISO/EMV card number 12..19)
             if (!pan.matches("\\d{12,19}")) {
                 etPan.setError("Số thẻ 12-19 chữ số");
                 return;
             }
-            // Basic expiry validation (YYMM)
-            if (!expiry.isEmpty() && !expiry.matches("\\d{4}")) {
-                etExpiry.setError("YYMM (4 số)");
-                return;
+
+            // Expiry optional, but if provided must be YYMM and not in the past
+            if (!expiry.isEmpty()) {
+                if (!expiry.matches("\\d{4}")) {
+                    etExpiry.setError("YYMM (4 số)");
+                    return;
+                }
+                if (isExpiryInPast(expiry)) {
+                    etExpiry.setError("Thẻ đã hết hạn");
+                    return;
+                }
             }
+
             // CVV optional for simulator, but if provided must be 3-4 digits
             if (!cvv.isEmpty() && !cvv.matches("\\d{3,4}")) {
                 etCvv.setError("3-4 số");
@@ -96,12 +103,15 @@ public class PurchaseCardActivity extends AppCompatActivity {
 
             btnPay.setEnabled(false);
 
-            // Build & pack ISO (still local, no socket). Save for preview/debugging later.
             try {
                 SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
                 String tid = prefs.getString("terminal_id", "TID00001");
                 String mid = prefs.getString("merchant_id", "MID000000000001");
                 boolean encryptPin = prefs.getBoolean("encrypt_pin", false);
+
+                // Normalize to NAPAS fixed lengths
+                tid = TransactionContext.formatTid8(tid);
+                mid = TransactionContext.formatMid15(mid);
 
                 Date now = new Date();
                 String f7 = new SimpleDateFormat("MMddHHmmss", Locale.US).format(now);
@@ -109,7 +119,12 @@ public class PurchaseCardActivity extends AppCompatActivity {
                 String f13 = new SimpleDateFormat("MMdd", Locale.US).format(now);
 
                 String stan11 = TraceManager.nextStan6(this);
+
+                // RRN must be 12 an; keep digits-only for our simulator
                 String rrn37 = new SimpleDateFormat("MMddHHmmssSS", Locale.US).format(now);
+                if (rrn37.length() < 12) {
+                    rrn37 = TransactionContext.formatStan6(rrn37); // fallback
+                }
                 rrn37 = rrn37.substring(0, 12);
 
                 final String f43 = padRight40();
@@ -132,7 +147,7 @@ public class PurchaseCardActivity extends AppCompatActivity {
                         .merchantNameLocation43(f43)
                         .currency49("704")
                         .encryptPin(encryptPin)
-                        .expiry14(expiry)
+                        .expiry14(expiry.isEmpty() ? null : expiry)
                         .track2_35(null)
                         .field60(null)
                         .build();
@@ -145,13 +160,30 @@ public class PurchaseCardActivity extends AppCompatActivity {
                 String framedHex = HexUtil.bytesToHex(framed);
                 IsoMessageStore.saveLast(this, TxnType.PURCHASE, iso, payloadHex, framedHex);
 
-                // Only play success animation if build succeeded
                 playGlowAndNavigate(vGlowRing, finalAmountDigits);
             } catch (Exception e) {
                 btnPay.setEnabled(true);
-                Toast.makeText(this, "Lỗi dữ liệu: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Lỗi xử lý: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private static boolean isExpiryInPast(String yymm) {
+        try {
+            int yy = Integer.parseInt(yymm.substring(0, 2));
+            int mm = Integer.parseInt(yymm.substring(2, 4));
+            if (mm < 1 || mm > 12) return true;
+            int year = 2000 + yy;
+
+            java.util.Calendar now = java.util.Calendar.getInstance();
+            int nowYear = now.get(java.util.Calendar.YEAR);
+            int nowMonth = now.get(java.util.Calendar.MONTH) + 1;
+
+            if (year < nowYear) return true;
+            return year == nowYear && mm < nowMonth;
+        } catch (Exception e) {
+            return true;
+        }
     }
 
     private static String safe(EditText et) {

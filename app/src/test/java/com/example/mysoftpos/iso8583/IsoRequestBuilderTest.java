@@ -45,7 +45,7 @@ public class IsoRequestBuilderTest {
     }
 
     @Test
-    public void reversal_hasAllMandatoryFields_andMtiIs0400() {
+    public void reversal_hasAllMandatoryFields_andMtiIs0420() {
         String f90 = TransactionContext.buildField90Full42(
                 "0200",
                 "123456",
@@ -76,11 +76,11 @@ public class IsoRequestBuilderTest {
         for (int f : FieldRules.REVERSAL_REQUIRED) {
             assertTrue("missing F" + f, m.hasField(f));
         }
-        assertEquals("0400", m.getMti());
+        assertEquals("0420", m.getMti());
     }
 
     @Test
-    public void void_hasMti0200_andProcCode020000() {
+    public void void_hasMti0420_andProcCode020000() {
         String f90 = TransactionContext.buildField90Full42(
                 "0200",
                 "123456",
@@ -109,7 +109,7 @@ public class IsoRequestBuilderTest {
                 .build();
 
         IsoMessage m = IsoRequestBuilder.buildVoid(c);
-        assertEquals("0200", m.getMti());
+        assertEquals("0420", m.getMti());
         assertEquals("020000", m.getField(IsoField.PROCESSING_CODE_3));
     }
 }
