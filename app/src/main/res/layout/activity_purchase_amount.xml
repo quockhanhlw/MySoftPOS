@@ -118,7 +118,7 @@
                     android:layout_height="wrap_content"
                     android:hint="@string/amount_hint"
                     android:inputType="number"
-                    android:maxLength="9"
+                    android:maxLength="15"
                     android:maxLines="1"
                     android:padding="12dp"
                     android:textColor="@color/text_primary"

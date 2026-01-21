@@ -44,9 +44,6 @@ public final class TransactionContext {
 
     public final String field60; // optional conditional
 
-    // Reversal specific
-    public final String originalDataElements90; // for reversal/void
-
     // MAC
     public final String mac128; // optional/not mandatory
 
@@ -81,8 +78,6 @@ public final class TransactionContext {
         this.iccData55 = b.iccData55;
 
         this.field60 = b.field60;
-
-        this.originalDataElements90 = b.originalDataElements90;
         this.mac128 = b.mac128;
     }
 
@@ -138,45 +133,65 @@ public final class TransactionContext {
         return "704";
     }
 
+    public static String buildTransmissionDateTime7Now() {
+        SimpleDateFormat sdf = new SimpleDateFormat("MMddHHmmss", Locale.US);
+        sdf.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+        return sdf.format(new Date());
+    }
+
+    public static String buildLocalTime12Now() {
+        SimpleDateFormat sdf = new SimpleDateFormat("HHmmss", Locale.US);
+        sdf.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+        return sdf.format(new Date());
+    }
+
+    public static String buildLocalDate13Now() {
+        SimpleDateFormat sdf = new SimpleDateFormat("MMdd", Locale.US);
+        sdf.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+        return sdf.format(new Date());
+    }
+
+    private static String padRightSpace(String v, int len) {
+        if (v == null) v = "";
+        if (v.length() > len) {
+            return v.substring(0, len);
+        }
+        StringBuilder sb = new StringBuilder(v);
+        while (sb.length() < len) sb.append(' ');
+        return sb.toString();
+    }
+
     /**
-     * Build Field 90 full 42 digits per NAPAS:
-     * 1) Original MTI (4)
-     * 2) Original STAN (6) - F11 of original
-     * 3) Original Date/Time (10) - F7 of original, MMDDhhmmss
-     * 4) Original Acquiring ID (11) - F32 of original, left pad '0' to 11
-     * 5) Original Forwarding ID (11) - F33 or F32, if absent fill 11 zeros
+     * Calculate RRN (DE 37) based on formula:
+     * RRN = Last Digit of Year + Julian Date + Server_ID + STAN (F11)
+     * Length: 1 + 3 + 2 + 6 = 12 digits.
      */
-    public static String buildField90Full42(
-            String originalMti4,
-            String originalStan11,
-            String originalF7_10,
-            String originalAcquirerId32,
-            String originalForwardingId11) {
+    public static String calculateRrn(String serverId, String stan) {
+        if (serverId == null) serverId = "01";
+        if (stan == null) stan = "000000";
 
-        if (originalMti4 == null || !originalMti4.matches("\\d{4}")) {
-            throw new IllegalArgumentException("F90 original MTI must be 4 digits");
-        }
-        String stan6 = formatStan6(originalStan11);
-        if (stan6 == null) {
-            throw new IllegalArgumentException("F90 original STAN required");
-        }
-        if (originalF7_10 == null || !originalF7_10.matches("\\d{10}")) {
-            throw new IllegalArgumentException("F90 original F7 must be 10 digits (MMddHHmmss)");
-        }
+        // 1. Last Digit of Year (e.g. 2026 -> 6)
+        SimpleDateFormat yearFmt = new SimpleDateFormat("y", Locale.US);
+        yearFmt.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+        String yearStr = yearFmt.format(new Date());
+        char lastDigitYear = yearStr.charAt(yearStr.length() - 1);
 
-        String acq11 = leftPadDigits(originalAcquirerId32, 11);
-        String fwd11;
-        if (originalForwardingId11 == null || originalForwardingId11.trim().isEmpty()) {
-            fwd11 = "00000000000";
-        } else {
-            fwd11 = leftPadDigits(originalForwardingId11, 11);
-        }
+        // 2. Julian Date (Day of Year) - 3 digits (e.g. 021)
+        SimpleDateFormat julianFmt = new SimpleDateFormat("D", Locale.US);
+        julianFmt.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+        String julian = String.format(Locale.US, "%03d", Integer.parseInt(julianFmt.format(new Date())));
 
-        String f90 = originalMti4 + stan6 + originalF7_10 + acq11 + fwd11;
-        if (!f90.matches("\\d{42}")) {
-            throw new IllegalStateException("F90 must be 42 digits, got: " + f90);
-        }
-        return f90;
+        // 3. Server ID (e.g. 01)
+        // Ensure strictly 2 chars? Assume config is correct or pad?
+        // Let's enforce 2 chars for safety.
+        String sid = serverId;
+        if (sid.length() > 2) sid = sid.substring(0, 2);
+        else if (sid.length() < 2) sid = String.format("%2s", sid).replace(' ', '0');
+
+        // 4. STAN (F11) - 6 digits
+        String s = formatStan6(stan);
+
+        return lastDigitYear + julian + sid + s;
     }
 
     /**
@@ -187,12 +202,12 @@ public final class TransactionContext {
      * Component 1 (Terminal Information) - 12 bytes (ASCII digits):
      *  - Byte1: chip read capability (e.g. '6')
      *  - Byte2: chip txn status (e.g. '1')
-     *  - Byte3-4: channel (e.g. '03' POS, '08' Mobile)
-     *  - Byte5-12: reserved '00000000'
+     *  - Byte3-4: channel (e.g. "03" POS, "08" Mobile)
+     *  - Byte5-12: reserved "00000000"
      * Component 2 (Sender Information) - 15 bytes:
-     *  - Byte1-3: currency exponent digits (e.g. '000' as per your doc note)
+     *  - Byte1-3: currency exponent digits (e.g. "000")
      *  - Byte4: initiation method (e.g. '1' card present)
-     *  - Byte5-15: reserved '00000000000'
+     *  - Byte5-15: reserved "00000000000"
      *
      * Total length: 27 chars.
      */
@@ -226,45 +241,25 @@ public final class TransactionContext {
         }
 
         String f60 = component1 + component2;
-        if (f60.length() > 60) {
-            throw new IllegalArgumentException("F60 too long (>60)");
+        if (f60.length() != 27) {
+            throw new IllegalStateException("F60 case A must be exactly 27, got " + f60.length());
         }
         return f60;
     }
 
-    private static String padRightSpace(String s, int len) {
-        String v = s == null ? "" : s;
-        if (v.length() > len) return v.substring(0, len);
-        StringBuilder sb = new StringBuilder(v);
-        while (sb.length() < len) sb.append(' ');
-        return sb.toString();
-    }
-
-    private static String leftPadDigits(String v, int len) {
-        if (v == null) {
-            throw new IllegalArgumentException("Value required");
-        }
-        String d = v.replaceAll("\\D+", "");
-        if (d.isEmpty()) {
-            throw new IllegalArgumentException("Value must contain digits");
-        }
-        if (d.length() > len) {
-            throw new IllegalArgumentException("Value too long (" + d.length() + ") for len=" + len);
-        }
-        return String.format(Locale.US, "%" + len + "s", d).replace(' ', '0');
-    }
-
-    // --------------------------------------------------------------------------
-
+    /** Builder for TransactionContext. */
     public static final class Builder {
         private final TxnType txnType;
+
         private String terminalId41;
         private String merchantId42;
         private String merchantNameLocation43;
+
         private String pan2;
         private String track2_35;
         private String expiry14;
         private String cardSeq23;
+
         private String processingCode3;
         private String amount4;
         private String transmissionDt7;
@@ -278,49 +273,50 @@ public final class TransactionContext {
         private String acquirerId32;
         private String rrn37;
         private String currency49;
+
         private boolean encryptPin;
         private String pinBlock52;
         private String iccData55;
         private String field60;
-        private String originalDataElements90;
+
         private String mac128;
 
         public Builder(TxnType txnType) {
             this.txnType = txnType;
         }
 
-        public Builder terminalId41(String v) { this.terminalId41 = v; return this; }
-        public Builder merchantId42(String v) { this.merchantId42 = v; return this; }
-        public Builder merchantNameLocation43(String v) { this.merchantNameLocation43 = v; return this; }
-        public Builder pan2(String v) { this.pan2 = v; return this; }
-        public Builder track2_35(String v) { this.track2_35 = v; return this; }
-        public Builder expiry14(String v) { this.expiry14 = v; return this; }
-        public Builder cardSeq23(String v) { this.cardSeq23 = v; return this; }
-        public Builder processingCode3(String v) { this.processingCode3 = v; return this; }
-        public Builder amount4(String v) { this.amount4 = v; return this; }
-        public Builder transmissionDt7(String v) { this.transmissionDt7 = v; return this; }
-        public Builder stan11(String v) { this.stan11 = v; return this; }
-        public Builder localTime12(String v) { this.localTime12 = v; return this; }
-        public Builder localDate13(String v) { this.localDate13 = v; return this; }
-        public Builder mcc18(String v) { this.mcc18 = v; return this; }
-        public Builder country19(String v) { this.country19 = v; return this; }
-        public Builder posEntryMode22(String v) { this.posEntryMode22 = v; return this; }
-        public Builder posCondition25(String v) { this.posCondition25 = v; return this; }
-        public Builder acquirerId32(String v) { this.acquirerId32 = v; return this; }
-        public Builder rrn37(String v) { this.rrn37 = v; return this; }
-        public Builder currency49(String v) { this.currency49 = v; return this; }
-        public Builder encryptPin(boolean v) { this.encryptPin = v; return this; }
-        public Builder pinBlock52(String v) { this.pinBlock52 = v; return this; }
-        public Builder iccData55(String v) { this.iccData55 = v; return this; }
-        public Builder field60(String v) { this.field60 = v; return this; }
-        public Builder originalDataElements90(String v) { this.originalDataElements90 = v; return this; }
-        public Builder mac128(String v) { this.mac128 = v; return this; }
+        public Builder terminalId41(String terminalId41) { this.terminalId41 = terminalId41; return this; }
+        public Builder merchantId42(String merchantId42) { this.merchantId42 = merchantId42; return this; }
+        public Builder merchantNameLocation43(String merchantNameLocation43) { this.merchantNameLocation43 = merchantNameLocation43; return this; }
+
+        public Builder pan2(String pan2) { this.pan2 = pan2; return this; }
+        public Builder track2_35(String track2_35) { this.track2_35 = track2_35; return this; }
+        public Builder expiry14(String expiry14) { this.expiry14 = expiry14; return this; }
+        public Builder cardSeq23(String cardSeq23) { this.cardSeq23 = cardSeq23; return this; }
+
+        public Builder processingCode3(String processingCode3) { this.processingCode3 = processingCode3; return this; }
+        public Builder amount4(String amount4) { this.amount4 = amount4; return this; }
+        public Builder transmissionDt7(String transmissionDt7) { this.transmissionDt7 = transmissionDt7; return this; }
+        public Builder stan11(String stan11) { this.stan11 = stan11; return this; }
+        public Builder localTime12(String localTime12) { this.localTime12 = localTime12; return this; }
+        public Builder localDate13(String localDate13) { this.localDate13 = localDate13; return this; }
+        public Builder mcc18(String mcc18) { this.mcc18 = mcc18; return this; }
+        public Builder country19(String country19) { this.country19 = country19; return this; }
+        public Builder posEntryMode22(String posEntryMode22) { this.posEntryMode22 = posEntryMode22; return this; }
+        public Builder posCondition25(String posCondition25) { this.posCondition25 = posCondition25; return this; }
+        public Builder acquirerId32(String acquirerId32) { this.acquirerId32 = acquirerId32; return this; }
+        public Builder rrn37(String rrn37) { this.rrn37 = rrn37; return this; }
+        public Builder currency49(String currency49) { this.currency49 = currency49; return this; }
+
+        public Builder encryptPin(boolean encryptPin) { this.encryptPin = encryptPin; return this; }
+        public Builder pinBlock52(String pinBlock52) { this.pinBlock52 = pinBlock52; return this; }
+        public Builder iccData55(String iccData55) { this.iccData55 = iccData55; return this; }
+        public Builder field60(String field60) { this.field60 = field60; return this; }
+
+        public Builder mac128(String mac128) { this.mac128 = mac128; return this; }
 
         public TransactionContext build() {
             return new TransactionContext(this);
         }
     }
-
-    // Move: helper methods MUST stay above/beside builder for readability.
-    // (No functional change; this comment is only to guide future edits.)
 }

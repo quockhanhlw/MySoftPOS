@@ -71,11 +71,35 @@ public class PurchaseAmountActivity extends AppCompatActivity {
                 return;
             }
 
-            Intent i = new Intent(this, PurchaseCardActivity.class);
-            i.putExtra(PurchaseFlowData.EXTRA_AMOUNT_DIGITS, normalized);
-            i.putExtra(PurchaseFlowData.EXTRA_AMOUNT_F4, f4);
-            startActivity(i);
-            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+            // Show Payment Selection Dialog
+            showPaymentMethodSelection(normalized, f4);
         });
+    }
+
+    private void showPaymentMethodSelection(String amountDigits, String amountF4) {
+        com.google.android.material.bottomsheet.BottomSheetDialog dialog = new com.google.android.material.bottomsheet.BottomSheetDialog(this);
+        android.view.View view = android.view.LayoutInflater.from(this).inflate(R.layout.dialog_payment_method, null);
+        dialog.setContentView(view);
+        
+        view.findViewById(R.id.cardNfc).setOnClickListener(v -> {
+            dialog.dismiss();
+            navigateToCardActivity(amountDigits, amountF4, true);
+        });
+
+        view.findViewById(R.id.cardManual).setOnClickListener(v -> {
+            dialog.dismiss();
+            navigateToCardActivity(amountDigits, amountF4, false);
+        });
+
+        dialog.show();
+    }
+
+    private void navigateToCardActivity(String amountDigits, String amountF4, boolean isNfcMode) {
+        Intent i = new Intent(this, PurchaseCardActivity.class);
+        i.putExtra(PurchaseFlowData.EXTRA_AMOUNT_DIGITS, amountDigits);
+        i.putExtra(PurchaseFlowData.EXTRA_AMOUNT_F4, amountF4);
+        i.putExtra("EXTRA_MODE_NFC", isNfcMode);
+        startActivity(i);
+        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
     }
 }

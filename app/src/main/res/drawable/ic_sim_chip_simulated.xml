@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="45dp"
+    android:height="35dp"
+    android:viewportWidth="45"
+    android:viewportHeight="35">
+    
+    <!-- Chip Background -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M4,0h37c2.21,0 4,1.79 4,4v27c0,2.21 -1.79,4 -4,4H4c-2.21,0 -4,-1.79 -4,-4V4c0,-2.21 1.79,-4 4,-4z"/>
+        
+    <!-- Chip Circuits -->
+    <path
+        android:strokeWidth="0.5"
+        android:strokeColor="#B8860B"
+        android:pathData="M14,0v35 M31,0v35 M0,17.5h14 M31,17.5h14 M14,12h17 M14,23h17 M22.5,12v11"/>
+</vector>

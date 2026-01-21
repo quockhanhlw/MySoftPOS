@@ -48,42 +48,6 @@ public final class IsoValidator {
     }
 
     /**
-     * Validate VOID/REVERSAL Advice transaction for NAPAS.
-     * Diagram-based MTI:
-     * - Request MTI: 0420
-     * - Response MTI: 0430
-     */
-    public static void validateReversal(IsoMessage msg) {
-        // 1. Format check based on Spec
-        validateAgainstNapasSpec(msg.getMti(), msg.getFields(), true, "VOID/REVERSAL");
-
-        // 2. Mandatory fields check
-        validateRequired(msg, FieldRules.REVERSAL_REQUIRED, "VOID/REVERSAL");
-
-        // 3. Logic check: Processing code vs MTI
-        validateProcessingCodeByContext(msg, "VOID/REVERSAL");
-
-        // 4. Business checks
-        requireNotBlank(msg, IsoField.RRN_37, "VOID/REVERSAL requires RRN (F37)");
-        requireNotBlank(msg, IsoField.ORIGINAL_DATA_ELEMENTS_90, "VOID/REVERSAL requires Original Data Elements (F90)");
-        requireNotBlank(msg, IsoField.AMOUNT_4, "VOID/REVERSAL requires amount (F4)");
-        requireCardData(msg, "VOID/REVERSAL");
-
-        // Validate F90 strict 42 digits
-        validateField90Strict(msg, "VOID/REVERSAL");
-
-        validateCommonFormats(msg, "VOID/REVERSAL");
-        validatePosEntryMode22(msg, "VOID/REVERSAL");
-        validateReversalConditional(msg);
-
-        // Time format checks
-        validateDateTimeFields(msg, "VOID/REVERSAL");
-
-        // Private field checks
-        validateField60IfPresent(msg, "VOID/REVERSAL");
-    }
-
-    /**
      * Validate PURCHASE response per NAPAS flow diagram: 0200 -> 0210.
      * Minimal requirements enforced for simulator:
      * - MTI must be 0210
@@ -101,26 +65,8 @@ public final class IsoValidator {
     }
 
     /**
-     * Validate VOID/REVERSAL ADVICE response per NAPAS flow diagram: 0420 -> 0430.
-     * Minimal requirements enforced for simulator:
-     * - MTI must be 0430
-     * - Must contain DE39 (Response Code)
-     * - Validate present fields against {@link NapasFieldSpecConfig}
-     */
-    public static void validateAdviceResponse(IsoMessage response) {
-        if (response == null) throw new IllegalArgumentException("response == null");
-        validateResponseAgainstNapasSpec(response.getMti(), response.getFields(), "ADVICE-RESP");
-
-        if (!"0430".equals(response.getMti())) {
-            throw new IllegalStateException("ADVICE response MTI must be 0430, got: " + response.getMti());
-        }
-        requireNotBlank(response, 39, "ADVICE response requires F39 (Response Code)");
-    }
-
-    /**
-     * Validate a response based on the original request MTI (diagram based).
+     * Validate a response based on the original request MTI.
      * - 0200 -> 0210
-     * - 0420 -> 0430
      */
     public static void validateResponseByRequest(IsoMessage request, IsoMessage response) {
         if (request == null) throw new IllegalArgumentException("request == null");
@@ -129,10 +75,6 @@ public final class IsoValidator {
         String reqMti = request.getMti();
         if ("0200".equals(reqMti)) {
             validatePurchaseResponse(response);
-            return;
-        }
-        if ("0420".equals(reqMti)) {
-            validateAdviceResponse(response);
             return;
         }
         throw new IllegalStateException("Unsupported request MTI for response validation: " + reqMti);
@@ -230,7 +172,6 @@ public final class IsoValidator {
      *
      * Diagram-based:
      * - Purchase request: MTI 0200, F3=000000
-     * - Void/Reversal advice request: MTI 0420, F3 in {000000,020000} (depends on original txn)
      */
     private static void validateProcessingCodeByContext(IsoMessage msg, String name) {
         String mti = msg.getMti();
@@ -239,25 +180,9 @@ public final class IsoValidator {
             throw new IllegalStateException(name + " F3 must be 6n. Got: " + f3);
         }
 
-        boolean hasF90 = msg.hasField(IsoField.ORIGINAL_DATA_ELEMENTS_90)
-                && !isBlank(msg.getField(IsoField.ORIGINAL_DATA_ELEMENTS_90));
-
         if ("0200".equals(mti)) {
-            if (hasF90) {
-                // Prevent legacy mixing: 0200 should not be used for void/reversal in diagram-based mode
-                throw new IllegalStateException(name + " invalid MTI=0200 with F90 in NAPAS advice mode. Use MTI=0420.");
-            }
-            // Purchase
             if (!"000000".equals(f3)) {
                 throw new IllegalStateException(name + " PURCHASE requires F3=000000 (MTI=0200). Got: " + f3);
-            }
-            return;
-        }
-
-        if ("0420".equals(mti)) {
-            // Advice request: allow both purchase-code and void-code depending on original txn
-            if (!("000000".equals(f3) || "020000".equals(f3))) {
-                throw new IllegalStateException(name + " ADVICE (MTI=0420) requires F3=000000 or 020000. Got: " + f3);
             }
             return;
         }
@@ -317,10 +242,6 @@ public final class IsoValidator {
         checkChipData(msg, "PURCHASE");
     }
 
-    private static void validateReversalConditional(IsoMessage msg) {
-        checkChipData(msg, "REVERSAL");
-    }
-
     private static void checkChipData(IsoMessage msg, String context) {
         String entryMode = msg.getField(IsoField.POS_ENTRY_MODE_22);
         if (!isBlank(entryMode)) {
@@ -332,12 +253,6 @@ public final class IsoValidator {
         }
     }
 
-    private static void validateField90Strict(IsoMessage msg, String name) {
-        String f90 = msg.getField(IsoField.ORIGINAL_DATA_ELEMENTS_90);
-        if (isBlank(f90) || !f90.matches("\\d{42}")) {
-            throw new IllegalStateException(name + " F90 must be 42 digits (n-42). Got: " + f90);
-        }
-    }
 
     private static void validateField60IfPresent(IsoMessage msg, String name) {
         if (!msg.hasField(IsoField.RESERVED_PRIVATE_60)) return;

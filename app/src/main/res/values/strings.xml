@@ -72,7 +72,6 @@
     <string name="dashboard_status_online">Kết nối</string>
     <string name="dashboard_status_offline">Mất kết nối</string>
     <string name="dashboard_purchase">Thanh toán</string>
-    <string name="dashboard_void">Hủy giao dịch</string>
     <string name="dashboard_refund">Hoàn tiền</string>
     <string name="dashboard_history">Lịch sử</string>
     <string name="dashboard_logon">Logon</string>
