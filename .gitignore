@@ -13,3 +13,11 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Agent
+.agent/
+
+# Logs
+build.log
+error.log
+compile_error.txt
