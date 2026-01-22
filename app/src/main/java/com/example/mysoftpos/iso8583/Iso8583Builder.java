@@ -1,0 +1,169 @@
+package com.example.mysoftpos.iso8583;
+
+import com.example.mysoftpos.domain.model.CardInputData;
+import java.util.Map;
+
+/**
+ * ISO8583 Builder - Production Grade.
+ * Adheres to Napas Specifications.
+ */
+public class Iso8583Builder {
+
+    private Iso8583Builder() {}
+
+    /**
+     * Build Purchase Request (0200).
+     */
+    public static IsoMessage buildPurchaseMsg(TransactionContext ctx, CardInputData card) {
+        IsoMessage m = new IsoMessage("0200");
+        
+        // 1. Primary Bitmap Data
+        m.setField(IsoField.PAN_2, card.getPan());
+        m.setField(IsoField.PROCESSING_CODE_3, "000000"); // Purchase
+        m.setField(IsoField.AMOUNT_4, ctx.amount4);
+        m.setField(IsoField.TRANSMISSION_DATETIME_7, ctx.transmissionDt7);
+        m.setField(IsoField.STAN_11, ctx.stan11);
+        m.setField(IsoField.LOCAL_TIME_12, ctx.localTime12);
+        m.setField(IsoField.LOCAL_DATE_13, ctx.localDate13);
+        m.setField(IsoField.EXPIRATION_DATE_14, card.getExpiryDate());
+        m.setField(IsoField.MERCHANT_TYPE_18, ctx.mcc18 != null ? ctx.mcc18 : "5411");
+        
+        // DE 22: POS Entry Mode
+        // Manual = "011", NFC = "071"
+        m.setField(IsoField.POS_ENTRY_MODE_22, card.isContactless() ? "071" : "011");
+        
+        m.setField(IsoField.POS_CONDITION_CODE_25, "00");
+        m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32 != null ? ctx.acquirerId32 : "970400");
+        m.setField(IsoField.RRN_37, ctx.rrn37);
+        m.setField(IsoField.TERMINAL_ID_41, ctx.terminalId41);
+        m.setField(IsoField.MERCHANT_ID_42, ctx.merchantId42);
+        m.setField(IsoField.CURRENCY_CODE_49, "704"); // VND
+
+        // Security Hygiene: Only include Device Data for NFC
+        if (card.isContactless()) {
+            m.setField(IsoField.TRACK2_35, card.getTrack2());
+            String emv = buildEmvString(card.getEmvTags());
+            if (emv != null) m.setField(IsoField.ICC_DATA_55, emv);
+        }
+        
+        if (ctx.encryptPin && ctx.pinBlock52 != null) {
+            m.setField(IsoField.PIN_BLOCK_52, ctx.pinBlock52);
+        }
+
+        return m;
+    }
+
+    /**
+     * Build Balance Inquiry Request (0200).
+     */
+    public static IsoMessage buildBalanceMsg(TransactionContext ctx, CardInputData card) {
+        IsoMessage m = new IsoMessage("0200");
+        
+        m.setField(IsoField.PAN_2, card.getPan());
+        m.setField(IsoField.PROCESSING_CODE_3, "300000"); // Balance Inquiry
+        m.setField(IsoField.AMOUNT_4, "000000000000");    // Ignore Amount
+        m.setField(IsoField.TRANSMISSION_DATETIME_7, ctx.transmissionDt7);
+        m.setField(IsoField.STAN_11, ctx.stan11);
+        m.setField(IsoField.LOCAL_TIME_12, ctx.localTime12);
+        m.setField(IsoField.LOCAL_DATE_13, ctx.localDate13);
+        m.setField(IsoField.MERCHANT_TYPE_18, "6011"); // Financial Inst
+        
+        m.setField(IsoField.POS_ENTRY_MODE_22, card.isContactless() ? "071" : "011");
+        
+        m.setField(IsoField.POS_CONDITION_CODE_25, "00");
+        m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32 != null ? ctx.acquirerId32 : "970400");
+        m.setField(IsoField.RRN_37, ctx.rrn37);
+        m.setField(IsoField.TERMINAL_ID_41, ctx.terminalId41);
+        m.setField(IsoField.MERCHANT_ID_42, ctx.merchantId42);
+        m.setField(IsoField.CURRENCY_CODE_49, "704");
+
+        if (card.isContactless()) {
+            m.setField(IsoField.TRACK2_35, card.getTrack2());
+            String emv = buildEmvString(card.getEmvTags());
+            if (emv != null) m.setField(IsoField.ICC_DATA_55, emv);
+        }
+        
+        if (ctx.encryptPin && ctx.pinBlock52 != null) {
+            m.setField(IsoField.PIN_BLOCK_52, ctx.pinBlock52);
+        }
+
+        return m;
+    }
+
+    /**
+     * Build Reversal Advice (0420).
+     * @param originalCtx The context of the original FAILED transaction.
+     * @param card Card Data.
+     * @param newTrace The NEW Trace Number (DE 11).
+     */
+    public static IsoMessage buildReversalAdvice(TransactionContext originalCtx, CardInputData card, String newTrace) {
+        IsoMessage m = new IsoMessage("0420");
+
+        // Copy Mandatory Fields
+        m.setField(IsoField.PAN_2, card.getPan());
+        
+        // ProcCode must match Original
+        String proc = (originalCtx.txnType == TxnType.BALANCE_INQUIRY) ? "300000" : "000000";
+        m.setField(IsoField.PROCESSING_CODE_3, proc);
+        
+        m.setField(IsoField.AMOUNT_4, originalCtx.amount4);
+        m.setField(IsoField.TRANSMISSION_DATETIME_7, originalCtx.transmissionDt7);
+        
+        // DE 11: CRITICAL - Use NEW Trace
+        m.setField(IsoField.STAN_11, newTrace);
+        
+        m.setField(IsoField.LOCAL_TIME_12, originalCtx.localTime12);
+        m.setField(IsoField.LOCAL_DATE_13, originalCtx.localDate13);
+        m.setField(IsoField.MERCHANT_TYPE_18, originalCtx.mcc18 != null ? originalCtx.mcc18 : (originalCtx.txnType == TxnType.BALANCE_INQUIRY ? "6011" : "5411"));
+        
+        m.setField(IsoField.POS_ENTRY_MODE_22, card.isContactless() ? "071" : "011");
+        m.setField(IsoField.ACQUIRER_ID_32, originalCtx.acquirerId32 != null ? originalCtx.acquirerId32 : "970400");
+        m.setField(IsoField.RRN_37, originalCtx.rrn37);
+        m.setField(IsoField.TERMINAL_ID_41, originalCtx.terminalId41);
+        m.setField(IsoField.MERCHANT_ID_42, originalCtx.merchantId42);
+        m.setField(IsoField.CURRENCY_CODE_49, "704");
+
+        // DE 90 Construction
+        // Format: [OrgMTI(4)] [OrgTrace(6)] [OrgDate(4)] [OrgTime(6)] [OrgAcq(11)] [OrgFwd(11)]
+        String orgMti = "0200"; // Both Purchase/Balance are 0200
+        String orgTrace = originalCtx.stan11; // Ensure this is 6 digits
+        String orgDate = originalCtx.localDate13 != null ? originalCtx.localDate13 : "0000"; // MMdd
+        String orgTime = originalCtx.localTime12 != null ? originalCtx.localTime12 : "000000"; // HHmmss
+        
+        // If transmissionDt7 is used instead of Local Date/Time for DE 90 matching:
+        // specs say "Original Transmission Date & Time".
+        // Let's use transmissionDt7 if it's 10 chars (MMDDHHMMSS) splitting it?
+        // Actually, DE 7 is MMDDHHMMSS. DE 90 needs Date(4) Time(6). 
+        // So simple substring of DE 7 is safer check.
+        if (originalCtx.transmissionDt7 != null && originalCtx.transmissionDt7.length() == 10) {
+            orgDate = originalCtx.transmissionDt7.substring(0, 4);
+            orgTime = originalCtx.transmissionDt7.substring(4, 10);
+        }
+        
+        String de90 = orgMti + orgTrace + orgDate + orgTime + "00970400000" + "00000000000";
+        m.setField(90, de90);
+        
+        // Exclude DE 52 (PIN) -> Implicit
+        
+        // Include DE 55 if NFC
+        if (card.isContactless()) {
+            String emv = buildEmvString(card.getEmvTags());
+            if (emv != null) m.setField(IsoField.ICC_DATA_55, emv);
+        }
+
+        return m;
+    }
+
+    private static String buildEmvString(Map<String, String> tags) {
+        if (tags == null || tags.isEmpty()) return null;
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> e : tags.entrySet()) {
+            sb.append(e.getKey());
+            // Length in hex? Simple byte length calculation
+            int len = e.getValue().length() / 2;
+            sb.append(String.format("%02X", len));
+            sb.append(e.getValue());
+        }
+        return sb.toString();
+    }
+}

@@ -14,6 +14,47 @@ public final class IsoRequestBuilder {
     private IsoRequestBuilder() {}
 
     /**
+     * Build Reversal Advice (MTI 0420)
+     */
+    public static IsoMessage buildReversalAdvice(TransactionContext ctx, CardInputData cardData) {
+        IsoMessage m = new IsoMessage("0420");
+
+        // Key Fields to Match Original Request
+        m.setField(IsoField.PAN_2, cardData.getPan());
+        m.setField(IsoField.PROCESSING_CODE_3, ctx.txnType == TxnType.BALANCE_INQUIRY ? "310000" : "000000");
+        m.setField(IsoField.AMOUNT_4, normalizeAmount12(ctx.amount4));
+        m.setField(IsoField.TRANSMISSION_DATETIME_7, ctx.transmissionDt7);
+        m.setField(IsoField.STAN_11, normalizeStan6(ctx.stan11));
+        m.setField(IsoField.LOCAL_TIME_12, ctx.localTime12);
+        m.setField(IsoField.LOCAL_DATE_13, ctx.localDate13);
+        
+        m.setField(IsoField.MERCHANT_TYPE_18, ctx.mcc18!=null?ctx.mcc18:"5411"); 
+        m.setField(IsoField.POS_ENTRY_MODE_22, cardData.getPosEntryMode());
+        m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32 != null ? ctx.acquirerId32 : "970400");
+        m.setField(IsoField.RRN_37, ctx.rrn37);
+        m.setField(IsoField.TERMINAL_ID_41, TransactionContext.formatTid8(ctx.terminalId41));
+        m.setField(IsoField.MERCHANT_ID_42, TransactionContext.formatMid15(ctx.merchantId42));
+        m.setField(IsoField.CURRENCY_CODE_49, "704");
+
+        // DE 90: Original Data Elements
+        // Format: MTI(4) + Stan(6) + Date(4) + Time(6) + AcqId(11, LLVAR)
+        // Note: AcqId is usually fixed length in DE 90 structure or LLVAR depending on spec.
+        // Assuming Standard: MTI(4) + Stan(6) + TransmissionDateTime(10) + AcquirerID(11, ZeroPadded) + ForwardingInst(11, ZeroPadded)
+        // Let's use simple matching logic for now: MTI + STAN + TRACE + ACQ
+        
+        String originalMti = (ctx.txnType == TxnType.BALANCE_INQUIRY) ? "0100" : "0200";
+        String originalStan = normalizeStan6(ctx.stan11);
+        String originalTimeDate = ctx.transmissionDt7; // MMddHHmmss
+        String originalAcq = "00970400000"; // 11 chars
+        String originalFwd = "00000000000"; // 11 chars
+        
+        String de90 = originalMti + originalStan + originalTimeDate + originalAcq + originalFwd;
+        m.setField(90, de90);
+
+        return m;
+    }
+
+    /**
      * Build Purchase Request (MTI 0200).
      * MTI: 0200
      * Processing Code: 000000

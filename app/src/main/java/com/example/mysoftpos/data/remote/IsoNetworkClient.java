@@ -8,91 +8,87 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 
-/**
- * Handles ISO 8583 TCP Networking with TPDU Framing.
- * Protocol: [2-byte Length] + [5-byte TPDU] + [ISO Data]
- * Length Value = 5 (TPDU) + ISO Data Length.
- */
 public class IsoNetworkClient {
 
     private static final String TAG = "IsoNetworkClient";
     private static final int DEFAULT_TIMEOUT_MS = 15000;
     
     // Hardcoded Configuration (Zero-Config)
-    private static final String SERVER_IP = "10.145.54.158";
-    private static final int SERVER_PORT = 8583;
+    private static final String DEFAULT_SERVER_IP = "10.145.54.122";
+    private static final int DEFAULT_SERVER_PORT = 8583;
     
-    // Standard NII/TPDU header (60 00 00 00 00)
-    private static final byte[] TPDU = new byte[]{0x60, 0x00, 0x00, 0x00, 0x00};
-    
+    private final String host;
+    private final int port;
     private int timeoutMs = DEFAULT_TIMEOUT_MS;
 
     public IsoNetworkClient() {
+        this.host = DEFAULT_SERVER_IP;
+        this.port = DEFAULT_SERVER_PORT;
+    }
+    
+    public IsoNetworkClient(String host, int port) {
+        this.host = host;
+        this.port = port;
     }
 
-    /**
-     * Sends ISO Data and receives Response.
-     * Wraps data in TPDU + Length Header.
-     * Unwraps Response TPDU + Length Header.
-     * 
-     * @param isoData Raw ISO 8583 bytes (MTI + Bitmap + Fields)
-     * @return Raw ISO 8583 Response bytes (MTI + Bitmap + Fields)
-     * @throws IOException on network failure
-     */
-    public byte[] sendAndReceive(byte[] isoData) throws IOException {
+    public byte[] sendAndReceive(byte[] requestData) throws IOException {
         Socket socket = null;
         try {
-            Log.d(TAG, "Connecting to " + SERVER_IP + ":" + SERVER_PORT);
+            Log.d(TAG, "Connecting to " + host + ":" + port);
             socket = new Socket();
-            socket.connect(new InetSocketAddress(SERVER_IP, SERVER_PORT), timeoutMs);
+            socket.connect(new InetSocketAddress(host, port), timeoutMs);
+            // --- FRAMING LOGIC (2-Byte Binary EXCLUSIVE) ---
+            // Length = Body Length ONLY
+            int bodyLen = requestData.length;
             
-            // --- SENDER LOGIC ---
-            OutputStream out = socket.getOutputStream();
-            
-            // 1. Calculate Total Body Length (TPDU + ISO Data)
-            int bodyLen = TPDU.length + isoData.length;
-            
-            // 2. Prepare Header (2 Bytes)
             byte[] header = new byte[2];
             header[0] = (byte) ((bodyLen >> 8) & 0xFF);
             header[1] = (byte) (bodyLen & 0xFF);
             
-            // 3. Write [Header] + [TPDU] + [ISO Data]
-            out.write(header);
-            out.write(TPDU);
-            out.write(isoData);
+            // Debug Log: EXACT BYTES SENT
+            Log.d(TAG, String.format("TX Header (Bin Exclusive): [%02X %02X] (Len=%d)", header[0], header[1], bodyLen));
+            Log.d(TAG, "TX Body: " + bytesToHex(requestData));
+            
+            OutputStream out = socket.getOutputStream();
+            out.write(header); // Write Header FIRST
+            out.write(requestData);
             out.flush();
-            
-            Log.d(TAG, String.format("TX: Header=[%02X %02X] (Len=%d) + TPDU + Data(%d bytes)", 
-                    header[0], header[1], bodyLen, isoData.length));
-            
-            // --- RECEIVER LOGIC ---
+            Log.d(TAG, "Data sent successfully");
+
+            // --- RECEIVE LOGIC ---
             InputStream in = socket.getInputStream();
             
-            // 1. Read Header (2 Bytes)
+            // Read 2 bytes Header
             byte[] headerBuf = new byte[2];
-            readFully(in, headerBuf);
-            
-            int respLen = ((headerBuf[0] & 0xFF) << 8) | (headerBuf[1] & 0xFF);
-            Log.d(TAG, String.format("RX: Header=[%02X %02X] (Len=%d)", headerBuf[0], headerBuf[1], respLen));
-            
-            if (respLen <= 5 || respLen > 8192) {
-                throw new IOException("Invalid Response Length: " + respLen + " (Must be > 5 for TPDU)");
+            int readHeaders = 0;
+            while(readHeaders < 2) {
+                int count = in.read(headerBuf, readHeaders, 2 - readHeaders);
+                if(count == -1) break;
+                readHeaders += count;
             }
             
-            // 2. Read Body (TPDU + ISO Data)
-            byte[] bodyBuf = new byte[respLen];
-            readFully(in, bodyBuf);
+            if (readHeaders < 2) {
+                 throw new IOException("Server closed connection / No Header received");
+            }
             
-            // 3. Strip TPDU (First 5 bytes)
-            // Verify TPDU? usually ignored in response or just logged.
-            // We assume standard 5 bytes.
-            int isoLen = respLen - 5;
-            byte[] isoResponse = new byte[isoLen];
-            System.arraycopy(bodyBuf, 5, isoResponse, 0, isoLen);
+            // Parse Body Length (Exclusive)
+            int respLen = ((headerBuf[0] & 0xFF) << 8) | (headerBuf[1] & 0xFF);
+            Log.d(TAG, String.format("RX Header (Bin Exclusive): [%02X %02X] (Len=%d)", headerBuf[0], headerBuf[1], respLen));
             
-            Log.d(TAG, "RX: TPDU Stripped. ISO Data size: " + isoLen);
-            return isoResponse;
+            if (respLen <= 0 || respLen > 4096) { 
+                throw new IOException("Invalid Response Length: " + respLen);
+            }
+            
+            byte[] response = new byte[respLen];
+            int totalRead = 0;
+            while (totalRead < respLen) {
+                int count = in.read(response, totalRead, respLen - totalRead);
+                if (count == -1) break;
+                totalRead += count;
+            }
+            
+            Log.d(TAG, "RX Body: " + bytesToHex(response));
+            return response;
 
         } catch (SocketTimeoutException e) {
             Log.e(TAG, "Timeout waiting for response", e);
@@ -105,21 +101,19 @@ public class IsoNetworkClient {
                 try {
                     socket.close();
                 } catch (IOException e) {
-                    // Ignore
+                    Log.w(TAG, "Error closing socket", e);
                 }
             }
         }
     }
     
-    private void readFully(InputStream in, byte[] buffer) throws IOException {
-        int total = 0;
-        int len = buffer.length;
-        while (total < len) {
-            int count = in.read(buffer, total, len - total);
-            if (count == -1) {
-                 throw new IOException("Unexpected End of Stream (read " + total + " of " + len + ")");
-            }
-            total += count;
+    // Helper for Hex Logging
+    private String bytesToHex(byte[] bytes) {
+        if (bytes == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02X", b));
         }
+        return sb.toString();
     }
 }

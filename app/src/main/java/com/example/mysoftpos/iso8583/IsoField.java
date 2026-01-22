@@ -21,6 +21,7 @@ public final class IsoField {
     public static final int TRACK2_35 = 35;
     public static final int RRN_37 = 37;
     public static final int AUTH_CODE_38 = 38;
+    public static final int RESPONSE_CODE_39 = 39;
     public static final int TERMINAL_ID_41 = 41;
     public static final int MERCHANT_ID_42 = 42;
     public static final int MERCHANT_NAME_LOCATION_43 = 43;

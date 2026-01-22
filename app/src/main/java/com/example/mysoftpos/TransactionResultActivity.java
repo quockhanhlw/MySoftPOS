@@ -148,9 +148,10 @@ public class TransactionResultActivity extends AppCompatActivity {
         btnClose.setOnClickListener(v -> {
             if (finalType == ResultType.LIMIT_EXCEEDED) {
                  // Go back to Amount Input
-                 Intent i = new Intent(this, PurchaseAmountActivity.class);
-                 i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                 startActivity(i);
+                Intent i = new Intent(this, MainDashboardActivity.class);
+                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(i);
+                finish();
             } else if (finalType == ResultType.CARD_EXPIRED || finalType == ResultType.INVALID_CARD) {
                  // Try again (Back to Dashboard or Card Input?)
                  // Dashboard is safest as "Retry" might imply same transaction params which failed validation

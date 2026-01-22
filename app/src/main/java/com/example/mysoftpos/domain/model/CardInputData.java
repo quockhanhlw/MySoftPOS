@@ -25,6 +25,12 @@ public class CardInputData {
         this.track2 = track2;
         this.emvTags = emvTags != null ? emvTags : Collections.emptyMap();
     }
+    
+    // MainDashboardActivity Usage (6 args: pan, expiry, track2, posMode, pin, emv)
+    public CardInputData(String pan, String expiryDate, String track2, String posEntryMode, String pinBlock, Map<String, String> emvTags) {
+         this(pan, expiryDate, posEntryMode, track2, emvTags);
+         // pinBlock ignored for now as it's not in the fields yet, or add it if needed
+    }
 
     public String getPan() {
         return pan;

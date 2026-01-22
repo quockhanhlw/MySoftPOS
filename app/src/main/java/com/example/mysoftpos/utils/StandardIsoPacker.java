@@ -134,6 +134,66 @@ public class StandardIsoPacker {
 
         return baos.toByteArray();
     }
+
+    public IsoMessage unpack(byte[] responseData) throws Exception {
+        if (responseData == null || responseData.length < 12) throw new Exception("Invalid response length");
+
+        // 1. MTI
+        String mti = new String(responseData, 0, 4, StandardCharsets.US_ASCII);
+        IsoMessage msg = new IsoMessage(mti);
+
+        // 2. Bitmap
+        long bitmap = 0;
+        for (int i = 0; i < 8; i++) {
+            bitmap = (bitmap << 8) | (responseData[4 + i] & 0xFF);
+        }
+
+        int offset = 12;
+
+        // 3. Fields
+        for (int i = 2; i <= 64; i++) {
+            boolean isPresent = ((bitmap >> (64 - i)) & 1) == 1;
+
+            if (isPresent) {
+                FieldDef def = SCHEMA.get(i);
+                if (def == null) continue; // Should probably skip bytes if unknown? But we don't know length. Assuming known schema.
+
+                String extracted = null;
+                int consumed = 0;
+
+                if (offset >= responseData.length) break;
+
+                if (def.type == FieldType.NUMERIC || def.type == FieldType.ALPHA) {
+                    int byteLen = def.length;
+                    if (offset + byteLen > responseData.length) break;
+                    extracted = new String(responseData, offset, byteLen, StandardCharsets.US_ASCII);
+                    consumed = byteLen;
+                } else if (def.type == FieldType.LLVAR) {
+                    if (offset + 2 > responseData.length) break;
+                    String lenStr = new String(responseData, offset, 2, StandardCharsets.US_ASCII);
+                    int len = Integer.parseInt(lenStr);
+                    consumed = 2;
+                    if (offset + 2 + len > responseData.length) break;
+                    extracted = new String(responseData, offset + 2, len, StandardCharsets.US_ASCII);
+                    consumed += len;
+                } else if (def.type == FieldType.LLLVAR) {
+                    if (offset + 3 > responseData.length) break;
+                    String lenStr = new String(responseData, offset, 3, StandardCharsets.US_ASCII);
+                    int len = Integer.parseInt(lenStr);
+                    consumed = 3;
+                    if (offset + 3 + len > responseData.length) break;
+                    extracted = new String(responseData, offset + 3, len, StandardCharsets.US_ASCII);
+                    consumed += len;
+                }
+
+                if (extracted != null) {
+                    msg.setField(i, extracted);
+                }
+                offset += consumed;
+            }
+        }
+        return msg;
+    }
     
     // Unpacker logic for Response (BCD Support)
     public static String unpackField(byte[] responseData, int fieldId) {
