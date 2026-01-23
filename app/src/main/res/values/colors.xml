@@ -1,40 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Brand Colors (User Specified) -->
+    <color name="primary">#0D47A1</color>       <!-- Trustworthy Dark Blue -->
+    <color name="primary_variant">#002171</color>
+    <color name="on_primary">#FFFFFF</color>
+    
+    <!-- Legacy Compatibility -->
+    <color name="primary_dark">@color/primary_variant</color>
+    <color name="primary_light">@color/tertiary</color>
 
-    <!-- Welcome Screen Colors -->
-    <color name="welcome_background">#F5E6D3</color>
-    <color name="welcome_button">#1A1A1A</color>
-    <color name="welcome_text_primary">#2C2C2C</color>
-    <color name="welcome_text_secondary">#666666</color>
-    <color name="welcome_link">#4A9EFF</color>
+    <color name="secondary">#00C853</color>     <!-- Vibrant Accent (Success) -->
+    <color name="secondary_variant">#009624</color>
+    <color name="on_secondary">#FFFFFF</color>
+    
+    <color name="tertiary">#2962FF</color>      <!-- Additional Interactive Color -->
 
-    <!-- SoftPOS Design System -->
-    <color name="primary">#0056D2</color>
-    <color name="primary_dark">#003D99</color>
-    <color name="primary_light">#4A88E8</color>
-    <color name="background">#E4F7FF</color>
-    <color name="text_primary">#212121</color>
-    <color name="text_secondary">#757575</color>
-    <color name="card_background">#FFFFFF</color>
-    <color name="success">#4CAF50</color>
-    <color name="error">#F44336</color>
+    <!-- Backgrounds & Surfaces -->
+    <color name="background">#F5F5F5</color>    <!-- Clean Light Gray -->
+    <color name="surface">#FFFFFF</color>       <!-- Clean White -->
+    <color name="surface_variant">#E0E0E0</color>
+    <color name="on_background">#1C1B1F</color>
+    <color name="on_surface">#1C1B1F</color>
+
+    <!-- State Colors -->
+    <color name="error">#B00020</color>         <!-- Standard Red -->
+    <color name="success">#00C853</color>
     <color name="warning">#FF9800</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#1C1B1F</color>  <!-- Almost Black -->
+    <color name="text_secondary">#49454F</color> <!-- Dark Gray -->
+    <color name="text_hint">#757575</color>
+
+    <!-- UI Elements -->
     <color name="divider">#E0E0E0</color>
-    <color name="status_online">#4CAF50</color>
-    <color name="status_offline">#F44336</color>
-
-    <!-- Payment screen background -->
-    <color name="payment_bg">#E4F7FF</color>
-
-    <!-- Modern button colors -->
-    <color name="btn_primary">#0056D2</color>
-    <color name="btn_primary_pressed">#003D99</color>
-    <color name="btn_on_primary">#FFFFFF</color>
+    <color name="card_background">#FFFFFF</color>
+    
+    <!-- Additional Legacy Compatibility for Build Fix -->
+    <color name="btn_primary">@color/primary</color>
+    <color name="status_offline">@color/text_secondary</color>
+    <color name="welcome_text_primary">@color/text_primary</color>
+    <color name="welcome_text_secondary">@color/text_secondary</color>
+    <color name="welcome_link">@color/primary</color>
+    <color name="welcome_button">@color/primary</color>
+    <color name="outline_light">@color/divider</color>
+    
+    <!-- Legacy/Direct References -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
 </resources>

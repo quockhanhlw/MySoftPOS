@@ -16,7 +16,7 @@ public class SettingsActivity extends AppCompatActivity {
     private MaterialButton btnSaveConfig;
     private MaterialButton btnPingTest;
     private SharedPreferences sharedPreferences;
-    private static final String PREFS_NAME = "SoftPOSConfig";
+    private static final String PREFS_NAME = "softpos_config";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,7 +36,7 @@ public class SettingsActivity extends AppCompatActivity {
     }
     private void loadConfiguration() {
         etServerIp.setText(sharedPreferences.getString("server_ip", ""));
-        etPort.setText(sharedPreferences.getString("port", "8583"));
+        etPort.setText(String.valueOf(sharedPreferences.getInt("server_port", 8888))); // Changed to getInt
         etTimeout.setText(sharedPreferences.getString("timeout", "30000"));
         etTerminalId.setText(sharedPreferences.getString("terminal_id", ""));
         etMerchantId.setText(sharedPreferences.getString("merchant_id", ""));
@@ -44,7 +44,7 @@ public class SettingsActivity extends AppCompatActivity {
     }
     private void saveConfiguration() {
         String serverIp = etServerIp.getText().toString().trim();
-        String port = etPort.getText().toString().trim();
+        String portStr = etPort.getText().toString().trim();
         String timeout = etTimeout.getText().toString().trim();
         String terminalId = etTerminalId.getText().toString().trim();
         String merchantId = etMerchantId.getText().toString().trim();
@@ -52,17 +52,19 @@ public class SettingsActivity extends AppCompatActivity {
             etServerIp.setError("Vui long nhap IP Server");
             return;
         }
-        if (port.isEmpty()) {
+        if (portStr.isEmpty()) {
             etPort.setError("Vui long nhap Port");
             return;
         }
+        int port = Integer.parseInt(portStr);
+
         if (terminalId.isEmpty()) {
             etTerminalId.setError("Vui long nhap Terminal ID");
             return;
         }
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString("server_ip", serverIp);
-        editor.putString("port", port);
+        editor.putInt("server_port", port); // Changed to putInt and "server_port"
         editor.putString("timeout", timeout);
         editor.putString("terminal_id", terminalId);
         editor.putString("merchant_id", merchantId);

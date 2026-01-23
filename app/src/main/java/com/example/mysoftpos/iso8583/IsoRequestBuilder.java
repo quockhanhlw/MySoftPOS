@@ -75,16 +75,21 @@ public final class IsoRequestBuilder {
         String f13 = c.localDate13 != null ? c.localDate13 : TransactionContext.buildLocalDate13Now();
         m.setField(IsoField.LOCAL_DATE_13, f13);
         
+        m.setField(15, c.settlementDate15); // DE 15
+        
         // Expiry (DE 14) - Required for Purchase
         m.setField(IsoField.EXPIRATION_DATE_14, cardData.getExpiryDate());
 
         m.setField(IsoField.MERCHANT_TYPE_18, c.mcc18 != null ? c.mcc18 : "5411");
         
         // DE 22: Pos Entry Mode matches Card Input (071 NFC vs 011 Manual)
-        m.setField(IsoField.POS_ENTRY_MODE_22, cardData.getPosEntryMode());
+        m.setField(IsoField.POS_ENTRY_MODE_22, cardData.isContactless() ? "072" : "012");
         
         m.setField(IsoField.POS_CONDITION_CODE_25, "00");
         m.setField(IsoField.ACQUIRER_ID_32, c.acquirerId32 != null ? c.acquirerId32 : "970400");
+        // DE 33 removed
+        // if (c.fwdInst33 != null) m.setField(33, c.fwdInst33);
+
         m.setField(IsoField.RRN_37, c.rrn37);
         m.setField(IsoField.TERMINAL_ID_41, TransactionContext.formatTid8(c.terminalId41));
         m.setField(IsoField.MERCHANT_ID_42, TransactionContext.formatMid15(c.merchantId42));
@@ -97,7 +102,9 @@ public final class IsoRequestBuilder {
 
         // DE 35 (Track 2) Logic
         if (cardData.isContactless()) {
-            m.setField(IsoField.TRACK2_35, cardData.getTrack2());
+            if (cardData.getTrack2() != null && !cardData.getTrack2().isEmpty()) {
+                 m.setField(IsoField.TRACK2_35, cardData.getTrack2().replace('D', '='));
+            }
             m.setField(IsoField.EXPIRATION_DATE_14, null); // Skip Expiry if Track 2 present (Host Preference)
             
             String emvData = buildEmvTlv(cardData.getEmvTags());
@@ -157,7 +164,7 @@ public final class IsoRequestBuilder {
 
         // DE 35: Track 2 - Only if NFC
         if (cardData.isContactless()) {
-            m.setField(IsoField.TRACK2_35, cardData.getTrack2());
+            m.setField(IsoField.TRACK2_35, cardData.getTrack2().replace('=', 'D'));
             
             String emvData = buildEmvTlv(cardData.getEmvTags());
             if (emvData != null && !emvData.isEmpty()) {

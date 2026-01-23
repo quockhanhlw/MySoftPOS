@@ -33,5 +33,7 @@ public class PurchaseAmountActivity extends AppCompatActivity {
                 startActivity(intent);
             });
         }
+        
+        findViewById(R.id.btnBack).setOnClickListener(v -> finish());
     }
 }

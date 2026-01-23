@@ -29,6 +29,16 @@ public class MainDashboardActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // Other features (Settings, History) would go here
+        // Settings Feature
+        findViewById(R.id.btnSettings).setOnClickListener(v -> {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
+        });
+
+        // History Feature (Optional, toast for now)
+        findViewById(R.id.cardHistory).setOnClickListener(v -> {
+            // Intent intent = new Intent(this, HistoryActivity.class);
+            // startActivity(intent);
+        });
     }
 }

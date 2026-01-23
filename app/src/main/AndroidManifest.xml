@@ -15,6 +15,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/Theme.MySoftPOS">
 
         <activity
@@ -58,15 +59,8 @@
             android:exported="false"
             android:label="Card" />
 
-        <activity
-            android:name=".IsoMessagePreviewActivity"
-            android:exported="false"
-            android:label="ISO8583" />
-
-        <activity
-            android:name=".HomeTabsActivity"
-            android:exported="false"
-            android:label="@string/app_name" />
+        <!-- Deleted IsoMessagePreviewActivity -->
+        <!-- Deleted HomeTabsActivity -->
 
         <activity
             android:name=".TransactionResultActivity"

@@ -1,81 +1,54 @@
 package com.example.mysoftpos.utils;
 
 import com.example.mysoftpos.domain.model.CardInputData;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 
+/**
+ * Validates transaction inputs.
+ */
 public class TransactionValidator {
 
     public enum ValidationResult {
         VALID,
         INVALID_AMOUNT,
-        INVALID_CARD_DATA,
-        CARD_EXPIRED,
-        LUHN_CHECK_FAILED
+        INVALID_CARD_NUMBER,
+        INVALID_EXPIRY,
+        INVALID_CARD_DATA
     }
 
-    public static ValidationResult validate(CardInputData card, String amount, boolean isPurchase) {
-        // 1. Amount Check (Purchase Only)
+    public static ValidationResult validate(CardInputData card, String amountStr, boolean isPurchase) {
+        // 1. Amount Check (Only for Purchase)
         if (isPurchase) {
             try {
-                long amtVal = Long.parseLong(amount);
-                if (amtVal <= 0) {
-                    return ValidationResult.INVALID_AMOUNT;
-                }
+                long amount = Long.parseLong(amountStr);
+                if (amount <= 0) return ValidationResult.INVALID_AMOUNT;
             } catch (NumberFormatException e) {
                 return ValidationResult.INVALID_AMOUNT;
             }
         }
 
-        // 2. Card Data Presence
-        if (card == null || card.getPan() == null || card.getPan().trim().isEmpty()) {
-            return ValidationResult.INVALID_CARD_DATA;
-        }
+        if (card == null) return ValidationResult.INVALID_CARD_DATA;
 
-        // 3. Expiry Check
-        if (isExpired(card.getExpiryDate())) {
-            return ValidationResult.CARD_EXPIRED;
-        }
-
-        // 4. Security Logic based on Flow Type
+        // 2. Card Validation
+        // NFC: Skip Luhn, Check Tag 57 presence if possible (but mainly trust the read)
         if (card.isContactless()) {
-            // --- NFC FLOW ---
-            // Constraint: Tag 57 presence implicit in isContactless checks usually, 
-            // but we trust emvUtils parsed it.
-            // Optimization: SKIP Luhn Check.
-            // Strictness: Ensure we actually have track data if needed? 
-            // Validator focuses on business rules.
+            if (card.getPan() == null || card.getPan().isEmpty()) return ValidationResult.INVALID_CARD_NUMBER;
+            // No Luhn Check for NFC
         } else {
-            // --- MANUAL FLOW (Key-in) ---
-            // Constraint: Enforce Luhn Algorithm
-            if (!checkLuhn(card.getPan())) {
-                return ValidationResult.LUHN_CHECK_FAILED;
+            // Manual: Check Luhn
+            if (!luhnCheck(card.getPan())) {
+                return ValidationResult.INVALID_CARD_NUMBER;
+            }
+            // Check Expiry (Basic)
+            if (card.getExpiryDate() == null || card.getExpiryDate().length() != 4) {
+                return ValidationResult.INVALID_EXPIRY;
             }
         }
 
         return ValidationResult.VALID;
     }
 
-    private static boolean isExpired(String expiryMmyy) {
-        if (expiryMmyy == null || expiryMmyy.length() != 4) return true;
-        try {
-            // Strictly compare YYMM
-            // Format: yyMM (e.g., 2512 for Dec 2025)
-            SimpleDateFormat sdf = new SimpleDateFormat("yyMM", Locale.US);
-            sdf.setLenient(false);
-            
-            // Current Month
-            String current = sdf.format(new Date());
-            
-            // Compare as Strings works for yyMM format (Year first)
-            return expiryMmyy.compareTo(current) < 0;
-        } catch (Exception e) {
-            return true;
-        }
-    }
-
-    private static boolean checkLuhn(String pan) {
+    private static boolean luhnCheck(String pan) {
+        if (pan == null || pan.length() < 13) return false; // Basic length check
         int sum = 0;
         boolean alternate = false;
         for (int i = pan.length() - 1; i >= 0; i--) {

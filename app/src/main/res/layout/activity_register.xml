@@ -30,7 +30,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Đăng ký"
-                android:textColor="@color/black"
+                android:textColor="@color/primary"
                 android:textSize="28sp"
                 android:textStyle="bold"
                 android:fontFamily="sans-serif-medium" />
@@ -39,7 +39,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Táº¡o tÃ i khoáº£n má»›i Ä‘á»ƒ báº¯t Ä‘áº§u sá»­ dá»¥ng dá»‹ch vá»¥"
+                android:text="Tạo tài khoản mới để bắt đầu sử dụng dịch vụ"
                 android:textColor="@color/welcome_text_secondary"
                 android:textSize="14sp"
                 android:lineSpacingExtra="2dp" />
@@ -47,8 +47,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="28dp"
-                android:text="Loáº¡i tÃ i khoáº£n"
-                android:textColor="@color/black"
+                android:text="Loại tài khoản"
+                android:textColor="@color/primary"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif-medium" />
             <RadioGroup
@@ -85,7 +85,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:text="Tên tài khoản"
-                android:textColor="@color/black"
+                android:textColor="@color/primary"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif-medium" />
             <androidx.cardview.widget.CardView
@@ -104,7 +104,7 @@
                     android:background="@android:color/transparent"
                     android:hint="Nhập tên tài khoản"
                     android:textColorHint="#AAAAAA"
-                    android:textColor="@color/black"
+                    android:textColor="@color/primary"
                     android:textSize="15sp"
                     android:padding="14dp"
                     android:inputType="number"
@@ -115,7 +115,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:text="Ngân hàng"
-                android:textColor="@color/black"
+                android:textColor="@color/primary"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif-medium" />
             <androidx.cardview.widget.CardView
@@ -134,7 +134,7 @@
                     android:background="@android:color/transparent"
                     android:hint="Nhập tên ngân hàng"
                     android:textColorHint="#AAAAAA"
-                    android:textColor="@color/black"
+                    android:textColor="@color/primary"
                     android:textSize="15sp"
                     android:padding="14dp"
                     android:inputType="text"
@@ -144,8 +144,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:text="TÃªn tÃ i khoáº£n"
-                android:textColor="@color/black"
+                android:text="Tên chủ tài khoản"
+                android:textColor="@color/primary"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif-medium" />
             <androidx.cardview.widget.CardView
@@ -162,9 +162,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@android:color/transparent"
-                    android:hint="Nháº­p tÃªn chá»§ tÃ i khoáº£n"
+                    android:hint="Nhập tên chủ tài khoản"
                     android:textColorHint="#AAAAAA"
-                    android:textColor="@color/black"
+                    android:textColor="@color/primary"
                     android:textSize="15sp"
                     android:padding="14dp"
                     android:inputType="textPersonName|textCapWords"
@@ -174,8 +174,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:text="Máº­t kháº©u"
-                android:textColor="@color/black"
+                android:text="Mật khẩu"
+                android:textColor="@color/primary"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif-medium" />
             <androidx.cardview.widget.CardView
@@ -195,9 +195,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:background="@android:color/transparent"
-                        android:hint="Nháº­p máº­t kháº©u"
+                        android:hint="Nhập mật khẩu"
                         android:textColorHint="#AAAAAA"
-                        android:textColor="@color/black"
+                        android:textColor="@color/primary"
                         android:textSize="15sp"
                         android:padding="14dp"
                         android:paddingEnd="48dp"
@@ -220,8 +220,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:text="XÃ¡c nháº­n máº­t kháº©u"
-                android:textColor="@color/black"
+                android:text="Xác nhận mật khẩu"
+                android:textColor="@color/primary"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif-medium" />
             <androidx.cardview.widget.CardView
@@ -241,7 +241,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:background="@android:color/transparent"
-                        android:hint="Nháº­p láº¡i máº­t kháº©u"
+                        android:hint="Nhập lại mật khẩu"
                         android:textColorHint="#AAAAAA"
                         android:textColor="@color/black"
                         android:textSize="15sp"
@@ -298,7 +298,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@color/black"
+                app:cardBackgroundColor="@color/primary"
                 app:cardCornerRadius="25dp"
                 app:cardElevation="2dp">
                 <TextView

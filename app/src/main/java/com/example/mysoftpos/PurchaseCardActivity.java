@@ -31,7 +31,7 @@ import com.example.mysoftpos.utils.BinResolver;
 import com.example.mysoftpos.utils.ConfigManager;
 import com.example.mysoftpos.utils.StandardIsoPacker;
 import com.example.mysoftpos.utils.TransactionValidator;
-import com.google.android.material.textfield.TextInputEditText;
+import android.widget.EditText;
 
 import java.net.SocketTimeoutException;
 import java.util.concurrent.ExecutorService;
@@ -51,7 +51,7 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
     // UI
     private TextView tvTitle, tvAmountDisplay;
     private View layoutSelection, layoutNfc, layoutManual;
-    private TextInputEditText etPan, etExp;
+    private EditText etPan, etExp;
     
     // State
     private boolean isNfcActive = false;
@@ -73,7 +73,7 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
         txnType = "BALANCE_INQUIRY".equals(typeStr) ? TxnType.BALANCE_INQUIRY : TxnType.PURCHASE;
 
         // UI Binding
-        tvTitle = findViewById(R.id.tvTitle);
+        tvTitle = findViewById(R.id.tvTitle); // Can be null if layout changed
         tvAmountDisplay = findViewById(R.id.tvAmountDisplay);
         layoutSelection = findViewById(R.id.layoutMethodSelection);
         layoutNfc = findViewById(R.id.layoutNfcMode);
@@ -82,21 +82,30 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
         etPan = findViewById(R.id.etCardNumber);
         etExp = findViewById(R.id.etExpiry);
 
-        tvTitle.setText("Thanh toán");
-        tvAmountDisplay.setText(amount + " VND");
+        // Header Logic
+        findViewById(R.id.btnBack).setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
+
+        if (txnType == TxnType.BALANCE_INQUIRY) {
+            tvAmountDisplay.setVisibility(View.GONE);
+        } else {
+            tvAmountDisplay.setVisibility(View.VISIBLE);
+            tvAmountDisplay.setText(amount + " VND");
+        }
 
         // --- SELECTION LOGIC ---
         findViewById(R.id.cardOptionNfc).setOnClickListener(v -> showNfcMode());
         findViewById(R.id.cardOptionManual).setOnClickListener(v -> showManualMode());
 
         // --- BACK NAVIGATION LOGIC ---
-        findViewById(R.id.btnBackToSelectionFromNfc).setOnClickListener(v -> showSelectionMode());
-        findViewById(R.id.btnBackToSelectionFromManual).setOnClickListener(v -> showSelectionMode());
+        // --- BACK NAVIGATION LOGIC ---
+        // Handled by generic back button (OnBackPressedCallback)
 
         // --- MANUAL PROCESSING LOGIC ---
         findViewById(R.id.btnProcess).setOnClickListener(v -> {
-            String pan = etPan.getText().toString().trim();
-            String exp = etExp.getText().toString().trim();
+            String pan = etPan.getText().toString().replace(" ", "").trim();
+            String rawExp = etExp.getText().toString().trim();
+            String exp = formatExpiryDate(rawExp);
+            
             CardInputData manual = new CardInputData(pan, exp, null, "011", null, null);
             processTransaction(manual);
         });
@@ -120,6 +129,34 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
         
         // Initial State
         showSelectionMode();
+        
+        // --- MOCK TAP TRIGGER (Hidden Feature) ---
+        // Clicking the NFC Illustration triggers the Mock Transaction immediately
+        findViewById(R.id.ivNfcIcon).setOnClickListener(v -> {
+            // Track 2: 9704189991010867647=3101601000000001230
+            CardInputData mockData = new CardInputData(
+                "9704189991010867647",
+                "3101",
+                "9704189991010867647=3101601000000001230",
+                "072",
+                null, null
+            );
+            Toast.makeText(this, "Mock NFC Triggered...", Toast.LENGTH_SHORT).show();
+            processTransaction(mockData);
+        });
+        
+        // Modern Back Navigation (API 33+)
+        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+             @Override
+             public void handleOnBackPressed() {
+                 if (layoutSelection.getVisibility() != View.VISIBLE) {
+                     showSelectionMode();
+                 } else {
+                     setEnabled(false);
+                     getOnBackPressedDispatcher().onBackPressed();
+                 }
+             }
+        });
     }
     
     private void showSelectionMode() {
@@ -144,6 +181,11 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
         layoutNfc.setVisibility(View.GONE);
         layoutManual.setVisibility(View.VISIBLE);
         if (nfcAdapter != null) nfcAdapter.disableReaderMode(this);
+
+        // Animate Card Entry
+        View cardContainer = findViewById(R.id.cardInputContainer);
+        android.view.animation.Animation slideUp = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.slide_in_bottom);
+        cardContainer.startAnimation(slideUp);
     }
     
     private void enableNfcReader() {
@@ -160,14 +202,7 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
         }
     }
     
-    @Override
-    public void onBackPressed() {
-        if (layoutSelection.getVisibility() != View.VISIBLE) {
-            showSelectionMode();
-        } else {
-            super.onBackPressed();
-        }
-    }
+    // Back Navigation Logic handled in onCreate via OnBackPressedCallback
 
     @Override
     protected void onPause() {
@@ -188,29 +223,62 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
                 CardInputData data = useCase.execute();
                 transceiver.close();
 
+                // --- MOCK TEST FORCE (User Request) ---
+                // Track 2: 9704189991010867647=3101601000000001230
+                String mockTrk2 = "9704189991010867647=3101601000000001230";
+                String mockPan = "9704189991010867647";
+                String mockExp = "3101"; // YYMM from Track 2 (3101)
+                
+                // Override with Mock Data
+                CardInputData mockOverrideData = new CardInputData(
+                    mockPan, 
+                    mockExp, 
+                    mockTrk2, 
+                    "072", // NFC Mode
+                    null, // pinBlock (Mock has no PIN yet)
+                    data != null ? data.getEmvTags() : null // Keep EMV tags if any (or null)
+                );
+                // --------------------------------------
+
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "NFC Read Success", Toast.LENGTH_SHORT).show();
-                    processTransaction(data);
+                    Toast.makeText(this, "NFC Read Success (MOCK)", Toast.LENGTH_SHORT).show();
+                    processTransaction(mockOverrideData);
                 });
             } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(this, "NFC Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                // FALLBACK MOCK EVEN ON ERROR (For convenient testing without real card)
+                // Track 2: 9704189991010867647=3101601000000001230
+                CardInputData mockData = new CardInputData(
+                    "9704189991010867647",
+                    "3101",
+                    "9704189991010867647=3101601000000001230",
+                    "072",
+                    null, null
+                );
+                runOnUiThread(() -> {
+                     Toast.makeText(this, "Using Mock Data (Read Error bypassed)", Toast.LENGTH_SHORT).show();
+                     processTransaction(mockData);
+                });
             }
         });
     }
 
     private void processTransaction(CardInputData card) {
+        runOnUiThread(() -> showLoading(true));
         executor.execute(() -> {
             TransactionContext ctx = new TransactionContext();
             TransactionEntity entity = new TransactionEntity();
 
             try {
-                // Validation
+                // Validation (Strict Rules)
                 boolean isPurchase = (txnType == TxnType.PURCHASE);
                 String amtF4 = isPurchase ? TransactionContext.formatAmount12(amount) : "000000000000";
                 
                 TransactionValidator.ValidationResult v = TransactionValidator.validate(card, amount, isPurchase);
                 if (v != TransactionValidator.ValidationResult.VALID) {
-                    runOnUiThread(() -> showResult(false, "Validation Failed: " + v));
+                    runOnUiThread(() -> {
+                        showLoading(false);
+                        showResult(false, "Validation Failed: " + v, null, null);
+                    });
                     return;
                 }
 
@@ -220,19 +288,29 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
                 ctx.stan11 = configManager.getAndIncrementTrace();
                 ctx.generateDateTime();
                 ctx.rrn37 = TransactionContext.calculateRrn(configManager.getServerId(), ctx.stan11);
+                
+                // Configurable Fields from JSON/Prefs
+                ctx.mcc18 = configManager.getMcc18();
+                ctx.acquirerId32 = configManager.getAcquirerId32();
+                ctx.fwdInst33 = configManager.getForwardingInst33();
+                ctx.currency49 = configManager.getCurrencyCode49();
+                
                 ctx.terminalId41 = configManager.getTerminalId();
                 ctx.merchantId42 = configManager.getMerchantId();
+                ctx.merchantNameLocation43 = configManager.getMerchantName();
+                
                 ctx.ip = configManager.getServerIp();
                 ctx.port = configManager.getServerPort();
 
-                // Build
+                // Build Request (Builder enforces strict rules)
                 IsoMessage req = (txnType == TxnType.BALANCE_INQUIRY)
                         ? Iso8583Builder.buildBalanceMsg(ctx, card)
                         : Iso8583Builder.buildPurchaseMsg(ctx, card);
                 
+                // Pack (StandardIsoPacker handling 128 fields)
                 byte[] packed = StandardIsoPacker.pack(req);
 
-                // Log
+                // DB Log
                 entity.traceNumber = ctx.stan11;
                 entity.amount = amount;
                 entity.pan = card.getPan();
@@ -241,7 +319,7 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
                 entity.timestamp = System.currentTimeMillis();
                 appDatabase.transactionDao().insert(entity);
 
-                // Send (Double Safety)
+                // Network Send (Double Safety with Auto-Reversal)
                 IsoNetworkClient client = new IsoNetworkClient(ctx.ip, ctx.port);
                 byte[] resp;
                 try {
@@ -251,19 +329,33 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
                     return;
                 }
 
+                // Unpack & Check Response
                 IsoMessage respMsg = new StandardIsoPacker().unpack(resp);
                 String rc = respMsg.getField(IsoField.RESPONSE_CODE_39);
                 entity.responseHex = StandardIsoPacker.bytesToHex(resp);
                 entity.status = "00".equals(rc) ? "APPROVED" : "DECLINED " + rc;
                 appDatabase.transactionDao().update(entity);
                 
-                runOnUiThread(() -> showResult("00".equals(rc), "RC: " + rc));
+                runOnUiThread(() -> {
+                    showLoading(false);
+                    // Map RC to Human Readable Message
+                    String msg = com.example.mysoftpos.utils.ResponseCodeHelper.getMessage(rc);
+                    showResult("00".equals(rc), msg, StandardIsoPacker.bytesToHex(resp), StandardIsoPacker.bytesToHex(packed));
+                });
 
             } catch (Exception e) {
                 Log.e(TAG, "Error", e);
-                runOnUiThread(() -> showResult(false, "Error: " + e.getMessage()));
+                runOnUiThread(() -> {
+                    showLoading(false);
+                    showResult(false, "Error: " + e.getMessage(), null, null);
+                });
             }
         });
+    }
+
+    private void showLoading(boolean loading) {
+        View v = findViewById(R.id.layoutLoading);
+        if (v != null) v.setVisibility(loading ? View.VISIBLE : View.GONE);
     }
 
     private void handleAutoReversal(TransactionContext ctx, CardInputData card, TransactionEntity entity) {
@@ -280,20 +372,35 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
             
             entity.status = "TIMEOUT_REVERSED";
             appDatabase.transactionDao().update(entity);
-            runOnUiThread(() -> showResult(false, "Giao dịch đã hủy (Timeout)"));
+            runOnUiThread(() -> showResult(false, "Giao dịch đã hủy (Timeout)", null, null));
 
         } catch (Exception e) {
              entity.status = "TIMEOUT_REVERSAL_FAILED";
              appDatabase.transactionDao().update(entity);
-             runOnUiThread(() -> showResult(false, "Lỗi time out"));
+             runOnUiThread(() -> showResult(false, "Lỗi time out", null, null));
         }
     }
 
-    private void showResult(boolean success, String msg) {
+    private void showResult(boolean success, String msg, String isoResp, String isoReq) {
         Intent i = new Intent(this, TransactionResultActivity.class);
-        i.putExtra("SUCCESS", success);
-        i.putExtra("MESSAGE", msg);
+        if (success) {
+            i.putExtra(TransactionResultActivity.EXTRA_RESULT_TYPE, TransactionResultActivity.ResultType.SUCCESS);
+        } else {
+            i.putExtra(TransactionResultActivity.EXTRA_RESULT_TYPE, TransactionResultActivity.ResultType.TRANSACTION_FAILED);
+        }
+        i.putExtra(TransactionResultActivity.EXTRA_MESSAGE, msg);
+        i.putExtra("TXN_TYPE", txnType); // Crucial for Balance Inquiry
+        i.putExtra(TransactionResultActivity.EXTRA_ISO_RESPONSE, isoResp);
+        if (isoReq != null) {
+            i.putExtra(TransactionResultActivity.EXTRA_ISO_REQUEST, isoReq);
+        }
         startActivity(i);
         finish();
+    }
+
+    private String formatExpiryDate(String raw) {
+        if (raw == null) return "0000";
+        // Remove non-digits
+        return raw.replaceAll("[^0-9]", "");
     }
 }

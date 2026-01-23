@@ -1,81 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Base application theme. -->
-    <style name="Theme.MySoftPOS" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <!-- Primary brand color. -->
+    <!-- Material Design 3 Theme -->
+    <style name="Theme.MySoftPOS" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Color Schemata -->
         <item name="colorPrimary">@color/primary</item>
-        <item name="colorPrimaryVariant">@color/primary_dark</item>
-        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorPrimaryContainer">@color/background</item>
+        <item name="colorOnPrimaryContainer">@color/primary</item>
 
-        <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/primary_light</item>
-        <item name="colorSecondaryVariant">@color/primary_dark</item>
-        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorOnSecondary">@color/on_secondary</item>
+        
+        <!-- Surface & Text -->
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        <item name="android:colorBackground">@color/background</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        
+        <!-- Input Fields -->
+        <item name="android:editTextColor">@color/text_primary</item>
+        <item name="android:textColorHint">@color/text_hint</item>
 
-        <!-- Status bar / system UI -->
-        <item name="android:statusBarColor">@color/white</item>
+        <item name="colorError">@color/error</item>
+        
+        <item name="android:statusBarColor">@color/background</item>
         <item name="android:windowLightStatusBar">true</item>
-
-        <!-- Optional: prevent tools warning in some layouts -->
-        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
-    </style>
-
-    <!-- Keypad styles (for Amount/PIN entry) -->
-    <style name="KeypadKey">
-        <item name="android:focusable">true</item>
-        <item name="android:clickable">true</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textSize">18sp</item>
-        <item name="android:textColor">@color/text_primary</item>
-        <item name="android:background">@drawable/bg_keypad_key</item>
-        <item name="android:gravity">center</item>
-        <item name="android:layout_margin">4dp</item>
-        <item name="android:layout_columnWeight">1</item>
-        <item name="android:layout_height">56dp</item>
-        <item name="android:layout_width">0dp</item>
-    </style>
-
-    <style name="KeypadKeyIcon">
-        <item name="android:focusable">true</item>
-        <item name="android:clickable">true</item>
-        <item name="android:scaleType">centerInside</item>
-        <item name="android:padding">16dp</item>
-        <item name="android:background">@drawable/bg_keypad_key</item>
-        <item name="android:layout_margin">4dp</item>
-        <item name="android:layout_columnWeight">1</item>
-        <item name="android:layout_height">56dp</item>
-        <item name="android:layout_width">0dp</item>
-        <!-- Note: ImageView uses android:tint (not 'tint'). -->
-        <item name="android:tint">@color/text_secondary</item>
-    </style>
-
-    <style name="KeypadDone">
-        <item name="android:enabled">false</item>
-        <item name="android:focusable">false</item>
-        <item name="android:clickable">false</item>
-        <item name="android:alpha">0.5</item>
+        
+        <!-- Typography: Sans-serif default -->
         <item name="android:fontFamily">sans-serif</item>
-        <item name="android:textSize">14sp</item>
-        <item name="android:textColor">@color/text_secondary</item>
-        <item name="android:background">@drawable/bg_keypad_key</item>
-        <item name="android:gravity">center</item>
-        <item name="android:layout_margin">4dp</item>
-        <item name="android:layout_columnWeight">1</item>
-        <item name="android:layout_height">56dp</item>
-        <item name="android:layout_width">0dp</item>
     </style>
 
-    <style name="KeypadKeySpacer">
-        <item name="android:enabled">false</item>
-        <item name="android:focusable">false</item>
-        <item name="android:clickable">false</item>
-        <item name="android:alpha">0.0</item>
-        <item name="android:background">@android:color/transparent</item>
-        <item name="android:layout_margin">4dp</item>
-        <item name="android:layout_columnWeight">1</item>
-        <item name="android:layout_height">56dp</item>
-        <item name="android:layout_width">0dp</item>
+    <!-- App Button Style (MD3) -->
+    <style name="AppButtonPrimary" parent="Widget.Material3.Button">
+        <item name="android:paddingVertical">12dp</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">16sp</item>
     </style>
+    
+    <!-- App Text Button Style -->
+    <style name="AppButtonText" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/primary</item>
+    </style>
+
+
 
 </resources>

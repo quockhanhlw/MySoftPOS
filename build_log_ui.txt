@@ -1,0 +1,24 @@
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+
+> Task :app:mergeDebugResources FAILED
+ERROR: [style/AppButtonPrimary] C:\Users\Laptop\AndroidStudioProjects\MySoftPOS\app\src\main\res\values\styles.xml [style/AppButtonPrimary] C:\Users\Laptop\AndroidStudioProjects\MySoftPOS\app\src\main\res\values\themes.xml: Resource and asset merger: Duplicate resources
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:mergeDebugResources'.
+> [style/AppButtonPrimary] C:\Users\Laptop\AndroidStudioProjects\MySoftPOS\app\src\main\res\values\styles.xml	[style/AppButtonPrimary] C:\Users\Laptop\AndroidStudioProjects\MySoftPOS\app\src\main\res\values\themes.xml: Error: Duplicate resources
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 7s
+4 actionable tasks: 1 executed, 3 up-to-date

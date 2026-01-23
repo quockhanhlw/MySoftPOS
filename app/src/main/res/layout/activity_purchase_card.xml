@@ -1,83 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
-    android:orientation="vertical"
-    android:padding="0dp">
+    android:padding="24dp">
 
-    <!-- Header (Common) -->
+    <!-- HEADER / APP BAR -->
     <LinearLayout
+        android:id="@+id/headerContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
-        android:elevation="4dp"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-            android:id="@+id/tvTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="Thanh toán"
-            android:textColor="@color/text_primary"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_back"
+            app:tint="@color/text_primary"/>
 
-        <TextView
-            android:id="@+id/tvAmountDisplay"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:gravity="center"
-            android:text="50,000 VND"
-            android:textColor="@color/primary"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+
+
+        <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1"/>
     </LinearLayout>
 
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
+    <TextView
+        android:id="@+id/tvAmountDisplay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="50,000 VND"
+        android:fontFamily="sans-serif"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:textColor="@color/primary"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/headerContainer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
-        <!-- 1. METHOD SELECTION MODE -->
-        <LinearLayout
+    <!-- CONTENT CONTAINER (3 STATES) -->
+    <FrameLayout
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toBottomOf="@id/tvAmountDisplay"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- STATE 1: SELECTION -->
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/layoutMethodSelection"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:padding="24dp"
             android:visibility="visible">
-
+            
             <TextView
+                android:id="@+id/tvSelectHint"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="32dp"
-                android:text="Chọn phương thức nhập thẻ"
+                android:text="Chọn phương thức"
                 android:textColor="@color/text_secondary"
-                android:textSize="16sp" />
+                android:textSize="14sp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"/>
 
-            <!-- NFC Choice -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardOptionNfc"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
+                android:layout_width="0dp"
+                android:layout_height="140dp"
+                app:cardBackgroundColor="@color/surface"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="2dp"
+                app:strokeColor="@color/outline_light" 
+                app:strokeWidth="0dp"
                 android:clickable="true"
                 android:focusable="true"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
-                app:strokeColor="@color/divider"
-                app:strokeWidth="1dp">
+                android:layout_marginTop="24dp"
+                app:layout_constraintTop_toBottomOf="@id/tvSelectHint"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:padding="24dp">
 
@@ -85,61 +100,57 @@
                         android:layout_width="48dp"
                         android:layout_height="48dp"
                         android:src="@drawable/ic_nfc"
-                        app:tint="@color/primary" />
+                        app:tint="@color/primary"/>
 
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="24dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:layout_marginStart="24dp">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Quét thẻ NFC"
-                            android:textColor="@color/text_primary"
                             android:textSize="18sp"
-                            android:textStyle="bold" />
+                            android:textStyle="bold"
+                            android:textColor="@color/text_primary"/>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="Chạm thẻ vào mặt sau thiết bị"
+                            android:text="Chạm nhanh &amp; Bảo mật"
+                            android:textSize="14sp"
                             android:textColor="@color/text_secondary"
-                            android:textSize="14sp" />
+                            android:layout_marginTop="4dp"/>
                     </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/ic_media_play"
-                        android:rotation="180" 
-                        app:tint="@color/text_secondary" 
-                        android:layout_gravity="center_vertical|end"/> 
-                        <!-- Simple arrow using system drawable logic or assume ic_back flipped if needed, 
-                             but simplicity -> just no arrow or system arrow -->
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Manual Choice -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardOptionManual"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
-                app:strokeColor="@color/divider"
-                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="24dp"
+                    android:orientation="vertical"/>
+            </com.google.android.material.card.MaterialCardView>
+            
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardOptionManual"
+                android:layout_width="0dp"
+                android:layout_height="140dp"
+                app:cardBackgroundColor="@color/surface"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="2dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginTop="16dp"
+                app:layout_constraintTop_toBottomOf="@id/cardOptionNfc"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:padding="24dp">
 
@@ -147,180 +158,251 @@
                         android:layout_width="48dp"
                         android:layout_height="48dp"
                         android:src="@drawable/ic_keyboard"
-                        app:tint="@color/primary" />
+                        app:tint="@color/tertiary"/>
 
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="24dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:layout_marginStart="24dp">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Nhập tay thủ công"
-                            android:textColor="@color/text_primary"
+                            android:text="Nhập thủ công"
                             android:textSize="18sp"
-                            android:textStyle="bold" />
+                            android:textStyle="bold"
+                            android:textColor="@color/text_primary"/>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="Nhập số thẻ và ngày hết hạn"
+                            android:text="Nhập thông tin thẻ"
+                            android:textSize="14sp"
                             android:textColor="@color/text_secondary"
-                            android:textSize="14sp" />
+                            android:layout_marginTop="4dp"/>
                     </LinearLayout>
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-        </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
-
-        <!-- 2. NFC MODE UI -->
-        <LinearLayout
+        <!-- STATE 2: NFC SCANNING -->
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/layoutNfcMode"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:padding="32dp"
             android:visibility="gone">
 
-            <FrameLayout
-                android:layout_width="280dp"
-                android:layout_height="280dp">
-
-                <!-- Pulse/Ripple Effect (Static or Animatable) -->
-                <ImageView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/glow_sweep_ring"
-                    android:alpha="0.2" />
-
-                <ImageView
-                    android:layout_width="120dp"
-                    android:layout_height="120dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_nfc"
-                    app:tint="@color/primary" />
-            </FrameLayout>
+            <ImageView
+                android:id="@+id/ivNfcIcon"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/softpos"
+                app:tint="@null"
+                android:layout_marginBottom="48dp"
+                app:layout_constraintBottom_toTopOf="@id/tvNfcHint"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_chainStyle="packed"/>
 
             <TextView
+                android:id="@+id/tvNfcHint"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
-                android:text="Sẵn sàng quét thẻ"
+                android:text="Chạm thẻ vào mặt sau"
+                android:textSize="18sp"
+                android:fontFamily="sans-serif-medium"
                 android:textColor="@color/text_primary"
-                android:textSize="22sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
                 android:gravity="center"
-                android:text="Giữ thẻ gần mặt sau thiết bị..."
-                android:textColor="@color/text_secondary"
-                android:textSize="16sp" />
-                
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnBackToSelectionFromNfc"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="48dp"
-                android:text="Quay lại"
-                android:textColor="@color/text_secondary" />
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/ivNfcIcon"
+                android:layout_marginBottom="32dp"/>
 
-        </LinearLayout>
+            <!-- Back button removed (Redundant with Header Back) -->
 
 
-        <!-- 3. MANUAL MODE UI (User's Design) -->
-        <ScrollView
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- STATE 3: MANUAL ENTRY -->
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/layoutManualMode"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:fillViewport="true"
             android:visibility="gone">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="24dp"
-                android:orientation="vertical">
+            <!-- Back button removed (Redundant with Header Back) -->
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Nhập thông tin thẻ"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:textColor="#212121" />
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/cardInputContainer"
+                android:layout_width="0dp"
+                android:layout_height="220dp"
+                android:background="@drawable/bg_bank_card"
+                android:layout_marginTop="32dp"
+                android:padding="24dp"
+                android:elevation="12dp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
 
                 <TextView
                     android:id="@+id/tvBankName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:text=""
-                    android:textColor="?attr/colorPrimary"
+                    android:text="MySoftPOS Bank"
+                    android:textColor="#FFFFFF"
                     android:textStyle="bold"
-                    android:visibility="gone"/>
+                    android:textSize="20sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:shadowColor="#80000000"
+                    android:shadowDx="2"
+                    android:shadowDy="2"
+                    android:shadowRadius="4"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"/>
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    app:boxStrokeColor="@color/primary">
+                <ImageView
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/ic_nfc"
+                    android:rotation="90"
+                    app:tint="#CCFFFFFF"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"/>
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etCardNumber"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Số thẻ (PAN)"
-                        android:inputType="number"
-                        android:maxLength="19" />
-                </com.google.android.material.textfield.TextInputLayout>
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    app:boxStrokeColor="@color/primary">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etExpiry"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Hết hạn (MMYY)"
-                        android:inputType="number"
-                        android:maxLength="4" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnProcess"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:layout_marginTop="32dp"
-                    android:text="Xác nhận"
-                    style="@style/AppButtonPrimary"
-                    app:cornerRadius="16dp" />
+                    <!-- Note: If ic_chip_sim doesn't exist, we revert to color view, but let's try to simulate checking later or use a View with background color as fallback if resource missing. 
+                         For now, keeping the View but making it prettier if possible. 
+                         Let's revert to simple View background to be safe but add corner radius -->
                     
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnBackToSelectionFromManual"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="Quay lại"
-                    android:textColor="@color/text_secondary" />
+                 <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/chipSimCard"
+                    android:layout_width="50dp"
+                    android:layout_height="36dp"
+                    app:cardBackgroundColor="#FFD700"
+                    app:cardCornerRadius="6dp"
+                    app:cardElevation="2dp"
+                    android:layout_marginTop="24dp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/tvBankName">
+                 </com.google.android.material.card.MaterialCardView>
 
-            </LinearLayout>
-        </ScrollView>
+                <!-- Card Number: Optimized for 16-19 digits on one line -->
+                <EditText
+                    android:id="@+id/etCardNumber"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:hint="XXXX XXXX XXXX XXXX"
+                    android:textColorHint="#60FFFFFF"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp" 
+                    android:textStyle="bold"
+                    android:background="@null"
+                    android:inputType="number"
+                    android:maxLength="22"
+                    android:maxLines="1"
+                    android:letterSpacing="0.05"
+                    android:fontFamily="monospace"
+                    android:shadowColor="#80000000"
+                    android:shadowDx="2"
+                    android:shadowDy="2"
+                    android:shadowRadius="2"
+                    android:layout_marginTop="24dp"
+                    android:paddingHorizontal="4dp"
+                    app:layout_constraintTop_toBottomOf="@id/chipSimCard"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"/>
+
+                <TextView
+                    android:id="@+id/tvLabelExpiry"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="VALID\nTHRU"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="10sp"
+                    android:gravity="end"
+                    android:layout_marginEnd="12dp"
+                    app:layout_constraintEnd_toStartOf="@id/etExpiry"
+                    app:layout_constraintTop_toTopOf="@id/etExpiry"
+                    app:layout_constraintBottom_toBottomOf="@id/etExpiry"/>
+
+                <EditText
+                    android:id="@+id/etExpiry"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:hint="YYMM"
+                    android:textColorHint="#60FFFFFF"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:background="@null"
+                    android:inputType="number"
+                    android:maxLength="4"
+                    android:maxLines="1"
+                    android:fontFamily="monospace"
+                    android:shadowColor="#80000000"
+                    android:shadowDx="2"
+                    android:shadowDy="2"
+                    android:shadowRadius="2"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/etCardNumber"
+                    app:layout_constraintVertical_bias="0.8"/>
+                
+                 <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="DEBIT"
+                    android:textColor="#AAFFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.1"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/etCardNumber"
+                    app:layout_constraintVertical_bias="0.8"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnProcess"
+                style="@style/AppButtonPrimary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="THANH TOÁN"
+                android:layout_marginTop="48dp"
+                app:layout_constraintTop_toBottomOf="@id/cardInputContainer"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
     </FrameLayout>
-</LinearLayout>
+
+    <!-- LOADING OVERLAY -->
+    <FrameLayout
+        android:id="@+id/layoutLoading"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+        
+        <ProgressBar
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/primary"/>
+    </FrameLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

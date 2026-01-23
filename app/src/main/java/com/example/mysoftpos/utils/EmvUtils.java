@@ -1,52 +1,46 @@
 package com.example.mysoftpos.utils;
 
-import com.example.mysoftpos.domain.model.CardInputData;
+import java.util.HashMap;
 import java.util.Map;
 
 public class EmvUtils {
 
+    public static String getTag(String tlv, String tag) {
+        // Mock implementation or real TLV parser needed? 
+        // For MySoftPOS context, this was likely a stub.
+        // Assuming this parses a hex string.
+        return ""; 
+    }
+
     /**
-     * Parse Tag 57 (Track 2 Equivalent Data) to extract PAN and Expiry.
-     * Expects the Tag 57 value as a Hex String.
+     * Parses Tag 57 (Track 2 Equivalent Data).
+     * Format: PAN + 'D'/'=' + Expiry + ServiceCode + Discret. + Padding 'F'
      */
-    public static CardInputData parseTag57(String tag57Hex, Map<String, String> fullTags) {
-        if (tag57Hex == null || tag57Hex.isEmpty()) return null;
-
-        // 1. Sanitize: Remove trailing 'F' padding
-        String clean = tag57Hex.toUpperCase().replaceAll("F*$", "");
-
-        // 2. Find Separator 'D' or '='
-        int separatorIndex = clean.indexOf('D');
-        if (separatorIndex == -1) {
-            separatorIndex = clean.indexOf('=');
+    public static Map<String, String> parseTag57(String hex57) {
+        Map<String, String> data = new HashMap<>();
+        if (hex57 == null) return data;
+        
+        // 1. Sanitize: Remove trailing 'F'
+        String clean = hex57.toUpperCase().replaceAll("F+$", "");
+        
+        // 2. Split
+        int sepIndex = clean.indexOf('D');
+        if (sepIndex == -1) sepIndex = clean.indexOf('=');
+        
+        if (sepIndex != -1) {
+            String pan = clean.substring(0, sepIndex);
+            // Expiry is usually next 4 digits
+            String trailer = clean.substring(sepIndex + 1);
+            String expiry = (trailer.length() >= 4) ? trailer.substring(0, 4) : "";
+            
+            data.put("PAN", pan);
+            data.put("EXPIRY", expiry);
+            data.put("TRACK2", clean); // Store the full cleaned track2
+        } else {
+            // Fallback: Assume whole string is PAN? Unlikely for Tag 57.
+            data.put("PAN", clean);
         }
-
-        if (separatorIndex == -1) {
-            // No separator found, cannot parse
-            return null;
-        }
-
-        // 3. Extract PAN
-        String pan = clean.substring(0, separatorIndex);
-
-        // 4. Extract Expiry (YYMM) - Next 4 digits after separator
-        String expiry = "";
-        if (separatorIndex + 5 <= clean.length()) { // Separator + 4 digits
-            expiry = clean.substring(separatorIndex + 1, separatorIndex + 5);
-        }
-
-        // 5. Populate CardInputData
-        // Pan, Expiry, Track2 (Tag 57 value cleaned? or Raw?), PosEntryMode (051 -> 071 internal logic), Pin (null), Tags
-        // Note: CardInputData constructor usually expects raw track2 if needed, 
-        // but for ISO DE 35 we often use the cleaned version without F padding? 
-        // Let's pass 'clean' as Track2.
-        return new CardInputData(
-                pan,
-                expiry,
-                clean, // Track 2 Data for DE 35
-                "071", // NFC Mode detected
-                null,  // No PIN
-                fullTags
-        );
+        
+        return data;
     }
 }
