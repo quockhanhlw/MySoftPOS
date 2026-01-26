@@ -92,8 +92,9 @@ public class ConfigManager {
         return String.format("%06d", trace);
     }
     
-    public String getServerIp() { return prefs.getString(KEY_IP, "10.145.54.218"); }
-    public int getServerPort() { return prefs.getInt(KEY_PORT, 8583); }
+    // FORCE CORRECT IP - Bypass SharedPreferences cache
+    public String getServerIp() { return "10.145.54.120"; } 
+    public int getServerPort() { return 8583; } // prefs.getInt(KEY_PORT, 8583);
     public String getServerId() { return "01"; } // Not in JSON mostly, keeps logic simple
 
     // Supported Fields - FORCE DEFAULTS (JSON) TO BYPASS STALE PREFS

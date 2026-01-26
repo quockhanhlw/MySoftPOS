@@ -54,8 +54,8 @@ public class TransactionContext {
 
     public void generateDateTime() {
         Date now = new Date();
-        SimpleDateFormat f7 = new SimpleDateFormat("MMddHHmmss", Locale.US);
-        // f7.setTimeZone("GMT"); // Reverted to Local (User Request)
+        SimpleDateFormat f7 = new SimpleDateFormat("MMddhhmmss", Locale.US);
+        // Format: MM=month(01-12), dd=day of month(01-31), hh=hour 12h(01-12), mm=minute, ss=second
         
         SimpleDateFormat f12 = new SimpleDateFormat("HHmmss", Locale.US); // Local
         SimpleDateFormat f13 = new SimpleDateFormat("MMdd", Locale.US);   // Local
@@ -124,7 +124,9 @@ public class TransactionContext {
          try {
              String clean = s.replaceAll("[^0-9]", "");
              long val = Long.parseLong(clean);
-             val = val * 100; // Append 00 for cents/decimal requirement
+             // User Request: "DE 4 phải là thêm 2 số 00 ở cuối, còn lại đệm số 0 ở đầu"
+             // Example: Input "50000" -> val=50000 -> *100 = 5000000 -> Pad 12 = "000005000000"
+             val = val * 100;
              return String.format(Locale.US, "%012d", val);
          } catch(Exception e) { return "000000000000"; }
     }

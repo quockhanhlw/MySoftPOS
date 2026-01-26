@@ -133,11 +133,11 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
         // --- MOCK TAP TRIGGER (Hidden Feature) ---
         // Clicking the NFC Illustration triggers the Mock Transaction immediately
         findViewById(R.id.ivNfcIcon).setOnClickListener(v -> {
-            // Track 2: 9704189991010867647=3101601000000001230
+            // Track 2: 9704189991010867647=31016010000000123 (37 chars)
             CardInputData mockData = new CardInputData(
                 "9704189991010867647",
                 "3101",
-                "9704189991010867647=3101601000000001230",
+                "9704189991010867647=31016010000000123",
                 "072",
                 null, null
             );
@@ -224,8 +224,10 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
                 transceiver.close();
 
                 // --- MOCK TEST FORCE (User Request) ---
-                // Track 2: 9704189991010867647=3101601000000001230
-                String mockTrk2 = "9704189991010867647=3101601000000001230";
+                // Track 2: Shortened to 37 chars (max per server)
+                // Orig: 9704189991010867647=3101601000000001230 (39)
+                // New:  9704189991010867647=31016010000000123   (37)
+                String mockTrk2 = "9704189991010867647=31016010000000123";
                 String mockPan = "9704189991010867647";
                 String mockExp = "3101"; // YYMM from Track 2 (3101)
                 
@@ -235,22 +237,21 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
                     mockExp, 
                     mockTrk2, 
                     "072", // NFC Mode
-                    null, // pinBlock (Mock has no PIN yet)
-                    data != null ? data.getEmvTags() : null // Keep EMV tags if any (or null)
+                    null, // pinBlock
+                    data != null ? data.getEmvTags() : null // Keep EMV tags
                 );
-                // --------------------------------------
 
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "NFC Read Success (MOCK)", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "NFC Read Success (MOCK 37)", Toast.LENGTH_SHORT).show();
                     processTransaction(mockOverrideData);
                 });
             } catch (Exception e) {
-                // FALLBACK MOCK EVEN ON ERROR (For convenient testing without real card)
-                // Track 2: 9704189991010867647=3101601000000001230
+                // FALLBACK MOCK (Shortened to 37)
+                // Track 2: 9704189991010867647=31016010000000123
                 CardInputData mockData = new CardInputData(
                     "9704189991010867647",
                     "3101",
-                    "9704189991010867647=3101601000000001230",
+                    "9704189991010867647=31016010000000123",
                     "072",
                     null, null
                 );
@@ -309,6 +310,9 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
                 
                 // Pack (StandardIsoPacker handling 128 fields)
                 byte[] packed = StandardIsoPacker.pack(req);
+                
+                // LOG REQUEST (File)
+                com.example.mysoftpos.utils.FileLogger.logPacket(this, "SEND 0200", packed);
 
                 // DB Log
                 entity.traceNumber = ctx.stan11;
@@ -324,9 +328,16 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
                 byte[] resp;
                 try {
                     resp = client.sendAndReceive(packed);
+                    // LOG RESPONSE (File)
+                    com.example.mysoftpos.utils.FileLogger.logPacket(this, "RECV 0210", resp);
+                    
                 } catch (SocketTimeoutException e) {
+                    com.example.mysoftpos.utils.FileLogger.logString(this, "ERROR", "Timeout waiting for response");
                     handleAutoReversal(ctx, card, entity);
                     return;
+                } catch (Exception e) {
+                    com.example.mysoftpos.utils.FileLogger.logString(this, "ERROR", "Network Error: " + e.getMessage());
+                    throw e; // rethrow to outer catch
                 }
 
                 // Unpack & Check Response
@@ -360,24 +371,64 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
 
     private void handleAutoReversal(TransactionContext ctx, CardInputData card, TransactionEntity entity) {
         try {
+            Log.d(TAG, "Starting Auto-Reversal due to Timeout...");
+            
+            // 1. Build Reversal Advice (0420)
             String newTrace = configManager.getAndIncrementTrace();
             IsoMessage rev = Iso8583Builder.buildReversalAdvice(ctx, card, newTrace);
             byte[] packedRev = StandardIsoPacker.pack(rev);
             
+            // LOG REVERSAL REQUEST
+            com.example.mysoftpos.utils.FileLogger.logPacket(this, "SEND 0420 (Reversal)", packedRev);
+            
             entity.status = "TIMEOUT_REVERSAL_INIT";
             appDatabase.transactionDao().update(entity);
 
+            // 2. Send 0420 & Wait for 0430
             IsoNetworkClient revClient = new IsoNetworkClient(ctx.ip, ctx.port);
-            revClient.sendAndReceive(packedRev);
+            byte[] revResp;
             
-            entity.status = "TIMEOUT_REVERSED";
-            appDatabase.transactionDao().update(entity);
-            runOnUiThread(() -> showResult(false, "Giao dịch đã hủy (Timeout)", null, null));
+            try {
+                revResp = revClient.sendAndReceive(packedRev);
+                
+                // 3. Received 0430 (Success or Failure doesn't matter, we received IT)
+                com.example.mysoftpos.utils.FileLogger.logPacket(this, "RECV 0430", revResp);
+                
+                entity.status = "TIMEOUT_REVERSED";
+                appDatabase.transactionDao().update(entity);
+                
+                runOnUiThread(() -> {
+                     showLoading(false);
+                     showResult(false, "Giao dịch lỗi Time Out (Đã gửi hủy)", null, null);
+                });
+                
+            } catch (SocketTimeoutException e) {
+                // 4. Timeout waiting for 0430 (Double Timeout)
+                Log.e(TAG, "Timeout waiting for Reversal Response (0430)");
+                com.example.mysoftpos.utils.FileLogger.logString(this, "ERROR", "Timeout waiting for 0430");
+                
+                entity.status = "TIMEOUT_REVERSAL_NO_RSP";
+                appDatabase.transactionDao().update(entity);
+                
+                runOnUiThread(() -> {
+                    showLoading(false);
+                    // Specific User Request: "hết timeout sau mà vẫn không nhận được 0430 thì hiện giao dịch lỗi time out"
+                    showResult(false, "Giao dịch lỗi Time Out", null, null);
+                });
+            }
 
         } catch (Exception e) {
+             // General Error during Reversal Build/Send
+             Log.e(TAG, "Reversal Failed", e);
+             com.example.mysoftpos.utils.FileLogger.logString(this, "ERROR", "Reversal Critical Error: " + e.getMessage());
+             
              entity.status = "TIMEOUT_REVERSAL_FAILED";
              appDatabase.transactionDao().update(entity);
-             runOnUiThread(() -> showResult(false, "Lỗi time out", null, null));
+             
+             runOnUiThread(() -> {
+                 showLoading(false);
+                 showResult(false, "Giao dịch lỗi Time Out", null, null);
+             });
         }
     }
 

@@ -44,32 +44,36 @@ public class Iso8583Builder {
         m.setField(IsoField.MERCHANT_NAME_LOCATION_43, ctx.merchantNameLocation43);
         m.setField(IsoField.CURRENCY_CODE_49, ctx.currency49 != null ? ctx.currency49 : "704");
 
-        // DE 35 or 55 (Card Data)
+        // DE 35 (Track 2) - NFC Only
         if (card.isContactless()) {
-            // NFC: Tag 57 is parsed into Track2 field in CardInputData usually? 
-            // If Track2 is available, set DE 35.
+            // NFC: Track 2 is mandatory
             if (card.getTrack2() != null && !card.getTrack2().isEmpty()) {
                  // Convert ISO separator '=' to Hex separator 'D' (User Request)
                  m.setField(IsoField.TRACK2_35, card.getTrack2().replace('=', 'D'));
             }
-            m.setField(IsoField.EXPIRATION_DATE_14, null); // Skip Expiry if Track 2 present (Host Preference)
             
-            // DE 55 (ICC)
-            String emv = buildEmvString(card.getEmvTags());
-            if (emv != null) m.setField(IsoField.ICC_DATA_55, emv);
+            // DE 14: Optional for NFC (per client_fix_guide.md)
+            // Will be sent from line 28 if card has expiry, otherwise null is OK
+            
+            // DE 52: PIN Block - Optional for NFC (per client_fix_guide.md)
+            if (ctx.encryptPin && ctx.pinBlock52 != null) {
+                m.setField(IsoField.PIN_BLOCK_52, ctx.pinBlock52);
+            }
+            
+            // DE 63: Reserved Private - Optional
+            if (ctx.field60 != null) {
+                m.setField(63, ctx.field60);
+            }
+            
         } else {
-            // Manual: DE 35 is usually not present for manual, unless magstripe?
-            // Manual usually uses DE 2 (PAN) + DE 14 (Expiry). 
-            // If strictly needed, checking card object.
+            // Manual: DE 35 is not present
+            // Manual uses DE 2 (PAN) + DE 14 (Expiry)
+            
+            // DE 52: PIN Block - Optional for Manual
+            if (ctx.encryptPin && ctx.pinBlock52 != null) {
+                m.setField(IsoField.PIN_BLOCK_52, ctx.pinBlock52);
+            }
         }
-        
-        if (ctx.encryptPin && ctx.pinBlock52 != null) {
-            m.setField(IsoField.PIN_BLOCK_52, ctx.pinBlock52);
-        }
-        
-        // DE 128: MAC (Placeholder for calculation)
-        // Note: Real MAC requires shared key + algorithm. We put 8 bytes of zeroes or mock.
-        m.setField(128, "0000000000000000"); // 16 hex chars = 8 bytes
 
         return m;
     }
