@@ -60,8 +60,8 @@ public class ConfigManager {
             JSONObject obj = new JSONObject(json);
 
             defMcc = obj.optString("merchant_type_18", "5411");
-            defAcq = obj.optString("acquirer_id_32", "970400");
-            defFwd = obj.optString("forwarding_inst_33", "970400");
+            defAcq = obj.optString("acquirer_id_32", "970406");
+            defFwd = obj.optString("forwarding_inst_33", "970406");
             defTid = obj.optString("terminal_id_41", "AUTO0001");
             defMid = obj.optString("merchant_id_42", "MYSOFTPOSSHOP01");
             
@@ -79,7 +79,7 @@ public class ConfigManager {
         } catch (Exception e) {
             e.printStackTrace();
             // Fallbacks
-            defMcc="5411"; defAcq="970400"; defFwd="970400"; defTid="AUTO0001"; 
+            defMcc="5411"; defAcq="970406"; defFwd="970406"; defTid="AUTO0001"; 
             defMid="MYSOFTPOSSHOP01"; defBank="MYSOFTPOS BANK"; defLoc="HA NOI"; 
             defCountryTxt="VNM"; defCurr="704";
         }

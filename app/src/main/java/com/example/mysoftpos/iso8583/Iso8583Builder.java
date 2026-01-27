@@ -36,7 +36,7 @@ public class Iso8583Builder {
         m.setField(IsoField.POS_ENTRY_MODE_22, card.isContactless() ? "021" : "011");
         
         m.setField(IsoField.POS_CONDITION_CODE_25, "00");
-        m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32 != null ? ctx.acquirerId32 : "970400");
+        m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32 != null ? ctx.acquirerId32 : "970406");
         // DE 33 removed for Purchase (Only for Reversal)
         
         m.setField(IsoField.RRN_37, ctx.rrn37);
@@ -97,7 +97,7 @@ public class Iso8583Builder {
         m.setField(IsoField.POS_ENTRY_MODE_22, card.isContactless() ? "071" : "011");
         
         m.setField(IsoField.POS_CONDITION_CODE_25, "00");
-        m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32 != null ? ctx.acquirerId32 : "970400");
+        m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32 != null ? ctx.acquirerId32 : "970406");
         // DE 33 removed for Balance
         m.setField(IsoField.RRN_37, ctx.rrn37);
         m.setField(IsoField.TERMINAL_ID_41, ctx.terminalId41);
@@ -149,7 +149,7 @@ public class Iso8583Builder {
         m.setField(IsoField.MERCHANT_TYPE_18, originalCtx.mcc18 != null ? originalCtx.mcc18 : (originalCtx.txnType == TxnType.BALANCE_INQUIRY ? "6011" : "5411"));
         
         m.setField(IsoField.POS_ENTRY_MODE_22, card.isContactless() ? "071" : "011");
-        m.setField(IsoField.ACQUIRER_ID_32, originalCtx.acquirerId32 != null ? originalCtx.acquirerId32 : "970400");
+        m.setField(IsoField.ACQUIRER_ID_32, originalCtx.acquirerId32 != null ? originalCtx.acquirerId32 : "970406");
         m.setField(IsoField.RRN_37, originalCtx.rrn37);
         m.setField(IsoField.TERMINAL_ID_41, originalCtx.terminalId41);
         m.setField(IsoField.MERCHANT_ID_42, originalCtx.merchantId42);
@@ -167,7 +167,7 @@ public class Iso8583Builder {
         while(orgTrace.length() < 6) orgTrace = "0" + orgTrace;
 
         // FwdInst(11) + 0000...(11)
-        String de90 = orgMti + orgTrace + orgDate + orgTime + "00970400000" + "00000000000";
+        String de90 = orgMti + orgTrace + orgDate + orgTime + "00970406000" + "00000000000";
         m.setField(90, de90);
         
         // EXCLUDE DE 52
@@ -223,20 +223,20 @@ public class Iso8583Builder {
     
     /**
      * Format DE43 (Merchant Name/Location) to exactly 40 characters:
-     * Format per server log: [Name with spaces][City with spaces][Country]
+     * Format per server example: spaces + city + numeric country code "704"
      * Total must be 40 chars
      */
     private static String formatMerchantNameLocation(String input) {
-        // Default values matching server requirements  
-        String name = "MYSOFTPOS BANK";
-        String city = "HA NOI";
-        String country = "VNM";
+        // Match server format: mostly spaces + short city + "704"
+        String name = "";  // Empty/spaces
+        String city = "BNV";  // Short city code
+        String country = "704";  // Numeric currency code (NOT "VNM")
         
         // Calculate padding to reach exactly 40 chars
-        // Strategy: Name(22) City(15) Country(3) = 40
-        String namePart = String.format("%-22s", name);
-        String cityPart = String.format("%-15s", city);
+        // Strategy: Spaces(33) + City(4) + Country(3) = 40
+        String namePart = String.format("%-33s", name);  // 33 spaces
+        String cityPart = String.format("%-4s", city);   // "BNV " (4 chars)
         
-        return namePart + cityPart + country; // 22 + 15 + 3 = 40
+        return namePart + cityPart + country; // 33 + 4 + 3 = 40
     }
 }

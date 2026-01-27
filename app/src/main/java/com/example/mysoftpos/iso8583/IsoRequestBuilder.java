@@ -30,7 +30,7 @@ public final class IsoRequestBuilder {
         
         m.setField(IsoField.MERCHANT_TYPE_18, ctx.mcc18!=null?ctx.mcc18:"5411"); 
         m.setField(IsoField.POS_ENTRY_MODE_22, cardData.getPosEntryMode());
-        m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32 != null ? ctx.acquirerId32 : "970400");
+        m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32 != null ? ctx.acquirerId32 : "970406");
         m.setField(IsoField.RRN_37, ctx.rrn37);
         m.setField(IsoField.TERMINAL_ID_41, TransactionContext.formatTid8(ctx.terminalId41));
         m.setField(IsoField.MERCHANT_ID_42, TransactionContext.formatMid15(ctx.merchantId42));
@@ -45,7 +45,7 @@ public final class IsoRequestBuilder {
         String originalMti = (ctx.txnType == TxnType.BALANCE_INQUIRY) ? "0100" : "0200";
         String originalStan = normalizeStan6(ctx.stan11);
         String originalTimeDate = ctx.transmissionDt7; // MMddHHmmss
-        String originalAcq = "00970400000"; // 11 chars
+        String originalAcq = "00970406000"; // 11 chars
         String originalFwd = "00000000000"; // 11 chars
         
         String de90 = originalMti + originalStan + originalTimeDate + originalAcq + originalFwd;
@@ -86,7 +86,7 @@ public final class IsoRequestBuilder {
         m.setField(IsoField.POS_ENTRY_MODE_22, cardData.isContactless() ? "072" : "012");
         
         m.setField(IsoField.POS_CONDITION_CODE_25, "00");
-        m.setField(IsoField.ACQUIRER_ID_32, c.acquirerId32 != null ? c.acquirerId32 : "970400");
+        m.setField(IsoField.ACQUIRER_ID_32, c.acquirerId32 != null ? c.acquirerId32 : "970406");
         // DE 33 removed
         // if (c.fwdInst33 != null) m.setField(33, c.fwdInst33);
 
@@ -151,7 +151,7 @@ public final class IsoRequestBuilder {
         m.setField(IsoField.MERCHANT_TYPE_18, "6011"); 
         m.setField(IsoField.POS_ENTRY_MODE_22, cardData.getPosEntryMode());
         m.setField(IsoField.POS_CONDITION_CODE_25, "00");
-        m.setField(IsoField.ACQUIRER_ID_32, c.acquirerId32 != null ? c.acquirerId32 : "970400");
+        m.setField(IsoField.ACQUIRER_ID_32, c.acquirerId32 != null ? c.acquirerId32 : "970406");
         m.setField(IsoField.RRN_37, c.rrn37);
         m.setField(IsoField.TERMINAL_ID_41, TransactionContext.formatTid8(c.terminalId41));
         m.setField(IsoField.MERCHANT_ID_42, TransactionContext.formatMid15(c.merchantId42));
