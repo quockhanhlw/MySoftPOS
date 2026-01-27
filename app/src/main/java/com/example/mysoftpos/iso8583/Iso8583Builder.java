@@ -30,18 +30,19 @@ public class Iso8583Builder {
         m.setField(IsoField.MERCHANT_TYPE_18, ctx.mcc18 != null ? ctx.mcc18 : "5411");
         
         // DE 22: POS Entry Mode
-        // Manual: 012
-        // NFC: 072 (User Request)
-        m.setField(IsoField.POS_ENTRY_MODE_22, card.isContactless() ? "072" : "012");
+        // Format: 021 (Server parses as 22.01=02, 22.02=1)
+        // Contactless: 021
+        // Manual: 011
+        m.setField(IsoField.POS_ENTRY_MODE_22, card.isContactless() ? "021" : "011");
         
         m.setField(IsoField.POS_CONDITION_CODE_25, "00");
         m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32 != null ? ctx.acquirerId32 : "970400");
         // DE 33 removed for Purchase (Only for Reversal)
         
         m.setField(IsoField.RRN_37, ctx.rrn37);
-        m.setField(IsoField.TERMINAL_ID_41, ctx.terminalId41);
-        m.setField(IsoField.MERCHANT_ID_42, ctx.merchantId42);
-        m.setField(IsoField.MERCHANT_NAME_LOCATION_43, ctx.merchantNameLocation43);
+        m.setField(IsoField.TERMINAL_ID_41, formatTerminalId(ctx.terminalId41));
+        m.setField(IsoField.MERCHANT_ID_42, formatMerchantId(ctx.merchantId42));
+        m.setField(IsoField.MERCHANT_NAME_LOCATION_43, formatMerchantNameLocation(ctx.merchantNameLocation43));
         m.setField(IsoField.CURRENCY_CODE_49, ctx.currency49 != null ? ctx.currency49 : "704");
 
         // DE 35 (Track 2) - NFC Only
@@ -194,5 +195,48 @@ public class Iso8583Builder {
             sb.append(e.getValue());
         }
         return sb.toString();
+    }
+    
+    /**
+     * Format DE41 (Terminal ID) to exactly 8 characters.
+     * Right-padded with spaces.
+     */
+    private static String formatTerminalId(String tid) {
+        if (tid == null) tid = "AUTO0001";
+        if (tid.length() > 8) {
+            return tid.substring(0, 8);
+        }
+        return String.format("%-8s", tid); // Left-aligned, space-padded
+    }
+    
+    /**
+     * Format DE42 (Merchant ID) to exactly 15 characters.
+     * Right-padded with spaces.
+     */
+    private static String formatMerchantId(String mid) {
+        if (mid == null) mid = "MYSOFTPOSSHOP01";
+        if (mid.length() > 15) {
+            return mid.substring(0, 15);
+        }
+        return String.format("%-15s", mid); // Left-aligned, space-padded
+    }
+    
+    /**
+     * Format DE43 (Merchant Name/Location) to exactly 40 characters:
+     * Format per server log: [Name with spaces][City with spaces][Country]
+     * Total must be 40 chars
+     */
+    private static String formatMerchantNameLocation(String input) {
+        // Default values matching server requirements  
+        String name = "MYSOFTPOS BANK";
+        String city = "HA NOI";
+        String country = "VNM";
+        
+        // Calculate padding to reach exactly 40 chars
+        // Strategy: Name(22) City(15) Country(3) = 40
+        String namePart = String.format("%-22s", name);
+        String cityPart = String.format("%-15s", city);
+        
+        return namePart + cityPart + country; // 22 + 15 + 3 = 40
     }
 }
