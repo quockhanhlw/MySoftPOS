@@ -93,7 +93,7 @@ public class ConfigManager {
     }
     
     // FORCE CORRECT IP - Bypass SharedPreferences cache
-    public String getServerIp() { return "10.145.54.120"; } 
+    public String getServerIp() { return "10.145.54.151"; } 
     public int getServerPort() { return 8583; } // prefs.getInt(KEY_PORT, 8583);
     public String getServerId() { return "01"; } // Not in JSON mostly, keeps logic simple
 
