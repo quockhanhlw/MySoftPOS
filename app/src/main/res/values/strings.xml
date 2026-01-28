@@ -108,4 +108,22 @@
     <string name="hint_yymm">YYMM</string>
     <string name="hint_cvv">CVV</string>
 
+    <!-- Test Suite -->
+    <string name="test_suite_title">ISO 8583 Test Suite</string>
+    <string name="error_test_case_not_found">Test case not found</string>
+    <string name="error_select_card">Please select a test card</string>
+    <string name="error_enter_amount">Please enter amount</string>
+    <string name="error_invalid_amount">Invalid amount</string>
+    <string name="error_connection_refused">Connection Refused</string>
+    <string name="error_timeout">Request Timeout (30s)</string>
+    <string name="error_network">Network Error</string>
+    <string name="status_pending">PENDING</string>
+    <string name="status_success">PASS</string>
+    <string name="status_fail">FAIL</string>
+    <string name="status_timeout">TIMEOUT</string>
+    <string name="status_error">ERROR</string>
+    <string name="btn_run_test">RUN TEST</string>
+    <string name="label_amount">Amount</string>
+    <string name="label_test_card">Test Card</string>
+
 </resources>

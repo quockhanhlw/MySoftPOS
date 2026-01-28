@@ -4,9 +4,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.mysoftpos.testsuite.SchemeSelectActivity;
+
 /**
  * Main Dashboard.
- * Simplified to launch feature Activities.
+ * Entry point for all features after login.
  */
 public class MainDashboardActivity extends AppCompatActivity {
 
@@ -14,6 +16,10 @@ public class MainDashboardActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_dashboard);
+
+        // ═══════════════════════════════════════════════════════════════════
+        //                         FEATURE NAVIGATION
+        // ═══════════════════════════════════════════════════════════════════
 
         // Purchase Feature
         findViewById(R.id.cardPurchase).setOnClickListener(v -> {
@@ -34,11 +40,20 @@ public class MainDashboardActivity extends AppCompatActivity {
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivity(intent);
         });
+        
+        // ═══════════════════════════════════════════════════════════════════
+        //                         TEST SUITE (NEW)
+        // ═══════════════════════════════════════════════════════════════════
+        
+        // Test Suite - ISO 8583 Testing
+        findViewById(R.id.cardTest).setOnClickListener(v -> {
+            Intent intent = new Intent(this, SchemeSelectActivity.class);
+            startActivity(intent);
+        });
 
-        // History Feature (Optional, toast for now)
+        // History Feature (Placeholder)
         findViewById(R.id.cardHistory).setOnClickListener(v -> {
-            // Intent intent = new Intent(this, HistoryActivity.class);
-            // startActivity(intent);
+            // TODO: Implement HistoryActivity
         });
     }
 }

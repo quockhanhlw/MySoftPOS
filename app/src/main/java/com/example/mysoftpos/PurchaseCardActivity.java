@@ -236,7 +236,7 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
                     mockPan, 
                     mockExp, 
                     mockTrk2, 
-                    "072", // NFC Mode
+                    "022", // NFC Mode
                     null, // pinBlock
                     data != null ? data.getEmvTags() : null // Keep EMV tags
                 );
@@ -246,13 +246,12 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
                     processTransaction(mockOverrideData);
                 });
             } catch (Exception e) {
-                // FALLBACK MOCK (Shortened to 37)
-                // Track 2: 9704189991010867647=31016010000000123
+                // Track 2: 9704189991010867647=31016010000000123 (37 chars)
                 CardInputData mockData = new CardInputData(
                     "9704189991010867647",
                     "3101",
                     "9704189991010867647=31016010000000123",
-                    "072",
+                    "022", // RESTORED: 072 (NFC - Known Working)
                     null, null
                 );
                 runOnUiThread(() -> {

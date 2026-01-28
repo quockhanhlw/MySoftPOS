@@ -188,28 +188,132 @@
         
     </LinearLayout>
 
+    <!-- Second Row: Test + History -->
+    <LinearLayout
+        android:id="@+id/gridActionsRow2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:baselineAligned="false"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/gridActions"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- TEST SUITE CARD -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardTest"
+            android:layout_width="0dp"
+            android:layout_height="120dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            app:cardBackgroundColor="@color/tertiary"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="4dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="20dp"
+                android:orientation="vertical"
+                android:gravity="bottom">
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@drawable/ic_test"
+                    app:tint="@color/on_primary"/>
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Test Suite"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/on_primary"
+                    android:layout_marginTop="8dp"/>
+                     
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ISO 8583"
+                    android:textSize="11sp"
+                    android:textColor="#CCFFFFFF"
+                    android:layout_marginTop="2dp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- HISTORY CARD -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardHistory"
+            android:layout_width="0dp"
+            android:layout_height="120dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            app:cardBackgroundColor="@color/surface"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="4dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="20dp"
+                android:orientation="vertical"
+                android:gravity="bottom">
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@drawable/ic_history"
+                    app:tint="@color/secondary"/>
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Lịch sử"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginTop="8dp"/>
+                     
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Giao dịch"
+                    android:textSize="11sp"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginTop="2dp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        
+    </LinearLayout>
+
     <!-- Recent History (Optional Placeholder) -->
     <TextView
         android:id="@+id/tvHistoryLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Gần đây"
+        android:text="Trạng thái"
         android:textSize="18sp"
         android:textStyle="bold"
         android:textColor="@color/text_primary"
-        android:layout_marginTop="32dp"
-        app:layout_constraintTop_toBottomOf="@id/gridActions"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toBottomOf="@id/gridActionsRow2"
         app:layout_constraintStart_toStartOf="parent"/>
         
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardHistory"
+        android:id="@+id/cardStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="100dp"
+        android:minHeight="80dp"
         app:cardBackgroundColor="@color/surface"
         app:cardCornerRadius="16dp"
         app:cardElevation="2dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="12dp"
         app:layout_constraintTop_toBottomOf="@id/tvHistoryLabel"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -218,12 +322,23 @@
              android:layout_width="match_parent"
              android:layout_height="match_parent"
              android:gravity="center"
+             android:padding="16dp"
              android:orientation="vertical">
+             
+             <View
+                 android:id="@+id/statusDot"
+                 android:layout_width="12dp"
+                 android:layout_height="12dp"
+                 android:background="@drawable/bg_status_online"/>
+                 
              <TextView
+                 android:id="@+id/tvStatusText"
                  android:layout_width="wrap_content"
                  android:layout_height="wrap_content"
-                 android:text="Chưa có giao dịch nào"
-                 android:textColor="@color/text_hint"/>
+                 android:text="Sẵn sàng"
+                 android:textColor="@color/status_success"
+                 android:textSize="14sp"
+                 android:layout_marginTop="8dp"/>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

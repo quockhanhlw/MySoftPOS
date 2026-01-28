@@ -6,10 +6,14 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
-@Database(entities = {TransactionEntity.class}, version = 1, exportSchema = false)
+import com.example.mysoftpos.testsuite.model.TestResult;
+import com.example.mysoftpos.testsuite.data.TestResultDao;
+
+@Database(entities = {TransactionEntity.class, TestResult.class}, version = 2, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract TransactionDao transactionDao();
+    public abstract TestResultDao testResultDao();
 
     private static volatile AppDatabase INSTANCE;
 
@@ -23,6 +27,7 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, "mysoftpos_db")
+                            .fallbackToDestructiveMigration()
                             .build();
                 }
             }
@@ -30,3 +35,4 @@ public abstract class AppDatabase extends RoomDatabase {
         return INSTANCE;
     }
 }
+

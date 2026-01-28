@@ -72,6 +72,39 @@
             android:exported="false"
             android:label="Success" />
 
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!--                        TEST SUITE ACTIVITIES                         -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <activity
+            android:name=".testsuite.SchemeSelectActivity"
+            android:exported="true"
+            android:label="ISO 8583 Test Suite">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".testsuite.TestSuiteActivity"
+            android:exported="false"
+            android:label="Test Suite" />
+
+        <activity
+            android:name=".testsuite.TestRunnerActivity"
+            android:exported="false"
+            android:label="Test Runner" />
+
+        <activity
+            android:name=".testsuite.ChannelSelectActivity"
+            android:exported="false"
+            android:label="Channel Selection" />
+
+        <activity
+            android:name=".testsuite.TransactionSelectActivity"
+            android:exported="false"
+            android:label="Transaction Type" />
+
     </application>
 
 </manifest>

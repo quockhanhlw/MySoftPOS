@@ -25,17 +25,15 @@ public class Iso8583Builder {
         m.setField(IsoField.STAN_11, ctx.stan11);
         m.setField(IsoField.LOCAL_TIME_12, ctx.localTime12);
         m.setField(IsoField.LOCAL_DATE_13, ctx.localDate13);
-        m.setField(IsoField.EXPIRATION_DATE_14, card.getExpiryDate());
         m.setField(15, ctx.settlementDate15); // DE 15
         m.setField(IsoField.MERCHANT_TYPE_18, ctx.mcc18 != null ? ctx.mcc18 : "5411");
         
-        // DE 22: POS Entry Mode
-        // User Request: "sửa DE 22 thành 022"
-        m.setField(IsoField.POS_ENTRY_MODE_22, "022");
+        // DE 22: POS Entry Mode - Dynamic based on Card/Test Case
+        String entryMode = card.getPosEntryMode();
+        m.setField(IsoField.POS_ENTRY_MODE_22, entryMode);
         
         m.setField(IsoField.POS_CONDITION_CODE_25, "00");
         m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32 != null ? ctx.acquirerId32 : "970406");
-        // DE 33 removed for Purchase (Only for Reversal)
         
         m.setField(IsoField.RRN_37, ctx.rrn37);
         m.setField(IsoField.TERMINAL_ID_41, formatTerminalId(ctx.terminalId41));
@@ -43,35 +41,36 @@ public class Iso8583Builder {
         m.setField(IsoField.MERCHANT_NAME_LOCATION_43, formatMerchantNameLocation(ctx.merchantNameLocation43));
         m.setField(IsoField.CURRENCY_CODE_49, ctx.currency49 != null ? ctx.currency49 : "704");
 
-        // DE 35 (Track 2) - NFC Only
-        if (card.isContactless()) {
-            // NFC: Track 2 is mandatory
-            if (card.getTrack2() != null && !card.getTrack2().isEmpty()) {
-                 // Convert ISO separator '=' to Hex separator 'D' (User Request)
-                 m.setField(IsoField.TRACK2_35, card.getTrack2().replace('=', 'D'));
+        // Logic "Like Mock Track 2" but Dynamic DE 22
+        
+        // DE 14: Expiration Date - Always Include if Available (Mock Pattern)
+        if (card.getExpiryDate() != null) {
+            m.setField(IsoField.EXPIRATION_DATE_14, card.getExpiryDate());
+        }
+
+        // DE 35: Track 2 - Always Include if Available (Mock Pattern, 'D' separator)
+        if (card.getTrack2() != null && !card.getTrack2().isEmpty()) {
+            m.setField(IsoField.TRACK2_35, card.getTrack2().replace('=', 'D'));
+        }
+
+        // DE 52: PIN Block - Conditional on Mode ending in '1'
+        boolean hasPin = entryMode != null && entryMode.endsWith("1");
+        if ((hasPin) && ctx.encryptPin && ctx.pinBlock52 != null) {
+            m.setField(IsoField.PIN_BLOCK_52, ctx.pinBlock52);
+        }
+
+        // DE 55: ICC Data - Conditional on Chip (05) or NFC (07)
+        boolean isChipOrNfc = entryMode != null && (entryMode.startsWith("05") || entryMode.startsWith("07"));
+        if (isChipOrNfc) {
+            String emv = buildEmvString(card.getEmvTags());
+            if (emv != null && !emv.isEmpty()) {
+                m.setField(IsoField.ICC_DATA_55, emv);
             }
-            
-            // DE 14: Optional for NFC (per client_fix_guide.md)
-            // Will be sent from line 28 if card has expiry, otherwise null is OK
-            
-            // DE 52: PIN Block - Optional for NFC (per client_fix_guide.md)
-            if (ctx.encryptPin && ctx.pinBlock52 != null) {
-                m.setField(IsoField.PIN_BLOCK_52, ctx.pinBlock52);
-            }
-            
-            // DE 63: Reserved Private - Optional
-            if (ctx.field60 != null) {
-                m.setField(63, ctx.field60);
-            }
-            
-        } else {
-            // Manual: DE 35 is not present
-            // Manual uses DE 2 (PAN) + DE 14 (Expiry)
-            
-            // DE 52: PIN Block - Optional for Manual
-            if (ctx.encryptPin && ctx.pinBlock52 != null) {
-                m.setField(IsoField.PIN_BLOCK_52, ctx.pinBlock52);
-            }
+        }
+
+        // DE 60-63: Reserved/Private (if any)
+        if (ctx.field60 != null) {
+            m.setField(63, ctx.field60);
         }
 
         return m;
@@ -90,9 +89,12 @@ public class Iso8583Builder {
         m.setField(IsoField.STAN_11, ctx.stan11);
         m.setField(IsoField.LOCAL_TIME_12, ctx.localTime12);
         m.setField(IsoField.LOCAL_DATE_13, ctx.localDate13);
+        m.setField(15, ctx.settlementDate15); // DE 15 - Added
         m.setField(IsoField.MERCHANT_TYPE_18, "6011"); // Financial Inst.
         
-        m.setField(IsoField.POS_ENTRY_MODE_22, card.isContactless() ? "071" : "011");
+        // DE 22: POS Entry Mode - Dynamic
+        String entryMode = card.getPosEntryMode();
+        m.setField(IsoField.POS_ENTRY_MODE_22, entryMode);
         
         m.setField(IsoField.POS_CONDITION_CODE_25, "00");
         m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32 != null ? ctx.acquirerId32 : "970406");
@@ -103,18 +105,31 @@ public class Iso8583Builder {
         m.setField(IsoField.MERCHANT_NAME_LOCATION_43, ctx.merchantNameLocation43);
         m.setField(IsoField.CURRENCY_CODE_49, "704");
 
-        if (card.isContactless()) {
-             if (card.getTrack2() != null) {
-                 m.setField(IsoField.TRACK2_35, card.getTrack2().replace('D', '='));
-             }
-             String emv = buildEmvString(card.getEmvTags());
-             if (emv != null) m.setField(IsoField.ICC_DATA_55, emv);
+        // DE 14: Expiration Date - Always Include if Available
+        if (card.getExpiryDate() != null) {
+            m.setField(IsoField.EXPIRATION_DATE_14, card.getExpiryDate());
         }
-        
-        if (ctx.encryptPin && ctx.pinBlock52 != null) {
+
+        // DE 35: Track 2 - Always Include if Available ('D')
+        if (card.getTrack2() != null && !card.getTrack2().isEmpty()) {
+            m.setField(IsoField.TRACK2_35, card.getTrack2().replace('=', 'D'));
+        }
+
+        // DE 52: PIN Block - Conditional
+        boolean hasPin = entryMode != null && entryMode.endsWith("1");
+        if ((hasPin) && ctx.encryptPin && ctx.pinBlock52 != null) {
             m.setField(IsoField.PIN_BLOCK_52, ctx.pinBlock52);
         }
 
+        // DE 55: ICC Data - Conditional on Chip/NFC
+        boolean isChipOrNfc = entryMode != null && (entryMode.startsWith("05") || entryMode.startsWith("07"));
+        if (isChipOrNfc) {
+            String emv = buildEmvString(card.getEmvTags());
+            if (emv != null && !emv.isEmpty()) {
+                m.setField(IsoField.ICC_DATA_55, emv);
+            }
+        }
+        
         // DE 128: MAC
         m.setField(128, "0000000000000000");
 
@@ -146,7 +161,10 @@ public class Iso8583Builder {
         m.setField(IsoField.LOCAL_DATE_13, originalCtx.localDate13);
         m.setField(IsoField.MERCHANT_TYPE_18, originalCtx.mcc18 != null ? originalCtx.mcc18 : (originalCtx.txnType == TxnType.BALANCE_INQUIRY ? "6011" : "5411"));
         
-        m.setField(IsoField.POS_ENTRY_MODE_22, card.isContactless() ? "071" : "011");
+        // DE 22: POS Entry Mode - Dynamic
+        String entryMode = card.getPosEntryMode();
+        m.setField(IsoField.POS_ENTRY_MODE_22, entryMode);
+        
         m.setField(IsoField.ACQUIRER_ID_32, originalCtx.acquirerId32 != null ? originalCtx.acquirerId32 : "970406");
         m.setField(IsoField.RRN_37, originalCtx.rrn37);
         m.setField(IsoField.TERMINAL_ID_41, originalCtx.terminalId41);
@@ -168,12 +186,16 @@ public class Iso8583Builder {
         String de90 = orgMti + orgTrace + orgDate + orgTime + "00970406000" + "00000000000";
         m.setField(90, de90);
         
-        // EXCLUDE DE 52
+        // DE 35: Track 2 - Included
+        if (card.getTrack2() != null && !card.getTrack2().isEmpty()) {
+            m.setField(IsoField.TRACK2_35, card.getTrack2().replace('=', 'D'));
+        }
         
-        // Include DE 55 if NFC
-        if (card.isContactless()) {
+        // DE 55: ICC Data
+        boolean isChipOrNfc = entryMode != null && (entryMode.startsWith("05") || entryMode.startsWith("07"));
+        if (isChipOrNfc) {
             String emv = buildEmvString(card.getEmvTags());
-            if (emv != null) m.setField(IsoField.ICC_DATA_55, emv);
+            if (emv != null && !emv.isEmpty()) m.setField(IsoField.ICC_DATA_55, emv);
         }
 
         // DE 128: MAC
