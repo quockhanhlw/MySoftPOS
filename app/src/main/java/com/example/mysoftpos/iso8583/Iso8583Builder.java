@@ -30,10 +30,8 @@ public class Iso8583Builder {
         m.setField(IsoField.MERCHANT_TYPE_18, ctx.mcc18 != null ? ctx.mcc18 : "5411");
         
         // DE 22: POS Entry Mode
-        // Format: 021 (Server parses as 22.01=02, 22.02=1)
-        // Contactless: 021
-        // Manual: 011
-        m.setField(IsoField.POS_ENTRY_MODE_22, card.isContactless() ? "021" : "011");
+        // User Request: "sửa DE 22 là 070"
+        m.setField(IsoField.POS_ENTRY_MODE_22, "070");
         
         m.setField(IsoField.POS_CONDITION_CODE_25, "00");
         m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32 != null ? ctx.acquirerId32 : "970406");
@@ -223,20 +221,31 @@ public class Iso8583Builder {
     
     /**
      * Format DE43 (Merchant Name/Location) to exactly 40 characters:
-     * Format per server example: spaces + city + numeric country code "704"
-     * Total must be 40 chars
+     * Spec: [Bank Name 22] + [Space 1] + [Location 13] + [Space 1] + [Country 3]
      */
     private static String formatMerchantNameLocation(String input) {
-        // Match server format: mostly spaces + short city + "704"
-        String name = "";  // Empty/spaces
-        String city = "BNV";  // Short city code
-        String country = "704";  // Numeric currency code (NOT "VNM")
+        // Values from Requirement / Config
+        String name = "MYSOFTPOS BANK";
+        String city = "HA NOI";
+        String country = "704"; // Vietnam Numeric
         
-        // Calculate padding to reach exactly 40 chars
-        // Strategy: Spaces(33) + City(4) + Country(3) = 40
-        String namePart = String.format("%-33s", name);  // 33 spaces
-        String cityPart = String.format("%-4s", city);   // "BNV " (4 chars)
+        // 1. Bank Name (22 chars)
+        if (name.length() > 22) name = name.substring(0, 22);
+        else name = String.format("%-22s", name);
         
-        return namePart + cityPart + country; // 33 + 4 + 3 = 40
+        // 2. Space (1 char) -> automatically handled by concatenation or explicit?
+        // Spec says: "23: Space", "37: Space".
+        // So we need explicit spaces between fields if we fill them exactly.
+        
+        // 3. Location (13 chars)
+        if (city.length() > 13) city = city.substring(0, 13);
+        else city = String.format("%-13s", city);
+        
+        // 4. Country (3 chars)
+        if (country.length() > 3) country = country.substring(0, 3);
+        
+        // Construct: Name(22) + " " + Location(13) + " " + Country(3)
+        // Total: 22 + 1 + 13 + 1 + 3 = 40
+        return name + " " + city + " " + country; 
     }
 }

@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_primary"
+    android:fitsSystemWindows="true">
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!--                        VIRTUAL POS STATUS BAR                        -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardStatusBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        app:cardBackgroundColor="@color/glass_background"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="0dp"
+        app:strokeColor="@color/glass_stroke"
+        app:strokeWidth="1dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp">
+
+            <!-- Signal Strength Icon -->
+            <ImageView
+                android:id="@+id/ivSignal"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_signal"
+                android:tint="@color/status_success"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                tools:ignore="ContentDescription" />
+
+            <!-- Battery Icon -->
+            <ImageView
+                android:id="@+id/ivBattery"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="12dp"
+                android:src="@drawable/ic_battery"
+                android:tint="@color/status_success"
+                app:layout_constraintStart_toEndOf="@id/ivSignal"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                tools:ignore="ContentDescription" />
+
+            <!-- Virtual POS Title -->
+            <TextView
+                android:id="@+id/tvPosTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="VIRTUAL POS"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.1"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <!-- Online Status Badge -->
+            <LinearLayout
+                android:id="@+id/layoutOnline"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_status_online"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="4dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <View
+                    android:layout_width="6dp"
+                    android:layout_height="6dp"
+                    android:background="@android:color/white" />
+
+                <TextView
+                    android:id="@+id/tvOnlineStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="ONLINE"
+                    android:textColor="@android:color/white"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05" />
+            </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!--                          CARD SLOT AREA                              -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <FrameLayout
+        android:id="@+id/frameCardSlot"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toBottomOf="@id/cardStatusBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Glow Effect Background -->
+        <View
+            android:id="@+id/viewGlow"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_card_slot_glow" />
+
+        <!-- NFC Icon Center -->
+        <ImageView
+            android:id="@+id/ivNfcIcon"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_nfc"
+            android:tint="@color/text_primary"
+            tools:ignore="ContentDescription" />
+    </FrameLayout>
+
+    <!-- Tap Card Instruction -->
+    <TextView
+        android:id="@+id/tvTapInstruction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="TAP CARD TO PAY"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.15"
+        android:fontFamily="sans-serif-medium"
+        app:layout_constraintTop_toBottomOf="@id/frameCardSlot"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!--                         AMOUNT DISPLAY                               -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardAmount"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="32dp"
+        app:cardBackgroundColor="@color/glass_background"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="0dp"
+        app:strokeColor="@color/glass_stroke"
+        app:strokeWidth="1dp"
+        app:layout_constraintTop_toBottomOf="@id/tvTapInstruction"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="24dp">
+
+            <TextView
+                android:id="@+id/tvAmountLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="AMOUNT"
+                android:textColor="@color/text_muted"
+                android:textSize="11sp"
+                android:letterSpacing="0.2" />
+
+            <TextView
+                android:id="@+id/tvAmountDisplay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="₫ 100,000"
+                android:textColor="@color/text_primary"
+                android:textSize="42sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium" />
+
+            <TextView
+                android:id="@+id/tvCurrency"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="VND"
+                android:textColor="@color/accent_cyan"
+                android:textSize="14sp"
+                android:letterSpacing="0.1" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!--                       HACKER CONSOLE LOGS                            -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardConsole"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="16dp"
+        app:cardBackgroundColor="@color/console_background"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        app:strokeColor="#1A22C55E"
+        app:strokeWidth="1dp"
+        app:layout_constraintTop_toBottomOf="@id/cardAmount"
+        app:layout_constraintBottom_toTopOf="@id/btnProcess"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <!-- Console Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp"
+                android:background="#0A22C55E">
+
+                <View
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/bg_status_online" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="TRANSACTION LOG"
+                    android:textColor="@color/console_text"
+                    android:textSize="10sp"
+                    android:letterSpacing="0.15"
+                    android:fontFamily="monospace" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
+
+                <TextView
+                    android:id="@+id/tvTimestamp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="11:09:37"
+                    android:textColor="@color/console_text_dim"
+                    android:textSize="10sp"
+                    android:fontFamily="monospace" />
+            </LinearLayout>
+
+            <!-- Console Body -->
+            <ScrollView
+                android:id="@+id/scrollConsole"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:fillViewport="true">
+
+                <TextView
+                    android:id="@+id/tvConsoleLog"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="12dp"
+                    android:text="[SYS] MySoftPOS v1.0 initialized...\n[SYS] NFC Reader: READY\n[SYS] Connection: 10.145.48.70:8386\n[SYS] Waiting for card...\n█"
+                    android:textColor="@color/console_text"
+                    android:textSize="11sp"
+                    android:lineSpacingMultiplier="1.4"
+                    android:fontFamily="monospace"
+                    android:typeface="monospace" />
+            </ScrollView>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!--                        PROCESS BUTTON                                -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <Button
+        android:id="@+id/btnProcess"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/bg_gradient_button"
+        android:text="CONFIRM PAYMENT"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.1"
+        android:fontFamily="sans-serif-medium"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!--                        LOADING OVERLAY                               -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <FrameLayout
+        android:id="@+id/layoutLoading"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#CC0F172A"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:indeterminateTint="@color/accent_cyan" />
+
+            <TextView
+                android:id="@+id/tvLoadingText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Processing transaction..."
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </FrameLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

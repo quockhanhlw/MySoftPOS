@@ -16,7 +16,7 @@ public class IsoNetworkClient {
     private static final int DEFAULT_TIMEOUT_MS = 30000;
     
     // Hardcoded Configuration (Zero-Config)
-    private static final String DEFAULT_SERVER_IP = "10.145.54.151";//10.145.48.70/8386
+    private static final String DEFAULT_SERVER_IP = "10.145.48.175";//10.145.48.70/8386
     private static final int DEFAULT_SERVER_PORT = 8583;
     
     private final String host;
