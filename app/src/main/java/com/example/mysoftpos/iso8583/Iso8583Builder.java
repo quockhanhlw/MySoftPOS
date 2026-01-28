@@ -30,8 +30,8 @@ public class Iso8583Builder {
         m.setField(IsoField.MERCHANT_TYPE_18, ctx.mcc18 != null ? ctx.mcc18 : "5411");
         
         // DE 22: POS Entry Mode
-        // User Request: "sửa DE 22 là 070"
-        m.setField(IsoField.POS_ENTRY_MODE_22, "070");
+        // User Request: "sửa DE 22 thành 022"
+        m.setField(IsoField.POS_ENTRY_MODE_22, "022");
         
         m.setField(IsoField.POS_CONDITION_CODE_25, "00");
         m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32 != null ? ctx.acquirerId32 : "970406");
