@@ -1,6 +1,7 @@
 {
     "merchant_type_18": "5411",
     "acquirer_id_32": "970406",
+    "forwarding_inst_33": "970406",
     "terminal_id_41": "AUTO0001",
     "merchant_id_42": "MYSOFTPOSSHOP01",
     "merchant_name_43": {

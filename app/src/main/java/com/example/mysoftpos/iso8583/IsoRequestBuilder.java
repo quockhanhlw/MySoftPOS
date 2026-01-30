@@ -11,7 +11,8 @@ import java.util.Map;
 public final class IsoRequestBuilder {
     private static final String TAG = "IsoRequestBuilder";
 
-    private IsoRequestBuilder() {}
+    private IsoRequestBuilder() {
+    }
 
     /**
      * Build Reversal Advice (MTI 0420)
@@ -27,27 +28,25 @@ public final class IsoRequestBuilder {
         m.setField(IsoField.STAN_11, normalizeStan6(ctx.stan11));
         m.setField(IsoField.LOCAL_TIME_12, ctx.localTime12);
         m.setField(IsoField.LOCAL_DATE_13, ctx.localDate13);
-        
-        m.setField(IsoField.MERCHANT_TYPE_18, ctx.mcc18!=null?ctx.mcc18:"5411"); 
+
+        m.setField(IsoField.MERCHANT_TYPE_18, ctx.mcc18);
         m.setField(IsoField.POS_ENTRY_MODE_22, cardData.getPosEntryMode());
-        m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32 != null ? ctx.acquirerId32 : "970406");
+        m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32);
         m.setField(IsoField.RRN_37, ctx.rrn37);
         m.setField(IsoField.TERMINAL_ID_41, TransactionContext.formatTid8(ctx.terminalId41));
         m.setField(IsoField.MERCHANT_ID_42, TransactionContext.formatMid15(ctx.merchantId42));
-        m.setField(IsoField.CURRENCY_CODE_49, "704");
+        m.setField(IsoField.CURRENCY_CODE_49, ctx.currency49);
 
         // DE 90: Original Data Elements
-        // Format: MTI(4) + Stan(6) + Date(4) + Time(6) + AcqId(11, LLVAR)
-        // Note: AcqId is usually fixed length in DE 90 structure or LLVAR depending on spec.
-        // Assuming Standard: MTI(4) + Stan(6) + TransmissionDateTime(10) + AcquirerID(11, ZeroPadded) + ForwardingInst(11, ZeroPadded)
-        // Let's use simple matching logic for now: MTI + STAN + TRACE + ACQ
-        
         String originalMti = (ctx.txnType == TxnType.BALANCE_INQUIRY) ? "0100" : "0200";
         String originalStan = normalizeStan6(ctx.stan11);
         String originalTimeDate = ctx.transmissionDt7; // MMddHHmmss
-        String originalAcq = "00970406000"; // 11 chars
+        // Note: AcquirerID should ideally be padded 11 chars from config, defaulting to
+        // context's ACQ ID
+        String originalAcq = ctx.acquirerId32 != null ? String.format("%-11s", ctx.acquirerId32).replace(' ', '0')
+                : "00000000000";
         String originalFwd = "00000000000"; // 11 chars
-        
+
         String de90 = originalMti + originalStan + originalTimeDate + originalAcq + originalFwd;
         m.setField(90, de90);
 
@@ -56,9 +55,6 @@ public final class IsoRequestBuilder {
 
     /**
      * Build Purchase Request (MTI 0200).
-     * MTI: 0200
-     * Processing Code: 000000
-     * Amount: Transaction Amount
      */
     public static IsoMessage buildPurchase(TransactionContext c, CardInputData cardData) {
         IsoMessage m = new IsoMessage("0200");
@@ -70,56 +66,53 @@ public final class IsoRequestBuilder {
         m.setField(IsoField.TRANSMISSION_DATETIME_7, c.transmissionDt7);
         m.setField(IsoField.STAN_11, normalizeStan6(c.stan11));
         m.setField(IsoField.LOCAL_TIME_12, c.localTime12);
-        
+
         // Safety: Ensure F13 is present
         String f13 = c.localDate13 != null ? c.localDate13 : TransactionContext.buildLocalDate13Now();
         m.setField(IsoField.LOCAL_DATE_13, f13);
-        
+
         m.setField(15, c.settlementDate15); // DE 15
-        
+
         // Expiry (DE 14) - Required for Purchase
         m.setField(IsoField.EXPIRATION_DATE_14, cardData.getExpiryDate());
 
-        m.setField(IsoField.MERCHANT_TYPE_18, c.mcc18 != null ? c.mcc18 : "5411");
-        
-        // DE 22: Pos Entry Mode matches Card Input (071 NFC vs 011 Manual)
+        m.setField(IsoField.MERCHANT_TYPE_18, c.mcc18);
+
+        // DE 22: Pos Entry Mode matches Card Input (072 NFC vs 012 Manual)
         m.setField(IsoField.POS_ENTRY_MODE_22, cardData.isContactless() ? "072" : "012");
-        
+
         m.setField(IsoField.POS_CONDITION_CODE_25, "00");
-        m.setField(IsoField.ACQUIRER_ID_32, c.acquirerId32 != null ? c.acquirerId32 : "970406");
-        // DE 33 removed
-        // if (c.fwdInst33 != null) m.setField(33, c.fwdInst33);
+        m.setField(IsoField.ACQUIRER_ID_32, c.acquirerId32);
 
         m.setField(IsoField.RRN_37, c.rrn37);
         m.setField(IsoField.TERMINAL_ID_41, TransactionContext.formatTid8(c.terminalId41));
         m.setField(IsoField.MERCHANT_ID_42, TransactionContext.formatMid15(c.merchantId42));
         m.setField(IsoField.MERCHANT_NAME_LOCATION_43, c.merchantNameLocation43);
-        m.setField(IsoField.CURRENCY_CODE_49, TransactionContext.defaultCurrencyVND());
+        m.setField(IsoField.CURRENCY_CODE_49, c.currency49);
 
         // --- Conditional Fields ---
-        if (c.country19 != null) m.setField(IsoField.COUNTRY_CODE_19, c.country19);
-        if (c.cardSeq23 != null) m.setField(IsoField.CARD_SEQ_23, c.cardSeq23);
+        if (c.country19 != null)
+            m.setField(IsoField.COUNTRY_CODE_19, c.country19);
+        if (c.cardSeq23 != null)
+            m.setField(IsoField.CARD_SEQ_23, c.cardSeq23);
 
         // DE 35 (Track 2) Logic
         if (cardData.isContactless()) {
             if (cardData.getTrack2() != null && !cardData.getTrack2().isEmpty()) {
-                 m.setField(IsoField.TRACK2_35, cardData.getTrack2().replace('D', '='));
+                m.setField(IsoField.TRACK2_35, cardData.getTrack2().replace('D', '='));
             }
             m.setField(IsoField.EXPIRATION_DATE_14, null); // Skip Expiry if Track 2 present (Host Preference)
-            
+
             String emvData = buildEmvTlv(cardData.getEmvTags());
             if (emvData != null && !emvData.isEmpty()) {
                 m.setField(IsoField.ICC_DATA_55, emvData);
             }
-        } else {
-            // Manual Entry: Skip DE 35 and DE 55
-            // Ensure DE 14 is set (already set above)
         }
 
         if (c.encryptPin) {
             m.setField(IsoField.PIN_BLOCK_52, c.pinBlock52);
         }
-        
+
         if (c.field60 != null) {
             m.setField(IsoField.RESERVED_PRIVATE_60, c.field60);
         }
@@ -130,9 +123,6 @@ public final class IsoRequestBuilder {
 
     /**
      * Build Balance Inquiry Request (MTI 0100).
-     * MTI: 0100
-     * Processing Code: 310000
-     * Amount: 000000000000
      */
     public static IsoMessage buildBalanceInquiry(TransactionContext c, CardInputData cardData) {
         IsoMessage m = new IsoMessage("0100");
@@ -144,39 +134,46 @@ public final class IsoRequestBuilder {
         m.setField(IsoField.TRANSMISSION_DATETIME_7, c.transmissionDt7);
         m.setField(IsoField.STAN_11, normalizeStan6(c.stan11));
         m.setField(IsoField.LOCAL_TIME_12, c.localTime12);
-        
+
         String f13 = c.localDate13 != null ? c.localDate13 : TransactionContext.buildLocalDate13Now();
         m.setField(IsoField.LOCAL_DATE_13, f13);
 
-        m.setField(IsoField.MERCHANT_TYPE_18, "6011"); 
+        // Balance Inquiry specific MCC if not configured?
+        // We defer to Config, but if null we can't just invent "6011".
+        // Assuming Config has correct MCC. If Config has Purchase MCC, this might be
+        // wrong.
+        // For now, we use what's in Context (which comes from Config).
+        m.setField(IsoField.MERCHANT_TYPE_18, c.mcc18);
+
         m.setField(IsoField.POS_ENTRY_MODE_22, cardData.getPosEntryMode());
         m.setField(IsoField.POS_CONDITION_CODE_25, "00");
-        m.setField(IsoField.ACQUIRER_ID_32, c.acquirerId32 != null ? c.acquirerId32 : "970406");
+        m.setField(IsoField.ACQUIRER_ID_32, c.acquirerId32);
         m.setField(IsoField.RRN_37, c.rrn37);
         m.setField(IsoField.TERMINAL_ID_41, TransactionContext.formatTid8(c.terminalId41));
         m.setField(IsoField.MERCHANT_ID_42, TransactionContext.formatMid15(c.merchantId42));
         m.setField(IsoField.MERCHANT_NAME_LOCATION_43, c.merchantNameLocation43);
-        m.setField(IsoField.CURRENCY_CODE_49, "704");
+        m.setField(IsoField.CURRENCY_CODE_49, c.currency49);
 
         // Conditional
-        if (c.country19 != null) m.setField(IsoField.COUNTRY_CODE_19, c.country19);
-        if (c.cardSeq23 != null) m.setField(IsoField.CARD_SEQ_23, c.cardSeq23);
+        if (c.country19 != null)
+            m.setField(IsoField.COUNTRY_CODE_19, c.country19);
+        if (c.cardSeq23 != null)
+            m.setField(IsoField.CARD_SEQ_23, c.cardSeq23);
 
         // DE 35: Track 2 - Only if NFC
         if (cardData.isContactless()) {
             m.setField(IsoField.TRACK2_35, cardData.getTrack2().replace('=', 'D'));
-            
+
             String emvData = buildEmvTlv(cardData.getEmvTags());
             if (emvData != null && !emvData.isEmpty()) {
                 m.setField(IsoField.ICC_DATA_55, emvData);
             }
         }
-        // Manual: Skip DE 35/55/14 for Balance (Minimal)
 
         if (c.encryptPin) {
-             m.setField(IsoField.PIN_BLOCK_52, c.pinBlock52);
+            m.setField(IsoField.PIN_BLOCK_52, c.pinBlock52);
         }
-        
+
         if (c.field60 != null) {
             m.setField(IsoField.RESERVED_PRIVATE_60, c.field60);
         }
@@ -199,20 +196,23 @@ public final class IsoRequestBuilder {
     }
 
     private static void appendMasked(StringBuilder sb, String label, String value) {
-        if (value == null) return;
-        String masked = value.length() > 6 
-                ? value.substring(0, 4) + "****" + value.substring(value.length() - 4) 
+        if (value == null)
+            return;
+        String masked = value.length() > 6
+                ? value.substring(0, 4) + "****" + value.substring(value.length() - 4)
                 : "****";
         sb.append(label).append(": ").append(masked).append("\n");
     }
 
     private static String buildEmvTlv(Map<String, String> tags) {
-        if (tags == null || tags.isEmpty()) return null;
+        if (tags == null || tags.isEmpty())
+            return null;
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, String> entry : tags.entrySet()) {
             String tag = entry.getKey();
             String value = entry.getValue();
-            if (value == null) continue;
+            if (value == null)
+                continue;
             sb.append(tag);
             int len = value.length() / 2;
             sb.append(String.format("%02X", len));
@@ -222,18 +222,24 @@ public final class IsoRequestBuilder {
     }
 
     private static String normalizeAmount12(String f4) {
-        if (f4 == null) return null;
+        if (f4 == null)
+            return null;
         String v = f4.trim();
-        if (v.matches("\\d{12}")) return v;
-        if (v.matches("\\d{1,12}")) return TransactionContext.formatAmount12(v);
+        if (v.matches("\\d{12}"))
+            return v;
+        if (v.matches("\\d{1,12}"))
+            return TransactionContext.formatAmount12(v);
         return v;
     }
 
     private static String normalizeStan6(String f11) {
-        if (f11 == null) return null;
+        if (f11 == null)
+            return null;
         String v = f11.trim();
-        if (v.matches("\\d{6}")) return v;
-        if (v.matches("\\d{1,6}")) return TransactionContext.formatStan6(v);
+        if (v.matches("\\d{6}"))
+            return v;
+        if (v.matches("\\d{1,6}"))
+            return TransactionContext.formatStan6(v);
         return v;
     }
 }

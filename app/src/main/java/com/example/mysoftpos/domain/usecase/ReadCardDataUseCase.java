@@ -5,7 +5,6 @@ import android.util.Log;
 import com.example.mysoftpos.data.CardTransceiver;
 import com.example.mysoftpos.domain.model.CardInputData;
 import com.example.mysoftpos.utils.ApduCommandBuilder;
-import com.example.mysoftpos.utils.TlvParser;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,14 +38,19 @@ public class ReadCardDataUseCase {
         // We ignore failure here as we will try direct selection next.
         try {
             transceiver.transceive(ApduCommandBuilder.selectPpse());
-        } catch (Exception ignored) { }
+        } catch (Exception ignored) {
+        }
 
         // 2. Select AID (Priority Order: Visa -> MC -> Napas -> Napas Ext)
         byte[] selectedAid = null;
-        if (trySelectAid(AID_VISA)) selectedAid = AID_VISA;
-        else if (trySelectAid(AID_MASTERCARD)) selectedAid = AID_MASTERCARD;
-        else if (trySelectAid(AID_NAPAS)) selectedAid = AID_NAPAS;
-        else if (trySelectAid(AID_NAPAS_EXT)) selectedAid = AID_NAPAS_EXT;
+        if (trySelectAid(AID_VISA))
+            selectedAid = AID_VISA;
+        else if (trySelectAid(AID_MASTERCARD))
+            selectedAid = AID_MASTERCARD;
+        else if (trySelectAid(AID_NAPAS))
+            selectedAid = AID_NAPAS;
+        else if (trySelectAid(AID_NAPAS_EXT))
+            selectedAid = AID_NAPAS_EXT;
 
         if (selectedAid == null) {
             throw new IOException("No supported Application found");
@@ -55,11 +59,12 @@ public class ReadCardDataUseCase {
         // 3. GET PROCESSING OPTIONS (GPO)
         byte[] gpoResponse = transceiver.transceive(ApduCommandBuilder.getProcessingOptions());
         if (!isSuccess(gpoResponse)) {
-             throw new IOException("GPO failed");
+            throw new IOException("GPO failed");
         }
 
         // 4. READ RECORD (Scan SFI 1-10, Rec 1-10) - Simplified scan
-        // In full EMV, we parse AFL from GPO response. For Quick Read, we can scan or assume standard locations.
+        // In full EMV, we parse AFL from GPO response. For Quick Read, we can scan or
+        // assume standard locations.
         // Track 2 (Tag 57) is our target.
         String track2Hex = null;
         Map<String, String> emvTags = new HashMap<>();
@@ -73,34 +78,32 @@ public class ReadCardDataUseCase {
                 if (isSuccess(readRecordResp)) {
                     // Try find Track2
                     if (track2Hex == null) {
-                        byte[] t2 = TlvParser.findTag(readRecordResp, 0x57);
+                        byte[] t2 = findTag(readRecordResp, 0x57);
                         if (t2 != null) {
-                           track2Hex = TlvParser.bytesToHex(t2).replace("F", "");
+                            track2Hex = bytesToHex(t2).replace("F", "");
                         }
                     }
-                    
+
                     // Capture critical EMV tags
-                    extractTags(readRecordResp, emvTags, "9F26", "9F27", "9F10", "9F37", "9F36", "95", "9A", "9C", "5F2A", "82");
+                    extractTags(readRecordResp, emvTags, "9F26", "9F27", "9F10", "9F37", "9F36", "95", "9A", "9C",
+                            "5F2A", "82");
                 }
             }
         }
 
-
-
         if (track2Hex == null) {
-             throw new IOException("Track2 Data (Tag 57) not found");
+            throw new IOException("Track2 Data (Tag 57) not found");
         }
-        
-        String pan = com.example.mysoftpos.utils.CardDataHelper.extractPan(track2Hex);
-        String expiry = com.example.mysoftpos.utils.CardDataHelper.extractExpiry(track2Hex);
-        
+
+        String pan = extractPan(track2Hex);
+        String expiry = extractExpiry(track2Hex);
+
         return new CardInputData(
-            pan,
-            expiry,
-            "071", // NFC
-            track2Hex,
-            emvTags
-        );
+                pan,
+                expiry,
+                "071", // NFC
+                track2Hex,
+                emvTags);
     }
 
     private boolean trySelectAid(byte[] aid) throws IOException {
@@ -109,7 +112,8 @@ public class ReadCardDataUseCase {
     }
 
     private boolean isSuccess(byte[] response) {
-        if (response == null || response.length < 2) return false;
+        if (response == null || response.length < 2)
+            return false;
         int sw1 = response[response.length - 2] & 0xFF;
         int sw2 = response[response.length - 1] & 0xFF;
         return sw1 == 0x90 && sw2 == 0x00;
@@ -124,17 +128,98 @@ public class ReadCardDataUseCase {
         }
         return data;
     }
+
     private void extractTags(byte[] data, Map<String, String> targetMap, String... tags) {
         for (String tag : tags) {
             try {
                 int tagInt = Integer.parseInt(tag, 16);
-                byte[] val = TlvParser.findTag(data, tagInt);
+                byte[] val = findTag(data, tagInt);
                 if (val != null) {
-                    targetMap.put(tag, TlvParser.bytesToHex(val));
+                    targetMap.put(tag, bytesToHex(val));
                 }
             } catch (Exception e) {
                 // Ignore parsing errors for individual tags
             }
         }
+    }
+
+    private String extractPan(String track2) {
+        if (track2 == null)
+            return null;
+        int sep = track2.indexOf('D');
+        if (sep == -1)
+            sep = track2.indexOf('=');
+        if (sep != -1)
+            return track2.substring(0, sep);
+        return track2;
+    }
+
+    private String extractExpiry(String track2) {
+        if (track2 == null)
+            return null;
+        int sep = track2.indexOf('D');
+        if (sep == -1)
+            sep = track2.indexOf('=');
+        if (sep != -1 && sep + 5 <= track2.length()) {
+            return track2.substring(sep + 1, sep + 5);
+        }
+        return null;
+    }
+
+    private byte[] findTag(byte[] data, int tag) {
+        if (data == null)
+            return null;
+        int i = 0;
+        while (i < data.length) {
+            if (i >= data.length)
+                break;
+            int currentTag = data[i++] & 0xFF;
+            if ((currentTag & 0x1F) == 0x1F) {
+                if (i < data.length) {
+                    currentTag = (currentTag << 8) | (data[i++] & 0xFF);
+                }
+            }
+
+            if (i >= data.length)
+                break;
+            int length = data[i++] & 0xFF;
+            if ((length & 0x80) != 0) {
+                int numBytes = length & 0x7F;
+                length = 0;
+                for (int b = 0; b < numBytes; b++) {
+                    if (i < data.length)
+                        length = (length << 8) | (data[i++] & 0xFF);
+                }
+            }
+
+            if (i + length > data.length)
+                break;
+
+            if (currentTag == tag) {
+                byte[] value = new byte[length];
+                System.arraycopy(data, i, value, 0, length);
+                return value;
+            }
+
+            int firstByte = (currentTag > 0xFF) ? (currentTag >> 8) : currentTag;
+            if ((firstByte & 0x20) != 0) {
+                byte[] inner = new byte[length];
+                System.arraycopy(data, i, inner, 0, length);
+                byte[] res = findTag(inner, tag);
+                if (res != null)
+                    return res;
+            }
+
+            i += length;
+        }
+        return null;
+    }
+
+    public static String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02X", b));
+        }
+        return sb.toString();
     }
 }

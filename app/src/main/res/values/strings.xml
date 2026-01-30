@@ -1,5 +1,18 @@
 <resources>
     <string name="app_name">MySoftPOS</string>
+    
+    <string-array name="field_sources">
+        <item>FIXED</item>
+        <item>AUTO</item>
+        <item>INPUT</item>
+        <item>CONFIG</item>
+    </string-array>
+    
+    <string-array name="channels">
+        <item>POS</item>
+        <item>ATM</item>
+        <item>QRC</item>
+    </string-array>
 
     <!-- Welcome Screen -->
     <string name="welcome_title">Trỷ lý đắc lực cho mọi cửa hàng</string>

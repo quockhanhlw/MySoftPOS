@@ -47,6 +47,7 @@
     <color name="status_error">#DC2626</color>        <!-- Red 600 -->
     <color name="status_online">#16A34A</color>
     <color name="status_offline">#DC2626</color>
+    <color name="status_pending">#D97706</color>
 
     <!-- Text Colors (High Contrast) -->
     <color name="text_primary">#0F172A</color>        <!-- Slate 900 -->

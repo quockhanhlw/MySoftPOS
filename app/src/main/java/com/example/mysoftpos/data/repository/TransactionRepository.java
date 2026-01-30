@@ -21,7 +21,8 @@ import java.util.concurrent.Executors;
 
 /**
  * Repository responsible for handling ISO 8583 Transaction flow.
- * Implements strict ISO Logic: Build -> MAC -> Pack -> DB -> Send -> Receive -> DB.
+ * Implements strict ISO Logic: Build -> MAC -> Pack -> DB -> Send -> Receive ->
+ * DB.
  */
 public class TransactionRepository {
 
@@ -29,6 +30,7 @@ public class TransactionRepository {
 
     private final SmartIsoBuilder isoBuilder;
     private final TestResultDao resultDao;
+    private final ConfigurationRepository configRepo;
     private final ConfigManager config;
     private final ExecutorService executor;
 
@@ -37,11 +39,13 @@ public class TransactionRepository {
         this.config = ConfigManager.getInstance(context);
         this.isoBuilder = new SmartIsoBuilder(config); // Injected Config
         this.resultDao = AppDatabase.getInstance(context).testResultDao();
+        this.configRepo = new ConfigurationRepository(context);
         this.executor = Executors.newSingleThreadExecutor();
     }
 
     public interface TransactionCallback {
         void onSuccess(TestResult result);
+
         void onError(String message);
     }
 
@@ -52,20 +56,27 @@ public class TransactionRepository {
                 String stan = config.getAndIncrementTrace();
                 Map<String, Object> inputs = prepareInputs(testCase, card, amount, stan);
 
-                // 2. Build Message
-                String mti = resolveMti(testCase);
-                IsoMessage msg = isoBuilder.build(mti, inputs);
+                // 2. Fetch Configs (if Configurable)
+                java.util.List<com.example.mysoftpos.data.local.entity.FieldConfiguration> fieldConfigs = null;
+                if (testCase.getTransactionTypeId() != null) {
+                    fieldConfigs = configRepo.getFieldConfigsForTypeSync(testCase.getTransactionTypeId());
+                }
 
-                // 3. DE 128: Calculate MAC (Last Step before Packing)
+                // 3. Build Message
+                String mti = resolveMti(testCase);
+                IsoMessage msg = isoBuilder.build(mti, inputs, fieldConfigs);
+
+                // 4. DE 128: Calculate MAC (Last Step before Packing)
                 calculateAndAppendMac(msg);
 
-                // 4. Pack
+                // 5. Pack
                 byte[] packed = StandardIsoPacker.pack(msg);
 
-                // 5. Save Pending State to DB
+                // 6. Save Pending State to DB
                 TestResult result = new TestResult();
                 result.testCaseId = testCase.getId();
                 result.stan = stan;
+                result.requestHex = StandardIsoPacker.bytesToHex(packed);
                 result.status = "PENDING";
                 long id = resultDao.insert(result);
                 result.id = id;
@@ -77,7 +88,7 @@ public class TransactionRepository {
                 // 7. Process Response
                 IsoMessage respMsg = new StandardIsoPacker().unpack(responseBytes);
                 String rc = respMsg.getField(39);
-                
+
                 // 8. Update DB
                 result.status = "00".equals(rc) ? "SUCCESS" : "FAIL";
                 result.responseCode = rc;
@@ -129,7 +140,7 @@ public class TransactionRepository {
         // TODO: Implement Real MAC Algorithm e.g. ANSI X9.19
         // For now, checks if DE 128 is in schema. If so, add placeholder.
         // We add hardcoded dummy MAC to prove architecture slot exists.
-        // msg.setField(128, "0000000000000000"); 
+        // msg.setField(128, "0000000000000000");
         // NOTE: Disabled by default to avoid failing on servers checking real MAC
     }
 
@@ -145,7 +156,7 @@ public class TransactionRepository {
         m.put("9C", "00");
         m.put("9F02", "000000000000");
         m.put("5F2A", "0704");
-        m.put("82", "1800"); 
+        m.put("82", "1800");
         m.put("9F1A", "0704");
         m.put("9F03", "000000000000");
         m.put("5F34", "01");

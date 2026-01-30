@@ -13,7 +13,7 @@
         android:gravity="center"
         android:orientation="vertical">
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="280dp"
             android:layout_height="280dp"
             android:layout_marginBottom="32dp"
@@ -30,7 +30,7 @@
                 android:padding="40dp"
                 android:src="@drawable/softpos" />
 
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
         <TextView
             android:id="@+id/tvWelcomeTitle"
@@ -66,7 +66,7 @@
         android:gravity="center"
         android:orientation="vertical">
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/btnLogin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -90,7 +90,7 @@
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
         <LinearLayout
             android:layout_width="wrap_content"

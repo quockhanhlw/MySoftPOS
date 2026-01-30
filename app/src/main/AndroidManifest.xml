@@ -19,7 +19,7 @@
         android:theme="@style/Theme.MySoftPOS">
 
         <activity
-            android:name=".WelcomeActivity"
+            android:name=".ui.welcome.WelcomeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,54 +27,24 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".LoginActivity"
-            android:exported="false" />
+        <activity android:name=".ui.auth.LoginActivity" />
+        <activity android:name=".ui.auth.RegisterActivity" />
+        <activity android:name=".ui.auth.ForgotPasswordActivity" />
+        
+        <activity android:name=".ui.main.MainDashboardActivity" android:label="@string/dashboard_title" />
+        <activity android:name=".ui.main.SettingsActivity" android:label="@string/settings_title" />
+        
+        <activity android:name=".ui.txn.PurchaseAmountActivity" android:label="Purchase" />
+        <activity android:name=".ui.txn.PurchaseCardActivity" android:label="Card" />
+        <activity android:name=".ui.txn.TransactionResultActivity" android:label="Kết quả" />
+        <activity android:name=".ui.txn.PaymentSuccessActivity" android:label="Success" />
 
-        <activity
-            android:name=".ForgotPasswordActivity"
-            android:exported="false" />
+        <!-- CONFIGURATION ACTIVITIES -->
+        <activity android:name=".config.ConfigDashboardActivity" />
+        <activity android:name=".config.TransactionTypeListActivity" />
+        <activity android:name=".config.TransactionTypeEditorActivity" android:windowSoftInputMode="adjustResize"/>
 
-        <activity
-            android:name=".RegisterActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".SettingsActivity"
-            android:exported="false"
-            android:label="@string/settings_title" />
-
-        <activity
-            android:name=".MainDashboardActivity"
-            android:exported="false"
-            android:label="@string/dashboard_title" />
-
-        <activity
-            android:name=".PurchaseAmountActivity"
-            android:exported="false"
-            android:label="Purchase" />
-
-        <activity
-            android:name=".PurchaseCardActivity"
-            android:exported="false"
-            android:label="Card" />
-
-        <!-- Deleted IsoMessagePreviewActivity -->
-        <!-- Deleted HomeTabsActivity -->
-
-        <activity
-            android:name=".TransactionResultActivity"
-            android:exported="false"
-            android:label="Kết quả" />
-            
-        <activity
-            android:name=".PaymentSuccessActivity"
-            android:exported="false"
-            android:label="Success" />
-
-        <!-- ═══════════════════════════════════════════════════════════════════ -->
-        <!--                        TEST SUITE ACTIVITIES                         -->
-        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- TEST SUITE ACTIVITIES -->
         <activity
             android:name=".testsuite.SchemeSelectActivity"
             android:exported="true"
@@ -85,26 +55,12 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".testsuite.TestSuiteActivity"
-            android:exported="false"
-            android:label="Test Suite" />
-
-        <activity
-            android:name=".testsuite.RunnerActivity"
-            android:exported="false"
-            android:label="Test Runner" />
-
-        <activity
-            android:name=".testsuite.ChannelSelectActivity"
-            android:exported="false"
-            android:label="Channel Selection" />
-
-        <activity
-            android:name=".testsuite.TransactionSelectActivity"
-            android:exported="false"
-            android:label="Transaction Type" />
-
+        <activity android:name=".testsuite.TestSuiteActivity" android:label="Test Suite" />
+        <activity android:name=".testsuite.TestSuiteDetailActivity" />
+        <activity android:name=".testsuite.TestCaseEditorActivity" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".testsuite.RunnerActivity" android:label="Test Runner" />
+        <activity android:name=".testsuite.ChannelSelectActivity" android:label="Channel Selection" />
+        <activity android:name=".testsuite.TransactionSelectActivity" android:label="Transaction Type" />
     </application>
 
 </manifest>

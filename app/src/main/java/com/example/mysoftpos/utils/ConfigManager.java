@@ -2,46 +2,31 @@ package com.example.mysoftpos.utils;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.res.AssetManager;
 import org.json.JSONObject;
+
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 public class ConfigManager {
 
+    private static final String TAG = "ConfigManager";
     private static final String PREF_NAME = "softpos_config";
-    
-    // Keys match JSON keys for simplicity where possible, but mapped to Pref keys
     private static final String KEY_TRACE = "trace_number";
-    
-    private static final String KEY_MCC_18 = "mcc_18";
-    private static final String KEY_ACQ_32 = "acquirer_id_32";
-    private static final String KEY_FWD_33 = "forwarding_inst_33";
-    private static final String KEY_TID_41 = "terminal_id_41";
-    private static final String KEY_MID_42 = "merchant_id_42";
-    
-    // F43 Components
-    private static final String KEY_BANK_43 = "bank_name_43";
-    private static final String KEY_LOC_43 = "location_43";
-    private static final String KEY_COUNTRY_TEXT_43 = "country_text_43";
-    
-    private static final String KEY_CURRENCY_49 = "currency_code_49";
-    
-    private static final String KEY_IP = "server_ip";
-    private static final String KEY_PORT = "server_port";
 
     private final SharedPreferences prefs;
     private static ConfigManager instance;
 
-    // In-Memory Defaults from JSON
-    private String defMcc, defAcq, defFwd, defTid, defMid, defBank, defLoc, defCountryTxt, defCurr;
+    // Configuration Values (Loaded from JSON)
+    private String mcc18, acqId32, fwdInst33, tid41, mid42, curr49;
+    private String bankName, location, countryCode;
+    private String serverIp, serverId;
+    private int serverPort;
 
     private ConfigManager(Context context) {
         this.prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        loadDefaultConfig(context);
+        loadConfig(context);
     }
 
     public static synchronized ConfigManager getInstance(Context context) {
@@ -51,37 +36,54 @@ public class ConfigManager {
         return instance;
     }
 
-    private void loadDefaultConfig(Context context) {
-        try (InputStream is = context.getAssets().open("pos_config.json")) {
+    private void loadConfig(Context context) {
+        // 1. Load POS Config (App Params) from pos_config.json
+        try {
+            JSONObject pos = loadJsonFromAsset(context, "pos_config.json");
+
+            this.mcc18 = pos.optString("merchant_type_18", "");
+            this.acqId32 = pos.optString("acquirer_id_32", "");
+            this.fwdInst33 = pos.optString("forwarding_inst_33", "");
+            this.tid41 = pos.optString("terminal_id_41", "");
+            this.mid42 = pos.optString("merchant_id_42", "");
+            this.curr49 = pos.optString("currency_code_49", "");
+
+            JSONObject f43 = pos.optJSONObject("merchant_name_43");
+            if (f43 != null) {
+                this.bankName = f43.optString("bank_name", "");
+                this.location = f43.optString("location", "");
+                this.countryCode = f43.optString("country_code", "");
+            } else {
+                this.bankName = "";
+                this.location = "";
+                this.countryCode = "";
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to load pos_config.json", e);
+        }
+
+        // 2. Load Server Config (Network Params) from server_config.json
+        try {
+            JSONObject server = loadJsonFromAsset(context, "server_config.json");
+
+            this.serverIp = server.optString("server_ip", "");
+            this.serverPort = server.optInt("server_port", 8583);
+            this.serverId = server.optString("server_id", "");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to load server_config.json", e);
+        }
+    }
+
+    /**
+     * Helper to read a JSON file from Assets.
+     */
+    private JSONObject loadJsonFromAsset(Context context, String filename) throws Exception {
+        try (InputStream is = context.getAssets().open(filename)) {
             int size = is.available();
             byte[] buffer = new byte[size];
             is.read(buffer);
             String json = new String(buffer, StandardCharsets.UTF_8);
-            JSONObject obj = new JSONObject(json);
-
-            defMcc = obj.optString("merchant_type_18", "5411");
-            defAcq = obj.optString("acquirer_id_32", "970406");
-            defFwd = obj.optString("forwarding_inst_33", "970406");
-            defTid = obj.optString("terminal_id_41", "AUTO0001");
-            defMid = obj.optString("merchant_id_42", "MYSOFTPOSSHOP01");
-            
-            JSONObject f43 = obj.optJSONObject("merchant_name_43");
-            if (f43 != null) {
-                defBank = f43.optString("bank_name", "MYSOFTPOS BANK");
-                defLoc = f43.optString("location", "HA NOI");
-                defCountryTxt = f43.optString("country_code", "VNM");
-            } else {
-                 defBank = "MYSOFTPOS BANK"; defLoc = "HA NOI"; defCountryTxt = "VNM";
-            }
-            
-            defCurr = obj.optString("currency_code_49", "704");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            // Fallbacks
-            defMcc="5411"; defAcq="970406"; defFwd="970406"; defTid="AUTO0001"; 
-            defMid="MYSOFTPOSSHOP01"; defBank="MYSOFTPOS BANK"; defLoc="HA NOI"; 
-            defCountryTxt="VNM"; defCurr="704";
+            return new JSONObject(json);
         }
     }
 
@@ -91,26 +93,49 @@ public class ConfigManager {
         prefs.edit().putInt(KEY_TRACE, next).apply();
         return String.format("%06d", trace);
     }
-    
-    // FORCE CORRECT IP - Bypass SharedPreferences cache
-    public String getServerIp() { return "10.145.52.154"; } 
-    public int getServerPort() { return 8583; } // prefs.getInt(KEY_PORT, 8583);
-    public String getServerId() { return "01"; } // Not in JSON mostly, keeps logic simple
 
-    // Supported Fields - FORCE DEFAULTS (JSON) TO BYPASS STALE PREFS
-    public String getMcc18() { return defMcc; }
-    public String getAcquirerId32() { return defAcq; }
-    public String getForwardingInst33() { return defFwd; }
-    public String getTerminalId() { return defTid; }
-    public String getMerchantId() { return defMid; }
-    public String getCurrencyCode49() { return defCurr; }
+    // --- Getters ---
+
+    public String getServerIp() {
+        return serverIp;
+    }
+
+    public int getServerPort() {
+        return serverPort;
+    }
+
+    public String getServerId() {
+        return serverId;
+    }
+
+    public String getMcc18() {
+        return mcc18;
+    }
+
+    public String getAcquirerId32() {
+        return acqId32;
+    }
+
+    public String getForwardingInst33() {
+        return fwdInst33;
+    }
+
+    public String getTerminalId() {
+        return tid41;
+    }
+
+    public String getMerchantId() {
+        return mid42;
+    }
+
+    public String getCurrencyCode49() {
+        return curr49;
+    }
 
     public String getMerchantName() {
-         String bank = defBank;
-         String loc = defLoc;
-         String ctry = defCountryTxt;
-         
-         // Format strict 40 bytes
-         return String.format("%-22s %-13s %s", bank, loc, ctry); 
+        if (bankName == null)
+            return "Unknown";
+        // Format strict 40 bytes
+        return String.format("%-22s %-13s %s", bankName, location, countryCode);
     }
 }
