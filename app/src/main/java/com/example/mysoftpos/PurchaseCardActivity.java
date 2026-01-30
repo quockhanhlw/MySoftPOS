@@ -22,7 +22,7 @@ import com.example.mysoftpos.data.local.TransactionEntity;
 import com.example.mysoftpos.data.remote.IsoNetworkClient;
 import com.example.mysoftpos.domain.model.CardInputData;
 import com.example.mysoftpos.domain.usecase.ReadCardDataUseCase;
-import com.example.mysoftpos.iso8583.Iso8583Builder;
+import com.example.mysoftpos.iso8583.IsoRequestBuilder; // Corrected Import
 import com.example.mysoftpos.iso8583.IsoField;
 import com.example.mysoftpos.iso8583.IsoMessage;
 import com.example.mysoftpos.iso8583.TransactionContext;
@@ -95,10 +95,6 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
         // --- SELECTION LOGIC ---
         findViewById(R.id.cardOptionNfc).setOnClickListener(v -> showNfcMode());
         findViewById(R.id.cardOptionManual).setOnClickListener(v -> showManualMode());
-
-        // --- BACK NAVIGATION LOGIC ---
-        // --- BACK NAVIGATION LOGIC ---
-        // Handled by generic back button (OnBackPressedCallback)
 
         // --- MANUAL PROCESSING LOGIC ---
         findViewById(R.id.btnProcess).setOnClickListener(v -> {
@@ -224,9 +220,6 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
                 transceiver.close();
 
                 // --- MOCK TEST FORCE (User Request) ---
-                // Track 2: Shortened to 37 chars (max per server)
-                // Orig: 9704189991010867647=3101601000000001230 (39)
-                // New:  9704189991010867647=31016010000000123   (37)
                 String mockTrk2 = "9704189991010867647=31016010000000123";
                 String mockPan = "9704189991010867647";
                 String mockExp = "3101"; // YYMM from Track 2 (3101)
@@ -302,10 +295,10 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
                 ctx.ip = configManager.getServerIp();
                 ctx.port = configManager.getServerPort();
 
-                // Build Request (Builder enforces strict rules)
+                // Build Request (Corrected Builder Usage)
                 IsoMessage req = (txnType == TxnType.BALANCE_INQUIRY)
-                        ? Iso8583Builder.buildBalanceMsg(ctx, card)
-                        : Iso8583Builder.buildPurchaseMsg(ctx, card);
+                        ? IsoRequestBuilder.buildBalanceInquiry(ctx, card)
+                        : IsoRequestBuilder.buildPurchase(ctx, card);
                 
                 // Pack (StandardIsoPacker handling 128 fields)
                 byte[] packed = StandardIsoPacker.pack(req);
@@ -374,7 +367,8 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
             
             // 1. Build Reversal Advice (0420)
             String newTrace = configManager.getAndIncrementTrace();
-            IsoMessage rev = Iso8583Builder.buildReversalAdvice(ctx, card, newTrace);
+            ctx.stan11 = newTrace; // Update Context with new Trace
+            IsoMessage rev = IsoRequestBuilder.buildReversalAdvice(ctx, card);
             byte[] packedRev = StandardIsoPacker.pack(rev);
             
             // LOG REVERSAL REQUEST

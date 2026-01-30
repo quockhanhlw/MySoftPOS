@@ -1,17 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
-
-    <!-- Night theme: keep same brand primaries but dark status bar -->
-    <style name="Theme.MySoftPOS" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+<resources>
+    <style name="Theme.MySoftPOS" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Colors (Inherits from colors-night.xml via semantic names) -->
         <item name="colorPrimary">@color/primary</item>
-        <item name="colorPrimaryVariant">@color/primary_dark</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSecondary">@color/primary_light</item>
-        <item name="colorSecondaryVariant">@color/primary_dark</item>
-        <item name="colorOnSecondary">@color/white</item>
-        <item name="android:statusBarColor">@color/black</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorPrimaryContainer">@color/primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/on_primary_container</item>
+
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorOnSecondary">@color/on_secondary</item>
+        
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        <item name="android:colorBackground">@color/background</item>
+        
+        <item name="colorError">@color/error</item>
+        
+        <!-- Status Bar: Apps in Dark Mode should have white text (LightStatusBar = false) -->
+        <item name="android:statusBarColor">@color/background</item>
         <item name="android:windowLightStatusBar">false</item>
+        
+        <!-- Typography -->
+         <item name="android:fontFamily">sans-serif</item>
     </style>
-
 </resources>
-

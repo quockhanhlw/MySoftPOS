@@ -43,4 +43,9 @@ public class TestCase {
     public String getDisplayName() {
         return channel + " - " + name;
     }
+
+    @Override
+    public String toString() {
+        return getDisplayName();
+    }
 }

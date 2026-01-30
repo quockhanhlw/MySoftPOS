@@ -92,10 +92,9 @@ public class SchemeSelectActivity extends AppCompatActivity {
         
         private int getSchemeLogoRes(String scheme) {
             switch (scheme.toUpperCase()) {
-                case "NAPAS": return R.drawable.ic_nfc;
-                case "VISA": return R.drawable.ic_nfc;
-                case "MASTERCARD": return R.drawable.ic_nfc;
-                case "JCB": return R.drawable.ic_nfc;
+                case "NAPAS": return R.drawable.logo_napas;
+                case "VISA": return R.drawable.logo_visa;
+                case "MASTERCARD": return R.drawable.logo_mastercard;
                 default: return R.drawable.ic_nfc;
             }
         }

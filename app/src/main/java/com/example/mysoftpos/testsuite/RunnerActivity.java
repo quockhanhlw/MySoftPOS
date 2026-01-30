@@ -1,115 +1,185 @@
 package com.example.mysoftpos.testsuite;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
-import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.mysoftpos.data.local.AppDatabase;
-import com.example.mysoftpos.data.remote.IsoNetworkClient;
-import com.example.mysoftpos.iso8583.IsoMessage;
-import com.example.mysoftpos.iso8583.SmartIsoBuilder;
-import com.example.mysoftpos.iso8583.TransactionContext;
-import com.example.mysoftpos.testsuite.data.TestResultDao;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.content.ContextCompat;
+import androidx.lifecycle.ViewModelProvider;
+
+import com.example.mysoftpos.R;
 import com.example.mysoftpos.testsuite.model.CardProfile;
 import com.example.mysoftpos.testsuite.model.TestCase;
 import com.example.mysoftpos.testsuite.model.TestResult;
-import com.example.mysoftpos.utils.ConfigManager;
-import com.example.mysoftpos.utils.StandardIsoPacker;
+import com.example.mysoftpos.testsuite.viewmodel.RunnerViewModel;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.textfield.TextInputEditText;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.List;
 
 /**
- * REFACTORED RUNNER ACTIVITY
- * Uses SmartIsoBuilder and Dynamic Templates.
- * No hardcoded field logic here.
+ * PRODUCTION-GRADE RUNNER VIEW.
+ * - MVVM Pattern (Observes ViewModel).
+ * - Passive View (No Business Logic).
+ * - SOLID Compliant.
  */
 public class RunnerActivity extends AppCompatActivity {
 
-    private ConfigManager config;
-    private TestResultDao testResultDao;
-    private ExecutorService executor;
-    private SmartIsoBuilder isoBuilder;
+    private static final String PREF_NAME = "app_settings";
+    private static final String KEY_THEME = "theme_mode";
 
-    // ... UI declarations omitted for brevity (same as TestRunnerActivity) ...
+    private RunnerViewModel viewModel;
+
+    // UI Components
+    private AutoCompleteTextView actvTestCase, actvCardProfile;
+    private TextInputEditText etAmount;
+    private MaterialButton btnRun;
+    private ImageButton btnThemeSwitch;
+    private MaterialCardView cvResult;
+    private View layoutLoading;
+    
+    // Result Views
+    private TextView tvResultTitle, tvRc, tvRrn;
+    private ImageView ivResultIcon;
+
+    // Selection State
+    private TestCase selectedTestCase;
+    private CardProfile selectedCard;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        applySavedTheme();
         super.onCreate(savedInstanceState);
-        // setContentView(...) // Use existing layout
+        setContentView(R.layout.activity_runner);
+
+        // 1. Initialize ViewModel
+        viewModel = new ViewModelProvider(this).get(RunnerViewModel.class);
+
+        // 2. Setup UI
+        initViews();
+        setupDropdowns();
+        setupListeners();
         
-        config = ConfigManager.getInstance(this);
-        testResultDao = AppDatabase.getInstance(this).testResultDao();
-        executor = Executors.newSingleThreadExecutor();
-        isoBuilder = new SmartIsoBuilder(this);
-        
-        // ... initViews() ...
+        // 3. Observe State
+        observeViewModel();
+    }
+    
+    private void initViews() {
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
+        if (toolbar != null) toolbar.setNavigationOnClickListener(v -> finish());
+
+        actvTestCase = findViewById(R.id.actvTestCase);
+        actvCardProfile = findViewById(R.id.actvCardProfile);
+        etAmount = findViewById(R.id.etAmount);
+        btnRun = findViewById(R.id.btnRun);
+        btnThemeSwitch = findViewById(R.id.btnThemeSwitch);
+        cvResult = findViewById(R.id.cvResult);
+        tvResultTitle = findViewById(R.id.tvResultTitle);
+        tvRc = findViewById(R.id.tvRc);
+        tvRrn = findViewById(R.id.tvRrn);
+        ivResultIcon = findViewById(R.id.ivResultIcon);
+        layoutLoading = findViewById(R.id.layoutLoading);
     }
 
-    private void runTest(TestCase testCase, CardProfile card, String amount) {
-        // 1. Generate Transaction Data
-        String stan = config.getAndIncrementTrace();
+    private void setupDropdowns() {
+        // Load Data - Using Custom Layout for Stability
+        List<TestCase> testCases = TestDataProvider.getPosTestCases(); 
+        testCases.addAll(TestDataProvider.getAtmTestCases());
+        testCases.addAll(TestDataProvider.getQrcTestCases());
+
+        ArrayAdapter<TestCase> caseAdapter = new ArrayAdapter<>(this, R.layout.item_dropdown_testcase, testCases);
+        if (actvTestCase != null) actvTestCase.setAdapter(caseAdapter);
+
+        // Cards
+        List<CardProfile> testCards = TestDataProvider.getTestCards();
+        ArrayAdapter<CardProfile> cardAdapter = new ArrayAdapter<>(this, R.layout.item_dropdown_testcase, testCards);
+        if (actvCardProfile != null) actvCardProfile.setAdapter(cardAdapter);
+    }
+
+    private void setupListeners() {
+        if (actvTestCase != null) {
+            actvTestCase.setOnItemClickListener((parent, view, position, id) -> selectedTestCase = (TestCase) parent.getItemAtPosition(position));
+        }
+        if (actvCardProfile != null) {
+            actvCardProfile.setOnItemClickListener((parent, view, position, id) -> selectedCard = (CardProfile) parent.getItemAtPosition(position));
+        }
         
-        executor.execute(() -> {
-             try {
-                 // 2. Prepare Input Map (User Inputs)
-                 Map<String, Object> inputs = new HashMap<>();
-                 inputs.put(SmartIsoBuilder.KEY_PAN, card.getPan());
-                 inputs.put(SmartIsoBuilder.KEY_EXPIRY, card.getExpiryDate());
-                 inputs.put(SmartIsoBuilder.KEY_TRACK2, card.getTrack2());
-                 inputs.put(SmartIsoBuilder.KEY_AMOUNT, amount);
-                 inputs.put(SmartIsoBuilder.KEY_STAN, stan);
-                 inputs.put(SmartIsoBuilder.KEY_POS_MODE, testCase.getPosEntryMode());
-                 
-                 // Inject Mock EMV if needed (Logic Logic moved to Builder or here? 
-                 // Builder handles logic if tags provided. We provide tags.)
-                 if (testCase.getPosEntryMode().startsWith("05") || testCase.getPosEntryMode().startsWith("07")) {
-                      inputs.put(SmartIsoBuilder.KEY_EMV_TAGS, getMockEmvTags());
-                 }
+        if (btnRun != null) btnRun.setOnClickListener(v -> handleRunClick());
+        if (btnThemeSwitch != null) btnThemeSwitch.setOnClickListener(v -> toggleTheme());
+    }
 
-                 // 3. Build Message via Smart Builder
-                 // Single Call - No manual setField()
-                 IsoMessage msg = isoBuilder.build("0200", inputs);
-                 
-                 byte[] packed = StandardIsoPacker.pack(msg);
-                 
-                 // 4. DB Insert Pending
-                 TestResult result = createPendingResult(testCase, card, stan, packed);
-                 long id = testResultDao.insert(result);
-                 result.id = id;
-
-                 // 5. Send Network
-                 IsoNetworkClient client = new IsoNetworkClient(config.getServerIp(), config.getServerPort());
-                 byte[] respBytes = client.sendAndReceive(packed);
-                 
-                 // 6. Valid response
-                 result.status = "SUCCESS";
-                 result.responseHex = StandardIsoPacker.bytesToHex(respBytes);
-                 testResultDao.update(result);
-                 
-                 // UI Update logic...
-                 
-             } catch (Exception e) {
-                 // Error handling logic...
-             }
+    private void observeViewModel() {
+        viewModel.getState().observe(this, state -> {
+            if (state instanceof RunnerViewModel.RunnerState.Loading) {
+                showLoading(true);
+            } else if (state instanceof RunnerViewModel.RunnerState.Success) {
+                showLoading(false);
+                showResult(((RunnerViewModel.RunnerState.Success) state).result);
+            } else if (state instanceof RunnerViewModel.RunnerState.Error) {
+                showLoading(false);
+                Toast.makeText(this, "Error: " + ((RunnerViewModel.RunnerState.Error) state).message, Toast.LENGTH_LONG).show();
+            }
         });
     }
 
-    private TestResult createPendingResult(TestCase tc, CardProfile cp, String stan, byte[] packed) {
-        TestResult r = new TestResult();
-        r.testCaseId = tc.getId();
-        r.stan = stan;
-        r.requestHex = StandardIsoPacker.bytesToHex(packed);
-        r.status = "PENDING";
-        return r;
+    private void handleRunClick() {
+        if (selectedTestCase == null || selectedCard == null) {
+            Toast.makeText(this, "Please select Test Case and Card", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String amount = etAmount.getText() != null ? etAmount.getText().toString() : "0";
+        // Delegate to ViewModel
+        viewModel.runTransaction(selectedTestCase, selectedCard, amount);
+    }
+
+    private void showResult(TestResult result) {
+        if (cvResult == null) return;
+        cvResult.setVisibility(View.VISIBLE);
+        
+        if (tvRc != null) tvRc.setText(result.responseCode);
+        if (tvRrn != null) tvRrn.setText(result.rrn);
+        
+        boolean success = "SUCCESS".equals(result.status);
+        if (tvResultTitle != null) {
+            tvResultTitle.setText(success ? "APPROVED" : "DECLINED (" + result.responseCode + ")");
+            int color = success ? ContextCompat.getColor(this, R.color.status_success) 
+                                : ContextCompat.getColor(this, R.color.status_error);
+            tvResultTitle.setTextColor(color);
+            if (ivResultIcon != null) {
+                ivResultIcon.setColorFilter(color);
+                ivResultIcon.setImageResource(success ? R.drawable.ic_check_circle_24 : R.drawable.ic_warning_24);
+            }
+        }
+    }
+
+    private void showLoading(boolean show) {
+        if (layoutLoading != null) layoutLoading.setVisibility(show ? View.VISIBLE : View.GONE);
+        if (btnRun != null) btnRun.setEnabled(!show);
     }
     
-    private Map<String, String> getMockEmvTags() {
-        Map<String, String> m = new HashMap<>();
-         m.put("9F26", "E293520E69D8C61D");
-         // ... populate others ...
-         return m;
+    private void applySavedTheme() {
+        SharedPreferences prefs = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+        int mode = prefs.getInt(KEY_THEME, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        if (AppCompatDelegate.getDefaultNightMode() != mode) {
+            AppCompatDelegate.setDefaultNightMode(mode);
+        }
+    }
+
+    private void toggleTheme() {
+        SharedPreferences prefs = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+        int currentMode = AppCompatDelegate.getDefaultNightMode();
+        int newMode = (currentMode == AppCompatDelegate.MODE_NIGHT_YES) ? 
+                      AppCompatDelegate.MODE_NIGHT_NO : AppCompatDelegate.MODE_NIGHT_YES;
+        prefs.edit().putInt(KEY_THEME, newMode).apply();
+        AppCompatDelegate.setDefaultNightMode(newMode);
     }
 }

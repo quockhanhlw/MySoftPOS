@@ -72,6 +72,62 @@ public class IsoUtils {
     }
     
     /**
+     * Format STAN (DE 11) to 6 digits, zero-padded.
+     */
+    public static String formatStan6(String s) {
+        return padLeftZero(s != null ? s.trim() : "000000", 6);
+    }
+    
+    /**
+     * Format DE 41 (Terminal ID) to 8 chars, space-padded right.
+     */
+    public static String formatTid8(String s) {
+        if (s == null) s = "AUTO0001";
+        if (s.length() > 8) return s.substring(0, 8);
+        return String.format(Locale.US, "%-8s", s);
+    }
+    
+    /**
+     * Format DE 42 (Merchant ID) to 15 chars, space-padded right.
+     */
+    public static String formatMid15(String s) {
+        if (s == null) s = "MYSOFTPOSSHOP01";
+        if (s.length() > 15) return s.substring(0, 15);
+        return String.format(Locale.US, "%-15s", s);
+    }
+
+    /**
+     * Format Amount (DE 4) to 12 digits.
+     * Logic: Val * 100 -> Pad left with zeros.
+     */
+    public static String formatAmount12(String s) {
+         if (s == null) return "000000000000";
+         try {
+             String clean = s.replaceAll("[^0-9]", "");
+             long val = Long.parseLong(clean);
+             // User Request: "DE 4 phải là thêm 2 số 00 ở cuối, còn lại đệm số 0 ở đầu"
+             // Example: Input "50000" -> val=50000 -> *100 = 5000000 -> Pad 12 = "000005000000"
+             val = val * 100;
+             return String.format(Locale.US, "%012d", val);
+         } catch(Exception e) { return "000000000000"; }
+    }
+    
+    /**
+     * Build EMV String from Map for DE 55.
+     */
+    public static String buildEmvString(java.util.Map<String, String> tags) {
+        if (tags == null || tags.isEmpty()) return null;
+        StringBuilder sb = new StringBuilder();
+        for (java.util.Map.Entry<String, String> e : tags.entrySet()) {
+            sb.append(e.getKey());
+            int len = e.getValue().length() / 2;
+            sb.append(String.format("%02X", len));
+            sb.append(e.getValue());
+        }
+        return sb.toString();
+    }
+
+    /**
      * Pad Left with Zeros (for numeric fields like DE 4, 11)
      */
     public static String padLeftZero(String val, int length) {

@@ -179,7 +179,7 @@ public class TestSuiteActivity extends AppCompatActivity {
             });
             
             holder.cardTestCase.setOnClickListener(v -> {
-                Intent intent = new Intent(TestSuiteActivity.this, TestRunnerActivity.class);
+                Intent intent = new Intent(TestSuiteActivity.this, RunnerActivity.class);
                 intent.putExtra("TEST_CASE_ID", tc.getId());
                 intent.putExtra("SCHEME", scheme);
                 startActivity(intent);

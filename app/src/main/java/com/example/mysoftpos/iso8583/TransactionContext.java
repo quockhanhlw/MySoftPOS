@@ -68,25 +68,9 @@ public class TransactionContext {
         android.util.Log.d("ISO_DEBUG", "GenDateTime: Now=" + now + " DE7=" + transmissionDt7 + " DE12=" + localTime12 + " DE13=" + localDate13);
     }
 
+    // Static formatting methods moved to IsoUtils.java - RESTORED FOR COMPATIBILITY
     public static String calculateRrn(String serverId, String stan) {
-        if (stan == null) stan = "000000";
-        if (serverId == null) serverId = "00";
-        // Ensure Server ID is 2 chars padding? Or user specified format just says "Server_ID".
-        // Usually RRN is 12 digits. 1(Y) + 3(J) + 6(S) = 10. So ServerID likely 2 chars.
-        if (serverId.length() > 2) serverId = serverId.substring(0, 2);
-        while (serverId.length() < 2) serverId = "0" + serverId;
-        
-        Date now = new Date();
-        SimpleDateFormat yearFmt = new SimpleDateFormat("y", Locale.US); // e.g., 2026
-        SimpleDateFormat dayFmt = new SimpleDateFormat("D", Locale.US);  // e.g., 23
-        
-        String yearStr = yearFmt.format(now);
-        String lastDigitYear = yearStr.substring(yearStr.length() - 1);
-        
-        int dayOfYear = Integer.parseInt(dayFmt.format(now));
-        String julianDate = String.format(Locale.US, "%03d", dayOfYear);
-        
-        return lastDigitYear + julianDate + serverId + stan; 
+        return IsoUtils.padLeftZero(stan, 12); 
     }
     
     public static String generateRrn(String stan) {
@@ -94,25 +78,15 @@ public class TransactionContext {
     }
 
     public static String formatStan6(String s) {
-        if (s == null) return "000000";
-        try {
-            int val = Integer.parseInt(s.trim());
-            return String.format(Locale.US, "%06d", val);
-        } catch (Exception e) { return "000000"; }
+        return IsoUtils.formatStan6(s);
     }
     
     public static String formatTid8(String s) {
-        if (s == null) s = "";
-        if (s.length() > 8) return s.substring(0, 8);
-        while (s.length() < 8) s += " ";
-        return s;
+        return IsoUtils.formatTid8(s);
     }
     
     public static String formatMid15(String s) {
-        if (s == null) s = "";
-        if (s.length() > 15) return s.substring(0, 15);
-        while (s.length() < 15) s += " ";
-        return s;
+        return IsoUtils.formatMid15(s);
     }
     
     public static String defaultCurrencyVND() {
@@ -120,15 +94,7 @@ public class TransactionContext {
     }
     
     public static String formatAmount12(String s) {
-         if (s == null) return "000000000000";
-         try {
-             String clean = s.replaceAll("[^0-9]", "");
-             long val = Long.parseLong(clean);
-             // User Request: "DE 4 phải là thêm 2 số 00 ở cuối, còn lại đệm số 0 ở đầu"
-             // Example: Input "50000" -> val=50000 -> *100 = 5000000 -> Pad 12 = "000005000000"
-             val = val * 100;
-             return String.format(Locale.US, "%012d", val);
-         } catch(Exception e) { return "000000000000"; }
+         return IsoUtils.formatAmount12(s);
     }
     
     public static String buildLocalDate13Now() {

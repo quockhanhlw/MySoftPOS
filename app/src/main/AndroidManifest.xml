@@ -91,7 +91,7 @@
             android:label="Test Suite" />
 
         <activity
-            android:name=".testsuite.TestRunnerActivity"
+            android:name=".testsuite.RunnerActivity"
             android:exported="false"
             android:label="Test Runner" />
 

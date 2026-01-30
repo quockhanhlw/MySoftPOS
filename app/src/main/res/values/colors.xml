@@ -1,101 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <!--                    MYSOFTPOS PREMIUM DARK THEME                     -->
-    <!--                       Futuristic Fintech Vibe                       -->
+    <!--                    MYSOFTPOS PREMIUM LIGHT THEME                    -->
+    <!--                       Clean Fintech Aesthetics                      -->
     <!-- ═══════════════════════════════════════════════════════════════════ -->
 
-    <!-- Base Dark Backgrounds -->
-    <color name="background_primary">#0F172A</color>
-    <color name="background_deep">#000000</color>
-    <color name="background_surface">#1E293B</color>
-    <color name="background_elevated">#334155</color>
+    <!-- Base Light Backgrounds -->
+    <color name="background_primary">#F8FAFC</color>  <!-- Slate 50 -->
+    <color name="background_deep">#FFFFFF</color>     <!-- White -->
+    <color name="background_surface">#FFFFFF</color>  <!-- White -->
+    <color name="background_elevated">#F1F5F9</color> <!-- Slate 100 -->
 
-    <!-- Primary Gradient (Electric Blue → Cyan) -->
+    <!-- Primary Brand Colors -->
+    <color name="primary">#2563EB</color>             <!-- Blue 600 -->
+    <color name="on_primary">#FFFFFF</color>
+    <color name="primary_container">#DBEAFE</color>   <!-- Blue 100 -->
+    <color name="on_primary_container">#1E3A8A</color><!-- Blue 900 -->
+
+    <color name="secondary">#475569</color>           <!-- Slate 600 -->
+    <color name="on_secondary">#FFFFFF</color>
+    
+    <color name="background">#F8FAFC</color>
+    <color name="on_background">#0F172A</color>       <!-- Slate 900 -->
+
+    <color name="surface">#FFFFFF</color>
+    <color name="on_surface">#0F172A</color>
+    <color name="surface_variant">#F1F5F9</color>
+    <color name="on_surface_variant">#475569</color>
+
+    <color name="error">#EF4444</color>
+    <color name="on_error">#FFFFFF</color>
+
+    <!-- Gradients & Accents -->
     <color name="gradient_start">#3B82F6</color>
     <color name="gradient_end">#06B6D4</color>
     <color name="gradient_mid">#0EA5E9</color>
 
-    <!-- Accent Colors -->
-    <color name="accent_cyan">#06B6D4</color>
-    <color name="accent_blue">#3B82F6</color>
-    <color name="accent_purple">#8B5CF6</color>
-    <color name="accent_pink">#EC4899</color>
+    <color name="accent_cyan">#0891B2</color>         <!-- Cyan 600 (Darker for Light Mode) -->
+    <color name="accent_blue">#2563EB</color>         <!-- Blue 600 -->
+    <color name="accent_purple">#7C3AED</color>       <!-- Violet 600 -->
+    <color name="accent_pink">#DB2777</color>         <!-- Pink 600 -->
 
     <!-- Status Colors -->
-    <color name="status_success">#10B981</color>
-    <color name="status_warning">#F59E0B</color>
-    <color name="status_error">#EF4444</color>
-    <color name="status_online">#22C55E</color>
-    <color name="status_offline">#EF4444</color>
+    <color name="status_success">#059669</color>      <!-- Emerald 600 -->
+    <color name="status_warning">#D97706</color>      <!-- Amber 600 -->
+    <color name="status_error">#DC2626</color>        <!-- Red 600 -->
+    <color name="status_online">#16A34A</color>
+    <color name="status_offline">#DC2626</color>
 
-    <!-- Text Colors -->
-    <color name="text_primary">#F8FAFC</color>
-    <color name="text_secondary">#94A3B8</color>
-    <color name="text_muted">#64748B</color>
-    <color name="text_accent">#38BDF8</color>
-    <color name="text_hint">#64748B</color>
+    <!-- Text Colors (High Contrast) -->
+    <color name="text_primary">#0F172A</color>        <!-- Slate 900 -->
+    <color name="text_secondary">#475569</color>      <!-- Slate 600 -->
+    <color name="text_muted">#64748B</color>          <!-- Slate 500 -->
+    <color name="text_accent">#0284C7</color>         <!-- Sky 600 -->
+    <color name="text_hint">#94A3B8</color>           <!-- Slate 400 -->
+    
+    <!-- Legacy Support -->
+    <color name="text_field_background">#FFFFFF</color>
+    <color name="text_field_background_error">#FEF2F2</color>
+    <color name="welcome_text_primary">#0F172A</color>
+    <color name="welcome_text_secondary">#475569</color>
+    <color name="welcome_button">#2563EB</color>
+    <color name="welcome_link">#0284C7</color>
 
-    <!-- Glassmorphism -->
-    <color name="glass_background">#1A1E293B</color>
-    <color name="glass_stroke">#1AFFFFFF</color>
-    <color name="glass_stroke_light">#33FFFFFF</color>
+    <!-- UI Elements -->
+    <color name="glass_background">#CCFFFFFF</color>
+    <color name="glass_stroke">#E2E8F0</color>
+    <color name="glass_stroke_light">#CBD5E1</color>
+    <color name="divider">#E2E8F0</color>
+    <color name="divider_light">#F1F5F9</color>
+    
+    <color name="glow_primary">#3B82F6</color>
+    <color name="glow_secondary">#06B6D4</color>
+    <color name="ripple_light">#1F000000</color>
+    <color name="ripple_dark">#1F000000</color>
 
-    <!-- Hacker Console -->
-    <color name="console_background">#0D0D0D</color>
+    <!-- Compat -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="btn_primary">#2563EB</color>
+    <color name="tertiary">#0891B2</color>
+    <color name="color_primary">#2563EB</color>
+    <color name="colorPrimary">#2563EB</color>
+    <color name="colorPrimaryDark">#1E3A8A</color>
+    <color name="colorAccent">#0EA5E9</color>
+    <color name="card_background">#FFFFFF</color>
+    <color name="outline_light">#CBD5E1</color>
+    <color name="arrow_color">#0F172A</color>
+    
+    <!-- Console (Keep Dark for Contrast if used, or flip) -->
+    <color name="console_background">#1E293B</color>
     <color name="console_text">#22C55E</color>
     <color name="console_text_dim">#166534</color>
     <color name="console_cursor">#22C55E</color>
 
-    <!-- Card Slot Glow -->
-    <color name="glow_primary">#3B82F6</color>
-    <color name="glow_secondary">#06B6D4</color>
-
-    <!-- Ripple -->
-    <color name="ripple_light">#33FFFFFF</color>
-    <color name="ripple_dark">#1A000000</color>
-
-    <!-- Dividers -->
-    <color name="divider">#1E293B</color>
-    <color name="divider_light">#334155</color>
-
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <!--                    MATERIAL THEME COLORS (Required)                  -->
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <color name="primary">#3B82F6</color>
-    <color name="primary_dark">#1E3A8A</color>
-    <color name="primary_variant">#2563EB</color>
-    <color name="on_primary">#FFFFFF</color>
-    
-    <color name="secondary">#06B6D4</color>
-    <color name="secondary_variant">#0891B2</color>
-    <color name="on_secondary">#000000</color>
-    
-    <color name="background">#0F172A</color>
-    <color name="on_background">#F8FAFC</color>
-    
-    <color name="surface">#1E293B</color>
-    <color name="on_surface">#F8FAFC</color>
-    
-    <color name="error">#EF4444</color>
-    <color name="on_error">#FFFFFF</color>
-    
-    <!-- Legacy Colors for Compatibility -->
-    <color name="colorPrimary">#3B82F6</color>
-    <color name="colorPrimaryDark">#1E3A8A</color>
-    <color name="colorAccent">#06B6D4</color>
-    <color name="black">#000000</color>
-    <color name="white">#FFFFFF</color>
-    
-    <!-- Additional Colors for Existing Layouts -->
-    <color name="primary_light">#60A5FA</color>
-    <color name="card_background">#1E293B</color>
-    <color name="welcome_text_primary">#F8FAFC</color>
-    <color name="welcome_text_secondary">#94A3B8</color>
-    <color name="welcome_button">#3B82F6</color>
-    <color name="welcome_link">#06B6D4</color>
-    <color name="btn_primary">#3B82F6</color>
-    <color name="btn_primary_dark">#2563EB</color>
-    <color name="outline_light">#334155</color>
-    <color name="tertiary">#8B5CF6</color>
 </resources>

@@ -10,50 +10,50 @@ import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
+/**
+ * Low-level TCP Client for ISO 8583 communication.
+ * Responsibility: Send bytes -> Receive bytes. 
+ * Does NOT know about ISO parsing.
+ */
 public class IsoNetworkClient {
 
     private static final String TAG = "IsoNetworkClient";
     private static final int DEFAULT_TIMEOUT_MS = 30000;
     
-    // Hardcoded Configuration (Zero-Config)
-    private static final String DEFAULT_SERVER_IP = "10.145.52.116";//10.145.48.70/8386
-    private static final int DEFAULT_SERVER_PORT = 8583;
-    
     private final String host;
     private final int port;
     private int timeoutMs = DEFAULT_TIMEOUT_MS;
 
-    public IsoNetworkClient() {
-        this.host = DEFAULT_SERVER_IP;
-        this.port = DEFAULT_SERVER_PORT;
-    }
-    
     public IsoNetworkClient(String host, int port) {
         this.host = host;
         this.port = port;
+    }
+    
+    public void setTimeout(int timeoutMs) {
+        this.timeoutMs = timeoutMs;
     }
 
     public byte[] sendAndReceive(byte[] requestData) throws IOException {
         Log.d(TAG, "Connecting to " + host + ":" + port);
         
         try (Socket socket = new Socket()) {
+            socket.setSoTimeout(timeoutMs); 
             socket.connect(new InetSocketAddress(host, port), timeoutMs);
-            socket.setSoTimeout(timeoutMs); // CRITICAL: Read timeout
             
-            // --- SEND: 4-BYTE ASCII HEADER (User Spec) ---
+            // --- SEND: 4-BYTE ASCII HEADER ---
+            // Naming: "Length Header" is compliant with common TCP Framing
             int bodyLen = requestData.length;
             String lengthStr = String.format(Locale.US, "%04d", bodyLen);
             byte[] header = lengthStr.getBytes(StandardCharsets.US_ASCII);
             
-            Log.d(TAG, String.format("TX Header: [%s] Body: %s", lengthStr, bytesToHex(requestData)));
+            Log.d(TAG, String.format("TX Header: [%s] BodyLen: %d", lengthStr, bodyLen));
             
             OutputStream out = socket.getOutputStream();
-            out.write(header);      // 4 bytes ASCII
-            out.write(requestData); // Body
+            out.write(header);      
+            out.write(requestData); 
             out.flush();
-            Log.d(TAG, "Data sent successfully");
 
-            // --- RECEIVE: ADAPTIVE HEADER HANDLING ---
+            // --- RECEIVE ---
             InputStream in = socket.getInputStream();
             return readAdaptiveResponse(in);
             
@@ -67,78 +67,47 @@ public class IsoNetworkClient {
     }
 
     private byte[] readAdaptiveResponse(InputStream in) throws IOException {
-        // Read first 2 bytes to sniff header type
+        // Read first 2 bytes to detect format (ASCII vs Binary)
         byte[] pfx = new byte[2];
-        int read = 0;
-        while(read < 2) {
-            int c = in.read(pfx, read, 2 - read);
-            if (c == -1) throw new IOException("Server closed during prefix read");
-            read += c;
-        }
+        readFully(in, pfx, 2);
         
         int bodyLength;
         byte[] body;
         
-        // CHECK: BINARY HEADER? (Starts with 0x00 or high byte of length)
-        // ISO msgs > 0 bytes. 0x00 is definitely binary. 
-        // 0x30 ('0') is ASCII.
+        // CHECK: BINARY HEADER? (Starts with 0x00 or high byte < 0x30 aka '0')
         if (pfx[0] == 0x00 || (pfx[0] & 0xFF) < 0x30) {
-            // ---> 2-BYTE BINARY HEADER DETECTED <---
-            // Length = [pfx0][pfx1]
+            // Binary Header (2 bytes)
             bodyLength = ((pfx[0] & 0xFF) << 8) | (pfx[1] & 0xFF);
-            Log.d(TAG, String.format("RX Header (Binary): [%02X %02X] Len=%d", pfx[0], pfx[1], bodyLength));
-            
-            // Read Body
-            body = new byte[bodyLength];
-            int totalRead = 0;
-            while(totalRead < bodyLength) {
-                int c = in.read(body, totalRead, bodyLength - totalRead);
-                if (c == -1) throw new IOException("Server closed during body read");
-                totalRead += c;
-            }
+            Log.d(TAG, "RX Header (Binary). Len=" + bodyLength);
             
         } else {
-            // ---> ASSUME 4-BYTE ASCII HEADER <---
-            // We have pfx[0], pfx[1] (ASCII). Need next 2 bytes.
+            // ASCII Header (4 bytes). We have first 2. Need next 2.
             byte[] suffix = new byte[2];
-            read = 0;
-            while(read < 2) {
-                int c = in.read(suffix, read, 2 - read);
-                if (c == -1) throw new IOException("Server closed during suffix read");
-                read += c;
-            }
+            readFully(in, suffix, 2);
             
-            // Full Header: pfx + suffix
             String headerStr = new String(new byte[]{pfx[0], pfx[1], suffix[0], suffix[1]}, StandardCharsets.US_ASCII);
             try {
                 bodyLength = Integer.parseInt(headerStr);
             } catch (NumberFormatException e) {
-                 throw new IOException("Unknown Header Format. Hex: " + bytesToHex(pfx) + bytesToHex(suffix));
+                 throw new IOException("Invalid Header: " + headerStr);
             }
-            
-            Log.d(TAG, String.format("RX Header (ASCII): [%s] Len=%d", headerStr, bodyLength));
-            
-            // Read Body
-            body = new byte[bodyLength];
-            int totalRead = 0;
-            while(totalRead < bodyLength) {
-                int c = in.read(body, totalRead, bodyLength - totalRead);
-                if (c == -1) throw new IOException("Server closed during body read");
-                totalRead += c;
-            }
+            Log.d(TAG, "RX Header (ASCII): " + headerStr + " Len=" + bodyLength);
         }
         
-        Log.d(TAG, "RX Body Clean: " + bytesToHex(body));
+        // Read Body
+        body = new byte[bodyLength];
+        readFully(in, body, bodyLength);
+        
         return body;
     }
     
-    // Helper for Hex Logging
-    private String bytesToHex(byte[] bytes) {
-        if (bytes == null) return "";
-        StringBuilder sb = new StringBuilder();
-        for (byte b : bytes) {
-            sb.append(String.format("%02X", b));
+    // Helper to allow cleaner read loop
+    private void readFully(InputStream in, byte[] buffer, int length) throws IOException {
+        int totalRead = 0;
+        while(totalRead < length) {
+            int c = in.read(buffer, totalRead, length - totalRead);
+            if (c == -1) throw new IOException("Server closed connection prematurely");
+            totalRead += c;
         }
-        return sb.toString();
     }
 }
