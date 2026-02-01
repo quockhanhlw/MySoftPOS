@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Material Design 3 Theme -->
-    <style name="Theme.MySoftPOS" parent="Theme.Material3.DayNight.NoActionBar">
+    <!-- Material Design 3 Theme - FORCED LIGHT MODE -->
+    <style name="Theme.MySoftPOS" parent="Theme.Material3.Light.NoActionBar">
         <!-- Color Schemata -->
         <item name="colorPrimary">@color/primary</item>
         <item name="colorOnPrimary">@color/on_primary</item>

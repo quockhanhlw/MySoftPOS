@@ -1,16 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Night theme: keep same brand primaries but dark status bar -->
-    <style name="Theme.MySoftPOS" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <!-- Night theme: OVERRIDE to FORCE LIGHT MODE (ignore system dark mode) -->
+    <style name="Theme.MySoftPOS" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
-        <item name="colorPrimaryVariant">@color/primary_dark</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSecondary">@color/primary_light</item>
-        <item name="colorSecondaryVariant">@color/primary_dark</item>
-        <item name="colorOnSecondary">@color/white</item>
-        <item name="android:statusBarColor">@color/black</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorPrimaryContainer">@color/background</item>
+        <item name="colorOnPrimaryContainer">@color/primary</item>
+
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorOnSecondary">@color/on_secondary</item>
+        
+        <!-- Surface & Text -->
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        <item name="android:colorBackground">@color/background</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        
+        <!-- Input Fields -->
+        <item name="android:editTextColor">@color/text_primary</item>
+        <item name="android:textColorHint">@color/text_hint</item>
+
+        <item name="colorError">@color/error</item>
+        
+        <!-- Status Bar: Light background with dark icons -->
+        <item name="android:statusBarColor">@color/background</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
 </resources>

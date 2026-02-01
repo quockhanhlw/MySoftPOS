@@ -40,5 +40,10 @@ public class MainDashboardActivity extends AppCompatActivity {
             // Intent intent = new Intent(this, HistoryActivity.class);
             // startActivity(intent);
         });
+        // Dynamic Tests Feature (Redirected to Scheme Select per user request)
+        findViewById(R.id.cardTests).setOnClickListener(v -> {
+            Intent intent = new Intent(this, com.example.mysoftpos.testsuite.SchemeSelectActivity.class);
+            startActivity(intent);
+        });
     }
 }

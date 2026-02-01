@@ -24,7 +24,10 @@ public interface TransactionDao {
 
     @Query("SELECT * FROM transactions WHERE trace_number = :traceNumber LIMIT 1")
     TransactionEntity getByTraceNumber(String traceNumber);
-    
+
     @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
     List<TransactionEntity> getAllTransactions();
+
+    @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
+    androidx.lifecycle.LiveData<List<TransactionEntity>> getAllTransactionsLive();
 }

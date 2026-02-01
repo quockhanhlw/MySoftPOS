@@ -49,10 +49,21 @@
             android:exported="false"
             android:label="@string/dashboard_title" />
 
+        <activity android:name=".testsuite.RunnerActivity" android:label="Test Runner" />
+        <activity android:name=".testsuite.ChannelSelectActivity" android:label="Select Channel" />
+        <activity android:name=".testsuite.TransactionSelectActivity" android:label="Select Transaction" />
+
         <activity
             android:name=".PurchaseAmountActivity"
             android:exported="false"
             android:label="Purchase" />
+
+        <activity android:name=".testsuite.SchemeSelectActivity" android:label="Select Scheme" />
+        <activity android:name=".testsuite.TestSuiteActivity" android:label="Test Suite" />
+
+        <activity android:name=".testsuite.DynamicTestSuiteActivity" android:label="Test Suites" />
+        <activity android:name=".testsuite.DynamicTestCaseActivity" android:label="Test Cases" />
+
 
         <activity
             android:name=".PurchaseCardActivity"

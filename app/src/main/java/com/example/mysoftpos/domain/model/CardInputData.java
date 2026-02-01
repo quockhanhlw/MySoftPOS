@@ -12,24 +12,28 @@ public class CardInputData {
     private final String expiryDate; // YYMM
     private final String posEntryMode; // "051" for NFC, "012" for Manual
     private final String track2; // Nullable, only for NFC
-    private final Map<String, String> emvTags;
+    private Map<String, String> emvTags; // Mutable
+
+    private String pinBlock; // Mutable, set via setter
 
     public CardInputData(String pan, String expiryDate, String posEntryMode, String track2) {
-        this(pan, expiryDate, posEntryMode, track2, Collections.emptyMap());
-    }
-
-    public CardInputData(String pan, String expiryDate, String posEntryMode, String track2, Map<String, String> emvTags) {
         this.pan = pan;
         this.expiryDate = expiryDate;
         this.posEntryMode = posEntryMode;
         this.track2 = track2;
-        this.emvTags = emvTags != null ? emvTags : Collections.emptyMap();
+        this.emvTags = new java.util.HashMap<>();
     }
-    
-    // MainDashboardActivity Usage (6 args: pan, expiry, track2, posMode, pin, emv)
-    public CardInputData(String pan, String expiryDate, String track2, String posEntryMode, String pinBlock, Map<String, String> emvTags) {
-         this(pan, expiryDate, posEntryMode, track2, emvTags);
-         // pinBlock ignored for now as it's not in the fields yet, or add it if needed
+
+    public void setEmvTags(Map<String, String> emvTags) {
+        this.emvTags = emvTags != null ? emvTags : new java.util.HashMap<>();
+    }
+
+    public void setPinBlock(String pinBlock) {
+        this.pinBlock = pinBlock;
+    }
+
+    public String getPinBlock() {
+        return pinBlock;
     }
 
     public String getPan() {
@@ -42,13 +46,15 @@ public class CardInputData {
 
     // Helper to get POS Entry Mode
     public String getPosEntryMode() {
-        return isContactless() ? "071" : "011"; 
+        if (posEntryMode != null && !posEntryMode.isEmpty())
+            return posEntryMode;
+        return isContactless() ? "071" : "011";
     }
 
     public String getTrack2() {
         return track2;
     }
-    
+
     public boolean isContactless() {
         return track2 != null && !track2.isEmpty();
     }
@@ -67,7 +73,8 @@ public class CardInputData {
     }
 
     private String maskPan(String pan) {
-        if (pan.length() < 4) return "****";
+        if (pan.length() < 4)
+            return "****";
         return "****" + pan.substring(pan.length() - 4);
     }
 }
