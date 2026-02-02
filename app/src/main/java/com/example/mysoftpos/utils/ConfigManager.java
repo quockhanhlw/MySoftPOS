@@ -134,19 +134,15 @@ public class ConfigManager {
                 }
             }
 
-            // Parse Transaction Defaults
-            JSONObject txnDef = obj.optJSONObject("transaction_defaults");
-            if (txnDef != null) {
-                defAmount = txnDef.optString("default_amount", "000000100000");
-                mockPan = txnDef.optString("mock_pan", "970418xxxxxx1234");
-                mockExpiry = txnDef.optString("mock_expiry", "2512");
-                defServerId = txnDef.optString("server_id", "01");
-            } else {
-                defAmount = "000000100000";
-                mockPan = "970418xxxxxx1234";
-                mockExpiry = "2512";
-                defServerId = "01";
-            }
+            // Parse Transaction Defaults (Root Level in JSON)
+            defAmount = obj.optString("default_amount", "000000100000");
+            mockPan = obj.optString("mock_pan", "970418xxxxxx1234");
+            mockExpiry = obj.optString("mock_expiry", "2512");
+            defServerId = obj.optString("server_id", "01");
+
+            // Parse Server Config
+            defIp = obj.optString("server_ip", "10.0.0.1");
+            defPort = obj.optInt("server_port", 8583);
 
             // Parse ISO Constants
             JSONObject isoConst = obj.optJSONObject("iso_constants");
@@ -174,6 +170,10 @@ public class ConfigManager {
             defLoc = "HA NOI";
             defCountryTxt = "VNM";
             defCurr = "704";
+            // Check IP defaults
+            defIp = "10.145.54.250";
+            defPort = 8583;
+
             // Fallbacks for new fields
             defAmount = "000000100000";
 
@@ -187,20 +187,26 @@ public class ConfigManager {
     }
 
     public synchronized String getAndIncrementTrace() {
-        int trace = prefs.getInt(KEY_TRACE, 1);
+        int trace = prefs.getInt(KEY_TRACE, 111111);
+        if (trace < 111111) {
+            trace = 111111;
+        }
         int next = (trace >= 999999) ? 1 : trace + 1;
-        prefs.edit().putInt(KEY_TRACE, next).apply();
+        prefs.edit().putInt(KEY_TRACE, next).commit();
         return String.format("%06d", trace);
     }
 
-    // FORCE CORRECT IP - Bypass SharedPreferences cache
+    private String defIp;
+    private int defPort;
+
     public String getServerIp() {
-        return "10.145.54.175";
+        return defIp != null ? defIp : "10.145.54.250";
     }
 
     public int getServerPort() {
-        return 8583;
-    } // prefs.getInt(KEY_PORT, 8583);
+        return defPort > 0 ? defPort : 8583;
+    }
+    // prefs.getInt(KEY_PORT, 8583);
 
     // ...
     private String defServerId; // New field

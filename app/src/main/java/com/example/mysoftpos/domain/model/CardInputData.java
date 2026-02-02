@@ -56,7 +56,26 @@ public class CardInputData {
     }
 
     public boolean isContactless() {
+        if (posEntryMode != null && !posEntryMode.isEmpty()) {
+            // Explicitly exclude Magstripe modes 012, 022, 080...
+            // Only return true for Contactless (07x, 91x) or Chip (05x)
+            // Note: 91x is Contactless for some specs, 07x is standard contactless
+            return posEntryMode.startsWith("07") ||
+                    posEntryMode.startsWith("91") ||
+                    posEntryMode.startsWith("05");
+        }
+        // Fallback (Legacy)
         return track2 != null && !track2.isEmpty();
+    }
+
+    private String rawIccData; // Optional: For injecting raw hex string (Test Suite)
+
+    public void setRawIccData(String rawIccData) {
+        this.rawIccData = rawIccData;
+    }
+
+    public String getRawIccData() {
+        return rawIccData;
     }
 
     public Map<String, String> getEmvTags() {

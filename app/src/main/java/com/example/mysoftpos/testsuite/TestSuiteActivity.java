@@ -76,12 +76,20 @@ public class TestSuiteActivity extends AppCompatActivity {
 
     private void openRunner(TestScenario scenario) {
         Intent intent = new Intent(this, RunnerActivity.class);
-        // Pass data. Simple way: Pass DE22 code, or the whole object if Serializable.
-        // TestScenario is simple, let's pass fields.
+
+        // Pass strictly generated logic fields
         intent.putExtra("DE_22", scenario.getField(22));
         intent.putExtra("DESC", scenario.getDescription());
         intent.putExtra("CHANNEL", channel);
         intent.putExtra("TXN_TYPE", txnType);
+
+        // Critical Data
+        intent.putExtra("TRACK2", scenario.getField(35));
+        intent.putExtra("DE55", scenario.getField(55));
+        intent.putExtra("PAN", scenario.getField(2));
+        intent.putExtra("EXPIRY", scenario.getField(14));
+        intent.putExtra("PIN_BLOCK", scenario.getField(52)); // Pass PIN marker
+
         startActivity(intent);
     }
 }

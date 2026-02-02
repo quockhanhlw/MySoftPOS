@@ -52,13 +52,31 @@ public class Iso8583Builder {
             if (ctx.encryptPin && ctx.pinBlock52 != null) {
                 m.setField(IsoField.PIN_BLOCK_52, ctx.pinBlock52);
             }
-            if (ctx.field60 != null) {
-                m.setField(63, ctx.field60);
-            }
         } else {
             if (ctx.encryptPin && ctx.pinBlock52 != null) {
                 m.setField(IsoField.PIN_BLOCK_52, ctx.pinBlock52);
             }
+        }
+
+        // Fix: Add DE 55 for Chip/Contactless Purchase
+        if (card.isContactless()) {
+            if (card.getRawIccData() != null) {
+                m.setField(IsoField.ICC_DATA_55, card.getRawIccData());
+            } else {
+                String emv = buildEmvString(card.getEmvTags());
+                if (emv != null) {
+                    m.setField(IsoField.ICC_DATA_55, emv);
+                } else {
+                    // Fallback: Generate Mock for Simulator
+                    m.setField(IsoField.ICC_DATA_55,
+                            MockEmvFactory.generateMockDe55(ctx.localDate13, ctx.currency49));
+                }
+            }
+        }
+
+        // Fix: Correct mapping for DE 60
+        if (ctx.field60 != null) {
+            m.setField(60, ctx.field60);
         }
 
         return m;

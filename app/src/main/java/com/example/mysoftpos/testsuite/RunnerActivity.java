@@ -43,6 +43,14 @@ public class RunnerActivity extends AppCompatActivity {
 
     private void runTransaction(String de22) {
         tvLog.setText("Starting Transaction...\nMode: " + de22 + "\n");
-        viewModel.runTransaction(de22);
+
+        android.content.Intent i = getIntent();
+        viewModel.runTransaction(
+                de22,
+                i.getStringExtra("TRACK2"),
+                i.getStringExtra("DE55"),
+                i.getStringExtra("PAN"),
+                i.getStringExtra("EXPIRY"),
+                i.getStringExtra("PIN_BLOCK"));
     }
 }

@@ -27,4 +27,8 @@ public class TransactionState {
     public static TransactionState error(String message) {
         return new TransactionState(false, false, message, null, null);
     }
+
+    public static TransactionState failed(String message, String isoResponse, String isoRequest) {
+        return new TransactionState(false, false, message, isoResponse, isoRequest);
+    }
 }

@@ -63,6 +63,13 @@ public class PurchaseViewModel extends BaseViewModel {
                 ctx.generateDateTime();
                 ctx.rrn37 = TransactionContext.calculateRrn(configManager.getServerId(), ctx.stan11);
 
+                // Set Processing Code based on Txn Type
+                if (txnType == TxnType.BALANCE_INQUIRY) {
+                    ctx.processingCode3 = configManager.getProcessingCodeBalance();
+                } else {
+                    ctx.processingCode3 = configManager.getProcessingCodePurchase();
+                }
+
                 // Configurable Fields
                 ctx.mcc18 = configManager.getMcc18();
                 ctx.acquirerId32 = configManager.getAcquirerId32();
@@ -114,13 +121,22 @@ public class PurchaseViewModel extends BaseViewModel {
                 IsoMessage respMsg = new StandardIsoPacker().unpack(resp);
                 String rc = respMsg.getField(IsoField.RESPONSE_CODE_39);
                 entity.responseHex = StandardIsoPacker.bytesToHex(resp);
-                entity.status = "00".equals(rc) ? "APPROVED" : "DECLINED " + rc;
+                boolean isApproved = "00".equals(rc);
+                entity.status = isApproved ? "APPROVED" : "DECLINED " + rc;
+
                 repository.updateTransactionResponse(ctx.stan11, entity.responseHex, entity.status);
 
                 launchUi(() -> {
                     String msg = com.example.mysoftpos.utils.ResponseCodeHelper.getMessage(rc);
-                    state.setValue(TransactionState.success(msg, StandardIsoPacker.bytesToHex(resp),
-                            StandardIsoPacker.bytesToHex(packed)));
+                    String respHex = StandardIsoPacker.bytesToHex(resp);
+                    String reqHex = StandardIsoPacker.bytesToHex(packed);
+
+                    if (isApproved) {
+                        state.setValue(TransactionState.success(msg, respHex, reqHex));
+                    } else {
+                        // Pass ISO details even on failure for debugging
+                        state.setValue(TransactionState.failed(msg, respHex, reqHex));
+                    }
                 });
 
             } catch (Exception e) {

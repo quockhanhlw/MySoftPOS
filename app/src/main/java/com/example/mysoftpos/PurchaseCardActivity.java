@@ -84,8 +84,8 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
             if (state.isSuccess) {
                 showResult(true, state.message, state.isoResponse, state.isoRequest);
             } else if (state.message != null && !state.isLoading) {
-                // Error
-                showResult(false, state.message, null, null);
+                // Error (Now includes ISO Data for "Failed" transactions)
+                showResult(false, state.message, state.isoResponse, state.isoRequest);
             }
         });
 
@@ -154,7 +154,7 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
         // --- MOCK TAP TRIGGER (Hidden Feature) ---
         // Clicking the NFC Illustration triggers the Mock Transaction immediately
         findViewById(R.id.ivNfcIcon).setOnClickListener(v -> {
-            String mockTrk2 = configManager.getTrack2("072"); // Centralized
+            String mockTrk2 = configManager.getTrack2("022"); // Centralized (Magstripe for Manual Trigger)
             String mockPan = configManager.getMockPan();
             String mockExp = configManager.getMockExpiry();
 
@@ -168,9 +168,9 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
             CardInputData mockData = new CardInputData(
                     mockPan,
                     mockExp,
-                    "072",
+                    "022",
                     mockTrk2);
-            Toast.makeText(this, "Mock NFC Triggered (Config)...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Mock Triggered (022)...", Toast.LENGTH_SHORT).show();
             processTransaction(mockData);
         });
 
