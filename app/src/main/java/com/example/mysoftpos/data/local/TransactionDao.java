@@ -22,6 +22,9 @@ public interface TransactionDao {
     @Query("UPDATE transactions SET response_hex = :responseHex, status = :status WHERE trace_number = :traceNumber")
     void updateResponse(String traceNumber, String responseHex, String status);
 
+    @Query("UPDATE transactions SET response_hex = :responseHex WHERE trace_number = :traceNumber")
+    void updateResponseHex(String traceNumber, String responseHex);
+
     @Query("SELECT * FROM transactions WHERE trace_number = :traceNumber LIMIT 1")
     TransactionEntity getByTraceNumber(String traceNumber);
 

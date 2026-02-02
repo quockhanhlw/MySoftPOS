@@ -279,7 +279,7 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
                         "072", // NFC Mode
                         mockTrk2);
                 if (data != null) {
-                    mockOverrideData.setEmvTags(data.getEmvTags());
+                    // mockOverrideData.setEmvTags(data.getEmvTags()); // Removed
                 }
                 // IF we needed PIN, we would call mockOverrideData.setPinBlock(...)
 

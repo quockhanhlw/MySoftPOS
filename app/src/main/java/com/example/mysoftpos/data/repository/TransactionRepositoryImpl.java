@@ -41,4 +41,11 @@ public class TransactionRepositoryImpl implements TransactionRepository {
             db.transactionDao().updateResponse(traceNumber, responseHex, status);
         });
     }
+
+    @Override
+    public void updateTransactionResponseHex(String traceNumber, String responseHex) {
+        dispatchers.io().execute(() -> {
+            db.transactionDao().updateResponseHex(traceNumber, responseHex);
+        });
+    }
 }

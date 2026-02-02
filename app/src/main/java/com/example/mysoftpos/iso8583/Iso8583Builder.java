@@ -58,21 +58,7 @@ public class Iso8583Builder {
             }
         }
 
-        // Fix: Add DE 55 for Chip/Contactless Purchase
-        if (card.isContactless()) {
-            if (card.getRawIccData() != null) {
-                m.setField(IsoField.ICC_DATA_55, card.getRawIccData());
-            } else {
-                String emv = buildEmvString(card.getEmvTags());
-                if (emv != null) {
-                    m.setField(IsoField.ICC_DATA_55, emv);
-                } else {
-                    // Fallback: Generate Mock for Simulator
-                    m.setField(IsoField.ICC_DATA_55,
-                            MockEmvFactory.generateMockDe55(ctx.localDate13, ctx.currency49));
-                }
-            }
-        }
+        // Fix: Add DE 55 for Chip/Contactless Purchase - REMOVED per User Request
 
         // Fix: Correct mapping for DE 60
         if (ctx.field60 != null) {
@@ -108,14 +94,7 @@ public class Iso8583Builder {
         m.setField(IsoField.MERCHANT_NAME_LOCATION_43, ctx.merchantNameLocation43);
         m.setField(IsoField.CURRENCY_CODE_49, ctx.currency49);
 
-        if (card.isContactless()) {
-            if (card.getTrack2() != null) {
-                m.setField(IsoField.TRACK2_35, card.getTrack2().replace('D', '='));
-            }
-            String emv = buildEmvString(card.getEmvTags());
-            if (emv != null)
-                m.setField(IsoField.ICC_DATA_55, emv);
-        }
+        // DE 55 / Track 2 for Contactless removed per User Request
 
         if (ctx.encryptPin && ctx.pinBlock52 != null) {
             m.setField(IsoField.PIN_BLOCK_52, ctx.pinBlock52);
@@ -151,7 +130,7 @@ public class Iso8583Builder {
         m.setField(IsoField.MERCHANT_TYPE_18, originalCtx.mcc18 != null ? originalCtx.mcc18
                 : (originalCtx.txnType == TxnType.BALANCE_INQUIRY ? "6011" : "5411"));
 
-        m.setField(IsoField.POS_ENTRY_MODE_22, card.isContactless() ? "071" : "011");
+        m.setField(IsoField.POS_ENTRY_MODE_22, card.getPosEntryMode());
         m.setField(IsoField.ACQUIRER_ID_32, originalCtx.acquirerId32 != null ? originalCtx.acquirerId32 : "970406");
         m.setField(IsoField.RRN_37, originalCtx.rrn37);
         m.setField(IsoField.TERMINAL_ID_41, originalCtx.terminalId41);
@@ -178,28 +157,12 @@ public class Iso8583Builder {
         // EXCLUDE DE 52
 
         // Include DE 55 if NFC
-        if (card.isContactless()) {
-            String emv = buildEmvString(card.getEmvTags());
-            if (emv != null)
-                m.setField(IsoField.ICC_DATA_55, emv);
-        }
+        // Include DE 55 if NFC - REMOVED
 
         return m;
     }
 
-    private static String buildEmvString(Map<String, String> tags) {
-        if (tags == null || tags.isEmpty())
-            return null;
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> e : tags.entrySet()) {
-            sb.append(e.getKey());
-            // Length in hex? Simple byte length calculation
-            int len = e.getValue().length() / 2;
-            sb.append(String.format("%02X", len));
-            sb.append(e.getValue());
-        }
-        return sb.toString();
-    }
+    // buildEmvString removed
 
     /**
      * Format DE41 (Terminal ID) to exactly 8 characters.

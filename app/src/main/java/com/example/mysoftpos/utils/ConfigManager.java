@@ -55,10 +55,32 @@ public class ConfigManager {
     // ISO Constants
     private String procPurchase, procBalance, posCondition, mccBalance;
 
-    // Track 2 Map
+    // Track 2 Map (Legacy support if needed)
     private java.util.Map<String, String> track2Map = new java.util.HashMap<>();
 
+    // Test Case Config Map
+    private java.util.Map<String, TestCaseConfig> testCaseMap = new java.util.HashMap<>();
+
+    public static class TestCaseConfig {
+        public String track2;
+        public String pan;
+        public String expiry;
+        public String description;
+    }
+
+    public TestCaseConfig getTestCaseConfig(String de22) {
+        if (testCaseMap.containsKey(de22)) {
+            return testCaseMap.get(de22);
+        }
+        return null;
+    }
+
     public String getTrack2(String de22) {
+        if (testCaseMap.containsKey(de22)) {
+            TestCaseConfig cfg = testCaseMap.get(de22);
+            if (cfg.track2 != null)
+                return cfg.track2;
+        }
         if (track2Map.containsKey(de22)) {
             return track2Map.get(de22);
         }
@@ -123,16 +145,31 @@ public class ConfigManager {
 
             defCurr = obj.optString("currency_code_49", "704");
 
-            // Parse Track 2 Definitions
-            JSONObject t2Obj = obj.optJSONObject("track2_definitions");
-            if (t2Obj != null) {
-                java.util.Iterator<String> keys = t2Obj.keys();
+            // Parse Test Case Definitions
+            JSONObject tcObj = obj.optJSONObject("test_cases");
+            if (tcObj != null) {
+                java.util.Iterator<String> keys = tcObj.keys();
                 while (keys.hasNext()) {
                     String key = keys.next();
-                    String val = t2Obj.optString(key);
-                    track2Map.put(key, val);
+                    JSONObject item = tcObj.optJSONObject(key);
+                    if (item != null) {
+                        TestCaseConfig config = new TestCaseConfig();
+                        config.track2 = item.optString("track2", null);
+                        // If track2 is empty string in JSON, treat as null
+                        if (config.track2 != null && config.track2.isEmpty())
+                            config.track2 = null;
+
+                        config.pan = item.optString("pan", null);
+                        config.expiry = item.optString("expiry", null);
+                        config.description = item.optString("description", "");
+                        testCaseMap.put(key, config);
+                    }
                 }
             }
+
+            // Legacy Track 2 parsing (Removed in favor of test_cases, but kept map for
+            // safety if needed)
+            // ...
 
             // Parse Transaction Defaults (Root Level in JSON)
             defAmount = obj.optString("default_amount", "000000100000");

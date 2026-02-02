@@ -88,24 +88,27 @@ public class PurchaseViewModel extends BaseViewModel {
 
                 // Pack
                 byte[] packed = StandardIsoPacker.pack(req);
-                com.example.mysoftpos.utils.FileLogger.logPacket(getApplication(), "SEND 0200", packed);
+                String requestHex = StandardIsoPacker.bytesToHex(packed);
 
-                // DB Log
+                // --- 1. LOG REQUEST (Before Network) ---
+                com.example.mysoftpos.utils.FileLogger.logPacket(getApplication(), "SEND 0200", packed);
+                com.example.mysoftpos.utils.FileLogger.logString(getApplication(), "SEND DETAIL",
+                        StandardIsoPacker.logIsoMessage(req));
+
+                // DB Log (Initial Save)
                 entity.traceNumber = ctx.stan11;
                 entity.amount = amount;
                 entity.pan = card.getPan();
                 entity.status = "PENDING";
-                entity.requestHex = StandardIsoPacker.bytesToHex(packed);
+                entity.requestHex = requestHex;
                 entity.timestamp = System.currentTimeMillis();
-                repository.saveTransaction(entity); // Use Repository
+                repository.saveTransaction(entity);
 
                 // Network Send
                 IsoNetworkClient client = new IsoNetworkClient(ctx.ip, ctx.port);
                 byte[] resp;
                 try {
                     resp = client.sendAndReceive(packed);
-                    com.example.mysoftpos.utils.FileLogger.logPacket(getApplication(), "RECV 0210", resp);
-
                 } catch (SocketTimeoutException e) {
                     com.example.mysoftpos.utils.FileLogger.logString(getApplication(), "ERROR",
                             "Timeout waiting for response");
@@ -117,25 +120,34 @@ public class PurchaseViewModel extends BaseViewModel {
                     throw e;
                 }
 
-                // Unpack & Check Response
+                // --- 2. LOG RESPONSE (Immediately after Network) ---
+                String responseHex = StandardIsoPacker.bytesToHex(resp);
+                com.example.mysoftpos.utils.FileLogger.logPacket(getApplication(), "RECV 0210", resp);
+
+                // IMPORTANT: Update DB with Response Hex BEFORE Unpacking (in case unpack
+                // fails)
+                repository.updateTransactionResponseHex(ctx.stan11, responseHex);
+
+                // 3. Unpack & Check Response
                 IsoMessage respMsg = new StandardIsoPacker().unpack(resp);
+                // Log Detail AFTER unpacking
+                com.example.mysoftpos.utils.FileLogger.logString(getApplication(), "RECV DETAIL",
+                        StandardIsoPacker.logIsoMessage(respMsg));
+
                 String rc = respMsg.getField(IsoField.RESPONSE_CODE_39);
-                entity.responseHex = StandardIsoPacker.bytesToHex(resp);
+                entity.responseHex = responseHex;
                 boolean isApproved = "00".equals(rc);
                 entity.status = isApproved ? "APPROVED" : "DECLINED " + rc;
 
-                repository.updateTransactionResponse(ctx.stan11, entity.responseHex, entity.status);
+                // 4. Update Status (Final Step)
+                repository.updateTransactionStatus(ctx.stan11, entity.status);
 
                 launchUi(() -> {
                     String msg = com.example.mysoftpos.utils.ResponseCodeHelper.getMessage(rc);
-                    String respHex = StandardIsoPacker.bytesToHex(resp);
-                    String reqHex = StandardIsoPacker.bytesToHex(packed);
-
                     if (isApproved) {
-                        state.setValue(TransactionState.success(msg, respHex, reqHex));
+                        state.setValue(TransactionState.success(msg, responseHex, requestHex));
                     } else {
-                        // Pass ISO details even on failure for debugging
-                        state.setValue(TransactionState.failed(msg, respHex, reqHex));
+                        state.setValue(TransactionState.failed(msg, responseHex, requestHex));
                     }
                 });
 

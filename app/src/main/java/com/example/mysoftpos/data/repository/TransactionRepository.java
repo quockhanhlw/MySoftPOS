@@ -18,4 +18,6 @@ public interface TransactionRepository {
 
     // ISO Operations (Future: Move from Activity to here)
     // void sendIsoMessage(IsoMessage message, Callback callback);
+
+    void updateTransactionResponseHex(String traceNumber, String responseHex);
 }

@@ -67,11 +67,12 @@ public class ReadCardDataUseCase {
         // In full EMV, we parse AFL from GPO response. For Quick Read, we can scan or
         // assume standard locations.
         // Track 2 (Tag 57) is our target.
+        // Track 2 (Tag 57) is our target.
         String track2Hex = null;
-        Map<String, String> emvTags = new HashMap<>();
+        // Map<String, String> emvTags = new HashMap<>(); // Removed
 
         // Capture from GPO (AIP 82)
-        extractTags(gpoResponse, emvTags, "82");
+        // extractTags(gpoResponse, emvTags, "82"); // Removed
 
         for (int sfi = 1; sfi <= 10; sfi++) {
             for (int rec = 1; rec <= 10; rec++) {
@@ -86,8 +87,8 @@ public class ReadCardDataUseCase {
                     }
 
                     // Capture critical EMV tags
-                    extractTags(readRecordResp, emvTags, "9F26", "9F27", "9F10", "9F37", "9F36", "95", "9A", "9C",
-                            "5F2A", "82");
+                    // Capture critical EMV tags - REMOVED
+                    // extractTags(readRecordResp, emvTags, ...);
                 }
             }
         }
@@ -104,7 +105,7 @@ public class ReadCardDataUseCase {
                 expiry,
                 "071", // NFC
                 track2Hex);
-        data.setEmvTags(emvTags);
+        // data.setEmvTags(emvTags); // Removed
         return data;
     }
 
@@ -131,17 +132,5 @@ public class ReadCardDataUseCase {
         return data;
     }
 
-    private void extractTags(byte[] data, Map<String, String> targetMap, String... tags) {
-        for (String tag : tags) {
-            try {
-                int tagInt = Integer.parseInt(tag, 16);
-                byte[] val = TlvParser.findTag(data, tagInt);
-                if (val != null) {
-                    targetMap.put(tag, TlvParser.bytesToHex(val));
-                }
-            } catch (Exception e) {
-                // Ignore parsing errors for individual tags
-            }
-        }
-    }
+    // extractTags removed
 }

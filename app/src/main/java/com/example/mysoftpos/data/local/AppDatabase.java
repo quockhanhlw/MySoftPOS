@@ -35,6 +35,8 @@ public abstract class AppDatabase extends RoomDatabase {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                             AppDatabase.class, "mysoftpos_db")
                             .fallbackToDestructiveMigration() // Dev only: Wipes DB on version change
+                            .setJournalMode(RoomDatabase.JournalMode.TRUNCATE) // Fix: Prevent WAL file issues for
+                                                                               // export
                             .build();
                 }
             }

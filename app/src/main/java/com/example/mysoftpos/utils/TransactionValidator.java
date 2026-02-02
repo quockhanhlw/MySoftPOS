@@ -20,35 +20,39 @@ public class TransactionValidator {
         if (isPurchase) {
             try {
                 long amount = Long.parseLong(amountStr);
-                if (amount <= 0) return ValidationResult.INVALID_AMOUNT;
+                if (amount <= 0)
+                    return ValidationResult.INVALID_AMOUNT;
             } catch (NumberFormatException e) {
                 return ValidationResult.INVALID_AMOUNT;
             }
         }
 
-        if (card == null) return ValidationResult.INVALID_CARD_DATA;
+        if (card == null)
+            return ValidationResult.INVALID_CARD_DATA;
 
         // 2. Card Validation
-        // NFC: Skip Luhn, Check Tag 57 presence if possible (but mainly trust the read)
-        if (card.isContactless()) {
-            if (card.getPan() == null || card.getPan().isEmpty()) return ValidationResult.INVALID_CARD_NUMBER;
-            // No Luhn Check for NFC
-        } else {
-            // Manual: Check Luhn
+        // Manual (012): Check Luhn
+        if ("012".equals(card.getPosEntryMode())) {
             if (!luhnCheck(card.getPan())) {
                 return ValidationResult.INVALID_CARD_NUMBER;
             }
-            // Check Expiry (Basic)
-            if (card.getExpiryDate() == null || card.getExpiryDate().length() != 4) {
-                return ValidationResult.INVALID_EXPIRY;
-            }
+        }
+
+        // Basic Presence Checks
+        if (card.getPan() == null || card.getPan().isEmpty())
+            return ValidationResult.INVALID_CARD_NUMBER;
+
+        // Check Expiry (Basic)
+        if (card.getExpiryDate() == null || card.getExpiryDate().length() != 4) {
+            return ValidationResult.INVALID_EXPIRY;
         }
 
         return ValidationResult.VALID;
     }
 
     private static boolean luhnCheck(String pan) {
-        if (pan == null || pan.length() < 13) return false; // Basic length check
+        if (pan == null || pan.length() < 13)
+            return false; // Basic length check
         int sum = 0;
         boolean alternate = false;
         for (int i = pan.length() - 1; i >= 0; i--) {

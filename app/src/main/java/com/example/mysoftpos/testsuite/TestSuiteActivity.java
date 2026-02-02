@@ -35,8 +35,8 @@ public class TestSuiteActivity extends AppCompatActivity {
 
         listView = findViewById(R.id.listViewCases);
 
-        // Load Data
-        allScenarios = TestDataProvider.generateAllScenarios();
+        // Load Data (Pass Activity Context for ConfigManager)
+        allScenarios = TestDataProvider.generateAllScenarios(this);
 
         // Filter Data (For now, show all, or implement filtering logic if needed)
         // Since user request specific DE22 list for "Purchase", and "TransactionSelect"

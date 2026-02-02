@@ -340,4 +340,13 @@ public class StandardIsoPacker {
             return "XX";
         }
     }
+
+    public static String logIsoMessage(IsoMessage msg) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("MTI: ").append(msg.getMti()).append("\n");
+        for (int field : new java.util.TreeSet<>(msg.getFieldNumbers())) {
+            sb.append("DE ").append(String.format("%03d", field)).append(": ").append(msg.getField(field)).append("\n");
+        }
+        return sb.toString();
+    }
 }

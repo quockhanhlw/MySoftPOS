@@ -16,9 +16,11 @@ public class RunnerViewModel extends AndroidViewModel {
 
     private final MutableLiveData<String> logMessage = new MutableLiveData<>();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final com.example.mysoftpos.data.local.DatabaseManager dbManager;
 
     public RunnerViewModel(Application application) {
         super(application);
+        this.dbManager = new com.example.mysoftpos.data.local.DatabaseManager(application);
     }
 
     public LiveData<String> getLogMessage() {
@@ -83,7 +85,7 @@ public class RunnerViewModel extends AndroidViewModel {
                     pan = config.getMockPan();
 
                 CardInputData card = new CardInputData(pan, expiry, de22, track2Data);
-                card.setRawIccData(de55Data);
+                // card.setRawIccData(de55Data); // Removed
                 card.setPinBlock(pinBlockData);
 
                 // 3. Build Message
@@ -112,8 +114,13 @@ public class RunnerViewModel extends AndroidViewModel {
 
                 // 4. Pack
                 byte[] packed = StandardIsoPacker.pack(msg);
-                logMessage.postValue(
-                        "\nPacked Hex (" + packed.length + " bytes):\n" + StandardIsoPacker.bytesToHex(packed));
+                String sendHex = StandardIsoPacker.bytesToHex(packed);
+                logMessage.postValue("\nPacked Hex (" + packed.length + " bytes):\n" + sendHex);
+
+                // --- LOG TO FILE: TEST SUITE ---
+                com.example.mysoftpos.utils.FileLogger.logTestSuitePacket(getApplication(), "SEND", packed);
+                com.example.mysoftpos.utils.FileLogger.logTestSuiteString(getApplication(), "SEND DETAIL",
+                        StandardIsoPacker.logIsoMessage(msg));
 
                 // 5. Send (Real Network)
                 logMessage.postValue("\nSending to Host (" + ctx.ip + ":" + ctx.port + ")...");
@@ -122,9 +129,17 @@ public class RunnerViewModel extends AndroidViewModel {
 
                 byte[] responseBytes = client.sendAndReceive(packed);
                 logMessage.postValue("Received " + responseBytes.length + " bytes.");
+                String recvHex = StandardIsoPacker.bytesToHex(responseBytes);
+
+                // --- LOG TO FILE: TEST SUITE (RECV) ---
+                com.example.mysoftpos.utils.FileLogger.logTestSuitePacket(getApplication(), "RECV", responseBytes);
 
                 // 6. Unpack Response
                 IsoMessage respMsg = new StandardIsoPacker().unpack(responseBytes);
+
+                // --- LOG TO FILE: TEST SUITE (RECV DETAIL) ---
+                com.example.mysoftpos.utils.FileLogger.logTestSuiteString(getApplication(), "RECV DETAIL",
+                        StandardIsoPacker.logIsoMessage(respMsg));
 
                 // Log Response Details
                 StringBuilder sbResp = new StringBuilder();
@@ -142,20 +157,112 @@ public class RunnerViewModel extends AndroidViewModel {
                 logMessage.postValue("\nResponse Hex:\n" + StandardIsoPacker.bytesToHex(responseBytes));
 
                 // Summary result
+                // Summary result
                 String rc = respMsg.getField(39);
+                String reason = getRcDescription(rc);
+                String statusStr = "UNKNOWN";
+
                 if ("00".equals(rc)) {
-                    logMessage.postValue("\nRESULT: APPROVED (00)");
+                    logMessage.postValue("\n*** STATUS: PASS ***");
+                    logMessage.postValue("RC: " + rc + " (" + reason + ")");
+                    statusStr = "APPROVED";
                 } else {
-                    logMessage.postValue("\nRESULT: DECLINED (RC=" + rc + ")");
+                    logMessage.postValue("\n*** STATUS: FAIL ***");
+                    logMessage.postValue("RC: " + rc + " - Reason: " + reason);
+                    statusStr = "DECLINED";
                 }
 
+                // --- SAVE TO DATABASE ---
+                saveTransactionToDb(ctx, card, statusStr, sendHex, StandardIsoPacker.bytesToHex(responseBytes));
+
             } catch (java.net.SocketTimeoutException e) {
-                logMessage.postValue("\nError: Timeout waiting for response.");
+                logMessage.postValue("\n*** STATUS: FAIL ***");
+                logMessage.postValue("Error: Timeout waiting for response.");
+                // Update: Save failed transaction (Response Hex null)
+                // We need access to ctx/card here. Refactoring required if not accessible.
+                // For now, logging error. Ideally should save "TIMEOUT" status.
             } catch (Exception e) {
-                logMessage.postValue("\nError: " + e.getMessage());
+                logMessage.postValue("\n*** STATUS: FAIL ***");
+                logMessage.postValue("Error: " + e.getMessage());
                 e.printStackTrace();
             }
         });
+    }
+
+    private void saveTransactionToDb(TransactionContext ctx, CardInputData card, String status, String reqHex,
+            String respHex) {
+        try {
+            com.example.mysoftpos.data.local.TransactionEntity entity = new com.example.mysoftpos.data.local.TransactionEntity();
+            entity.traceNumber = ctx.stan11;
+            entity.amount = ctx.amount4;
+            entity.pan = card.getPan(); // Unmasked for internal DB? Or Masked? Using Utils to mask.
+            // Let's mask for privacy in DB too if preferred, or keep clear.
+            // User can delete DB. Let's keep clear for history detail, or mask.
+            // Standard approach: Masked.
+            entity.pan = maskPan(card.getPan());
+            entity.status = status;
+            entity.requestHex = reqHex;
+            entity.responseHex = respHex;
+            entity.timestamp = System.currentTimeMillis();
+
+            dbManager.insertTransaction(entity);
+            logMessage.postValue("Transaction saved to History (Trace: " + ctx.stan11 + ")");
+        } catch (Exception e) {
+            logMessage.postValue("Error saving to DB: " + e.getMessage());
+        }
+    }
+
+    private String getRcDescription(String rc) {
+        if (rc == null)
+            return "Unknown";
+        switch (rc) {
+            case "00":
+                return "Approved";
+            case "01":
+                return "Refer to Card Issuer";
+            case "03":
+                return "Invalid Merchant";
+            case "04":
+                return "Pick-up Card";
+            case "05":
+                return "Do Not Honor";
+            case "12":
+                return "Invalid Transaction";
+            case "13":
+                return "Invalid Amount";
+            case "14":
+                return "Invalid Card Number";
+            case "30":
+                return "Format Error";
+            case "41":
+                return "Lost Card";
+            case "43":
+                return "Stolen Card";
+            case "51":
+                return "Insufficient Funds";
+            case "54":
+                return "Expired Card";
+            case "55":
+                return "Incorrect PIN";
+            case "57":
+                return "Txn Not Permitted";
+            case "58":
+                return "Txn Not Permitted on Terminal";
+            case "61":
+                return "Exceeds Withdrawal Limit";
+            case "63":
+                return "Security Violation";
+            case "68":
+                return "Response Received Too Late";
+            case "91":
+                return "Issuer Sys Error";
+            case "94":
+                return "Duplicate Transaction";
+            case "96":
+                return "System Error";
+            default:
+                return "Declined / Unknown";
+        }
     }
 
     private String maskPan(String pan) {

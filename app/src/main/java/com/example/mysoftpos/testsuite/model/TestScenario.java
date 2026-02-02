@@ -25,6 +25,10 @@ public class TestScenario {
         return description;
     }
 
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     // Helper for DE 22/Pos Mode
     public String getPosEntryMode() {
         return getField(22);
