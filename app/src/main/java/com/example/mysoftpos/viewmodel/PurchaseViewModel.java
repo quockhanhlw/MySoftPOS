@@ -1,23 +1,25 @@
 package com.example.mysoftpos.viewmodel;
+import com.example.mysoftpos.utils.logging.ResponseCodeHelper;
+import com.example.mysoftpos.utils.logging.FileLogger;
 
 import android.app.Application;
 import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import com.example.mysoftpos.data.local.TransactionEntity;
+import com.example.mysoftpos.data.local.entity.TransactionEntity;
 import com.example.mysoftpos.data.remote.IsoNetworkClient;
 import com.example.mysoftpos.data.repository.TransactionRepository;
 import com.example.mysoftpos.domain.model.CardInputData;
-import com.example.mysoftpos.iso8583.Iso8583Builder;
-import com.example.mysoftpos.iso8583.IsoField;
-import com.example.mysoftpos.iso8583.IsoMessage;
+import com.example.mysoftpos.iso8583.builder.Iso8583Builder;
+import com.example.mysoftpos.iso8583.spec.IsoField;
+import com.example.mysoftpos.iso8583.message.IsoMessage;
 import com.example.mysoftpos.iso8583.TransactionContext;
 import com.example.mysoftpos.iso8583.TxnType;
-import com.example.mysoftpos.ui.BaseViewModel;
-import com.example.mysoftpos.utils.ConfigManager;
-import com.example.mysoftpos.utils.DispatcherProvider;
-import com.example.mysoftpos.utils.StandardIsoPacker;
-import com.example.mysoftpos.utils.TransactionValidator;
+import com.example.mysoftpos.ui.base.BaseViewModel;
+import com.example.mysoftpos.utils.config.ConfigManager;
+import com.example.mysoftpos.utils.threading.DispatcherProvider;
+import com.example.mysoftpos.iso8583.util.StandardIsoPacker;
+import com.example.mysoftpos.utils.validation.TransactionValidator;
 import java.net.SocketTimeoutException;
 
 public class PurchaseViewModel extends BaseViewModel {
@@ -38,7 +40,7 @@ public class PurchaseViewModel extends BaseViewModel {
         return state;
     }
 
-    public void processTransaction(CardInputData card, String amount, TxnType txnType) {
+    public void processTransaction(CardInputData card, String amount, String currencyCode, TxnType txnType) {
         state.setValue(TransactionState.loading());
 
         launchIo(() -> {
@@ -48,7 +50,8 @@ public class PurchaseViewModel extends BaseViewModel {
             try {
                 // Validation
                 boolean isPurchase = (txnType == TxnType.PURCHASE);
-                String amtF4 = isPurchase ? TransactionContext.formatAmount12(amount) : "000000000000";
+                // DE4: Format amount based on currency (VND=704, USD=840)
+                String amtF4 = isPurchase ? TransactionContext.formatAmount12(amount, currencyCode) : "000000000000";
 
                 TransactionValidator.ValidationResult v = TransactionValidator.validate(card, amount, isPurchase);
                 if (v != TransactionValidator.ValidationResult.VALID) {
@@ -74,7 +77,8 @@ public class PurchaseViewModel extends BaseViewModel {
                 ctx.mcc18 = configManager.getMcc18();
                 ctx.acquirerId32 = configManager.getAcquirerId32();
                 ctx.fwdInst33 = configManager.getForwardingInst33();
-                ctx.currency49 = configManager.getCurrencyCode49();
+                // Use passed currency code (704 for VND, 840 for USD)
+                ctx.currency49 = currencyCode != null ? currencyCode : configManager.getCurrencyCode49();
                 ctx.terminalId41 = configManager.getTerminalId();
                 ctx.merchantId42 = configManager.getMerchantId();
                 ctx.merchantNameLocation43 = configManager.getMerchantName();
@@ -91,8 +95,8 @@ public class PurchaseViewModel extends BaseViewModel {
                 String requestHex = StandardIsoPacker.bytesToHex(packed);
 
                 // --- 1. LOG REQUEST (Before Network) ---
-                com.example.mysoftpos.utils.FileLogger.logPacket(getApplication(), "SEND 0200", packed);
-                com.example.mysoftpos.utils.FileLogger.logString(getApplication(), "SEND DETAIL",
+                com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "SEND 0200", packed);
+                com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "SEND DETAIL",
                         StandardIsoPacker.logIsoMessage(req));
 
                 // DB Log (Initial Save)
@@ -110,19 +114,19 @@ public class PurchaseViewModel extends BaseViewModel {
                 try {
                     resp = client.sendAndReceive(packed);
                 } catch (SocketTimeoutException e) {
-                    com.example.mysoftpos.utils.FileLogger.logString(getApplication(), "ERROR",
+                    com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "ERROR",
                             "Timeout waiting for response");
                     handleAutoReversal(ctx, card, entity);
                     return;
                 } catch (Exception e) {
-                    com.example.mysoftpos.utils.FileLogger.logString(getApplication(), "ERROR",
+                    com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "ERROR",
                             "Network Error: " + e.getMessage());
                     throw e;
                 }
 
                 // --- 2. LOG RESPONSE (Immediately after Network) ---
                 String responseHex = StandardIsoPacker.bytesToHex(resp);
-                com.example.mysoftpos.utils.FileLogger.logPacket(getApplication(), "RECV 0210", resp);
+                com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "RECV 0210", resp);
 
                 // IMPORTANT: Update DB with Response Hex BEFORE Unpacking (in case unpack
                 // fails)
@@ -131,7 +135,7 @@ public class PurchaseViewModel extends BaseViewModel {
                 // 3. Unpack & Check Response
                 IsoMessage respMsg = new StandardIsoPacker().unpack(resp);
                 // Log Detail AFTER unpacking
-                com.example.mysoftpos.utils.FileLogger.logString(getApplication(), "RECV DETAIL",
+                com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "RECV DETAIL",
                         StandardIsoPacker.logIsoMessage(respMsg));
 
                 String rc = respMsg.getField(IsoField.RESPONSE_CODE_39);
@@ -143,7 +147,7 @@ public class PurchaseViewModel extends BaseViewModel {
                 repository.updateTransactionStatus(ctx.stan11, entity.status);
 
                 launchUi(() -> {
-                    String msg = com.example.mysoftpos.utils.ResponseCodeHelper.getMessage(rc);
+                    String msg = com.example.mysoftpos.utils.logging.ResponseCodeHelper.getMessage(rc);
                     if (isApproved) {
                         state.setValue(TransactionState.success(msg, responseHex, requestHex));
                     } else {
@@ -169,14 +173,14 @@ public class PurchaseViewModel extends BaseViewModel {
             IsoMessage rev = Iso8583Builder.buildReversalAdvice(ctx, card, newTrace);
             byte[] packedRev = StandardIsoPacker.pack(rev);
 
-            com.example.mysoftpos.utils.FileLogger.logPacket(getApplication(), "SEND 0420 (Reversal)", packedRev);
+            com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "SEND 0420 (Reversal)", packedRev);
             entity.status = "TIMEOUT_REVERSAL_INIT";
             repository.updateTransactionStatus(ctx.stan11, entity.status);
 
             IsoNetworkClient revClient = new IsoNetworkClient(ctx.ip, ctx.port);
             try {
                 byte[] revResp = revClient.sendAndReceive(packedRev);
-                com.example.mysoftpos.utils.FileLogger.logPacket(getApplication(), "RECV 0430", revResp);
+                com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "RECV 0430", revResp);
                 entity.status = "TIMEOUT_REVERSED";
                 repository.updateTransactionStatus(ctx.stan11, entity.status);
                 postError("Giao dịch lỗi Time Out (Đã gửi hủy)");
@@ -195,3 +199,9 @@ public class PurchaseViewModel extends BaseViewModel {
         }
     }
 }
+
+
+
+
+
+

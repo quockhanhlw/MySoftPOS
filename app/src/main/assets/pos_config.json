@@ -10,56 +10,27 @@
     },
     "currency_code_49": "704",
     "test_cases": {
-        "022": {
-            "track2": "9704189991010867647=31016010000000123",
-            "description": "Magstripe Standard"
-        },
-        "031": {
-            "track2": "9704368888881111221=26122210000000000",
-            "description": "VCB Chip (SC 221)"
-        },
-        "032": {
-            "track2": "9704157777773333447=28122010000000000",
-            "description": "Vietin Chip (SC 201)"
+        "011": {
+            "pan": "9704189991010867647",
+            "expiry": "3101",
+            "description": "Manual Key-in with PIN"
         },
         "012": {
             "pan": "9704186870000505297",
             "expiry": "2808",
-            "description": "Manual Key-in"
+            "description": "Manual Key-in without PIN"
         },
-        "102": {
-            "pan": "9704186870000505297",
-            "expiry": "2808",
-            "description": "Credential on File"
-        },
-        "792": {
-            "pan": "9704186870000505297",
-            "expiry": "2808",
-            "description": "Fallback Manual"
-        },
-        "801": {
-            "track2": "9704032222228888991=25122010000000000",
-            "description": "Tech Fallback (SC 201)"
-        },
-        "802": {
-            "track2": "9704032222228888991=25122010000000000",
-            "description": "Tech Fallback (SC 201)"
+        "022": {
+            "track2": "9704189991010867647=31016010000000123",
+            "description": "Magstripe without PIN"
         },
         "901": {
             "track2": "9704189991010867647=31011010000000123",
-            "description": "Fallback Empty (SC 101)"
+            "description": "Contactless with PIN"
         },
         "902": {
             "track2": "9704189991010867647=31011010000000123",
-            "description": "Fallback Empty (SC 101)"
-        },
-        "911": {
-            "track2": "9704234444449999001=30121010000000000",
-            "description": "Fallback Ctls (SC 101)"
-        },
-        "912": {
-            "track2": "9704234444449999001=30121010000000000",
-            "description": "Fallback Ctls (SC 101)"
+            "description": "Contactless without PIN"
         }
     },
     "default_amount": "000000100000",

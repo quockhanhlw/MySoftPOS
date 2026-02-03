@@ -3,8 +3,8 @@ package com.example.mysoftpos.data.repository;
 import android.content.Context;
 import androidx.lifecycle.LiveData;
 import com.example.mysoftpos.data.local.AppDatabase;
-import com.example.mysoftpos.data.local.TestCaseDao;
-import com.example.mysoftpos.data.local.TestCaseEntity;
+import com.example.mysoftpos.data.local.dao.TestCaseDao;
+import com.example.mysoftpos.data.local.entity.TestCaseEntity;
 import com.example.mysoftpos.testsuite.storage.TestStorageProvider;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -51,3 +51,8 @@ public class TestCaseRepository {
         });
     }
 }
+
+
+
+
+

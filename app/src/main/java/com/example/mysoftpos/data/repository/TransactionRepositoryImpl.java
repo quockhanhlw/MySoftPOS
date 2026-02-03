@@ -1,9 +1,10 @@
 package com.example.mysoftpos.data.repository;
+import com.example.mysoftpos.data.local.dao.TransactionDao;
 
 import androidx.lifecycle.LiveData;
 import com.example.mysoftpos.data.local.AppDatabase;
-import com.example.mysoftpos.data.local.TransactionEntity;
-import com.example.mysoftpos.utils.DispatcherProvider;
+import com.example.mysoftpos.data.local.entity.TransactionEntity;
+import com.example.mysoftpos.utils.threading.DispatcherProvider;
 import java.util.List;
 
 public class TransactionRepositoryImpl implements TransactionRepository {
@@ -49,3 +50,9 @@ public class TransactionRepositoryImpl implements TransactionRepository {
         });
     }
 }
+
+
+
+
+
+

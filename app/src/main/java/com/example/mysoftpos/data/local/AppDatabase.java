@@ -1,4 +1,14 @@
 package com.example.mysoftpos.data.local;
+import com.example.mysoftpos.data.local.dao.UserDao;
+import com.example.mysoftpos.data.local.entity.UserEntity;
+import com.example.mysoftpos.data.local.entity.TestCaseEntity;
+import com.example.mysoftpos.data.local.dao.TransactionDao;
+import com.example.mysoftpos.data.local.dao.TestCaseDao;
+import com.example.mysoftpos.data.local.dao.TransactionTemplateDao;
+import com.example.mysoftpos.data.local.dao.TestSuiteDao;
+import com.example.mysoftpos.data.local.entity.TransactionTemplateEntity;
+import com.example.mysoftpos.data.local.entity.TestSuiteEntity;
+import com.example.mysoftpos.data.local.entity.TransactionEntity;
 
 import android.content.Context;
 
@@ -6,21 +16,27 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
+import com.example.mysoftpos.data.local.entity.*;
+import com.example.mysoftpos.data.local.dao.*;
+
 @Database(entities = {
         TransactionEntity.class,
         TransactionTemplateEntity.class,
         TestSuiteEntity.class,
-        TestCaseEntity.class
-}, version = 2, exportSchema = false)
+        TestCaseEntity.class,
+        UserEntity.class // New: User accounts
+}, version = 3, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract TransactionDao transactionDao();
 
-    public abstract TransactionTemplateDao transactionTemplateDao(); // New
+    public abstract TransactionTemplateDao transactionTemplateDao();
 
-    public abstract TestSuiteDao testSuiteDao(); // New
+    public abstract TestSuiteDao testSuiteDao();
 
-    public abstract TestCaseDao testCaseDao(); // New
+    public abstract TestCaseDao testCaseDao();
+
+    public abstract UserDao userDao(); // New: User DAO
 
     private static volatile AppDatabase INSTANCE;
 
@@ -34,9 +50,8 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                             AppDatabase.class, "mysoftpos_db")
-                            .fallbackToDestructiveMigration() // Dev only: Wipes DB on version change
-                            .setJournalMode(RoomDatabase.JournalMode.TRUNCATE) // Fix: Prevent WAL file issues for
-                                                                               // export
+                            .fallbackToDestructiveMigration()
+                            .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
                             .build();
                 }
             }
@@ -44,3 +59,4 @@ public abstract class AppDatabase extends RoomDatabase {
         return INSTANCE;
     }
 }
+

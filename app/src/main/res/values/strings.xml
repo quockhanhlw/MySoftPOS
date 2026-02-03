@@ -34,7 +34,7 @@
     <string name="register_password_hint">Nhập mật khẩu</string>
     <string name="register_confirm_password">Xác nhận mật khẩu</string>
     <string name="register_confirm_password_hint">Nhập lại mật khẩu</string>
-    <string name="register_terms_text">Bằng việc Đăng ký, bạn đã đồng ý với Điều khoản và Điều kiện cũng Chính sách bảo mật của Techcombank ePOS</string>
+    <string name="register_terms_text">Bằng việc Đăng ký, bạn đã đồng ý với Điều khoản và Điều kiện cũng Chính sách bảo mật của softbank ePOS</string>
     <string name="register_button">Đăng ký</string>
 
     <!-- Forgot Password Screen -->

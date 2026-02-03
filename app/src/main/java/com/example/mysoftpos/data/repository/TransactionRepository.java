@@ -1,8 +1,8 @@
 package com.example.mysoftpos.data.repository;
 
 import androidx.lifecycle.LiveData;
-import com.example.mysoftpos.data.local.TransactionEntity;
-import com.example.mysoftpos.iso8583.IsoMessage;
+import com.example.mysoftpos.data.local.entity.TransactionEntity;
+import com.example.mysoftpos.iso8583.message.IsoMessage;
 import com.example.mysoftpos.domain.model.CardInputData;
 import java.util.List;
 
@@ -21,3 +21,8 @@ public interface TransactionRepository {
 
     void updateTransactionResponseHex(String traceNumber, String responseHex);
 }
+
+
+
+
+

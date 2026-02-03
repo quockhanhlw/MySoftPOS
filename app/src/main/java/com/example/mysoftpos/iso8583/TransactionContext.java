@@ -1,4 +1,6 @@
 package com.example.mysoftpos.iso8583;
+import com.example.mysoftpos.iso8583.TxnType;
+import com.example.mysoftpos.iso8583.TransactionContext;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -95,17 +97,39 @@ public class TransactionContext {
     }
 
     /**
-     * Format Amount for DE 4.
-     * Logic: Input (e.g. "1000") -> Append "00" (cents) -> "100000" -> Pad left "0"
-     * to 12 chars -> "000000100000".
+     * Format Amount for DE 4 (Default VND).
+     * VND: Input (e.g. "1234") -> Append "00" -> "123400" -> Pad to 12 chars ->
+     * "000000123400"
      */
     public static String formatAmount12(String amount) {
+        return formatAmount12(amount, "704"); // Default VND
+    }
+
+    /**
+     * Format Amount for DE 4 with Currency.
+     * 
+     * VND (704): Input amount is whole number, append "00" suffix for minor units.
+     * Example: "1234" -> "123400" -> "000000123400"
+     * 
+     * USD (840): Input amount already includes cents (last 2 digits are cents).
+     * Example: "345678" -> "000000345678" (means $3,456.78)
+     * 
+     * @param amount       Raw amount string
+     * @param currencyCode "704" for VND, "840" for USD
+     */
+    public static String formatAmount12(String amount, String currencyCode) {
         if (amount == null || amount.isEmpty())
             return "000000000000";
         try {
             long val = Long.parseLong(amount.replace(".", "").replace(",", ""));
-            // User Requirement: "thêm 2 số 0 ở cuối" (multiply by 100)
-            val = val * 100;
+
+            if ("704".equals(currencyCode)) {
+                // VND: Append "00" (multiply by 100) - VND has no minor units
+                val = val * 100;
+            }
+            // USD (840): Input already includes cents, no multiplication needed
+            // Example: 345678 means $3,456.78
+
             return String.format(Locale.US, "%012d", val);
         } catch (NumberFormatException e) {
             return "000000000000";
@@ -131,3 +155,9 @@ public class TransactionContext {
         return "704";
     }
 }
+
+
+
+
+
+

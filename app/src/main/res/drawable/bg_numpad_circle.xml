@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Circular numpad button background (light gray with ripple) -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="#20000000">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#F0F4F8" />
+        </shape>
+    </item>
+</ripple>

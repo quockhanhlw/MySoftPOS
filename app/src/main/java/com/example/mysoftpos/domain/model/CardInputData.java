@@ -1,4 +1,5 @@
 package com.example.mysoftpos.domain.model;
+import com.example.mysoftpos.iso8583.emv.EmvTags;
 
 import java.util.Map;
 import java.util.Collections;
@@ -70,3 +71,9 @@ public class CardInputData {
         return "****" + pan.substring(pan.length() - 4);
     }
 }
+
+
+
+
+
+

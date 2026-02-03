@@ -1,11 +1,12 @@
 package com.example.mysoftpos.domain.usecase;
+import com.example.mysoftpos.iso8583.emv.EmvTags;
 
 import android.util.Log;
 
-import com.example.mysoftpos.data.CardTransceiver;
+import com.example.mysoftpos.nfc.CardTransceiver;
 import com.example.mysoftpos.domain.model.CardInputData;
-import com.example.mysoftpos.utils.ApduCommandBuilder;
-import com.example.mysoftpos.utils.TlvParser;
+import com.example.mysoftpos.nfc.ApduCommandBuilder;
+import com.example.mysoftpos.iso8583.parser.TlvParser;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -97,8 +98,8 @@ public class ReadCardDataUseCase {
             throw new IOException("Track2 Data (Tag 57) not found");
         }
 
-        String pan = com.example.mysoftpos.utils.CardDataHelper.extractPan(track2Hex);
-        String expiry = com.example.mysoftpos.utils.CardDataHelper.extractExpiry(track2Hex);
+        String pan = com.example.mysoftpos.utils.card.CardDataHelper.extractPan(track2Hex);
+        String expiry = com.example.mysoftpos.utils.card.CardDataHelper.extractExpiry(track2Hex);
 
         CardInputData data = new CardInputData(
                 pan,
@@ -134,3 +135,10 @@ public class ReadCardDataUseCase {
 
     // extractTags removed
 }
+
+
+
+
+
+
+

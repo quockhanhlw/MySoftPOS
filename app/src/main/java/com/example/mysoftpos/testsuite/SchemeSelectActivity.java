@@ -40,3 +40,8 @@ public class SchemeSelectActivity extends AppCompatActivity {
         Toast.makeText(this, scheme + " coming soon...", Toast.LENGTH_SHORT).show();
     }
 }
+
+
+
+
+

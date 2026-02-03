@@ -12,7 +12,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.mysoftpos.R;
-import com.example.mysoftpos.data.local.TestSuiteEntity;
+import com.example.mysoftpos.data.local.entity.TestSuiteEntity;
 import com.example.mysoftpos.testsuite.adapter.TestSuiteAdapter;
 import com.example.mysoftpos.testsuite.viewmodel.DynamicTestSuiteViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -74,3 +74,8 @@ public class DynamicTestSuiteActivity extends AppCompatActivity {
         builder.show();
     }
 }
+
+
+
+
+

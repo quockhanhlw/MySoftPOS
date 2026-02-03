@@ -3,8 +3,8 @@ package com.example.mysoftpos.data.repository;
 import android.content.Context;
 import androidx.lifecycle.LiveData;
 import com.example.mysoftpos.data.local.AppDatabase;
-import com.example.mysoftpos.data.local.TransactionTemplateDao;
-import com.example.mysoftpos.data.local.TransactionTemplateEntity;
+import com.example.mysoftpos.data.local.dao.TransactionTemplateDao;
+import com.example.mysoftpos.data.local.entity.TransactionTemplateEntity;
 import org.json.JSONObject;
 import java.io.File;
 import java.io.FileWriter;
@@ -73,3 +73,8 @@ public class TemplateRepository {
         }
     }
 }
+
+
+
+
+

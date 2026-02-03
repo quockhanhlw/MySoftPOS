@@ -1,4 +1,5 @@
 package com.example.mysoftpos.testsuite;
+import com.example.mysoftpos.utils.config.ConfigManager;
 
 import com.example.mysoftpos.testsuite.model.TestScenario;
 import java.util.ArrayList;
@@ -61,7 +62,7 @@ public class TestDataProvider {
                     pan = parts[0];
                 }
             }
-            String bankName = com.example.mysoftpos.utils.BinResolver.getBankName(pan);
+            String bankName = com.example.mysoftpos.utils.card.BinResolver.getBankName(pan);
             s.setDescription(s.getDescription() + " - " + bankName);
 
             list.add(s);
@@ -73,10 +74,10 @@ public class TestDataProvider {
             android.content.Context context) {
         // --- Rule 1: Load Data from ConfigManager (JSON) ---
         // Includes: Track 2, PAN (Manual), Expiry (Manual)
-        com.example.mysoftpos.utils.ConfigManager config = com.example.mysoftpos.utils.ConfigManager
+        com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
                 .getInstance(context);
 
-        com.example.mysoftpos.utils.ConfigManager.TestCaseConfig tcConfig = config.getTestCaseConfig(code);
+        com.example.mysoftpos.utils.config.ConfigManager.TestCaseConfig tcConfig = config.getTestCaseConfig(code);
 
         if (tcConfig != null) {
             // Set Track 2 if present
@@ -135,3 +136,10 @@ public class TestDataProvider {
         return "Unknown";
     }
 }
+
+
+
+
+
+
+

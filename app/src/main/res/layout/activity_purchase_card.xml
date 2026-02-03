@@ -1,408 +1,252 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Purchase Card Screen - Tab-based Entry: Manual Entry | Mock Track 2 -->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
-    android:padding="24dp">
+    android:background="@color/white">
 
-    <!-- HEADER / APP BAR -->
-    <LinearLayout
+    <!-- Header -->
+    <FrameLayout
         android:id="@+id/headerContainer"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:layout_height="56dp"
+        android:layout_marginTop="24dp"
+        android:paddingHorizontal="16dp"
+        app:layout_constraintTop_toTopOf="parent">
 
         <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="start|center_vertical"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_back"
-            app:tint="@color/text_primary"/>
+            android:scaleType="centerInside"
+            android:padding="8dp"
+            app:tint="@color/neo_primary_dark"
+            android:contentDescription="Back" />
 
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Payment"
+            android:textSize="18sp"
+            android:textColor="@color/neo_primary_dark"
+            android:fontFamily="sans-serif-medium" />
+    </FrameLayout>
 
+    <!-- Tab Layout: Manual Entry | Mock Track 2 -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="8dp"
+        app:tabMode="fixed"
+        app:tabGravity="fill"
+        app:tabIndicatorColor="@color/neo_primary_dark"
+        app:tabSelectedTextColor="@color/neo_primary_dark"
+        app:tabTextColor="@color/neo_text_label"
+        app:tabIndicatorHeight="2dp"
+        app:tabRippleColor="@android:color/transparent"
+        app:layout_constraintTop_toBottomOf="@id/headerContainer">
 
-        <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1"/>
-    </LinearLayout>
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Manual Entry" />
 
-    <TextView
-        android:id="@+id/tvAmountDisplay"
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mock Track 2" />
+    </com.google.android.material.tabs.TabLayout>
+
+    <!-- Manual Entry Card (Tab 0) - CENTERED & LARGER -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardManualEntry"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="6dp"
+        app:cardBackgroundColor="@color/white"
+        app:layout_constraintTop_toBottomOf="@id/tabLayout"
+        app:layout_constraintBottom_toTopOf="@id/amountContainer"
+        app:layout_constraintVertical_bias="0.4">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="28dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Card Number (PAN)"
+                android:textSize="16sp"
+                android:textColor="@color/neo_text_secondary" />
+
+            <EditText
+                android:id="@+id/etPan"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="12dp"
+                android:inputType="number"
+                android:maxLength="19"
+                android:textSize="18sp"
+                android:hint="1234 5678 9012 3456"
+                android:background="@drawable/bg_input_rounded"
+                android:paddingHorizontal="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Expiry Date (YYMM)"
+                android:textSize="16sp"
+                android:textColor="@color/neo_text_secondary" />
+
+            <EditText
+                android:id="@+id/etExpiry"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="12dp"
+                android:inputType="number"
+                android:maxLength="4"
+                android:textSize="18sp"
+                android:hint="2512"
+                android:background="@drawable/bg_input_rounded"
+                android:paddingHorizontal="16dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSubmitManual"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="32dp"
+                android:text="Pay"
+                android:textSize="18sp"
+                app:backgroundTint="@color/neo_primary_dark"
+                app:cornerRadius="14dp" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Mock Track 2 Card (Tab 1) - CENTERED & LARGER -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardMockTrack2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:visibility="gone"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="6dp"
+        app:cardBackgroundColor="@color/white"
+        app:layout_constraintTop_toBottomOf="@id/tabLayout"
+        app:layout_constraintBottom_toTopOf="@id/amountContainer"
+        app:layout_constraintVertical_bias="0.4">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="32dp"
+            android:gravity="center">
+
+            <!-- NFC Icon - LARGER -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardNfcIcon"
+                android:layout_width="160dp"
+                android:layout_height="160dp"
+                app:cardBackgroundColor="#F0F4F8"
+                app:cardCornerRadius="80dp"
+                app:cardElevation="0dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_nfc"
+                    app:tint="@color/neo_primary_dark" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="Tap to use Mock Track 2"
+                android:textSize="18sp"
+                android:textColor="@color/neo_primary_dark"
+                android:fontFamily="sans-serif-medium" />
+
+            <TextView
+                android:id="@+id/tvMockTrack2Preview"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="9704189991010867647=3101..."
+                android:textSize="14sp"
+                android:textColor="@color/neo_text_label"
+                android:fontFamily="monospace" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Amount Display -->
+    <LinearLayout
+        android:id="@+id/amountContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="50,000 VND"
-        android:fontFamily="sans-serif"
-        android:textSize="32sp"
-        android:textStyle="bold"
-        android:textColor="@color/primary"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/headerContainer"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <!-- CONTENT CONTAINER (3 STATES) -->
-    <FrameLayout
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="24dp"
-        app:layout_constraintTop_toBottomOf="@id/tvAmountDisplay"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="40dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- STATE 1: SELECTION -->
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/layoutMethodSelection"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="visible">
-            
-            <TextView
-                android:id="@+id/tvSelectHint"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Chọn phương thức"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"/>
+        <TextView
+            android:id="@+id/tvCurrency"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VND"
+            android:textSize="28sp"
+            android:textColor="@color/neo_primary_dark"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginEnd="16dp" />
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardOptionNfc"
-                android:layout_width="0dp"
-                android:layout_height="140dp"
-                app:cardBackgroundColor="@color/surface"
-                app:cardCornerRadius="24dp"
-                app:cardElevation="2dp"
-                app:strokeColor="@color/outline_light" 
-                app:strokeWidth="0dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_marginTop="24dp"
-                app:layout_constraintTop_toBottomOf="@id/tvSelectHint"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
+        <TextView
+            android:id="@+id/tvAmountDisplay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textSize="52sp"
+            android:textColor="@color/neo_primary_dark"
+            android:fontFamily="sans-serif-bold"
+            tools:text="52,687" />
+    </LinearLayout>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="24dp">
-
-                    <ImageView
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:src="@drawable/ic_nfc"
-                        app:tint="@color/primary"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_marginStart="24dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Quét thẻ NFC"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/text_primary"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Chạm nhanh &amp; Bảo mật"
-                            android:textSize="14sp"
-                            android:textColor="@color/text_secondary"
-                            android:layout_marginTop="4dp"/>
-                    </LinearLayout>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="24dp"
-                    android:orientation="vertical"/>
-            </com.google.android.material.card.MaterialCardView>
-            
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardOptionManual"
-                android:layout_width="0dp"
-                android:layout_height="140dp"
-                app:cardBackgroundColor="@color/surface"
-                app:cardCornerRadius="24dp"
-                app:cardElevation="2dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_marginTop="16dp"
-                app:layout_constraintTop_toBottomOf="@id/cardOptionNfc"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="24dp">
-
-                    <ImageView
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:src="@drawable/ic_keyboard"
-                        app:tint="@color/tertiary"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_marginStart="24dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Nhập thủ công"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/text_primary"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Nhập thông tin thẻ"
-                            android:textSize="14sp"
-                            android:textColor="@color/text_secondary"
-                            android:layout_marginTop="4dp"/>
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-        <!-- STATE 2: NFC SCANNING -->
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/layoutNfcMode"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone">
-
-            <ImageView
-                android:id="@+id/ivNfcIcon"
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:src="@drawable/softpos"
-                app:tint="@null"
-                android:layout_marginBottom="48dp"
-                app:layout_constraintBottom_toTopOf="@id/tvNfcHint"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintVertical_chainStyle="packed"/>
-
-            <TextView
-                android:id="@+id/tvNfcHint"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Chạm thẻ vào mặt sau"
-                android:textSize="18sp"
-                android:fontFamily="sans-serif-medium"
-                android:textColor="@color/text_primary"
-                android:gravity="center"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/ivNfcIcon"
-                android:layout_marginBottom="32dp"/>
-
-            <!-- Back button removed (Redundant with Header Back) -->
-
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-        <!-- STATE 3: MANUAL ENTRY -->
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/layoutManualMode"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone">
-
-            <!-- Back button removed (Redundant with Header Back) -->
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/cardInputContainer"
-                android:layout_width="0dp"
-                android:layout_height="220dp"
-                android:background="@drawable/bg_bank_card"
-                android:layout_marginTop="32dp"
-                android:padding="24dp"
-                android:elevation="12dp"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
-
-                <TextView
-                    android:id="@+id/tvBankName"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="MySoftPOS Bank"
-                    android:textColor="#FFFFFF"
-                    android:textStyle="bold"
-                    android:textSize="20sp"
-                    android:fontFamily="sans-serif-medium"
-                    android:shadowColor="#80000000"
-                    android:shadowDx="2"
-                    android:shadowDy="2"
-                    android:shadowRadius="4"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"/>
-
-                <ImageView
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:src="@drawable/ic_nfc"
-                    android:rotation="90"
-                    app:tint="#CCFFFFFF"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"/>
-
-
-                    <!-- Note: If ic_chip_sim doesn't exist, we revert to color view, but let's try to simulate checking later or use a View with background color as fallback if resource missing. 
-                         For now, keeping the View but making it prettier if possible. 
-                         Let's revert to simple View background to be safe but add corner radius -->
-                    
-                 <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/chipSimCard"
-                    android:layout_width="50dp"
-                    android:layout_height="36dp"
-                    app:cardBackgroundColor="#FFD700"
-                    app:cardCornerRadius="6dp"
-                    app:cardElevation="2dp"
-                    android:layout_marginTop="24dp"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/tvBankName">
-                 </com.google.android.material.card.MaterialCardView>
-
-                <!-- Card Number: Optimized for 16-19 digits on one line -->
-                <EditText
-                    android:id="@+id/etCardNumber"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:hint="XXXX XXXX XXXX XXXX"
-                    android:textColorHint="#60FFFFFF"
-                    android:textColor="#FFFFFF"
-                    android:textSize="20sp" 
-                    android:textStyle="bold"
-                    android:background="@null"
-                    android:inputType="number"
-                    android:maxLength="22"
-                    android:maxLines="1"
-                    android:letterSpacing="0.05"
-                    android:fontFamily="monospace"
-                    android:shadowColor="#80000000"
-                    android:shadowDx="2"
-                    android:shadowDy="2"
-                    android:shadowRadius="2"
-                    android:layout_marginTop="24dp"
-                    android:paddingHorizontal="4dp"
-                    app:layout_constraintTop_toBottomOf="@id/chipSimCard"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"/>
-
-                <TextView
-                    android:id="@+id/tvLabelExpiry"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="VALID\nTHRU"
-                    android:textColor="#CCFFFFFF"
-                    android:textSize="10sp"
-                    android:gravity="end"
-                    android:layout_marginEnd="12dp"
-                    app:layout_constraintEnd_toStartOf="@id/etExpiry"
-                    app:layout_constraintTop_toTopOf="@id/etExpiry"
-                    app:layout_constraintBottom_toBottomOf="@id/etExpiry"/>
-
-                <EditText
-                    android:id="@+id/etExpiry"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:hint="YYMM"
-                    android:textColorHint="#60FFFFFF"
-                    android:textColor="#FFFFFF"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:background="@null"
-                    android:inputType="number"
-                    android:maxLength="4"
-                    android:maxLines="1"
-                    android:fontFamily="monospace"
-                    android:shadowColor="#80000000"
-                    android:shadowDx="2"
-                    android:shadowDy="2"
-                    android:shadowRadius="2"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/etCardNumber"
-                    app:layout_constraintVertical_bias="0.8"/>
-                
-                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="DEBIT"
-                    android:textColor="#AAFFFFFF"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.1"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/etCardNumber"
-                    app:layout_constraintVertical_bias="0.8"/>
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnProcess"
-                style="@style/AppButtonPrimary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="THANH TOÁN"
-                android:layout_marginTop="48dp"
-                app:layout_constraintTop_toBottomOf="@id/cardInputContainer"/>
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-    </FrameLayout>
-
-    <!-- LOADING OVERLAY -->
+    <!-- Loading Overlay -->
     <FrameLayout
         android:id="@+id/layoutLoading"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#80000000"
+        android:background="#80FFFFFF"
         android:visibility="gone"
         android:clickable="true"
-        android:focusable="true"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-        
+        android:focusable="true">
+
         <ProgressBar
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_gravity="center"
             android:indeterminate="true"
-            android:indeterminateTint="@color/primary"/>
+            android:indeterminateTint="@color/neo_primary_dark" />
     </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

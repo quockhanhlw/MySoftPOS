@@ -1,14 +1,17 @@
 package com.example.mysoftpos.testsuite.viewmodel;
+import com.example.mysoftpos.utils.config.ConfigManager;
+import com.example.mysoftpos.data.local.entity.TransactionEntity;
+import com.example.mysoftpos.utils.logging.FileLogger;
 
 import android.app.Application;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import com.example.mysoftpos.domain.model.CardInputData;
-import com.example.mysoftpos.iso8583.Iso8583Builder;
-import com.example.mysoftpos.iso8583.IsoMessage;
+import com.example.mysoftpos.iso8583.builder.Iso8583Builder;
+import com.example.mysoftpos.iso8583.message.IsoMessage;
 import com.example.mysoftpos.iso8583.TransactionContext;
-import com.example.mysoftpos.utils.StandardIsoPacker;
+import com.example.mysoftpos.iso8583.util.StandardIsoPacker;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -32,7 +35,7 @@ public class RunnerViewModel extends AndroidViewModel {
         executor.execute(() -> {
             try {
                 // 1. Prepare Context with ConfigManager
-                com.example.mysoftpos.utils.ConfigManager config = com.example.mysoftpos.utils.ConfigManager
+                com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
                         .getInstance(getApplication());
 
                 TransactionContext ctx = new TransactionContext();
@@ -118,8 +121,8 @@ public class RunnerViewModel extends AndroidViewModel {
                 logMessage.postValue("\nPacked Hex (" + packed.length + " bytes):\n" + sendHex);
 
                 // --- LOG TO FILE: TEST SUITE ---
-                com.example.mysoftpos.utils.FileLogger.logTestSuitePacket(getApplication(), "SEND", packed);
-                com.example.mysoftpos.utils.FileLogger.logTestSuiteString(getApplication(), "SEND DETAIL",
+                com.example.mysoftpos.utils.logging.FileLogger.logTestSuitePacket(getApplication(), "SEND", packed);
+                com.example.mysoftpos.utils.logging.FileLogger.logTestSuiteString(getApplication(), "SEND DETAIL",
                         StandardIsoPacker.logIsoMessage(msg));
 
                 // 5. Send (Real Network)
@@ -132,13 +135,13 @@ public class RunnerViewModel extends AndroidViewModel {
                 String recvHex = StandardIsoPacker.bytesToHex(responseBytes);
 
                 // --- LOG TO FILE: TEST SUITE (RECV) ---
-                com.example.mysoftpos.utils.FileLogger.logTestSuitePacket(getApplication(), "RECV", responseBytes);
+                com.example.mysoftpos.utils.logging.FileLogger.logTestSuitePacket(getApplication(), "RECV", responseBytes);
 
                 // 6. Unpack Response
                 IsoMessage respMsg = new StandardIsoPacker().unpack(responseBytes);
 
                 // --- LOG TO FILE: TEST SUITE (RECV DETAIL) ---
-                com.example.mysoftpos.utils.FileLogger.logTestSuiteString(getApplication(), "RECV DETAIL",
+                com.example.mysoftpos.utils.logging.FileLogger.logTestSuiteString(getApplication(), "RECV DETAIL",
                         StandardIsoPacker.logIsoMessage(respMsg));
 
                 // Log Response Details
@@ -192,7 +195,7 @@ public class RunnerViewModel extends AndroidViewModel {
     private void saveTransactionToDb(TransactionContext ctx, CardInputData card, String status, String reqHex,
             String respHex) {
         try {
-            com.example.mysoftpos.data.local.TransactionEntity entity = new com.example.mysoftpos.data.local.TransactionEntity();
+            com.example.mysoftpos.data.local.entity.TransactionEntity entity = new com.example.mysoftpos.data.local.entity.TransactionEntity();
             entity.traceNumber = ctx.stan11;
             entity.amount = ctx.amount4;
             entity.pan = card.getPan(); // Unmasked for internal DB? Or Masked? Using Utils to mask.
@@ -277,3 +280,10 @@ public class RunnerViewModel extends AndroidViewModel {
         return track2.substring(0, 6) + "......" + track2.substring(track2.length() - 4);
     }
 }
+
+
+
+
+
+
+

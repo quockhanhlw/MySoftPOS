@@ -4,8 +4,8 @@ import android.content.Context;
 import com.example.mysoftpos.data.local.AppDatabase;
 import com.example.mysoftpos.data.repository.TransactionRepository;
 import com.example.mysoftpos.data.repository.TransactionRepositoryImpl;
-import com.example.mysoftpos.utils.DefaultDispatcherProvider;
-import com.example.mysoftpos.utils.DispatcherProvider;
+import com.example.mysoftpos.utils.threading.DefaultDispatcherProvider;
+import com.example.mysoftpos.utils.threading.DispatcherProvider;
 
 public class ServiceLocator {
 
@@ -51,3 +51,8 @@ public class ServiceLocator {
         return transactionRepository;
     }
 }
+
+
+
+
+

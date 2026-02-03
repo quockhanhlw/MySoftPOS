@@ -32,3 +32,8 @@ public class TransactionState {
         return new TransactionState(false, false, message, isoResponse, isoRequest);
     }
 }
+
+
+
+
+

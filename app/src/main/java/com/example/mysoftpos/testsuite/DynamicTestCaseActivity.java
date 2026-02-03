@@ -8,7 +8,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.mysoftpos.R;
-import com.example.mysoftpos.data.local.TestCaseEntity;
+import com.example.mysoftpos.data.local.entity.TestCaseEntity;
 import com.example.mysoftpos.testsuite.adapter.TestCaseAdapter;
 import com.example.mysoftpos.testsuite.viewmodel.DynamicTestCaseViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -56,3 +56,8 @@ public class DynamicTestCaseActivity extends AppCompatActivity {
         // Need to query TemplateRepository first
     }
 }
+
+
+
+
+

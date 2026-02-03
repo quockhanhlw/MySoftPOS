@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.example.mysoftpos.data.local.dao.TransactionDao;
+import com.example.mysoftpos.data.local.entity.TransactionEntity;
+
 public class DatabaseManager {
 
     private final TransactionDao transactionDao;

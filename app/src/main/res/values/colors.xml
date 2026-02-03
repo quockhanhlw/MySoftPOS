@@ -98,4 +98,49 @@
     <color name="btn_primary_dark">#2563EB</color>
     <color name="outline_light">#334155</color>
     <color name="tertiary">#8B5CF6</color>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!--                    NEO-FINTECH PREMIUM PALETTE                       -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+
+    <!-- Primary: Deep Ocean Blue Gradient -->
+    <color name="neo_primary_dark">#0A2463</color>
+    <color name="neo_primary_light">#247BA0</color>
+    <color name="neo_primary_mid">#1A4A7A</color>
+
+    <!-- Accent: Cyber Teal -->
+    <color name="neo_accent">#00E5FF</color>
+    <color name="neo_accent_dark">#00B8D4</color>
+
+    <!-- Backgrounds -->
+    <color name="neo_bg_light">#F4F7FA</color>
+    <color name="neo_bg_dark">#1B1F23</color>
+    <color name="neo_surface">#FFFFFF</color>
+    <color name="neo_surface_elevated">#FAFBFC</color>
+
+    <!-- Payment Button Gradient (Cyan to Blue) -->
+    <color name="neo_btn_gradient_start">#00C6FF</color>
+    <color name="neo_btn_gradient_end">#0072FF</color>
+    <color name="neo_btn_pressed_start">#00A8D6</color>
+    <color name="neo_btn_pressed_end">#0060D6</color>
+
+    <!-- Glassmorphism -->
+    <color name="neo_glass_bg">#E6FFFFFF</color>
+    <color name="neo_glass_bg_dark">#CC1B1F23</color>
+    <color name="neo_glass_border">#33FFFFFF</color>
+
+    <!-- Status Pills -->
+    <color name="neo_status_connected">#00C853</color>
+    <color name="neo_status_keys">#2979FF</color>
+    <color name="neo_status_offline">#FF5252</color>
+
+    <!-- Keypad -->
+    <color name="neo_keypad_bg">#F0F4F8</color>
+    <color name="neo_keypad_pressed">#E0E7EF</color>
+    <color name="neo_keypad_text">#0A2463</color>
+
+    <!-- Typography -->
+    <color name="neo_text_amount">#0A2463</color>
+    <color name="neo_text_label">#64748B</color>
+    <color name="neo_text_secondary">#64748B</color>
 </resources>

@@ -88,7 +88,7 @@
                 android:textColor="@color/primary"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif-medium" />
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -107,9 +107,12 @@
                     android:textColor="@color/primary"
                     android:textSize="15sp"
                     android:padding="14dp"
-                    android:inputType="number"
-                    android:maxLines="1" />
-            </androidx.cardview.widget.CardView>
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:clickable="true" />
+            </com.google.android.material.card.MaterialCardView>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -118,7 +121,7 @@
                 android:textColor="@color/primary"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif-medium" />
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -138,8 +141,11 @@
                     android:textSize="15sp"
                     android:padding="14dp"
                     android:inputType="text"
-                    android:maxLines="1" />
-            </androidx.cardview.widget.CardView>
+                    android:maxLines="1"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:clickable="true" />
+            </com.google.android.material.card.MaterialCardView>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -148,7 +154,7 @@
                 android:textColor="@color/primary"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif-medium" />
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -168,8 +174,11 @@
                     android:textSize="15sp"
                     android:padding="14dp"
                     android:inputType="textPersonName|textCapWords"
-                    android:maxLines="1" />
-            </androidx.cardview.widget.CardView>
+                    android:maxLines="1"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:clickable="true" />
+            </com.google.android.material.card.MaterialCardView>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -178,7 +187,7 @@
                 android:textColor="@color/primary"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif-medium" />
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -202,7 +211,10 @@
                         android:padding="14dp"
                         android:paddingEnd="48dp"
                         android:inputType="textPassword"
-                        android:maxLines="1" />
+                        android:maxLines="1"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:clickable="true" />
                     <ImageView
                         android:id="@+id/btnShowPassword"
                         android:layout_width="24dp"
@@ -215,7 +227,7 @@
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:padding="2dp" />
                 </RelativeLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -224,7 +236,7 @@
                 android:textColor="@color/primary"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif-medium" />
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -248,7 +260,10 @@
                         android:padding="14dp"
                         android:paddingEnd="48dp"
                         android:inputType="textPassword"
-                        android:maxLines="1" />
+                        android:maxLines="1"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:clickable="true" />
                     <ImageView
                         android:id="@+id/btnShowConfirmPassword"
                         android:layout_width="24dp"
@@ -261,7 +276,7 @@
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:padding="2dp" />
                 </RelativeLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -282,14 +297,14 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_gravity="center_vertical"
-                    android:text="Bằng việc Đăng ký, bạn đã đồng ý với Điều khoản và Điều kiện cũng Chính sách bảo mật của Techcombank ePOS"
+                    android:text="Bằng việc Đăng ký, bạn đã đồng ý với Điều khoản và Điều kiện cũng Chính sách bảo mật của softbank ePOS"
                     android:textSize="13sp"
                     android:textColor="@color/welcome_text_secondary"
                     android:lineSpacingExtra="2dp" />
 
             </LinearLayout>
 
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:id="@+id/btnRegister"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -312,7 +327,7 @@
                     android:textColor="@color/white"
                     android:textSize="16sp"
                     android:textStyle="bold" />
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </RelativeLayout>
 </ScrollView>

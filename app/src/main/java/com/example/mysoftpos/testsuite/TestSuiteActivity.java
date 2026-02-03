@@ -1,4 +1,6 @@
 package com.example.mysoftpos.testsuite;
+import com.example.mysoftpos.utils.config.ConfigManager;
+import com.example.mysoftpos.iso8583.TxnType;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -93,3 +95,10 @@ public class TestSuiteActivity extends AppCompatActivity {
         startActivity(intent);
     }
 }
+
+
+
+
+
+
+

@@ -18,8 +18,9 @@
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.MySoftPOS">
 
+        <!-- Auth Activities -->
         <activity
-            android:name=".WelcomeActivity"
+            android:name=".ui.auth.WelcomeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,60 +29,65 @@
         </activity>
 
         <activity
-            android:name=".LoginActivity"
+            android:name=".ui.auth.LoginActivity"
             android:exported="false" />
 
         <activity
-            android:name=".ForgotPasswordActivity"
+            android:name=".ui.auth.ForgotPasswordActivity"
             android:exported="false" />
 
         <activity
-            android:name=".RegisterActivity"
+            android:name=".ui.auth.RegisterActivity"
             android:exported="false" />
 
+        <!-- Settings Activity -->
         <activity
-            android:name=".SettingsActivity"
+            android:name=".ui.settings.SettingsActivity"
             android:exported="false"
             android:label="@string/settings_title" />
 
+        <!-- Dashboard Activity -->
         <activity
-            android:name=".MainDashboardActivity"
+            android:name=".ui.dashboard.MainDashboardActivity"
             android:exported="false"
             android:label="@string/dashboard_title" />
 
+        <!-- Test Suite Activities -->
         <activity android:name=".testsuite.RunnerActivity" android:label="Test Runner" />
         <activity android:name=".testsuite.ChannelSelectActivity" android:label="Select Channel" />
         <activity android:name=".testsuite.TransactionSelectActivity" android:label="Select Transaction" />
-
-        <activity
-            android:name=".PurchaseAmountActivity"
-            android:exported="false"
-            android:label="Purchase" />
-
         <activity android:name=".testsuite.SchemeSelectActivity" android:label="Select Scheme" />
         <activity android:name=".testsuite.TestSuiteActivity" android:label="Test Suite" />
-
         <activity android:name=".testsuite.DynamicTestSuiteActivity" android:label="Test Suites" />
         <activity android:name=".testsuite.DynamicTestCaseActivity" android:label="Test Cases" />
 
+        <!-- Purchase Activities -->
+        <activity
+            android:name=".ui.purchase.PurchaseAmountActivity"
+            android:exported="false"
+            android:label="Purchase" />
 
         <activity
-            android:name=".PurchaseCardActivity"
+            android:name=".ui.purchase.PurchaseCardActivity"
             android:exported="false"
             android:label="Card" />
 
-        <!-- Deleted IsoMessagePreviewActivity -->
-        <!-- Deleted HomeTabsActivity -->
-
         <activity
-            android:name=".TransactionResultActivity"
-            android:exported="false"
-            android:label="Kết quả" />
-            
-        <activity
-            android:name=".PaymentSuccessActivity"
+            android:name=".ui.purchase.PaymentSuccessActivity"
             android:exported="false"
             android:label="Success" />
+
+        <!-- Balance Inquiry Activity -->
+        <activity
+            android:name=".ui.balance.BalanceInquiryActivity"
+            android:exported="false"
+            android:label="Balance Inquiry" />
+
+        <!-- Result Activity -->
+        <activity
+            android:name=".ui.result.TransactionResultActivity"
+            android:exported="false"
+            android:label="Kết quả" />
 
     </application>
 

@@ -5,8 +5,8 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import com.example.mysoftpos.data.local.AppDatabase;
-import com.example.mysoftpos.data.local.TestSuiteDao;
-import com.example.mysoftpos.data.local.TestSuiteEntity;
+import com.example.mysoftpos.data.local.dao.TestSuiteDao;
+import com.example.mysoftpos.data.local.entity.TestSuiteEntity;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -39,3 +39,8 @@ public class DynamicTestSuiteViewModel extends AndroidViewModel {
         executor.execute(() -> dao.delete(suite));
     }
 }
+
+
+
+
+

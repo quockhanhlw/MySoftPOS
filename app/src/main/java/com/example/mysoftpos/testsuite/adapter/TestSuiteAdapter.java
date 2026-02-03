@@ -7,7 +7,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.mysoftpos.R;
-import com.example.mysoftpos.data.local.TestSuiteEntity;
+import com.example.mysoftpos.data.local.entity.TestSuiteEntity;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -66,3 +66,8 @@ public class TestSuiteAdapter extends RecyclerView.Adapter<TestSuiteAdapter.View
         }
     }
 }
+
+
+
+
+

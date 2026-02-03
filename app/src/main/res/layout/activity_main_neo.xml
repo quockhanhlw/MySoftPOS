@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Neo-Fintech Premium Dashboard Layout -->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/neo_bg_light"
+    android:padding="16dp">
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!--                    HEADER: GLASSMORPHISM CARD                      -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/headerCard"
+        style="@style/NeoCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Merchant Info -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvMerchantName"
+                style="@style/NeoHeaderTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="MySoftPOS Merchant"
+                tools:text="MySoftPOS Merchant" />
+
+            <TextView
+                android:id="@+id/tvTerminalId"
+                style="@style/NeoHeaderSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TID: 00000001"
+                tools:text="TID: 00000001" />
+        </LinearLayout>
+
+        <!-- Settings Icon -->
+        <ImageButton
+            android:id="@+id/btnSettings"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_settings"
+            android:contentDescription="Settings"
+            app:tint="@color/neo_primary_dark" />
+    </LinearLayout>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!--                    STATUS INDICATORS: PILL BADGES                  -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/statusRow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="12dp"
+        app:layout_constraintTop_toBottomOf="@id/headerCard"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <!-- Server Connected Badge -->
+        <TextView
+            android:id="@+id/badgeServer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="● Server"
+            android:textColor="@color/neo_status_connected"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif-medium"
+            android:drawablePadding="4dp"
+            android:layout_marginEnd="16dp" />
+
+        <!-- Keys Loaded Badge -->
+        <TextView
+            android:id="@+id/badgeKeys"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="● Keys Loaded"
+            android:textColor="@color/neo_status_keys"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif-medium"
+            android:drawablePadding="4dp" />
+    </LinearLayout>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!--                    AMOUNT DISPLAY AREA                             -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/amountSection"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toBottomOf="@id/statusRow"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/tvAmountLabel"
+            style="@style/NeoAmountLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ENTER AMOUNT" />
+
+        <TextView
+            android:id="@+id/tvAmountDisplay"
+            style="@style/NeoAmountText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:layout_marginTop="8dp"
+            tools:text="500,000" />
+
+        <TextView
+            android:id="@+id/tvCurrency"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VND"
+            android:textColor="@color/neo_text_label"
+            android:textSize="20sp"
+            android:fontFamily="sans-serif-medium" />
+    </LinearLayout>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!--                    CUSTOM NUMPAD (3x4 Grid)                        -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <GridLayout
+        android:id="@+id/numpadGrid"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:columnCount="3"
+        android:rowCount="4"
+        android:alignmentMode="alignBounds"
+        android:useDefaultMargins="true"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toBottomOf="@id/amountSection"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintWidth_max="320dp">
+
+        <!-- Row 1: 1, 2, 3 -->
+        <Button android:id="@+id/btn1" style="@style/NeoKeypadKey" android:text="1" android:layout_columnWeight="1" />
+        <Button android:id="@+id/btn2" style="@style/NeoKeypadKey" android:text="2" android:layout_columnWeight="1" />
+        <Button android:id="@+id/btn3" style="@style/NeoKeypadKey" android:text="3" android:layout_columnWeight="1" />
+
+        <!-- Row 2: 4, 5, 6 -->
+        <Button android:id="@+id/btn4" style="@style/NeoKeypadKey" android:text="4" android:layout_columnWeight="1" />
+        <Button android:id="@+id/btn5" style="@style/NeoKeypadKey" android:text="5" android:layout_columnWeight="1" />
+        <Button android:id="@+id/btn6" style="@style/NeoKeypadKey" android:text="6" android:layout_columnWeight="1" />
+
+        <!-- Row 3: 7, 8, 9 -->
+        <Button android:id="@+id/btn7" style="@style/NeoKeypadKey" android:text="7" android:layout_columnWeight="1" />
+        <Button android:id="@+id/btn8" style="@style/NeoKeypadKey" android:text="8" android:layout_columnWeight="1" />
+        <Button android:id="@+id/btn9" style="@style/NeoKeypadKey" android:text="9" android:layout_columnWeight="1" />
+
+        <!-- Row 4: Clear, 0, Backspace -->
+        <Button android:id="@+id/btnClear" style="@style/NeoKeypadKeyIcon" android:text="C" android:layout_columnWeight="1" />
+        <Button android:id="@+id/btn0" style="@style/NeoKeypadKey" android:text="0" android:layout_columnWeight="1" />
+        <ImageButton
+            android:id="@+id/btnBackspace"
+            android:layout_width="0dp"
+            android:layout_height="72dp"
+            android:layout_columnWeight="1"
+            android:background="@drawable/bg_neo_keypad_key"
+            android:src="@drawable/ic_back"
+            android:scaleType="center"
+            android:contentDescription="Backspace"
+            app:tint="@color/neo_keypad_text" />
+    </GridLayout>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!--                    PAY BUTTON (Floating Gradient)                  -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <Button
+        android:id="@+id/btnPay"
+        style="@style/NeoPayButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pay Now"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toBottomOf="@id/numpadGrid"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!--                    RECENT TRANSACTIONS (Mini List)                 -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <TextView
+        android:id="@+id/tvRecentLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Recent Transactions"
+        android:textColor="@color/neo_text_label"
+        android:textSize="14sp"
+        android:fontFamily="sans-serif-medium"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toBottomOf="@id/btnPay"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvRecentTransactions"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/tvRecentLabel"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:listitem="@layout/item_transaction_mini"
+        tools:itemCount="3" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

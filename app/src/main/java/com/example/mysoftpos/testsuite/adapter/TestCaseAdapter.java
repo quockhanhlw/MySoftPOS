@@ -1,5 +1,7 @@
 package com.example.mysoftpos.testsuite.adapter;
 
+import com.example.mysoftpos.R;
+
 import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -7,7 +9,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import com.example.mysoftpos.data.local.TestCaseEntity;
+import com.example.mysoftpos.data.local.entity.TestCaseEntity;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -77,3 +79,9 @@ public class TestCaseAdapter extends RecyclerView.Adapter<TestCaseAdapter.ViewHo
         }
     }
 }
+
+
+
+
+
+
