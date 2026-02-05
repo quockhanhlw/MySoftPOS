@@ -1,4 +1,5 @@
 package com.example.mysoftpos.testsuite.viewmodel;
+
 import com.example.mysoftpos.utils.config.ConfigManager;
 import com.example.mysoftpos.data.local.entity.TransactionEntity;
 import com.example.mysoftpos.utils.logging.FileLogger;
@@ -12,6 +13,7 @@ import com.example.mysoftpos.iso8583.builder.Iso8583Builder;
 import com.example.mysoftpos.iso8583.message.IsoMessage;
 import com.example.mysoftpos.iso8583.TransactionContext;
 import com.example.mysoftpos.iso8583.util.StandardIsoPacker;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -110,7 +112,7 @@ public class RunnerViewModel extends AndroidViewModel {
                     if (field == 35)
                         val = maskTrack2(val);
 
-                    sb.append(String.format("DE %03d: %s\n", field, val));
+                    sb.append(String.format(Locale.ROOT, "DE %03d: %s\n", field, val));
                 }
                 sb.append("---------------------------\n");
                 logMessage.postValue(sb.toString());
@@ -135,7 +137,8 @@ public class RunnerViewModel extends AndroidViewModel {
                 String recvHex = StandardIsoPacker.bytesToHex(responseBytes);
 
                 // --- LOG TO FILE: TEST SUITE (RECV) ---
-                com.example.mysoftpos.utils.logging.FileLogger.logTestSuitePacket(getApplication(), "RECV", responseBytes);
+                com.example.mysoftpos.utils.logging.FileLogger.logTestSuitePacket(getApplication(), "RECV",
+                        responseBytes);
 
                 // 6. Unpack Response
                 IsoMessage respMsg = new StandardIsoPacker().unpack(responseBytes);
@@ -152,7 +155,7 @@ public class RunnerViewModel extends AndroidViewModel {
                 java.util.TreeSet<Integer> respFields = new java.util.TreeSet<>(respMsg.getFieldNumbers());
                 for (Integer field : respFields) {
                     String val = respMsg.getField(field);
-                    sbResp.append(String.format("DE %03d: %s\n", field, val));
+                    sbResp.append(String.format(Locale.ROOT, "DE %03d: %s\n", field, val));
                 }
                 sbResp.append("----------------------------\n");
                 logMessage.postValue(sbResp.toString());
@@ -280,10 +283,3 @@ public class RunnerViewModel extends AndroidViewModel {
         return track2.substring(0, 6) + "......" + track2.substring(track2.length() - 4);
     }
 }
-
-
-
-
-
-
-

@@ -7,7 +7,7 @@
 
     <!-- Glassmorphism Card -->
     <style name="NeoCard">
-        <item name="android:background">@drawable/bg_glass_header</item>
+        <item name="android:background">@color/card_background</item>
         <item name="android:padding">16dp</item>
         <item name="android:elevation">8dp</item>
     </style>
@@ -31,7 +31,7 @@
 
     <!-- Keypad Key (Circular) -->
     <style name="NeoKeypadKey" parent="Widget.MaterialComponents.Button.TextButton">
-        <item name="android:background">@drawable/bg_neo_keypad_key</item>
+        <item name="android:background">@color/neo_keypad_bg</item>
         <item name="android:textColor">@color/neo_keypad_text</item>
         <item name="android:textSize">28sp</item>
         <item name="android:fontFamily">sans-serif-medium</item>
@@ -48,7 +48,7 @@
 
     <!-- Payment Button (Gradient) -->
     <style name="NeoPayButton">
-        <item name="android:background">@drawable/btn_payment_selector</item>
+        <item name="android:background">@color/primary</item>
         <item name="android:textColor">@android:color/white</item>
         <item name="android:textSize">18sp</item>
         <item name="android:fontFamily">sans-serif-bold</item>

@@ -1,9 +1,11 @@
 package com.example.mysoftpos.iso8583.spec;
+
 import com.example.mysoftpos.iso8583.spec.IsoField;
 
 /** ISO8583 field numbers used in this project. */
 public final class IsoField {
-    private IsoField() {}
+    private IsoField() {
+    }
 
     public static final int PAN_2 = 2;
     public static final int PROCESSING_CODE_3 = 3;
@@ -39,9 +41,3 @@ public final class IsoField {
         }
     }
 }
-
-
-
-
-
-

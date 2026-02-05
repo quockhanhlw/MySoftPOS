@@ -1,7 +1,9 @@
 package com.example.mysoftpos.iso8583.emv;
+
 import com.example.mysoftpos.iso8583.emv.EmvUtils;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class EmvUtils {
@@ -23,7 +25,7 @@ public class EmvUtils {
             return data;
 
         // 1. Sanitize: Remove trailing 'F'
-        String clean = hex57.toUpperCase().replaceAll("F+$", "");
+        String clean = hex57.toUpperCase(Locale.ROOT).replaceAll("F+$", "");
 
         // 2. Split
         int sepIndex = clean.indexOf('D');
@@ -68,9 +70,3 @@ public class EmvUtils {
         return tag + lenHex + value;
     }
 }
-
-
-
-
-
-

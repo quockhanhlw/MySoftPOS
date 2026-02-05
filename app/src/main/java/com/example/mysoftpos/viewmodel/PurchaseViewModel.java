@@ -1,4 +1,5 @@
 package com.example.mysoftpos.viewmodel;
+
 import com.example.mysoftpos.utils.logging.ResponseCodeHelper;
 import com.example.mysoftpos.utils.logging.FileLogger;
 
@@ -75,6 +76,7 @@ public class PurchaseViewModel extends BaseViewModel {
 
                 // Configurable Fields
                 ctx.mcc18 = configManager.getMcc18();
+                ctx.posCondition25 = configManager.getPosConditionCode();
                 ctx.acquirerId32 = configManager.getAcquirerId32();
                 ctx.fwdInst33 = configManager.getForwardingInst33();
                 // Use passed currency code (704 for VND, 840 for USD)
@@ -173,7 +175,11 @@ public class PurchaseViewModel extends BaseViewModel {
             IsoMessage rev = Iso8583Builder.buildReversalAdvice(ctx, card, newTrace);
             byte[] packedRev = StandardIsoPacker.pack(rev);
 
-            com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "SEND 0420 (Reversal)", packedRev);
+            com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "SEND 0420 (Reversal)",
+                    packedRev);
+            com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "SEND 0420 DETAIL",
+                    StandardIsoPacker.logIsoMessage(rev));
+
             entity.status = "TIMEOUT_REVERSAL_INIT";
             repository.updateTransactionStatus(ctx.stan11, entity.status);
 
@@ -181,6 +187,16 @@ public class PurchaseViewModel extends BaseViewModel {
             try {
                 byte[] revResp = revClient.sendAndReceive(packedRev);
                 com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "RECV 0430", revResp);
+
+                try {
+                    IsoMessage revRespMsg = new StandardIsoPacker().unpack(revResp);
+                    com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "RECV 0430 DETAIL",
+                            StandardIsoPacker.logIsoMessage(revRespMsg));
+                } catch (Exception e) {
+                    com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "RECV 0430 ERROR",
+                            "Failed to unpack: " + e.getMessage());
+                }
+
                 entity.status = "TIMEOUT_REVERSED";
                 repository.updateTransactionStatus(ctx.stan11, entity.status);
                 postError("Giao dịch lỗi Time Out (Đã gửi hủy)");
@@ -199,9 +215,3 @@ public class PurchaseViewModel extends BaseViewModel {
         }
     }
 }
-
-
-
-
-
-

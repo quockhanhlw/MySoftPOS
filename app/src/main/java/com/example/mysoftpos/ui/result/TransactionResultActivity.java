@@ -86,7 +86,15 @@ public class TransactionResultActivity extends AppCompatActivity {
                         "Hoàn tất");
 
                 // Special Balance Logic
-                TxnType txnType = (TxnType) getIntent().getSerializableExtra("TXN_TYPE");
+                // Special Balance Logic
+                String txnTypeStr = getIntent().getStringExtra("TXN_TYPE");
+                TxnType txnType = null;
+                if (txnTypeStr != null) {
+                    try {
+                        txnType = TxnType.valueOf(txnTypeStr);
+                    } catch (IllegalArgumentException e) {
+                    }
+                }
                 if (txnType == com.example.mysoftpos.iso8583.TxnType.BALANCE_INQUIRY && isoResponse != null) {
                     try {
                         // 1. Convert Hex String back to Bytes
@@ -96,26 +104,25 @@ public class TransactionResultActivity extends AppCompatActivity {
                         // 2. Unpack DE 54
                         String f54 = com.example.mysoftpos.iso8583.util.StandardIsoPacker.unpackField(rawResp, 54);
 
-                        if (f54 != null) {
-                            // Parse Balance (Last 12)
-                            if (f54.length() >= 12) {
-                                String balStr = f54.substring(f54.length() - 12);
-                                try {
-                                    long bal = Long.parseLong(balStr);
-                                    java.text.NumberFormat nf = java.text.NumberFormat
-                                            .getCurrencyInstance(new java.util.Locale("vi", "VN"));
-                                    String fmt = nf.format(bal);
-                                    tvReason.setText("Số dư khả dụng: " + fmt);
-                                } catch (Exception e) {
-                                    tvReason.setText("Số dư: " + f54);
-                                }
-                            } else {
-                                tvReason.setText("Số dư: " + f54);
+                        if (f54 != null && f54.length() >= 20) {
+                            // Spec: First 20 bytes = Available Balance.
+                            // Position 9-20 (Index 8-20) = Amount (n12) with 2 decimal places.
+                            String balStr = f54.substring(8, 20); // First block amount
+
+                            try {
+                                long val = Long.parseLong(balStr);
+                                double amount = val / 100.0; // Implied 2 decimals
+
+                                java.text.NumberFormat nf = java.text.NumberFormat
+                                        .getCurrencyInstance(new java.util.Locale("vi", "VN"));
+                                String fmt = nf.format(amount);
+                                tvReason.setText("Số dư khả dụng: " + fmt);
+                            } catch (Exception e) {
+                                tvReason.setText("Số dư: " + balStr);
                             }
                             tvTitle.setText("Vấn tin số dư");
                         } else {
-                            tvReason.setText(
-                                    messageExtras != null ? messageExtras : "Không tìm thấy thông tin số dư (DE 54)");
+                            tvReason.setText("Lỗi định dạng số dư (DE 54): " + f54);
                         }
                     } catch (Exception e) {
                         tvReason.setText("Lỗi hiển thị số dư: " + e.getMessage());

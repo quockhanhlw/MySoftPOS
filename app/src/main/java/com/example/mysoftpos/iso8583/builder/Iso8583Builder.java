@@ -1,4 +1,5 @@
 package com.example.mysoftpos.iso8583.builder;
+
 import com.example.mysoftpos.iso8583.builder.Iso8583Builder;
 
 import com.example.mysoftpos.iso8583.message.IsoMessage;
@@ -46,13 +47,17 @@ public class Iso8583Builder {
         m.setField(IsoField.POS_ENTRY_MODE_22, de22);
 
         // Conditional DE 14 / DE 35
-        if ("011".equals(de22) || "012".equals(de22) || "022".equals(de22)) {
+        if ("011".equals(de22) || "012".equals(de22)) {
             // Manual/Magstripe → Include Expiry (DE 14), Exclude Track 2 (DE 35)
             m.setField(IsoField.EXPIRATION_DATE_14, card.getExpiryDate());
-        } else if ("901".equals(de22) || "902".equals(de22)) {
-            // Contactless → Include Track 2 (DE 35), Exclude Expiry (DE 14)
+        } else if ("901".equals(de22) || "902".equals(de22) || "022".equals(de22)) {
+            // Contactless → Include Track 2 (DE 35)
             if (card.getTrack2() != null && !card.getTrack2().isEmpty()) {
                 m.setField(IsoField.TRACK2_35, card.getTrack2().replace('=', 'D'));
+            }
+            // User Request: Include DE 14 (Expiry) even if Track 2 is present for Mock/Test
+            if (card.getExpiryDate() != null) {
+                m.setField(IsoField.EXPIRATION_DATE_14, card.getExpiryDate());
             }
         }
 
@@ -102,13 +107,17 @@ public class Iso8583Builder {
         m.setField(IsoField.POS_ENTRY_MODE_22, de22);
 
         // Conditional DE 14 / DE 35
-        if ("011".equals(de22) || "012".equals(de22) || "022".equals(de22)) {
+        if ("011".equals(de22) || "012".equals(de22)) {
             // Manual/Magstripe Entry → Include Expiry (DE 14), Exclude Track 2 (DE 35)
             m.setField(IsoField.EXPIRATION_DATE_14, card.getExpiryDate());
-        } else if ("901".equals(de22) || "902".equals(de22)) {
-            // Contactless → Include Track 2 (DE 35), Exclude Expiry (DE 14)
+        } else if ("901".equals(de22) || "902".equals(de22) || "022".equals(de22)) {
+            // Contactless → Include Track 2 (DE 35)
             if (card.getTrack2() != null && !card.getTrack2().isEmpty()) {
                 m.setField(IsoField.TRACK2_35, card.getTrack2().replace('=', 'D'));
+            }
+            // User Request: Include DE 14 (Expiry) even if Track 2 is present for Mock/Test
+            if (card.getExpiryDate() != null) {
+                m.setField(IsoField.EXPIRATION_DATE_14, card.getExpiryDate());
             }
         }
 
@@ -291,10 +300,3 @@ public class Iso8583Builder {
     // REMOVED formatMerchantNameLocation logic.
     // We assume the caller (Context) provides the correct 40-char string.
 }
-
-
-
-
-
-
-

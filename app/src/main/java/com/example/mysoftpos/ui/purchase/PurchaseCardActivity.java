@@ -1,4 +1,5 @@
 package com.example.mysoftpos.ui.purchase;
+
 import com.example.mysoftpos.ui.result.TransactionResultActivity;
 
 import com.example.mysoftpos.R;
@@ -19,6 +20,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import java.util.Locale;
+
 import com.example.mysoftpos.domain.model.CardInputData;
 import com.example.mysoftpos.iso8583.TxnType;
 import com.example.mysoftpos.utils.config.ConfigManager;
@@ -29,7 +32,7 @@ import com.google.android.material.tabs.TabLayout;
  * Purchase Card Activity with Tab-based UI.
  * 
  * Tab 0: Manual Entry (PAN + Expiry) -> DE 22 = 012
- * Tab 1: Mock Track 2 -> DE 22 = 902
+ * Tab 1: Mock Track 2 -> DE 22 = 022
  */
 public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapter.ReaderCallback {
 
@@ -112,7 +115,7 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
         }
 
         // Mock Track 2 Preview
-        String mockTrack2 = configManager.getTrack2("902");
+        String mockTrack2 = configManager.getTrack2("022");
         if (mockTrack2 != null && mockTrack2.length() > 25) {
             tvMockPreview.setText(mockTrack2.substring(0, 25) + "...");
         } else {
@@ -152,7 +155,7 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
 
         // Mock Track 2 Tap
         cardNfcIcon.setOnClickListener(v -> {
-            String trk2 = configManager.getTrack2("902");
+            String trk2 = configManager.getTrack2("022");
             String mockPan = configManager.getMockPan();
             String mockExp = configManager.getMockExpiry();
 
@@ -163,7 +166,7 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
                     mockExp = parts[1].substring(0, 4);
             }
 
-            CardInputData mockData = new CardInputData(mockPan, mockExp, "902", trk2);
+            CardInputData mockData = new CardInputData(mockPan, mockExp, "022", trk2);
             Toast.makeText(this, "Using Mock Track 2...", Toast.LENGTH_SHORT).show();
             processTransaction(mockData);
         });
@@ -205,7 +208,7 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
             return;
 
         // Use mock data for NFC (real implementation would read card)
-        String trk2 = configManager.getTrack2("902");
+        String trk2 = configManager.getTrack2("022");
         String mockPan = configManager.getMockPan();
         String mockExp = configManager.getMockExpiry();
 
@@ -216,7 +219,7 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
                 mockExp = parts[1].substring(0, 4);
         }
 
-        CardInputData mockData = new CardInputData(mockPan, mockExp, "902", trk2);
+        CardInputData mockData = new CardInputData(mockPan, mockExp, "022", trk2);
         runOnUiThread(() -> {
             Toast.makeText(this, "Card Detected", Toast.LENGTH_SHORT).show();
             processTransaction(mockData);
@@ -236,7 +239,10 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
         Intent intent = new Intent(this, TransactionResultActivity.class);
         intent.putExtra("TXN_TYPE", txnType.name());
         intent.putExtra("SUCCESS", success);
-        intent.putExtra("MESSAGE", msg);
+        intent.putExtra(TransactionResultActivity.EXTRA_RESULT_TYPE,
+                success ? TransactionResultActivity.ResultType.SUCCESS
+                        : TransactionResultActivity.ResultType.TRANSACTION_FAILED);
+        intent.putExtra(TransactionResultActivity.EXTRA_MESSAGE, msg);
         intent.putExtra("AMOUNT", amount);
         intent.putExtra("CURRENCY", currency);
         if (isoResp != null)
@@ -250,17 +256,9 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
     private String formatAmount(String amt) {
         try {
             long val = Long.parseLong(amt);
-            return String.format("%,d", val);
+            return String.format(Locale.ROOT, "%,d", val);
         } catch (NumberFormatException e) {
             return amt;
         }
     }
 }
-
-
-
-
-
-
-
-

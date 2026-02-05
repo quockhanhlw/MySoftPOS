@@ -1,4 +1,5 @@
 package com.example.mysoftpos.ui.balance;
+
 import com.example.mysoftpos.ui.result.TransactionResultActivity;
 
 import com.example.mysoftpos.R;
@@ -26,7 +27,7 @@ import com.example.mysoftpos.viewmodel.PurchaseViewModel;
  * Balance Inquiry Activity with Tab-based UI.
  * 
  * Tab 0: Manual Entry (PAN + Expiry) -> DE 22 = 012
- * Tab 1: Mock Track 2 -> DE 22 = 902
+ * Tab 1: Mock Track 2 -> DE 22 = 022
  */
 public class BalanceInquiryActivity extends AppCompatActivity {
 
@@ -71,7 +72,7 @@ public class BalanceInquiryActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
 
         // Mock Track 2 Preview
-        String mockTrack2 = configManager.getTrack2("902");
+        String mockTrack2 = configManager.getTrack2("022");
         if (mockTrack2 != null && mockTrack2.length() > 25) {
             tvMockPreview.setText(mockTrack2.substring(0, 25) + "...");
         } else {
@@ -111,7 +112,7 @@ public class BalanceInquiryActivity extends AppCompatActivity {
 
         // Mock Track 2 Tap
         cardNfcIcon.setOnClickListener(v -> {
-            String trk2 = configManager.getTrack2("902");
+            String trk2 = configManager.getTrack2("022");
             String mockPan = configManager.getMockPan();
             String mockExpiry = configManager.getMockExpiry();
 
@@ -122,7 +123,7 @@ public class BalanceInquiryActivity extends AppCompatActivity {
                     mockExpiry = parts[1].substring(0, 4);
             }
 
-            CardInputData cardData = new CardInputData(mockPan, mockExpiry, "902", trk2);
+            CardInputData cardData = new CardInputData(mockPan, mockExpiry, "022", trk2);
             Toast.makeText(this, "Using Mock Track 2...", Toast.LENGTH_SHORT).show();
             processBalanceInquiry(cardData);
         });
@@ -161,7 +162,10 @@ public class BalanceInquiryActivity extends AppCompatActivity {
         Intent intent = new Intent(this, TransactionResultActivity.class);
         intent.putExtra("TXN_TYPE", TxnType.BALANCE_INQUIRY.name());
         intent.putExtra("SUCCESS", success);
-        intent.putExtra("MESSAGE", message);
+        intent.putExtra(TransactionResultActivity.EXTRA_RESULT_TYPE,
+                success ? TransactionResultActivity.ResultType.SUCCESS
+                        : TransactionResultActivity.ResultType.TRANSACTION_FAILED);
+        intent.putExtra(TransactionResultActivity.EXTRA_MESSAGE, message);
 
         if (isoResponse != null) {
             intent.putExtra("RAW_RESPONSE", isoResponse);
@@ -174,11 +178,3 @@ public class BalanceInquiryActivity extends AppCompatActivity {
         finish();
     }
 }
-
-
-
-
-
-
-
-

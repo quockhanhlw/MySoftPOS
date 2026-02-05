@@ -223,7 +223,7 @@ public class MainDashboardActivity extends AppCompatActivity {
             tvTime.setTypeface(null, android.graphics.Typeface.BOLD);
 
             TextView tvStatus = new TextView(this);
-            String statusUpper = txn.status != null ? txn.status.toUpperCase() : "UNKNOWN";
+            String statusUpper = txn.status != null ? txn.status.toUpperCase(Locale.ROOT) : "UNKNOWN";
             tvStatus.setText(statusUpper);
             tvStatus.setTextSize(12f);
             if ("APPROVED".equals(statusUpper) || "SUCCESS".equals(statusUpper)) {

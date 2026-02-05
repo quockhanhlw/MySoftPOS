@@ -1,4 +1,5 @@
 package com.example.mysoftpos.utils.config;
+
 import com.example.mysoftpos.utils.config.ConfigManager;
 
 import android.content.Context;
@@ -8,6 +9,7 @@ import android.content.res.AssetManager;
 import org.json.JSONObject;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 public class ConfigManager {
 
@@ -209,7 +211,7 @@ public class ConfigManager {
             defCountryTxt = "VNM";
             defCurr = "704";
             // Check IP defaults
-            defIp = "10.145.54.250";
+            defIp = "10.145.54.179";
             defPort = 8583;
 
             // Fallbacks for new fields
@@ -225,20 +227,20 @@ public class ConfigManager {
     }
 
     public synchronized String getAndIncrementTrace() {
-        int trace = prefs.getInt(KEY_TRACE, 111111);
-        if (trace < 111111) {
-            trace = 111111;
+        int trace = prefs.getInt(KEY_TRACE, 111200);
+        if (trace < 111200) {
+            trace = 111200;
         }
         int next = (trace >= 999999) ? 1 : trace + 1;
-        prefs.edit().putInt(KEY_TRACE, next).commit();
-        return String.format("%06d", trace);
+        prefs.edit().putInt(KEY_TRACE, next).apply();
+        return String.format(Locale.ROOT, "%06d", trace);
     }
 
     private String defIp;
     private int defPort;
 
     public String getServerIp() {
-        return defIp != null ? defIp : "10.145.54.250";
+        return defIp != null ? defIp : "10.145.54.179";
     }
 
     public int getServerPort() {
@@ -290,9 +292,3 @@ public class ConfigManager {
         return String.format("%-22s %-13s %s", bank, loc, ctry);
     }
 }
-
-
-
-
-
-

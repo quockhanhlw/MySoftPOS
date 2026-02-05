@@ -1,4 +1,5 @@
 package com.example.mysoftpos.iso8583.builder;
+
 import com.example.mysoftpos.iso8583.builder.ConfigurableIsoBuilder;
 import com.example.mysoftpos.iso8583.TransactionContext;
 
@@ -11,6 +12,7 @@ import com.example.mysoftpos.data.model.FieldConfig;
 import com.example.mysoftpos.utils.config.ConfigManager;
 import org.json.JSONObject;
 import java.util.Iterator;
+import java.util.Locale;
 
 public class ConfigurableIsoBuilder {
 
@@ -59,7 +61,7 @@ public class ConfigurableIsoBuilder {
         if (rule.type == null)
             return null;
 
-        switch (rule.type.toUpperCase()) {
+        switch (rule.type.toUpperCase(Locale.ROOT)) {
             case "FIXED":
                 return rule.value;
 
@@ -107,10 +109,3 @@ public class ConfigurableIsoBuilder {
         }
     }
 }
-
-
-
-
-
-
-

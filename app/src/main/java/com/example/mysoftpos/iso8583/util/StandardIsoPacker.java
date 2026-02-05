@@ -1,10 +1,12 @@
 package com.example.mysoftpos.iso8583.util;
+
 import com.example.mysoftpos.iso8583.util.StandardIsoPacker;
 
 import com.example.mysoftpos.iso8583.message.IsoMessage;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -133,7 +135,7 @@ public class StandardIsoPacker {
                 // FORCE LLVAR for DE 32 (Maestro Fix)
                 if (i == 32) {
                     int len = val.length();
-                    String lenStr = String.format("%02d", len);
+                    String lenStr = String.format(Locale.ROOT, "%02d", len);
                     baos.write(lenStr.getBytes(StandardCharsets.US_ASCII));
                     baos.write(val.getBytes(StandardCharsets.US_ASCII));
                     continue; // Done for DE 32
@@ -161,7 +163,7 @@ public class StandardIsoPacker {
                     }
                 } else if (def.type == FieldType.LLVAR) {
                     int len = val.length();
-                    String lenStr = String.format("%02d", len);
+                    String lenStr = String.format(Locale.ROOT, "%02d", len);
                     baos.write(lenStr.getBytes(StandardCharsets.US_ASCII));
                     baos.write(val.getBytes(StandardCharsets.US_ASCII));
                     if (i == 32) {
@@ -170,7 +172,7 @@ public class StandardIsoPacker {
                     }
                 } else if (def.type == FieldType.LLLVAR) {
                     int len = val.length();
-                    String lenStr = String.format("%03d", len);
+                    String lenStr = String.format(Locale.ROOT, "%03d", len);
                     baos.write(lenStr.getBytes(StandardCharsets.US_ASCII));
                     baos.write(val.getBytes(StandardCharsets.US_ASCII));
                 }
@@ -345,15 +347,27 @@ public class StandardIsoPacker {
     public static String logIsoMessage(IsoMessage msg) {
         StringBuilder sb = new StringBuilder();
         sb.append("MTI: ").append(msg.getMti()).append("\n");
+
+        // Calculate and Log Primary Bitmap (DE 001) for visibility
+        java.util.Set<Integer> fields = msg.getFieldNumbers();
+        long primaryBitmap = 0;
+        boolean hasSecondary = false;
+        for (int f : fields) {
+            if (f > 64)
+                hasSecondary = true;
+        }
+        if (hasSecondary)
+            primaryBitmap |= (1L << 63);
+        for (int f : fields) {
+            if (f > 1 && f <= 64)
+                primaryBitmap |= (1L << (64 - f));
+        }
+        sb.append("DE 001: ").append(String.format(Locale.ROOT, "%016X", primaryBitmap)).append("\n");
+
         for (int field : new java.util.TreeSet<>(msg.getFieldNumbers())) {
-            sb.append("DE ").append(String.format("%03d", field)).append(": ").append(msg.getField(field)).append("\n");
+            sb.append("DE ").append(String.format(Locale.ROOT, "%03d", field)).append(": ").append(msg.getField(field))
+                    .append("\n");
         }
         return sb.toString();
     }
 }
-
-
-
-
-
-
