@@ -113,6 +113,11 @@ public class PurchaseAmountActivity extends AppCompatActivity {
         updateCurrencyDisplay();
     }
 
+    private String getUsername() {
+        String u = getIntent().getStringExtra("USERNAME");
+        return u != null ? u : "Guest";
+    }
+
     private void switchCurrency(int direction) {
         currentCurrencyIndex = (currentCurrencyIndex + direction + currencies.length) % currencies.length;
         updateCurrencyDisplay();
@@ -229,6 +234,7 @@ public class PurchaseAmountActivity extends AppCompatActivity {
         intent.putExtra("AMOUNT", amountBuilder.toString());
         intent.putExtra("CURRENCY", getCurrentCurrency()); // VND or USD
         intent.putExtra("CURRENCY_CODE", getCurrentCurrencyCode()); // 704 or 840
+        intent.putExtra("USERNAME", getUsername());
         startActivity(intent);
     }
 
@@ -240,9 +246,3 @@ public class PurchaseAmountActivity extends AppCompatActivity {
         }
     }
 }
-
-
-
-
-
-

@@ -1,4 +1,5 @@
 package com.example.mysoftpos.data.local.dao;
+
 import com.example.mysoftpos.data.local.dao.UserDao;
 import com.example.mysoftpos.data.local.entity.UserEntity;
 
@@ -24,10 +25,7 @@ public interface UserDao {
 
     @Query("SELECT COUNT(*) FROM users")
     int count();
+
+    @Query("SELECT * FROM users WHERE username_hash = :hash LIMIT 1")
+    UserEntity getByUsernameHashSync(String hash);
 }
-
-
-
-
-
-

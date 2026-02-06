@@ -1,4 +1,5 @@
 package com.example.mysoftpos.iso8583.util;
+
 import com.example.mysoftpos.iso8583.util.IsoValidator;
 
 import java.util.ArrayList;
@@ -245,8 +246,7 @@ public final class IsoValidator {
             throw new IllegalStateException(name + " F22 must be 3n. Got: " + f22);
         }
 
-        if (!("012".equals(f22) || "051".equals(f22) || f22.startsWith("05") || f22.startsWith("07")
-                || f22.startsWith("01"))) {
+        if (!("012".equals(f22) || "021".equals(f22) || "022".equals(f22) || f22.startsWith("01"))) {
             throw new IllegalStateException(name + " F22 unsupported/unknown value: " + f22);
         }
     }
@@ -255,19 +255,7 @@ public final class IsoValidator {
         if (msg.hasField(IsoField.PIN_BLOCK_52) && isBlank(msg.getField(IsoField.PIN_BLOCK_52))) {
             throw new IllegalStateException("PURCHASE field 52 is blank");
         }
-        checkChipData(msg, "PURCHASE");
-    }
-
-    private static void checkChipData(IsoMessage msg, String context) {
-        String entryMode = msg.getField(IsoField.POS_ENTRY_MODE_22);
-        if (!isBlank(entryMode)) {
-            if (entryMode.startsWith("05") || entryMode.startsWith("07")) {
-                if (!msg.hasField(IsoField.ICC_DATA_55) || isBlank(msg.getField(IsoField.ICC_DATA_55))) {
-                    throw new IllegalStateException(
-                            context + " requires field 55 for ICC entry mode (F22=" + entryMode + ")");
-                }
-            }
-        }
+        // Chip Data check removed
     }
 
     private static void validateField60IfPresent(IsoMessage msg, String name) {
@@ -320,4 +308,3 @@ public final class IsoValidator {
         return s == null || s.trim().isEmpty();
     }
 }
-

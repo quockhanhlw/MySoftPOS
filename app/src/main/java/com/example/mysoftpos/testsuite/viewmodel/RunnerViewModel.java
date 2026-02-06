@@ -32,8 +32,8 @@ public class RunnerViewModel extends AndroidViewModel {
         return logMessage;
     }
 
-    public void runTransaction(String de22, String track2Data, String de55Data, String panData, String expiryData,
-            String pinBlockData) {
+    public void runTransaction(String de22, String track2Data, String panData, String expiryData,
+            String pinBlockData, String txnType) {
         executor.execute(() -> {
             try {
                 // 1. Prepare Context with ConfigManager
@@ -47,7 +47,13 @@ public class RunnerViewModel extends AndroidViewModel {
                 ctx.generateDateTime();
                 ctx.rrn37 = TransactionContext.calculateRrn(config.getServerId(), ctx.stan11);
 
-                ctx.processingCode3 = config.getProcessingCodePurchase();
+                if ("BALANCE".equals(txnType)) {
+                    ctx.processingCode3 = "300000";
+                    // Use config prompt if available? Or Hardcode as per user request
+                    // User said: "nếu là Balance Inquiry thì DE 3 là 300000"
+                } else {
+                    ctx.processingCode3 = "000000";
+                }
                 ctx.posCondition25 = config.getPosConditionCode();
                 ctx.mcc18 = config.getMcc18();
                 ctx.acquirerId32 = config.getAcquirerId32();
@@ -59,16 +65,21 @@ public class RunnerViewModel extends AndroidViewModel {
                 // FIX: Set IP/Port for Network Client
                 ctx.ip = config.getServerIp();
                 ctx.port = config.getServerPort();
-                // Pass PIN block to Context if needed for encryption logic??
-                // Actually Iso8583Builder checks ctx.pinBlock52, NOT CardInputData.pinBlock
-                // directly in some branches
-                // But let's check Iso8583Builder: "if (ctx.encryptPin && ctx.pinBlock52 !=
-                // null)"
-                // RunnerViewModel sets context.
-                // We should set ctx.pinBlock52 from passed pinBlockData
-                ctx.pinBlock52 = pinBlockData;
-                // Enable pin if block is present
-                ctx.encryptPin = (pinBlockData != null);
+                // Pass PIN block to Context
+                // Start Update: Calculate Clear PIN Block (ISO 9564 Format 0) if Raw PIN is
+                // present
+                if (pinBlockData != null && !pinBlockData.isEmpty()) {
+                    // We need the PAN to calculate the block.
+                    // Note: panData input might be null if Track2 is used, so use the derived 'pan'
+                    // later?
+                    // actually 'pan' variable is defined BELOW this block (line 80).
+                    // Let's resolve PAN first or move this logic down.
+                    // Moving logic down to after card data preparation is cleaner.
+                    ctx.encryptPin = true;
+                } else {
+                    ctx.encryptPin = false;
+                    ctx.pinBlock52 = null;
+                }
 
                 // 2. Prepare Card Data based on Inputs
                 String pan = panData;
@@ -76,6 +87,11 @@ public class RunnerViewModel extends AndroidViewModel {
 
                 // Extract PAN/Expiry from Track 2 if not provided
                 if ((pan == null || pan.isEmpty()) && track2Data != null) {
+                    // FIX: Set DE 25 to 80 for Fallback Modes (79, 80 only) - User confirmed 902 is
+                    // Normal.
+                    if (de22.startsWith("80") || de22.startsWith("79")) {
+                        ctx.posCondition25 = "80";
+                    }
                     // Support both D and = separators
                     String[] parts = track2Data.split("[=D]");
                     if (parts.length > 0)
@@ -91,11 +107,37 @@ public class RunnerViewModel extends AndroidViewModel {
 
                 CardInputData card = new CardInputData(pan, expiry, de22, track2Data);
                 // card.setRawIccData(de55Data); // Removed
-                card.setPinBlock(pinBlockData);
+
+                // Start Update: Calculate PIN Block logic moved here to access resolved 'pan'
+                if (pinBlockData != null && !pinBlockData.isEmpty() && pan != null) {
+                    try {
+                        String clearBlock = com.example.mysoftpos.iso8583.util.PinBlockGenerator
+                                .calculateClearBlock(pinBlockData, pan);
+                        ctx.pinBlock52 = clearBlock;
+                        card.setPinBlock(clearBlock); // Update Card model too
+                        logMessage.postValue("Generated PIN Block (Format 0): " + clearBlock);
+                    } catch (Exception e) {
+                        logMessage.postValue("Error generating PIN Block: " + e.getMessage());
+                        ctx.pinBlock52 = null;
+                    }
+                } else {
+                    card.setPinBlock(null);
+                    ctx.pinBlock52 = null;
+                }
 
                 // 3. Build Message
-                logMessage.postValue("Building 0200...");
-                IsoMessage msg = Iso8583Builder.buildPurchaseMsg(ctx, card);
+                logMessage
+                        .postValue("Building " + ("BALANCE".equals(txnType) ? "Balance Inquiry" : "Purchase") + "...");
+
+                IsoMessage msg;
+                if ("BALANCE".equals(txnType)) {
+                    // Start Update: Force Amount to 0 for Context consistency (though builder does
+                    // it too)
+                    ctx.amount4 = "000000000000";
+                    msg = Iso8583Builder.buildBalanceMsg(ctx, card);
+                } else {
+                    msg = Iso8583Builder.buildPurchaseMsg(ctx, card);
+                }
 
                 // Detailed Log
                 StringBuilder sb = new StringBuilder();
@@ -198,23 +240,42 @@ public class RunnerViewModel extends AndroidViewModel {
     private void saveTransactionToDb(TransactionContext ctx, CardInputData card, String status, String reqHex,
             String respHex) {
         try {
-            com.example.mysoftpos.data.local.entity.TransactionEntity entity = new com.example.mysoftpos.data.local.entity.TransactionEntity();
-            entity.traceNumber = ctx.stan11;
-            entity.amount = ctx.amount4;
-            entity.pan = card.getPan(); // Unmasked for internal DB? Or Masked? Using Utils to mask.
-            // Let's mask for privacy in DB too if preferred, or keep clear.
-            // User can delete DB. Let's keep clear for history detail, or mask.
-            // Standard approach: Masked.
-            entity.pan = maskPan(card.getPan());
-            entity.status = status;
-            entity.requestHex = reqHex;
-            entity.responseHex = respHex;
-            entity.timestamp = System.currentTimeMillis();
+            String pan = maskPan(card.getPan());
+            String rawPan = card.getPan(); // internal usage for bin/last4 extraction
 
-            dbManager.insertTransaction(entity);
+            // Derive Data
+            String bin = (rawPan != null && rawPan.length() >= 6) ? rawPan.substring(0, 6) : "";
+            String last4 = (rawPan != null && rawPan.length() >= 4) ? rawPan.substring(rawPan.length() - 4) : "";
+            String scheme = "TestCard";
+            if (rawPan != null) {
+                if (rawPan.startsWith("4"))
+                    scheme = "Visa";
+                else if (rawPan.startsWith("5"))
+                    scheme = "Mastercard";
+                else if (rawPan.startsWith("9704"))
+                    scheme = "Napas";
+            }
+
+            dbManager.saveTransaction(
+                    ctx.stan11,
+                    ctx.amount4,
+                    status,
+                    reqHex,
+                    respHex,
+                    System.currentTimeMillis(),
+                    ctx.merchantId42,
+                    ctx.merchantNameLocation43,
+                    ctx.terminalId41,
+                    pan, // Masked PAN
+                    bin,
+                    last4,
+                    scheme,
+                    "TEST_SUITE_USER");
+
             logMessage.postValue("Transaction saved to History (Trace: " + ctx.stan11 + ")");
         } catch (Exception e) {
             logMessage.postValue("Error saving to DB: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

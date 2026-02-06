@@ -1,4 +1,5 @@
 package com.example.mysoftpos.data.local;
+
 import com.example.mysoftpos.data.local.dao.UserDao;
 import com.example.mysoftpos.data.local.entity.UserEntity;
 import com.example.mysoftpos.data.local.entity.TestCaseEntity;
@@ -24,8 +25,11 @@ import com.example.mysoftpos.data.local.dao.*;
         TransactionTemplateEntity.class,
         TestSuiteEntity.class,
         TestCaseEntity.class,
-        UserEntity.class // New: User accounts
-}, version = 3, exportSchema = false)
+        UserEntity.class,
+        MerchantEntity.class,
+        TerminalEntity.class,
+        CardEntity.class
+}, version = 5, exportSchema = false) // Bumped version to 5 and destructive migration enabled below
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract TransactionDao transactionDao();
@@ -36,7 +40,13 @@ public abstract class AppDatabase extends RoomDatabase {
 
     public abstract TestCaseDao testCaseDao();
 
-    public abstract UserDao userDao(); // New: User DAO
+    public abstract UserDao userDao();
+
+    public abstract MerchantDao merchantDao();
+
+    public abstract TerminalDao terminalDao();
+
+    public abstract CardDao cardDao();
 
     private static volatile AppDatabase INSTANCE;
 
@@ -59,4 +69,3 @@ public abstract class AppDatabase extends RoomDatabase {
         return INSTANCE;
     }
 }
-

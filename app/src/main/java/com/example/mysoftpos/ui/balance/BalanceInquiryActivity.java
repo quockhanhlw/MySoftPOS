@@ -150,7 +150,10 @@ public class BalanceInquiryActivity extends AppCompatActivity {
     }
 
     private void processBalanceInquiry(CardInputData cardData) {
-        viewModel.processTransaction(cardData, "0", "704", TxnType.BALANCE_INQUIRY);
+        String username = getIntent().getStringExtra("USERNAME");
+        if (username == null)
+            username = "Guest";
+        viewModel.processTransaction(cardData, "0", "704", TxnType.BALANCE_INQUIRY, username);
     }
 
     private void showLoading(boolean show) {

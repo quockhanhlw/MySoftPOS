@@ -1,46 +1,135 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:gravity="center_horizontal"
->
+    android:background="#F8FAFC">
 
-    <ImageButton
+    <ImageView
         android:id="@+id/btnBack"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:src="@drawable/ic_back"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="Back"
-        android:layout_gravity="start" />
+        android:padding="12dp"
+        android:src="@drawable/ic_back"
+        app:tint="#1E293B"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
+        android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Select Channel"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="#1E293B"
         android:layout_marginTop="24dp"
-        android:layout_marginBottom="40dp"/>
+        android:fontFamily="sans-serif-black"
+        android:text="Select Channel"
+        android:textColor="#1E293B"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnBack" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnPos"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:text="POS"
-        android:textSize="20sp"
-        android:layout_marginBottom="16dp"
-        android:backgroundTint="#3B82F6"/>
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="32dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle"
+        app:layout_constraintVertical_bias="0.4">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnAtm"
-        android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:text="ATM"
-        android:textSize="20sp"
-        android:backgroundTint="#64748B"/>
+        <!-- POS Terminal (Blue Gradient Style) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/btnPos"
+            android:layout_width="match_parent"
+            android:layout_height="140dp"
+            android:layout_marginBottom="24dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="#2196F3"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="8dp"
+            app:strokeWidth="0dp">
 
-</LinearLayout>
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <ImageView
+                    android:id="@+id/iconPos"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/ic_credit_card"
+                    app:tint="@android:color/white"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintVertical_bias="0.35" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="POS Terminal"
+                    android:textColor="@android:color/white"
+                    android:textSize="20sp"
+                    app:layout_constraintTop_toBottomOf="@id/iconPos"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ATM (Dark Grey/Slate Style) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/btnAtm"
+            android:layout_width="match_parent"
+            android:layout_height="140dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="#475569"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="8dp"
+            app:strokeWidth="0dp">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <ImageView
+                    android:id="@+id/iconAtm"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/ic_money"
+                    app:tint="@android:color/white"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintVertical_bias="0.35" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="ATM"
+                    android:textColor="@android:color/white"
+                    android:textSize="20sp"
+                    app:layout_constraintTop_toBottomOf="@id/iconAtm"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

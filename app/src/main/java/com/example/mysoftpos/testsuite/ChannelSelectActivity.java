@@ -2,6 +2,7 @@ package com.example.mysoftpos.testsuite;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.mysoftpos.R;
@@ -13,8 +14,8 @@ public class ChannelSelectActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_channel_select); // Will create layout next
 
-        Button btnPos = findViewById(R.id.btnPos);
-        Button btnAtm = findViewById(R.id.btnAtm);
+        View btnPos = findViewById(R.id.btnPos);
+        View btnAtm = findViewById(R.id.btnAtm);
 
         btnPos.setOnClickListener(v -> navigateToTransaction("POS"));
         btnAtm.setOnClickListener(v -> navigateToTransaction("ATM"));
@@ -28,8 +29,3 @@ public class ChannelSelectActivity extends AppCompatActivity {
         startActivity(intent);
     }
 }
-
-
-
-
-

@@ -18,7 +18,7 @@ public class RunnerActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_runner); // Will create layout
 
-        tvLog = findViewById(R.id.tvIsoLog);
+        tvLog = findViewById(R.id.tvLog);
         viewModel = new ViewModelProvider(this).get(RunnerViewModel.class);
 
         // Get Intent Data
@@ -45,17 +45,13 @@ public class RunnerActivity extends AppCompatActivity {
         tvLog.setText("Starting Transaction...\nMode: " + de22 + "\n");
 
         android.content.Intent i = getIntent();
+        String txnType = i.getStringExtra("TXN_TYPE");
         viewModel.runTransaction(
                 de22,
                 i.getStringExtra("TRACK2"),
-                i.getStringExtra("DE55"),
                 i.getStringExtra("PAN"),
                 i.getStringExtra("EXPIRY"),
-                i.getStringExtra("PIN_BLOCK"));
+                i.getStringExtra("PIN_BLOCK"),
+                txnType);
     }
 }
-
-
-
-
-

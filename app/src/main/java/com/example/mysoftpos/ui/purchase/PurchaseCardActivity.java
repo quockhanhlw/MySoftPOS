@@ -227,7 +227,10 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
     }
 
     private void processTransaction(CardInputData card) {
-        viewModel.processTransaction(card, amount, currencyCode, txnType);
+        String username = getIntent().getStringExtra("USERNAME");
+        if (username == null)
+            username = "Guest";
+        viewModel.processTransaction(card, amount, currencyCode, txnType, username);
     }
 
     private void showLoading(boolean loading) {

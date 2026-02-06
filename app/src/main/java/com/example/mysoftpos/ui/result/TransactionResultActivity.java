@@ -11,7 +11,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import com.google.android.material.button.MaterialButton;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatActivity;
+
 import androidx.constraintlayout.widget.ConstraintLayout;
 import com.example.mysoftpos.iso8583.TxnType;
 

@@ -1,55 +1,125 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:gravity="center_horizontal"
->
+    android:background="#F8FAFC">
 
-    <ImageButton
+    <ImageView
         android:id="@+id/btnBack"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:src="@drawable/ic_back"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="Back"
-        android:layout_gravity="start"/>
+        android:padding="12dp"
+        android:src="@drawable/ic_back"
+        app:tint="#1E293B"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
+        android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Select Scheme"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="#1E293B"
         android:layout_marginTop="24dp"
-        android:layout_marginBottom="40dp"/>
+        android:fontFamily="sans-serif-black"
+        android:text="Select Scheme"
+        android:textColor="#1E293B"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnBack" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnNapas"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:text="NAPAS"
-        android:textSize="20sp"
-        android:layout_marginBottom="16dp"
-        android:backgroundTint="#3B82F6"/>
+        android:layout_height="0dp"
+        android:layout_marginTop="32dp"
+        android:clipToPadding="false"
+        android:paddingBottom="32dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnVisa"
-        android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:text="VISA"
-        android:textSize="20sp"
-        android:layout_marginBottom="16dp"
-        android:backgroundTint="#1A1F71"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="24dp">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnMastercard"
-        android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:text="MASTERCARD"
-        android:textSize="20sp"
-        android:backgroundTint="#FF5F00"/>
+            <!-- NAPAS Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardNapas"
+                android:layout_width="match_parent"
+                android:layout_height="160dp"
+                android:layout_marginBottom="20dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                app:cardBackgroundColor="@android:color/white"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="6dp"
+                app:strokeColor="#EEF2F6"
+                app:strokeWidth="1dp">
 
-</LinearLayout>
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="Napas"
+                    android:padding="32dp"
+                    android:src="@drawable/pic_napas"
+                    android:scaleType="fitCenter" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- VISA Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardVisa"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:layout_marginBottom="20dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                app:cardBackgroundColor="@android:color/white"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="6dp"
+                app:strokeColor="#EEF2F6"
+                app:strokeWidth="1dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="Visa"
+                    android:padding="24dp"
+                    android:src="@drawable/pic_visa"
+                    android:scaleType="fitCenter" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Master Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardMaster"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:layout_marginBottom="20dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                app:cardBackgroundColor="@android:color/white"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="6dp"
+                app:strokeColor="#EEF2F6"
+                app:strokeWidth="1dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="Mastercard"
+                    android:padding="24dp"
+                    android:src="@drawable/pic_mastercard"
+                    android:scaleType="fitCenter" />
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

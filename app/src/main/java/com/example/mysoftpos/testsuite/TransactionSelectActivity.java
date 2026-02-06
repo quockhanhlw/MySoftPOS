@@ -1,8 +1,10 @@
 package com.example.mysoftpos.testsuite;
+
 import com.example.mysoftpos.iso8583.TxnType;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,8 +26,8 @@ public class TransactionSelectActivity extends AppCompatActivity {
         TextView tvTitle = findViewById(R.id.tvTitle);
         tvTitle.setText(channel + " - Select Transaction");
 
-        Button btnPurchase = findViewById(R.id.btnPurchase);
-        Button btnBalance = findViewById(R.id.btnBalance);
+        View btnPurchase = findViewById(R.id.btnPurchase);
+        View btnBalance = findViewById(R.id.btnBalance);
 
         btnPurchase.setOnClickListener(v -> navigateToTestSuite("PURCHASE"));
         btnBalance.setOnClickListener(v -> navigateToTestSuite("BALANCE"));
@@ -40,9 +42,3 @@ public class TransactionSelectActivity extends AppCompatActivity {
         startActivity(intent);
     }
 }
-
-
-
-
-
-

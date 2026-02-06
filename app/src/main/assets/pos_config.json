@@ -24,21 +24,25 @@
             "track2": "9704189991010867647=31016010000000123",
             "description": "Magstripe without PIN"
         },
-        "901": {
+        "021": {
             "track2": "9704189991010867647=31016010000000123",
-            "description": "Contactless with PIN"
-        },
-        "902": {
-            "track2": "9704189991010867647=31016010000000123",
-            "description": "Contactless without PIN"
+            "description": "Magstripe with PIN (No PIN Block)"
         }
     },
     "default_amount": "000000100000",
     "mock_pan": "9704189991010867647",
     "mock_expiry": "3101",
     "server_id": "01",
-    "server_ip": "10.145.54.179",
+    "server_ip": "10.145.54.206",
     "server_port": 8583,
+    "admin_account": {
+        "username": "admin",
+        "password": "admin123456789"
+    },
+    "currency_rules": {
+        "usd_code": "840",
+        "usd_country_code": "840"
+    },
     "iso_constants": {
         "processing_code_purchase": "000000",
         "processing_code_balance": "300000",

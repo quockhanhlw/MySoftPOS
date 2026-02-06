@@ -2,6 +2,7 @@ package com.example.mysoftpos.data.local.entity;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
@@ -33,6 +34,7 @@ public class UserEntity {
     public UserEntity() {
     }
 
+    @Ignore
     public UserEntity(String usernameHash, String passwordHash, String displayName, String role) {
         this.usernameHash = usernameHash;
         this.passwordHash = passwordHash;

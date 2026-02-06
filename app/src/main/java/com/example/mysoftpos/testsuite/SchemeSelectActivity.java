@@ -14,16 +14,16 @@ public class SchemeSelectActivity extends AppCompatActivity {
         setContentView(R.layout.activity_scheme_select); // Assuming existing layout with IDs
 
         // Setup Listeners
-        if (findViewById(R.id.btnNapas) != null) {
-            findViewById(R.id.btnNapas).setOnClickListener(v -> navigateToChannel());
+        if (findViewById(R.id.cardNapas) != null) {
+            findViewById(R.id.cardNapas).setOnClickListener(v -> navigateToChannel());
         }
 
-        if (findViewById(R.id.btnVisa) != null) {
-            findViewById(R.id.btnVisa).setOnClickListener(v -> showComingSoon("Visa"));
+        if (findViewById(R.id.cardVisa) != null) {
+            findViewById(R.id.cardVisa).setOnClickListener(v -> showComingSoon("Visa"));
         }
 
-        if (findViewById(R.id.btnMastercard) != null) {
-            findViewById(R.id.btnMastercard).setOnClickListener(v -> showComingSoon("Mastercard"));
+        if (findViewById(R.id.cardMaster) != null) {
+            findViewById(R.id.cardMaster).setOnClickListener(v -> showComingSoon("Mastercard"));
         }
 
         if (findViewById(R.id.btnBack) != null) {
@@ -40,8 +40,3 @@ public class SchemeSelectActivity extends AppCompatActivity {
         Toast.makeText(this, scheme + " coming soon...", Toast.LENGTH_SHORT).show();
     }
 }
-
-
-
-
-

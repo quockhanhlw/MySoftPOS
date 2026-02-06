@@ -1,4 +1,5 @@
 package com.example.mysoftpos.testsuite;
+
 import com.example.mysoftpos.utils.config.ConfigManager;
 
 import com.example.mysoftpos.testsuite.model.TestScenario;
@@ -29,18 +30,15 @@ public class TestDataProvider {
         List<TestScenario> list = new ArrayList<>();
 
         String[] codes = {
-                "022", "012", "031", "032",
-                "102", "792", "801", "802",
-                "901", "902", "911", "912"
+                "022", "011", "012", "021"
         };
 
         for (String code : codes) {
             String modeStr = getModeName(code);
-            boolean isPin = code.endsWith("1"); // 3rd digit '1' = PIN, '2' = No PIN
-            String type = isPin ? "PIN" : "No-PIN";
+            // User Request: 021 should NOT have PIN code (even though it ends in 1)
+            boolean isPin = code.endsWith("1") && !"021".equals(code);
+            String desc = String.format("%s (%s)", modeStr, code);
 
-            // Description based on Mode + Code + Type
-            String desc = String.format("%s (%s) - %s", modeStr, code, type);
             String mti = "0200";
 
             TestScenario s = new TestScenario(mti, desc);
@@ -63,7 +61,10 @@ public class TestDataProvider {
                 }
             }
             String bankName = com.example.mysoftpos.utils.card.BinResolver.getBankName(pan);
-            s.setDescription(s.getDescription() + " - " + bankName);
+            // Append Bank Name simply
+            if (!bankName.equals("Unknown")) {
+                s.setDescription(s.getDescription() + " - " + bankName);
+            }
 
             list.add(s);
         }
@@ -115,31 +116,11 @@ public class TestDataProvider {
     private static String getModeName(String code) {
         if (code.startsWith("02"))
             return "Magstripe (Swipe)";
-        if (code.startsWith("05"))
-            return "EMV Chip";
-        if (code.startsWith("07"))
-            return "Contactless (NFC)";
         if (code.startsWith("01"))
             return "Manual Key-in";
         if (code.startsWith("03"))
             return "QR Code";
-        if (code.startsWith("10"))
-            return "Credential on File"; // 102
-        if (code.startsWith("79"))
-            return "Fallback > Manual"; // 792
-        if (code.startsWith("80"))
-            return "Fallback > Magstripe (Tech)"; // 801
-        if (code.startsWith("90"))
-            return "Fallback > Magstripe (Empty)"; // 901
-        if (code.startsWith("91"))
-            return "Fallback > Magstripe (Ctls)"; // 911
+        // 901/902 and Chip/NFC Removed as per user request
         return "Unknown";
     }
 }
-
-
-
-
-
-
-

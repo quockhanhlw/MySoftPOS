@@ -1,5 +1,4 @@
 package com.example.mysoftpos.domain.model;
-import com.example.mysoftpos.iso8583.emv.EmvTags;
 
 import java.util.Map;
 import java.util.Collections;
@@ -13,20 +12,13 @@ public class CardInputData {
     private final String expiryDate; // YYMM
     private final String posEntryMode; // "051" for NFC, "012" for Manual
     private final String track2; // Nullable, only for NFC
-    private Map<String, String> emvTags; // Mutable
-
-    private String pinBlock; // Mutable, set via setter
+    private String pinBlock; // Optional PIN Block (DE 52)
 
     public CardInputData(String pan, String expiryDate, String posEntryMode, String track2) {
         this.pan = pan;
         this.expiryDate = expiryDate;
         this.posEntryMode = posEntryMode;
         this.track2 = track2;
-        this.emvTags = new java.util.HashMap<>();
-    }
-
-    public void setEmvTags(Map<String, String> emvTags) {
-        this.emvTags = emvTags != null ? emvTags : new java.util.HashMap<>();
     }
 
     public void setPinBlock(String pinBlock) {
@@ -71,9 +63,3 @@ public class CardInputData {
         return "****" + pan.substring(pan.length() - 4);
     }
 }
-
-
-
-
-
-

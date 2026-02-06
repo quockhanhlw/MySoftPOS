@@ -184,6 +184,26 @@ public class ConfigManager {
             defIp = obj.optString("server_ip", "10.0.0.1");
             defPort = obj.optInt("server_port", 8583);
 
+            // Parse Admin Account
+            JSONObject adminObj = obj.optJSONObject("admin_account");
+            if (adminObj != null) {
+                adminUser = adminObj.optString("username", "admin");
+                adminPass = adminObj.optString("password", "admin123456789");
+            } else {
+                adminUser = "admin";
+                adminPass = "admin123456789"; // Fallback
+            }
+
+            // Parse Currency Rules
+            JSONObject currRules = obj.optJSONObject("currency_rules");
+            if (currRules != null) {
+                usdCode = currRules.optString("usd_code", "840");
+                usdCountrySuffix = currRules.optString("usd_country_code", "840");
+            } else {
+                usdCode = "840";
+                usdCountrySuffix = "840";
+            }
+
             // Parse ISO Constants
             JSONObject isoConst = obj.optJSONObject("iso_constants");
             if (isoConst != null) {
@@ -211,7 +231,7 @@ public class ConfigManager {
             defCountryTxt = "VNM";
             defCurr = "704";
             // Check IP defaults
-            defIp = "10.145.54.179";
+            defIp = "10.145.54.206";
             defPort = 8583;
 
             // Fallbacks for new fields
@@ -240,13 +260,35 @@ public class ConfigManager {
     private int defPort;
 
     public String getServerIp() {
-        return defIp != null ? defIp : "10.145.54.179";
+        return defIp != null ? defIp : "10.145.54.206";
     }
 
     public int getServerPort() {
         return defPort > 0 ? defPort : 8583;
     }
-    // prefs.getInt(KEY_PORT, 8583);
+
+    private String adminUser;
+    private String adminPass;
+
+    public String getAdminUsername() {
+        return adminUser != null ? adminUser : "admin";
+    }
+
+    public String getAdminPassword() {
+        return adminPass != null ? adminPass : "admin123456789";
+    }
+
+    // Currency Rules
+    private String usdCode;
+    private String usdCountrySuffix;
+
+    public String getUsdCurrencyCode() {
+        return usdCode != null ? usdCode : "840";
+    }
+
+    public String getUsdCountrySuffix() {
+        return usdCountrySuffix != null ? usdCountrySuffix : "840";
+    }
 
     // ...
     private String defServerId; // New field

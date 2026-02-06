@@ -10,7 +10,12 @@ public interface TransactionRepository {
     // DB Operations
     LiveData<List<TransactionEntity>> getAllTransactions();
 
-    void saveTransaction(TransactionEntity transaction);
+    void saveTransaction(
+            String traceNumber, String amount, String status, String reqHex, String respHex, long timestamp,
+            String merchantCode, String merchantName,
+            String terminalCode,
+            String panMasked, String bin, String last4, String scheme,
+            String username);
 
     void updateTransactionStatus(String traceNumber, String status);
 
@@ -21,8 +26,3 @@ public interface TransactionRepository {
 
     void updateTransactionResponseHex(String traceNumber, String responseHex);
 }
-
-
-
-
-

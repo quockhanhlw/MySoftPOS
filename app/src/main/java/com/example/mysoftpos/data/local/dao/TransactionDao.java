@@ -1,5 +1,5 @@
 package com.example.mysoftpos.data.local.dao;
-import com.example.mysoftpos.data.local.dao.TransactionDao;
+
 import com.example.mysoftpos.data.local.entity.TransactionEntity;
 
 import androidx.room.Dao;
@@ -35,10 +35,11 @@ public interface TransactionDao {
 
     @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
     androidx.lifecycle.LiveData<List<TransactionEntity>> getAllTransactionsLive();
+
+    @Query("SELECT t.* FROM transactions t INNER JOIN users u ON t.user_id = u.id WHERE u.username_hash = :usernameHash ORDER BY t.timestamp DESC")
+    androidx.lifecycle.LiveData<List<TransactionEntity>> getTransactionsByUsernameHashLive(String usernameHash);
+
+    // Kept for direct ID access if needed
+    @Query("SELECT * FROM transactions WHERE user_id = :userId ORDER BY timestamp DESC")
+    androidx.lifecycle.LiveData<List<TransactionEntity>> getTransactionsByUserIdLive(long userId);
 }
-
-
-
-
-
-

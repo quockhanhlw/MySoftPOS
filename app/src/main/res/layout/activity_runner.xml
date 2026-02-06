@@ -1,60 +1,92 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
->
+    android:background="@drawable/bg_gradient_light">
 
-    <ImageButton
-        android:id="@+id/btnBack"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:src="@drawable/ic_back"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="Back"/>
-
-    <TextView
-        android:id="@+id/tvTitle"
+    <!-- Header -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Test Case Details"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="#1E293B"
-        android:layout_marginBottom="16dp"/>
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp"
+        android:background="#FFFFFFFF"
+        android:elevation="4dp">
 
-    <Button
-        android:id="@+id/btnRun"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="RUN TRANSACTION"
-        android:textSize="18sp"
-        android:layout_marginBottom="16dp"/>
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_back"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back"
+            app:tint="@color/neo_primary_dark"/>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="ISO 8583 Log:"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp"/>
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Execute Transaction"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/neo_primary_dark"
+            android:layout_marginStart="16dp"/>
+    </LinearLayout>
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:background="#FFFFFF"
-        android:padding="8dp"
-        android:elevation="2dp">
-        
-        <TextView
-            android:id="@+id/tvIsoLog"
+        android:padding="16dp">
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="monospace"
-            android:textSize="12sp"
-            android:textColor="#334155"
-            android:text="Waiting to run..."/>
-    </ScrollView>
+            android:orientation="vertical">
+
+            <!-- Console Log Output -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardBackgroundColor="#1E1E1E"
+                app:cardElevation="4dp">
+
+                <TextView
+                    android:id="@+id/tvLog"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:fontFamily="monospace"
+                    android:textColor="#00FF00"
+                    android:textSize="12sp"
+                    android:lineSpacingExtra="4dp"
+                    android:text="Waiting for execution..."/>
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Action Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="24dp"
+        android:background="#FFFFFFFF"
+        android:elevation="16dp">
+
+        <Button
+            android:id="@+id/btnRun"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Run Transaction"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:cornerRadius="28dp"
+            app:backgroundTint="@color/neo_primary_dark"/>
+    </LinearLayout>
 
 </LinearLayout>

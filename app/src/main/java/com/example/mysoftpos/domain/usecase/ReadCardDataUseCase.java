@@ -1,5 +1,4 @@
 package com.example.mysoftpos.domain.usecase;
-import com.example.mysoftpos.iso8583.emv.EmvTags;
 
 import android.util.Log;
 
@@ -135,10 +134,3 @@ public class ReadCardDataUseCase {
 
     // extractTags removed
 }
-
-
-
-
-
-
-

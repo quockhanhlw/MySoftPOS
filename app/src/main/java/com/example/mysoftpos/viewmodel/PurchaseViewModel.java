@@ -41,12 +41,14 @@ public class PurchaseViewModel extends BaseViewModel {
         return state;
     }
 
-    public void processTransaction(CardInputData card, String amount, String currencyCode, TxnType txnType) {
+    public void processTransaction(CardInputData card, String amount, String currencyCode, TxnType txnType,
+            String username) {
         state.setValue(TransactionState.loading());
 
         launchIo(() -> {
             TransactionContext ctx = new TransactionContext();
             TransactionEntity entity = new TransactionEntity();
+            // entity.username = username; // Removed in 3NF refactor
 
             try {
                 // Validation
@@ -83,7 +85,24 @@ public class PurchaseViewModel extends BaseViewModel {
                 ctx.currency49 = currencyCode != null ? currencyCode : configManager.getCurrencyCode49();
                 ctx.terminalId41 = configManager.getTerminalId();
                 ctx.merchantId42 = configManager.getMerchantId();
-                ctx.merchantNameLocation43 = configManager.getMerchantName();
+
+                // DE 43 Customization for USD
+                String usdCode = configManager.getUsdCurrencyCode(); // "840" from config
+
+                if (usdCode.equals(ctx.currency49)) {
+                    // Replace Country Code (last 3 chars) with country suffix
+                    String base43 = configManager.getMerchantName();
+                    String suffix = configManager.getUsdCountrySuffix(); // "840" from config
+
+                    if (base43.length() >= 3) {
+                        ctx.merchantNameLocation43 = base43.substring(0, base43.length() - 3) + suffix;
+                    } else {
+                        ctx.merchantNameLocation43 = base43;
+                    }
+                } else {
+                    ctx.merchantNameLocation43 = configManager.getMerchantName();
+                }
+
                 ctx.ip = configManager.getServerIp();
                 ctx.port = configManager.getServerPort();
 
@@ -101,14 +120,44 @@ public class PurchaseViewModel extends BaseViewModel {
                 com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "SEND DETAIL",
                         StandardIsoPacker.logIsoMessage(req));
 
+                // --- 1. LOG REQUEST (Before Network) ---
+                com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "SEND 0200", packed);
+                com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "SEND DETAIL",
+                        StandardIsoPacker.logIsoMessage(req));
+
                 // DB Log (Initial Save)
-                entity.traceNumber = ctx.stan11;
-                entity.amount = amount;
-                entity.pan = card.getPan();
-                entity.status = "PENDING";
-                entity.requestHex = requestHex;
-                entity.timestamp = System.currentTimeMillis();
-                repository.saveTransaction(entity);
+                String pan = card.getPan();
+                String panMasked = (pan != null && pan.length() > 6)
+                        ? pan.substring(0, 6) + "******" + pan.substring(pan.length() - 4)
+                        : pan;
+                String bin = (pan != null && pan.length() >= 6) ? pan.substring(0, 6) : "";
+                String last4 = (pan != null && pan.length() >= 4) ? pan.substring(pan.length() - 4) : "";
+                // Simple Scheme detection (can be improved)
+                String scheme = "Unknown";
+                if (pan != null) {
+                    if (pan.startsWith("4"))
+                        scheme = "Visa";
+                    else if (pan.startsWith("5"))
+                        scheme = "Mastercard";
+                    else if (pan.startsWith("9704"))
+                        scheme = "Napas";
+                }
+
+                repository.saveTransaction(
+                        ctx.stan11,
+                        amount,
+                        "PENDING",
+                        requestHex,
+                        null,
+                        System.currentTimeMillis(),
+                        ctx.merchantId42,
+                        ctx.merchantNameLocation43,
+                        ctx.terminalId41,
+                        panMasked,
+                        bin,
+                        last4,
+                        scheme,
+                        username);
 
                 // Network Send
                 IsoNetworkClient client = new IsoNetworkClient(ctx.ip, ctx.port);

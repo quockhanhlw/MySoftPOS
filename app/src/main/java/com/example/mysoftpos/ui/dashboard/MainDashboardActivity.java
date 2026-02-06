@@ -49,12 +49,13 @@ public class MainDashboardActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main_dashboard);
 
         // Get user info
-        String userRole = getIntent().getStringExtra("USER_ROLE");
-        String username = getIntent().getStringExtra("USERNAME");
-        if (userRole == null)
-            userRole = "USER";
-        if (username == null)
-            username = "Guest";
+        String userRoleArg = getIntent().getStringExtra("USER_ROLE");
+        String usernameArg = getIntent().getStringExtra("USERNAME");
+        if (userRoleArg == null)
+            userRoleArg = "USER";
+
+        final String userRole = userRoleArg;
+        final String username = (usernameArg != null) ? usernameArg : "Guest";
 
         // Bind Views
         tvMerchantName = findViewById(R.id.tvMerchantName);
@@ -63,28 +64,67 @@ public class MainDashboardActivity extends AppCompatActivity {
 
         View btnPurchase = findViewById(R.id.btnPurchase);
         View btnBalance = findViewById(R.id.btnBalance);
+        View btnTestSuite = findViewById(R.id.btnTestSuite);
         ImageView btnSettings = findViewById(R.id.btnSettings);
+        ImageView btnLogout = findViewById(R.id.btnLogout);
         ImageView btnHome = findViewById(R.id.btnHome);
 
         // Set Welcome Name
         tvMerchantName.setText(username);
 
+        // --- ROLE BASED UI ---
+        boolean isAdmin = "ADMIN".equals(userRole);
+        if (isAdmin) {
+            btnPurchase.setVisibility(View.GONE);
+            btnBalance.setVisibility(View.GONE);
+            if (btnTestSuite != null) {
+                btnTestSuite.setVisibility(View.VISIBLE);
+            }
+        } else {
+            btnPurchase.setVisibility(View.VISIBLE);
+            btnBalance.setVisibility(View.VISIBLE);
+            if (btnTestSuite != null) {
+                btnTestSuite.setVisibility(View.GONE);
+            }
+        }
+
         // Purchase Action
         btnPurchase.setOnClickListener(v -> {
             Intent intent = new Intent(this, PurchaseAmountActivity.class);
+            intent.putExtra("USERNAME", username);
             startActivity(intent);
         });
 
         // Balance Action
         btnBalance.setOnClickListener(v -> {
             Intent intent = new Intent(this, BalanceInquiryActivity.class);
+            intent.putExtra("USERNAME", username);
             startActivity(intent);
         });
+
+        // Test Suite Action (Admin Only)
+        if (btnTestSuite != null) {
+            btnTestSuite.setOnClickListener(v -> {
+                Intent intent = new Intent(this, com.example.mysoftpos.testsuite.SchemeSelectActivity.class);
+                startActivity(intent);
+            });
+        }
 
         // Settings Action
         btnSettings.setOnClickListener(v -> {
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivity(intent);
+        });
+
+        // Logout Action
+        btnLogout.setOnClickListener(v -> {
+            // Clear any session info if stored (optional)
+            // Navigate back to Welcome Activity
+            Intent intent = new Intent(this, com.example.mysoftpos.ui.auth.WelcomeActivity.class);
+            intent.addFlags(
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
         });
 
         // Home Action (Just refresh/toast for now)
@@ -93,10 +133,10 @@ public class MainDashboardActivity extends AppCompatActivity {
         });
 
         // Hidden Admin Trigger (Double tap or long press)
-        // Only if userRole is ADMIN or for easy access during dev
+        // Keep as fallback for dev
         final String finalUserRole = userRole;
         hiddenAdminTrigger.setOnLongClickListener(v -> {
-            if ("ADMIN".equals(finalUserRole) || true) { // Always allow for now for testing
+            if ("ADMIN".equals(finalUserRole) || true) { // Always allow logic for now
                 Intent intent = new Intent(this, com.example.mysoftpos.testsuite.SchemeSelectActivity.class);
                 startActivity(intent);
                 return true;
@@ -154,12 +194,19 @@ public class MainDashboardActivity extends AppCompatActivity {
 
     private void setupHistoryObserver() {
         AppDatabase db = AppDatabase.getInstance(this);
-        db.transactionDao().getAllTransactionsLive().observe(this, new Observer<List<TransactionEntity>>() {
-            @Override
-            public void onChanged(List<TransactionEntity> transactions) {
-                updateHistoryList(transactions);
-            }
-        });
+        // Get username from Intent (already retrieved in onCreate)
+        String currentUsername = getIntent().getStringExtra("USERNAME");
+        if (currentUsername == null)
+            currentUsername = "Guest";
+
+        String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(currentUsername);
+        db.transactionDao().getTransactionsByUsernameHashLive(usernameHash).observe(this,
+                new Observer<List<TransactionEntity>>() {
+                    @Override
+                    public void onChanged(List<TransactionEntity> transactions) {
+                        updateHistoryList(transactions);
+                    }
+                });
     }
 
     // --- History Logic Refactored for Expansion --- //

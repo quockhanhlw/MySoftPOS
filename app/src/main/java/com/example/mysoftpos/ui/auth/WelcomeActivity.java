@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 public class WelcomeActivity extends AppCompatActivity {
 
     // TODO: Set to false to re-enable login/register flow
-    private static final boolean SKIP_LOGIN = true;
+    private static final boolean SKIP_LOGIN = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

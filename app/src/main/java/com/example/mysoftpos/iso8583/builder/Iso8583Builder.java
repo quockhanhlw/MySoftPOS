@@ -1,7 +1,5 @@
 package com.example.mysoftpos.iso8583.builder;
 
-import com.example.mysoftpos.iso8583.builder.Iso8583Builder;
-
 import com.example.mysoftpos.iso8583.message.IsoMessage;
 import com.example.mysoftpos.iso8583.spec.IsoField;
 import com.example.mysoftpos.iso8583.TxnType;
@@ -9,8 +7,6 @@ import com.example.mysoftpos.iso8583.TransactionContext;
 
 import com.example.mysoftpos.domain.model.CardInputData;
 import java.util.Map;
-import com.example.mysoftpos.iso8583.TransactionContext;
-import com.example.mysoftpos.iso8583.spec.IsoField;
 
 /**
  * ISO8583 Builder - Production Grade.
@@ -50,8 +46,8 @@ public class Iso8583Builder {
         if ("011".equals(de22) || "012".equals(de22)) {
             // Manual/Magstripe → Include Expiry (DE 14), Exclude Track 2 (DE 35)
             m.setField(IsoField.EXPIRATION_DATE_14, card.getExpiryDate());
-        } else if ("901".equals(de22) || "902".equals(de22) || "022".equals(de22)) {
-            // Contactless → Include Track 2 (DE 35)
+        } else if ("021".equals(de22) || "022".equals(de22)) {
+            // Magstripe → Include Track 2 (DE 35)
             if (card.getTrack2() != null && !card.getTrack2().isEmpty()) {
                 m.setField(IsoField.TRACK2_35, card.getTrack2().replace('=', 'D'));
             }
@@ -130,7 +126,10 @@ public class Iso8583Builder {
         m.setField(IsoField.MERCHANT_NAME_LOCATION_43, ctx.merchantNameLocation43);
         m.setField(IsoField.CURRENCY_CODE_49, ctx.currency49);
 
-        // No PIN Block for Balance Inquiry per user spec
+        // PIN Block (only for 011, 021 cases with PIN)
+        if (ctx.encryptPin && ctx.pinBlock52 != null) {
+            m.setField(IsoField.PIN_BLOCK_52, ctx.pinBlock52);
+        }
 
         return m;
     }

@@ -81,9 +81,12 @@ public class LoginActivity extends AppCompatActivity {
 
         new Thread(() -> {
             try {
-                // Check hardcoded admin first (always available)
-                if (finalUsername.equals("admin") && finalPassword.equals("admin123")) {
-                    runOnUiThread(() -> navigateToDashboard("ADMIN", "admin"));
+                // Check admin (from Config)
+                com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
+                        .getInstance(this);
+                if (finalUsername.equals(config.getAdminUsername())
+                        && finalPassword.equals(config.getAdminPassword())) {
+                    runOnUiThread(() -> navigateToDashboard("ADMIN", config.getAdminUsername()));
                     return;
                 }
 
