@@ -32,7 +32,20 @@ public class TestSuiteActivity extends AppCompatActivity {
         txnType = getIntent().getStringExtra("TXN_TYPE");
 
         TextView tvTitle = findViewById(R.id.tvTitle);
-        tvTitle.setText(String.format("%s - %s Tests", channel, txnType));
+        // title kept as "Test Scenarios" or generic
+
+        // Bind Summary Card
+        TextView tvSummaryScheme = findViewById(R.id.tvSummaryScheme);
+        TextView tvSummaryChannel = findViewById(R.id.tvSummaryChannel);
+        TextView tvSummaryType = findViewById(R.id.tvSummaryType);
+
+        String scheme = getIntent().getStringExtra("SCHEME");
+        if (scheme == null)
+            scheme = "Napas"; // Fallback
+
+        tvSummaryScheme.setText(scheme);
+        tvSummaryChannel.setText(channel);
+        tvSummaryType.setText(txnType);
 
         androidx.recyclerview.widget.RecyclerView recyclerView = findViewById(R.id.recyclerViewCases);
 

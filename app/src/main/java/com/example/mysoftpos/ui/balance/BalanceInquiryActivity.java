@@ -11,6 +11,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -44,6 +45,11 @@ public class BalanceInquiryActivity extends AppCompatActivity {
 
     private int currentMode = 0; // 0 = Manual, 1 = Mock
 
+    private ImageView ripple1;
+    private ImageView ripple2;
+    private ImageView ripple3;
+    private ImageView ripple4;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,6 +73,11 @@ public class BalanceInquiryActivity extends AppCompatActivity {
         layoutLoading = findViewById(R.id.layoutLoading);
         View cardNfcIcon = findViewById(R.id.cardNfcIcon);
         TextView tvMockPreview = findViewById(R.id.tvMockTrack2Preview);
+
+        ripple1 = findViewById(R.id.ripple1);
+        ripple2 = findViewById(R.id.ripple2);
+        ripple3 = findViewById(R.id.ripple3);
+        ripple4 = findViewById(R.id.ripple4);
 
         ImageButton btnBack = findViewById(R.id.btnBack);
         btnBack.setOnClickListener(v -> finish());
@@ -143,10 +154,73 @@ public class BalanceInquiryActivity extends AppCompatActivity {
         if (currentMode == 0) {
             cardManualEntry.setVisibility(View.VISIBLE);
             cardMockTrack2.setVisibility(View.GONE);
+            stopRippleAnimation();
         } else {
             cardManualEntry.setVisibility(View.GONE);
             cardMockTrack2.setVisibility(View.VISIBLE);
+            startRippleAnimation();
         }
+    }
+
+    private void startRippleAnimation() {
+        if (ripple1 != null && ripple2 != null && ripple3 != null && ripple4 != null) {
+            ripple1.setVisibility(View.VISIBLE);
+            ripple2.setVisibility(View.VISIBLE);
+            ripple3.setVisibility(View.VISIBLE);
+            ripple4.setVisibility(View.VISIBLE);
+
+            android.view.animation.Animation anim1 = android.view.animation.AnimationUtils.loadAnimation(this,
+                    R.anim.ripple_effect);
+            ripple1.startAnimation(anim1);
+
+            android.view.animation.Animation anim2 = android.view.animation.AnimationUtils.loadAnimation(this,
+                    R.anim.ripple_effect);
+            anim2.setStartOffset(750);
+            ripple2.startAnimation(anim2);
+
+            android.view.animation.Animation anim3 = android.view.animation.AnimationUtils.loadAnimation(this,
+                    R.anim.ripple_effect);
+            anim3.setStartOffset(1500);
+            ripple3.startAnimation(anim3);
+
+            android.view.animation.Animation anim4 = android.view.animation.AnimationUtils.loadAnimation(this,
+                    R.anim.ripple_effect);
+            anim4.setStartOffset(2250);
+            ripple4.startAnimation(anim4);
+        }
+    }
+
+    private void stopRippleAnimation() {
+        if (ripple1 != null) {
+            ripple1.clearAnimation();
+            ripple1.setVisibility(View.GONE);
+        }
+        if (ripple2 != null) {
+            ripple2.clearAnimation();
+            ripple2.setVisibility(View.GONE);
+        }
+        if (ripple3 != null) {
+            ripple3.clearAnimation();
+            ripple3.setVisibility(View.GONE);
+        }
+        if (ripple4 != null) {
+            ripple4.clearAnimation();
+            ripple4.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (currentMode == 1) {
+            startRippleAnimation();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        stopRippleAnimation();
     }
 
     private void processBalanceInquiry(CardInputData cardData) {
@@ -176,6 +250,17 @@ public class BalanceInquiryActivity extends AppCompatActivity {
         if (isoRequest != null) {
             intent.putExtra("RAW_REQUEST", isoRequest);
         }
+
+        // Receipt Extras
+        String maskedPan = etPan.getText().toString().length() > 4
+                ? "**** " + etPan.getText().toString().substring(etPan.getText().length() - 4)
+                : "**** 0000";
+        intent.putExtra("MASKED_PAN", maskedPan);
+
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm:ss dd/MM/yyyy",
+                java.util.Locale.getDefault());
+        intent.putExtra("TXN_DATE", sdf.format(new java.util.Date()));
+        intent.putExtra("TXN_ID", "TXN" + System.currentTimeMillis() % 100000000);
 
         startActivity(intent);
         finish();

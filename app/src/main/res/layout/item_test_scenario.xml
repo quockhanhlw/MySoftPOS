@@ -4,107 +4,80 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="16dp"
-    android:layout_marginVertical="8dp"
+    android:layout_marginHorizontal="0dp"
+    android:layout_marginBottom="12dp"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
     app:cardBackgroundColor="@android:color/white"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="2dp"
-    app:strokeColor="#F1F5F9"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:strokeColor="#EEF2F6"
     app:strokeWidth="1dp">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
         android:padding="16dp">
 
-        <!-- Icon Container -->
+        <!-- Checkbox Mockup -->
+        <ImageView
+            android:id="@+id/imgIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/bg_checkbox_outline"
+            app:tint="#94A3B8" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="16dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:textColor="#0F172A"
+                android:textSize="16sp"
+                tools:text="TC01 - Approved" />
+
+            <TextView
+                android:id="@+id/tvDetail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#64748B"
+                android:textSize="14sp"
+                tools:text="Standard approval flow" />
+        </LinearLayout>
+
+        <!-- Hidden elements needed for binding but not shown -->
         <FrameLayout
             android:id="@+id/iconContainer"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@drawable/bg_circle_soft"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-
-            <ImageView
-                android:id="@+id/imgIcon"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_credit_card"
-                app:tint="#6366F1" />
-        </FrameLayout>
-
-        <!-- Title -->
-        <TextView
-            android:id="@+id/tvTitle"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="8dp"
-            android:ellipsize="end"
-            android:fontFamily="sans-serif-black"
-            android:maxLines="1"
-            android:textColor="#0F172A"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:layout_constraintBottom_toTopOf="@id/tvDetail"
-            app:layout_constraintEnd_toStartOf="@id/chipBadge"
-            app:layout_constraintStart_toEndOf="@id/iconContainer"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_chainStyle="packed"
-            tools:text="Magstripe (Swipe)" />
+            android:layout_height="0dp"
+            android:visibility="gone"/>
 
-        <!-- Detail -->
-        <TextView
-            android:id="@+id/tvDetail"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginTop="2dp"
-            android:ellipsize="end"
-            android:maxLines="2"
-            android:textColor="#64748B"
-            android:textSize="13sp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/chipBadge"
-            app:layout_constraintStart_toEndOf="@id/iconContainer"
-            app:layout_constraintTop_toBottomOf="@id/tvTitle"
-            tools:text="Standard transaction without PIN" />
-
-        <!-- Badge (DE 22 Code) -->
-        <TextView
+         <TextView
             android:id="@+id/chipBadge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_pill_gray"
-            android:layout_marginEnd="8dp"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="4dp"
-            android:textColor="#475569"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/ivArrow"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:text="022" />
-        
-        <!-- Forward Arrow -->
+            android:visibility="gone"/>
+            
          <ImageView
             android:id="@+id/ivArrow"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/ic_arrow_right"
-            app:tint="#94A3B8"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"/>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

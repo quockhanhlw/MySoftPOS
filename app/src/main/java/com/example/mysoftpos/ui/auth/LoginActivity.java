@@ -14,7 +14,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
+import com.google.android.material.button.MaterialButton;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -33,7 +33,7 @@ public class LoginActivity extends AppCompatActivity {
         etPassword = findViewById(R.id.etPassword);
         btnShowPassword = findViewById(R.id.btnShowPassword);
         TextView tvForgotPassword = findViewById(R.id.tvForgotPassword);
-        CardView btnLogin = findViewById(R.id.btnLogin);
+        MaterialButton btnLogin = findViewById(R.id.btnLogin);
 
         btnBack.setOnClickListener(v -> finish());
         btnShowPassword.setOnClickListener(v -> togglePasswordVisibility());
@@ -64,13 +64,13 @@ public class LoginActivity extends AppCompatActivity {
         String password = etPassword.getText().toString().trim();
 
         if (username.isEmpty()) {
-            etUsername.setError("Vui lòng nhập tên đăng nhập");
+            etUsername.setError("Please enter your username");
             etUsername.requestFocus();
             return;
         }
 
         if (password.isEmpty()) {
-            etPassword.setError("Vui lòng nhập mật khẩu");
+            etPassword.setError("Please enter your password");
             etPassword.requestFocus();
             return;
         }
@@ -110,21 +110,21 @@ public class LoginActivity extends AppCompatActivity {
 
                 // Invalid credentials
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "Sai tên đăng nhập hoặc mật khẩu!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Invalid username or password!", Toast.LENGTH_SHORT).show();
                     etPassword.setText("");
                     etPassword.requestFocus();
                 });
 
             } catch (Exception e) {
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "Lỗi đăng nhập: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Login Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
             }
         }).start();
     }
 
     private void navigateToDashboard(String role, String username) {
-        Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Login Successful!", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(LoginActivity.this, MainDashboardActivity.class);
         intent.putExtra("USER_ROLE", role);
         intent.putExtra("USERNAME", username);

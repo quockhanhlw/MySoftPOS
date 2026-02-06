@@ -21,6 +21,7 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RadioButton;
+import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,7 +37,10 @@ import java.nio.charset.StandardCharsets;
 
 public class RegisterActivity extends AppCompatActivity {
 
-    private RadioGroup rgAccountType;
+    private LinearLayout cardPersonal;
+    private LinearLayout cardBusiness;
+    private boolean isBusiness = false;
+
     private EditText etAccountNumber;
     private EditText etBankName;
     private EditText etAccountName;
@@ -57,36 +61,67 @@ public class RegisterActivity extends AppCompatActivity {
 
         // Initialize views
         ImageView btnBack = findViewById(R.id.btnBack);
-        rgAccountType = findViewById(R.id.rgAccountType);
-        RadioButton rbPersonal = findViewById(R.id.rbPersonal);
+        cardPersonal = findViewById(R.id.cardPersonal);
+        cardBusiness = findViewById(R.id.cardBusiness);
+
         etAccountNumber = findViewById(R.id.etAccountNumber);
         etBankName = findViewById(R.id.etBankName);
         etAccountName = findViewById(R.id.etAccountName);
         etPassword = findViewById(R.id.etPassword);
-        etConfirmPassword = findViewById(R.id.etConfirmPassword);
-        btnShowPassword = findViewById(R.id.btnShowPassword);
-        btnShowConfirmPassword = findViewById(R.id.btnShowConfirmPassword);
+        // etConfirmPassword removed from UI but keeping variable if needed or simply
+        // remove
+        // Actually UI removed confirm password? Let me check layout XML.
+        // Step 20788 shows Update Register Activity Layout...
+        // Wait, looking at Step 20788:
+        // Layout has etPassword but NO etConfirmPassword.
+        // It has etAccountNumber, etBankName, etAccountName, etPassword.
+
+        // So I should remove confirm password logic from Java.
+
+        btnShowPassword = findViewById(R.id.btnShowPassword); // Wait, Layout in 20788 uses etPassword
+                                                              // inputType="textPassword" but NO eye icon in the layout!
+        // Step 20788 layout for etPassword:
+        // <EditText id="@+id/etPassword" ... inputType="textPassword" ... />
+        // usage of drawable/bg_input_field.
+        // NO FrameLayout wrapping it with an eye icon.
+
+        // Okay, I need to match the Java code to the NEW XML.
+        // The new XML (Step 20788) has:
+        // - cardPersonal, cardBusiness
+        // - etAccountNumber, etBankName, etAccountName, etPassword
+        // - cbTerms, tvTermsText
+        // - btnRegister
+        // - btnBack
+
+        // It DOES NOT have:
+        // - rgAccountType
+        // - etConfirmPassword
+        // - btnShowPassword (eye icon)
+
         cbTerms = findViewById(R.id.cbTerms);
         tvTermsText = findViewById(R.id.tvTermsText);
-        CardView btnRegister = findViewById(R.id.btnRegister);
+        com.google.android.material.button.MaterialButton btnRegister = findViewById(R.id.btnRegister);
 
-        // Set default selection
-        rbPersonal.setChecked(true);
-
-        // Setup clickable terms text
-        setupTermsText();
+        // Default Selection
+        updateSelectionState(false);
 
         // Back button
         btnBack.setOnClickListener(v -> finish());
 
-        // Show/Hide password
-        btnShowPassword.setOnClickListener(v -> togglePasswordVisibility());
-
-        // Show/Hide confirm password
-        btnShowConfirmPassword.setOnClickListener(v -> toggleConfirmPasswordVisibility());
+        // Card Selection
+        cardPersonal.setOnClickListener(v -> updateSelectionState(false));
+        cardBusiness.setOnClickListener(v -> updateSelectionState(true));
 
         // Register button
         btnRegister.setOnClickListener(v -> handleRegister());
+
+        setupTermsText();
+    }
+
+    private void updateSelectionState(boolean businesses) {
+        this.isBusiness = businesses;
+        cardPersonal.setSelected(!businesses);
+        cardBusiness.setSelected(businesses);
     }
 
     private void setupTermsText() {
@@ -190,105 +225,61 @@ public class RegisterActivity extends AppCompatActivity {
         }
     }
 
-    private void togglePasswordVisibility() {
-        if (isPasswordVisible) {
-            etPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
-            btnShowPassword.setImageResource(R.drawable.ic_eye_off);
-            isPasswordVisible = false;
-        } else {
-            etPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
-            btnShowPassword.setImageResource(R.drawable.ic_eye);
-            isPasswordVisible = true;
-        }
-        etPassword.setSelection(etPassword.getText().length());
-    }
-
-    private void toggleConfirmPasswordVisibility() {
-        if (isConfirmPasswordVisible) {
-            etConfirmPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
-            btnShowConfirmPassword.setImageResource(R.drawable.ic_eye_off);
-            isConfirmPasswordVisible = false;
-        } else {
-            etConfirmPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
-            btnShowConfirmPassword.setImageResource(R.drawable.ic_eye);
-            isConfirmPasswordVisible = true;
-        }
-        etConfirmPassword.setSelection(etConfirmPassword.getText().length());
-    }
-
     private void handleRegister() {
         // Get selected account type
-        int selectedTypeId = rgAccountType.getCheckedRadioButtonId();
-        String accountType = "";
-        if (selectedTypeId == R.id.rbPersonal) {
-            accountType = "Hộ kinh doanh";
-        } else if (selectedTypeId == R.id.rbBusiness) {
-            accountType = "Doanh nghiệp";
-        }
+        String accountType = isBusiness ? "Business" : "Personal";
 
         String accountNumber = etAccountNumber.getText().toString().trim();
         String bankName = etBankName.getText().toString().trim();
         String accountName = etAccountName.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
-        String confirmPassword = etConfirmPassword.getText().toString().trim();
 
         // Validation
         if (accountNumber.isEmpty()) {
-            etAccountNumber.setError("Vui lòng nhập số tài khoản");
+            etAccountNumber.setError("Please enter a username");
             etAccountNumber.requestFocus();
             return;
         }
 
-        if (accountNumber.length() < 9) {
-            etAccountNumber.setError("Số tài khoản phải có ít nhất 9 chữ số");
+        if (accountNumber.length() < 3) {
+            etAccountNumber.setError("Username is too short");
             etAccountNumber.requestFocus();
             return;
         }
 
         if (bankName.isEmpty()) {
-            etBankName.setError("Vui lòng nhập tên ngân hàng");
+            etBankName.setError("Please enter bank name");
             etBankName.requestFocus();
             return;
         }
 
         if (accountName.isEmpty()) {
-            etAccountName.setError("Vui lòng nhập tên tài khoản");
+            etAccountName.setError("Please enter your full name");
             etAccountName.requestFocus();
             return;
         }
 
         if (password.isEmpty()) {
-            etPassword.setError("Vui lòng nhập mật khẩu");
+            etPassword.setError("Please enter a password");
             etPassword.requestFocus();
             return;
         }
 
-        if (password.length() < 8) {
-            etPassword.setError("Mật khẩu phải có ít nhất 8 ký tự");
+        if (password.length() < 6) {
+            etPassword.setError("Password must be at least 6 characters");
             etPassword.requestFocus();
-            return;
-        }
-
-        if (confirmPassword.isEmpty()) {
-            etConfirmPassword.setError("Vui lòng nhập lại mật khẩu");
-            etConfirmPassword.requestFocus();
-            return;
-        }
-
-        if (!password.equals(confirmPassword)) {
-            etConfirmPassword.setError("Mật khẩu không khớp");
-            etConfirmPassword.requestFocus();
             return;
         }
 
         // Check terms and conditions
         if (!cbTerms.isChecked()) {
-            Toast.makeText(this, "Vui lòng đồng ý với điều khoản và chính sách bảo mật", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please agree to the Terms & Conditions", Toast.LENGTH_SHORT).show();
             return;
         }
 
         // Save user to database with encrypted credentials
-        final String finalAccountName = accountName;
+        final String finalAccountName = accountName; // Display Name
+        final String finalUsername = accountNumber; // Login Username
         final String finalPassword = password;
         final String finalAccountType = accountType;
 
@@ -299,14 +290,14 @@ public class RegisterActivity extends AppCompatActivity {
                 com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
 
                 // Hash username and password with SHA-256
-                String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(finalAccountName);
+                String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(finalUsername);
                 String passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(finalPassword);
 
                 // Check if username already exists
                 if (userDao.existsByUsernameHash(usernameHash)) {
                     runOnUiThread(() -> {
-                        etAccountName.setError("Tên tài khoản đã tồn tại");
-                        etAccountName.requestFocus();
+                        etAccountNumber.setError("Username already exists");
+                        etAccountNumber.requestFocus();
                     });
                     return;
                 }
@@ -322,23 +313,17 @@ public class RegisterActivity extends AppCompatActivity {
                 userDao.insert(user);
 
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "Đăng ký thành công! Loại TK: " + finalAccountType, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Registration Successful! Type: " + finalAccountType, Toast.LENGTH_SHORT)
+                            .show();
                     finish();
                 });
 
             } catch (Exception e) {
                 Log.e("RegisterActivity", "Registration failed", e);
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "Đăng ký thất bại: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Registration Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
             }
         }).start();
     }
 }
-
-
-
-
-
-
-

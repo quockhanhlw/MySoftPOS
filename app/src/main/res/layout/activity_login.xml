@@ -1,160 +1,157 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
-    android:fillViewport="true">
-    <RelativeLayout
+    android:background="#F8FAFC">
+
+    <!-- Curved Header Background -->
+    <View
+        android:id="@+id/viewHeader"
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        android:background="@drawable/bg_header_curved"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Back Button -->
+    <ImageView
+        android:id="@+id/btnBack"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="48dp"
+        android:padding="8dp"
+        android:src="@drawable/ic_back"
+        app:tint="#FFFFFF"
+        android:background="@drawable/bg_glass_card"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Header Text -->
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="24dp"
+        android:text="@string/login_title"
+        android:fontFamily="sans-serif-bold"
+        android:textSize="32sp"
+        android:textColor="#FFFFFF"
+        app:layout_constraintTop_toBottomOf="@id/btnBack"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/tvSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="4dp"
+        android:text="@string/login_description"
+        android:textSize="16sp"
+        android:textColor="#E2E8F0"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Login Form Container -->
+    <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="20dp">
-        <ImageView
-            android:id="@+id/btnBack"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentStart="true"
-            android:src="@drawable/ic_back"
-            android:contentDescription="@string/back"
-            android:padding="4dp"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="32dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="#FFFFFF"
+        app:layout_constraintTop_toBottomOf="@id/tvSubtitle">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/btnBack"
-            android:layout_marginTop="20dp"
-            android:orientation="vertical">
-            <TextView
-                android:id="@+id/tvTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/login_title"
-                android:textColor="@color/primary"
-                android:textSize="28sp"
-                android:textStyle="bold"
-                android:fontFamily="sans-serif-medium" />
-            <TextView
-                android:id="@+id/tvDescription"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/login_description"
-                android:textColor="@color/welcome_text_secondary"
-                android:textSize="14sp"
-                android:lineSpacingExtra="2dp" />
+            android:orientation="vertical"
+            android:padding="24dp">
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
                 android:text="@string/login_username_label"
-                android:textColor="@color/primary"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="#64748B"
                 android:textSize="14sp"
-                android:fontFamily="sans-serif-medium" />
-            <androidx.cardview.widget.CardView
+                android:layout_marginBottom="8dp"/>
+
+            <EditText
+                android:id="@+id/etUsername"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="0dp"
-                app:strokeColor="#E0E0E0"
-                app:strokeWidth="1dp"
-                app:cardBackgroundColor="@color/white">
-                <EditText
-                    android:id="@+id/etUsername"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@android:color/transparent"
-                    android:hint="@string/login_username_hint"
-                    android:textColorHint="#AAAAAA"
-                    android:textColor="@color/primary"
-                    android:textSize="15sp"
-                    android:padding="14dp"
-                    android:inputType="text"
-                    android:maxLines="1" />
-            </androidx.cardview.widget.CardView>
+                android:layout_height="56dp"
+                android:background="@drawable/bg_input_premium"
+                android:hint="@string/login_username_hint"
+                android:paddingHorizontal="16dp"
+                android:textColor="#1E293B"
+                android:textSize="16sp"
+                android:singleLine="true"/>
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
                 android:text="@string/login_password_label"
-                android:textColor="@color/primary"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="#64748B"
                 android:textSize="14sp"
-                android:fontFamily="sans-serif-medium" />
-            <androidx.cardview.widget.CardView
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="8dp"/>
+
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="0dp"
-                app:strokeColor="#E0E0E0"
-                app:strokeWidth="1dp"
-                app:cardBackgroundColor="@color/white">
-                <RelativeLayout
+                android:layout_height="wrap_content">
+                
+                <EditText
+                    android:id="@+id/etPassword"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-                    <EditText
-                        android:id="@+id/etPassword"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="@android:color/transparent"
-                        android:hint="@string/login_password_hint"
-                        android:textColorHint="#AAAAAA"
-                        android:textColor="@color/primary"
-                        android:textSize="15sp"
-                        android:padding="14dp"
-                        android:paddingEnd="48dp"
-                        android:inputType="textPassword"
-                        android:maxLines="1" />
-                    <ImageView
-                        android:id="@+id/btnShowPassword"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:layout_marginEnd="14dp"
-                        android:src="@drawable/ic_eye_off"
-                        android:contentDescription="Show password"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:padding="2dp" />
-                </RelativeLayout>
-            </androidx.cardview.widget.CardView>
+                    android:layout_height="56dp"
+                    android:background="@drawable/bg_input_premium"
+                    android:hint="@string/login_password_hint"
+                    android:inputType="textPassword"
+                    android:paddingHorizontal="16dp"
+                    android:paddingEnd="48dp"
+                    android:textColor="#1E293B"
+                    android:textSize="16sp"
+                    android:singleLine="true"/>
+
+                <ImageView
+                    android:id="@+id/btnShowPassword"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/ic_eye_off"
+                    android:padding="12dp"
+                    android:layout_gravity="end|center_vertical"
+                    app:tint="#94A3B8"/>
+            </FrameLayout>
+
             <TextView
                 android:id="@+id/tvForgotPassword"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_gravity="end"
+                android:layout_marginTop="16dp"
                 android:text="@string/login_forgot_password"
-                android:textColor="@color/welcome_link"
-                android:textSize="14sp"
+                android:textColor="@color/neo_primary"
                 android:fontFamily="sans-serif-medium"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackground"
-                android:padding="4dp" />
-            <androidx.cardview.widget.CardView
+                android:textSize="14sp"/>
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnLogin"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="60dp"
                 android:layout_marginTop="32dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@color/primary"
-                app:cardCornerRadius="25dp"
-                app:cardElevation="2dp">
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-medium"
-                    android:gravity="center"
-                    android:paddingTop="14dp"
-                    android:paddingBottom="14dp"
-                    android:text="@string/login_button"
-                    android:textColor="@color/white"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-            </androidx.cardview.widget.CardView>
+                android:text="@string/login_button"
+                android:textSize="16sp"
+                android:fontFamily="sans-serif-bold"
+                app:cornerRadius="30dp"
+                android:backgroundTint="@color/neo_primary"
+                android:stateListAnimator="@null"
+                android:elevation="4dp" />
+
         </LinearLayout>
-    </RelativeLayout>
-</ScrollView>
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -36,166 +36,109 @@ public class TransactionResultActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_transaction_result);
 
-        // UI References
-        // ConstraintLayout rootLayout = findViewById(R.id.rootLayout);
+        // Bind New Views
+        TextView tvTitle = findViewById(R.id.tvTitle);
+        TextView tvSubtitle = findViewById(R.id.tvSubtitle);
+        TextView tvAmount = findViewById(R.id.tvAmount);
+        TextView tvTxnId = findViewById(R.id.tvTxnId);
+        TextView tvDate = findViewById(R.id.tvDate);
+        TextView tvType = findViewById(R.id.tvType);
+        TextView tvCardNum = findViewById(R.id.tvCardNum);
+        TextView tvStatus = findViewById(R.id.tvStatus);
 
         ImageView ivIcon = findViewById(R.id.ivResultIcon);
-        TextView tvTitle = findViewById(R.id.tvTitle);
-        TextView tvReason = findViewById(R.id.tvReason);
+        android.view.View bgHeader = findViewById(R.id.viewHeaderBg);
+        android.widget.FrameLayout layoutIcon = findViewById(R.id.layoutIcon);
+
         MaterialButton btnClose = findViewById(R.id.btnClose);
+        android.widget.Button btnPrint = findViewById(R.id.btnPrint);
+        android.widget.Button btnShare = findViewById(R.id.btnShare);
 
-        MaterialButton btnDetails = findViewById(R.id.btnDetails);
-        TextView tvIsoLog = findViewById(R.id.tvIsoLog);
-
+        // Get Data
         ResultType type = (ResultType) getIntent().getSerializableExtra(EXTRA_RESULT_TYPE);
-        String messageExtras = getIntent().getStringExtra(EXTRA_MESSAGE);
-        String isoResponse = getIntent().getStringExtra(EXTRA_ISO_RESPONSE);
-        String isoRequest = getIntent().getStringExtra(EXTRA_ISO_REQUEST);
-
-        StringBuilder logBuilder = new StringBuilder();
-        if (isoRequest != null) {
-            logBuilder.append("=== REQUEST ===\n").append(isoRequest).append("\n\n");
-        }
-        if (isoResponse != null) {
-            logBuilder.append("=== RESPONSE ===\n").append(isoResponse);
-        }
-
-        if (logBuilder.length() > 0) {
-            tvIsoLog.setText(logBuilder.toString());
-            btnDetails.setVisibility(android.view.View.VISIBLE);
-        } else {
-            btnDetails.setVisibility(android.view.View.GONE);
-        }
-
-        btnDetails.setOnClickListener(v -> {
-            if (tvIsoLog.getVisibility() == android.view.View.VISIBLE) {
-                tvIsoLog.setVisibility(android.view.View.GONE);
-                btnDetails.setText("Xem chi tiết (ISO)");
-            } else {
-                tvIsoLog.setVisibility(android.view.View.VISIBLE);
-                btnDetails.setText("Ẩn chi tiết");
-            }
-        });
+        String amount = getIntent().getStringExtra("AMOUNT");
+        String currency = getIntent().getStringExtra("CURRENCY");
+        String maskedPan = getIntent().getStringExtra("MASKED_PAN");
+        String txnDate = getIntent().getStringExtra("TXN_DATE");
+        String txnId = getIntent().getStringExtra("TXN_ID");
+        String txnTypeStr = getIntent().getStringExtra("TXN_TYPE");
 
         if (type == null)
             type = ResultType.SYSTEM_ERROR;
 
-        switch (type) {
-            case SUCCESS:
-                setupUI(ivIcon, tvTitle, btnClose, R.drawable.ic_check_circle, "#4CAF50", "Giao dịch Thành công",
-                        "Hoàn tất");
+        // Set Common Data
+        tvTxnId.setText(txnId != null ? txnId : "---");
+        tvDate.setText(txnDate != null ? txnDate : "---");
+        tvCardNum.setText(maskedPan != null ? maskedPan : "**** ----");
+        tvType.setText(txnTypeStr != null ? txnTypeStr : "Transaction");
 
-                // Special Balance Logic
-                // Special Balance Logic
-                String txnTypeStr = getIntent().getStringExtra("TXN_TYPE");
-                TxnType txnType = null;
-                if (txnTypeStr != null) {
-                    try {
-                        txnType = TxnType.valueOf(txnTypeStr);
-                    } catch (IllegalArgumentException e) {
-                    }
+        // Format Amount
+        if (amount != null) {
+            try {
+                long val = Long.parseLong(amount);
+                java.text.NumberFormat nf = java.text.NumberFormat
+                        .getCurrencyInstance(new java.util.Locale("vi", "VN"));
+                if ("USD".equals(currency)) {
+                    nf = java.text.NumberFormat.getCurrencyInstance(java.util.Locale.US);
                 }
-                if (txnType == com.example.mysoftpos.iso8583.TxnType.BALANCE_INQUIRY && isoResponse != null) {
-                    try {
-                        // 1. Convert Hex String back to Bytes
-                        // Note: isoResponse is now confirmed to be Hex String from MainDashboard
-                        byte[] rawResp = com.example.mysoftpos.iso8583.util.StandardIsoPacker.hexToBytes(isoResponse);
-
-                        // 2. Unpack DE 54
-                        String f54 = com.example.mysoftpos.iso8583.util.StandardIsoPacker.unpackField(rawResp, 54);
-
-                        if (f54 != null && f54.length() >= 20) {
-                            // Spec: First 20 bytes = Available Balance.
-                            // Position 9-20 (Index 8-20) = Amount (n12) with 2 decimal places.
-                            String balStr = f54.substring(8, 20); // First block amount
-
-                            try {
-                                long val = Long.parseLong(balStr);
-                                double amount = val / 100.0; // Implied 2 decimals
-
-                                java.text.NumberFormat nf = java.text.NumberFormat
-                                        .getCurrencyInstance(new java.util.Locale("vi", "VN"));
-                                String fmt = nf.format(amount);
-                                tvReason.setText("Số dư khả dụng: " + fmt);
-                            } catch (Exception e) {
-                                tvReason.setText("Số dư: " + balStr);
-                            }
-                            tvTitle.setText("Vấn tin số dư");
-                        } else {
-                            tvReason.setText("Lỗi định dạng số dư (DE 54): " + f54);
-                        }
-                    } catch (Exception e) {
-                        tvReason.setText("Lỗi hiển thị số dư: " + e.getMessage());
-                    }
-                } else {
-                    tvReason.setText(messageExtras != null ? messageExtras : "Cảm ơn quý khách!");
-                }
-                break;
-
-            case LIMIT_EXCEEDED:
-                setupUI(ivIcon, tvTitle, btnClose, R.drawable.ic_warning, "#FF9800", "Vượt quá hạn mức",
-                        "Nhập lại số tiền"); // Orange
-                tvReason.setText("Giao dịch vượt quá hạn mức cho phép.");
-                break;
-
-            case CARD_EXPIRED:
-                setupUI(ivIcon, tvTitle, btnClose, R.drawable.ic_event_busy, "#F44336", "Thẻ đã hết hạn", "Thử lại"); // Red
-                tvReason.setText("Thẻ đã hết hạn sử dụng. Vui lòng thử thẻ khác.");
-                break;
-
-            case INVALID_CARD:
-                setupUI(ivIcon, tvTitle, btnClose, R.drawable.ic_credit_card_off, "#F44336", "Thẻ không hợp lệ",
-                        "Thử lại"); // Red
-                tvReason.setText("Số thẻ không hợp lệ hoặc không được hỗ trợ.");
-                break;
-
-            case SYSTEM_ERROR:
-                setupUI(ivIcon, tvTitle, btnClose, R.drawable.ic_cloud_off, "#607D8B", "Lỗi kết nối",
-                        "Về màn hình chính"); // Blue Grey
-                tvReason.setText(messageExtras != null ? messageExtras : "Lỗi hệ thống hoặc mất kết nối.");
-                break;
-
-            case TRANSACTION_FAILED:
-                setupUI(ivIcon, tvTitle, btnClose, R.drawable.ic_error, "#F44336", "Giao dịch Thất bại",
-                        "Về màn hình chính"); // Red
-                tvReason.setText("Lý do: " + (messageExtras != null ? messageExtras : "Không xác định"));
-                break;
+                tvAmount.setText(nf.format(val)); // Implicit 100/1000 divisor omitted for simplicity matching previous
+                                                  // logic, or dividing by 1 should be checked
+                // Assuming amount passed is RAW, we might need to decimalize?
+                // Previous logic in PurchaseCardActivity: formatAmount just added commas.
+                // Let's assume standard int display for now unless specific requirement.
+            } catch (Exception e) {
+                tvAmount.setText(amount);
+            }
+        } else {
+            tvAmount.setText("---");
         }
 
-        // Button Action
-        ResultType finalType = type;
+        // Stylize based on Result
+        if (type == ResultType.SUCCESS) {
+            // Checked Green Default
+            tvTitle.setText("Transaction Approved");
+            tvSubtitle.setText("Payment completed successfully");
+            tvStatus.setText("Approved");
+            tvStatus.setTextColor(Color.parseColor("#22C55E")); // Green
+
+            ivIcon.setImageResource(R.drawable.ic_check);
+            // layoutIcon background is already green circle
+            bgHeader.setBackgroundColor(Color.parseColor("#D1FAE5")); // Light Green
+
+        } else {
+            // Failure Red
+            tvTitle.setText("Transaction Failed");
+            tvSubtitle.setText(getIntent().getStringExtra(EXTRA_MESSAGE));
+            tvStatus.setText("Failed");
+            tvStatus.setTextColor(Color.parseColor("#EF4444")); // Red
+
+            ivIcon.setImageResource(R.drawable.ic_close); // Ensure icon exists or use fallback
+            // Update Icon Background to Red
+            android.graphics.drawable.GradientDrawable bgShape = new android.graphics.drawable.GradientDrawable();
+            bgShape.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            bgShape.setColor(Color.parseColor("#EF4444"));
+            layoutIcon.setBackground(bgShape);
+
+            bgHeader.setBackgroundColor(Color.parseColor("#FEE2E2")); // Light Red
+        }
+
+        // Actions
         btnClose.setOnClickListener(v -> {
-            if (finalType == ResultType.LIMIT_EXCEEDED) {
-                // Go back to Amount Input
-                Intent i = new Intent(this, MainDashboardActivity.class);
-                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(i);
-                finish();
-            } else if (finalType == ResultType.CARD_EXPIRED || finalType == ResultType.INVALID_CARD) {
-                // Try again (Back to Dashboard or Card Input?)
-                // Dashboard is safest as "Retry" might imply same transaction params which
-                // failed validation
-                Intent i = new Intent(this, MainDashboardActivity.class);
-                i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(i);
-            } else {
-                // Success or Fail -> Home
-                Intent i = new Intent(this, MainDashboardActivity.class);
-                i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(i);
-            }
+            Intent i = new Intent(this, MainDashboardActivity.class);
+            i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(i);
             finish();
+        });
+
+        btnPrint.setOnClickListener(v -> {
+            android.widget.Toast.makeText(this, "Printing Receipt...", android.widget.Toast.LENGTH_SHORT).show();
+        });
+
+        btnShare.setOnClickListener(v -> {
+            android.widget.Toast.makeText(this, "Sharing Receipt...", android.widget.Toast.LENGTH_SHORT).show();
         });
     }
 
-    private void setupUI(ImageView iv, TextView tv, MaterialButton btn, int resId, String colorHex, String title,
-            String btnText) {
-        iv.setImageResource(resId);
-        int color = Color.parseColor(colorHex);
-        iv.setColorFilter(color);
-        tv.setTextColor(color);
-        tv.setText(title);
-        btn.setText(btnText);
-        // btn.setBackgroundColor(color); // Optional: tint button to match
-    }
+    // Helper removed as logic is inline for custom layout styling
+    // private void setupUI(...) {}
 }

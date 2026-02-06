@@ -82,15 +82,12 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
             chipBadge.setText(code);
 
             // Dynamic Icon & Details logic
-            if ("011".equals(code) || "012".equals(code)) {
-                // Manual
-                imgIcon.setImageResource(R.drawable.ic_edit_note); // Need to ensure this exists or use fallback
-            } else if ("021".equals(code) || "022".equals(code)) {
-                // Magstripe
-                imgIcon.setImageResource(R.drawable.ic_credit_card);
-            } else {
-                imgIcon.setImageResource(R.drawable.ic_credit_card_off);
-            }
+            // Dynamic Icon & Details logic
+            // if ("011".equals(code) || "012".equals(code)) {
+            // imgIcon.setImageResource(R.drawable.ic_edit_note);
+            // } else ...
+            // Keeping static checkbox outline as requested by UI design match
+            // imgIcon.setImageResource(R.drawable.bg_checkbox_outline);
 
             // Set Details (Bank Name or other info)
             tvDetail.setText("Tap to run test case");

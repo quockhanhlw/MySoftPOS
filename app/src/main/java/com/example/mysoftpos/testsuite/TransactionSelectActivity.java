@@ -39,6 +39,7 @@ public class TransactionSelectActivity extends AppCompatActivity {
         Intent intent = new Intent(this, TestSuiteActivity.class);
         intent.putExtra("CHANNEL", channel);
         intent.putExtra("TXN_TYPE", txnType);
+        intent.putExtra("SCHEME", getIntent().getStringExtra("SCHEME"));
         startActivity(intent);
     }
 }

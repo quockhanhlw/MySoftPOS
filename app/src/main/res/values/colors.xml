@@ -107,6 +107,7 @@
     <color name="neo_primary_dark">#0A2463</color>
     <color name="neo_primary_light">#247BA0</color>
     <color name="neo_primary_mid">#1A4A7A</color>
+    <color name="neo_primary">#3B82F6</color>
 
     <!-- Accent: Cyber Teal -->
     <color name="neo_accent">#00E5FF</color>

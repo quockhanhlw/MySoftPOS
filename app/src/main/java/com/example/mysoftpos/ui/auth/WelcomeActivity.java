@@ -6,6 +6,11 @@ import com.example.mysoftpos.ui.dashboard.MainDashboardActivity;
 import android.content.Intent;
 import android.os.Bundle;
 
+import android.view.View;
+import android.widget.ImageView;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 public class WelcomeActivity extends AppCompatActivity {
@@ -29,13 +34,21 @@ public class WelcomeActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_welcome);
 
-        // Login button
-        findViewById(R.id.btnLogin).setOnClickListener(v -> {
+        // Bind Views
+        ImageView ivHero = findViewById(R.id.ivHero);
+        View btnLogin = findViewById(R.id.btnLogin);
+        View tvRegister = findViewById(R.id.tvRegister);
+
+        // Start Pulse Animation
+        Animation pulse = AnimationUtils.loadAnimation(this, R.anim.pulse);
+        ivHero.startAnimation(pulse);
+
+        // Click Listeners
+        btnLogin.setOnClickListener(v -> {
             startActivity(new Intent(this, LoginActivity.class));
         });
 
-        // Register link
-        findViewById(R.id.tvRegister).setOnClickListener(v -> {
+        tvRegister.setOnClickListener(v -> {
             startActivity(new Intent(this, RegisterActivity.class));
         });
     }

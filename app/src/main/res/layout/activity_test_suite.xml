@@ -8,12 +8,12 @@
 
     <ImageView
         android:id="@+id/btnBack"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:padding="12dp"
+        android:background="@drawable/bg_circle_soft"
+        android:padding="10dp"
         android:src="@drawable/ic_back"
         app:tint="#1E293B"
         app:layout_constraintStart_toStartOf="parent"
@@ -23,26 +23,126 @@
         android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:layout_marginStart="16dp"
         android:fontFamily="sans-serif-black"
-        android:text="Select Test Case"
+        android:text="Test Scenarios"
         android:textColor="#1E293B"
-        android:textSize="28sp"
+        android:textSize="20sp"
         android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnBack" />
+        app:layout_constraintBottom_toBottomOf="@id/btnBack"
+        app:layout_constraintStart_toEndOf="@id/btnBack"
+        app:layout_constraintTop_toTopOf="@id/btnBack" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewCases"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:orientation="vertical"
         android:layout_marginTop="24dp"
-        android:clipToPadding="false"
-        android:paddingBottom="24dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        android:paddingHorizontal="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvTitle"
-        tools:listitem="@layout/item_test_scenario" />
+        app:layout_constraintTop_toBottomOf="@id/btnBack">
+
+        <!-- Summary Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@drawable/bg_summary_card"
+            android:paddingVertical="16dp"
+            android:paddingHorizontal="8dp"
+            android:layout_marginBottom="24dp"
+            android:gravity="center">
+
+            <!-- Scheme -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Scheme"
+                    android:textSize="12sp"
+                    android:textColor="#64748B"/>
+                <TextView
+                    android:id="@+id/tvSummaryScheme"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Napas"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#0F172A"
+                    android:layout_marginTop="4dp"/>
+            </LinearLayout>
+
+            <!-- Channel -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Channel"
+                    android:textSize="12sp"
+                    android:textColor="#64748B"/>
+                <TextView
+                    android:id="@+id/tvSummaryChannel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="POS"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#0F172A"
+                    android:layout_marginTop="4dp"/>
+            </LinearLayout>
+
+            <!-- Type -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Type"
+                    android:textSize="12sp"
+                    android:textColor="#64748B"/>
+                <TextView
+                    android:id="@+id/tvSummaryType"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Purchase"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#0F172A"
+                    android:layout_marginTop="4dp"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Basic"
+            android:textColor="#64748B"
+            android:textSize="14sp"
+            android:layout_marginBottom="8dp"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewCases"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            tools:listitem="@layout/item_test_scenario" />
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

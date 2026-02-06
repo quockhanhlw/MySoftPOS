@@ -1,333 +1,272 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
-    android:fillViewport="true">
-    <RelativeLayout
+    android:background="#F8FAFC">
+
+    <!-- Header Background -->
+    <View
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="20dp">
-        <ImageView
-            android:id="@+id/btnBack"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentStart="true"
-            android:src="@drawable/ic_back"
-            android:contentDescription="Back"
-            android:padding="4dp"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+        android:layout_height="180dp"
+        android:background="@drawable/bg_header_curved"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/btnBack"
-            android:layout_marginTop="20dp"
-            android:orientation="vertical">
-            <TextView
-                android:id="@+id/tvTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Đăng ký"
-                android:textColor="@color/primary"
-                android:textSize="28sp"
-                android:textStyle="bold"
-                android:fontFamily="sans-serif-medium" />
-            <TextView
-                android:id="@+id/tvDescription"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Tạo tài khoản mới để bắt đầu sử dụng dịch vụ"
-                android:textColor="@color/welcome_text_secondary"
-                android:textSize="14sp"
-                android:lineSpacingExtra="2dp" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="28dp"
-                android:text="Loại tài khoản"
-                android:textColor="@color/primary"
-                android:textSize="14sp"
-                android:fontFamily="sans-serif-medium" />
-            <RadioGroup
-                android:id="@+id/rgAccountType"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal">
-                <RadioButton
-                    android:id="@+id/rbPersonal"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    android:text="Hộ kinh doanh"
-                    android:textSize="14sp"
-                    android:buttonTint="@color/welcome_link"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp" />
-                <RadioButton
-                    android:id="@+id/rbBusiness"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:text="Doanh nghiệp"
-                    android:textSize="14sp"
-                    android:buttonTint="@color/welcome_link"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp" />
-            </RadioGroup>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="Tên tài khoản"
-                android:textColor="@color/primary"
-                android:textSize="14sp"
-                android:fontFamily="sans-serif-medium" />
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="0dp"
-                app:strokeColor="#E0E0E0"
-                app:strokeWidth="1dp"
-                app:cardBackgroundColor="@color/white">
-                <EditText
-                    android:id="@+id/etAccountNumber"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@android:color/transparent"
-                    android:hint="Nhập tên tài khoản"
-                    android:textColorHint="#AAAAAA"
-                    android:textColor="@color/primary"
-                    android:textSize="15sp"
-                    android:padding="14dp"
-                    android:inputType="text"
-                    android:maxLines="1"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:clickable="true" />
-            </com.google.android.material.card.MaterialCardView>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="Ngân hàng"
-                android:textColor="@color/primary"
-                android:textSize="14sp"
-                android:fontFamily="sans-serif-medium" />
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="0dp"
-                app:strokeColor="#E0E0E0"
-                app:strokeWidth="1dp"
-                app:cardBackgroundColor="@color/white">
-                <EditText
-                    android:id="@+id/etBankName"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@android:color/transparent"
-                    android:hint="Nhập tên ngân hàng"
-                    android:textColorHint="#AAAAAA"
-                    android:textColor="@color/primary"
-                    android:textSize="15sp"
-                    android:padding="14dp"
-                    android:inputType="text"
-                    android:maxLines="1"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:clickable="true" />
-            </com.google.android.material.card.MaterialCardView>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="Tên chủ tài khoản"
-                android:textColor="@color/primary"
-                android:textSize="14sp"
-                android:fontFamily="sans-serif-medium" />
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="0dp"
-                app:strokeColor="#E0E0E0"
-                app:strokeWidth="1dp"
-                app:cardBackgroundColor="@color/white">
-                <EditText
-                    android:id="@+id/etAccountName"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@android:color/transparent"
-                    android:hint="Nhập tên chủ tài khoản"
-                    android:textColorHint="#AAAAAA"
-                    android:textColor="@color/primary"
-                    android:textSize="15sp"
-                    android:padding="14dp"
-                    android:inputType="textPersonName|textCapWords"
-                    android:maxLines="1"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:clickable="true" />
-            </com.google.android.material.card.MaterialCardView>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="Mật khẩu"
-                android:textColor="@color/primary"
-                android:textSize="14sp"
-                android:fontFamily="sans-serif-medium" />
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="0dp"
-                app:strokeColor="#E0E0E0"
-                app:strokeWidth="1dp"
-                app:cardBackgroundColor="@color/white">
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-                    <EditText
-                        android:id="@+id/etPassword"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="@android:color/transparent"
-                        android:hint="Nhập mật khẩu"
-                        android:textColorHint="#AAAAAA"
-                        android:textColor="@color/primary"
-                        android:textSize="15sp"
-                        android:padding="14dp"
-                        android:paddingEnd="48dp"
-                        android:inputType="textPassword"
-                        android:maxLines="1"
-                        android:focusable="true"
-                        android:focusableInTouchMode="true"
-                        android:clickable="true" />
-                    <ImageView
-                        android:id="@+id/btnShowPassword"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:layout_marginEnd="14dp"
-                        android:src="@drawable/ic_eye_off"
-                        android:contentDescription="Show password"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:padding="2dp" />
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="Xác nhận mật khẩu"
-                android:textColor="@color/primary"
-                android:textSize="14sp"
-                android:fontFamily="sans-serif-medium" />
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="0dp"
-                app:strokeColor="#E0E0E0"
-                app:strokeWidth="1dp"
-                app:cardBackgroundColor="@color/white">
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-                    <EditText
-                        android:id="@+id/etConfirmPassword"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="@android:color/transparent"
-                        android:hint="Nhập lại mật khẩu"
-                        android:textColorHint="#AAAAAA"
-                        android:textColor="@color/black"
-                        android:textSize="15sp"
-                        android:padding="14dp"
-                        android:paddingEnd="48dp"
-                        android:inputType="textPassword"
-                        android:maxLines="1"
-                        android:focusable="true"
-                        android:focusableInTouchMode="true"
-                        android:clickable="true" />
-                    <ImageView
-                        android:id="@+id/btnShowConfirmPassword"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:layout_marginEnd="14dp"
-                        android:src="@drawable/ic_eye_off"
-                        android:contentDescription="Show password"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:padding="2dp" />
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
+            android:orientation="vertical"
+            android:paddingHorizontal="24dp"
+            android:paddingTop="32dp"
+            android:paddingBottom="48dp">
 
+            <!-- Nav Header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:orientation="horizontal"
-                android:gravity="start">
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-                <CheckBox
-                    android:id="@+id/cbTerms"
+                <ImageView
+                    android:id="@+id/btnBack"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_back"
+                    android:padding="8dp"
+                    android:background="@drawable/bg_glass_card"
+                    app:tint="#FFFFFF"/>
+                
+                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:buttonTint="@color/welcome_link" />
-
-                <TextView
-                    android:id="@+id/tvTermsText"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_gravity="center_vertical"
-                    android:text="Bằng việc Đăng ký, bạn đã đồng ý với Điều khoản và Điều kiện cũng Chính sách bảo mật của softbank ePOS"
-                    android:textSize="13sp"
-                    android:textColor="@color/welcome_text_secondary"
-                    android:lineSpacingExtra="2dp" />
-
+                    android:layout_marginStart="16dp"
+                    android:text="@string/register_title"
+                    android:fontFamily="sans-serif-bold"
+                    android:textSize="24sp"
+                    android:textColor="#FFFFFF"/>
             </LinearLayout>
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/btnRegister"
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
-                android:layout_marginBottom="20dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@color/primary"
-                app:cardCornerRadius="25dp"
-                app:cardElevation="2dp">
-                <TextView
+                android:layout_marginTop="8dp"
+                android:text="@string/register_description"
+                android:textColor="#E2E8F0"
+                android:textSize="14sp"/>
+
+            <!-- Main Card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="8dp"
+                app:cardBackgroundColor="#FFFFFF">
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-medium"
-                    android:gravity="center"
-                    android:paddingTop="14dp"
-                    android:paddingBottom="14dp"
-                    android:text="@string/register_button"
-                    android:textColor="@color/white"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-            </com.google.android.material.card.MaterialCardView>
+                    android:orientation="vertical"
+                    android:padding="24dp">
+
+                    <!-- Account Type Selection -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/register_account_type"
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="#64748B"
+                        android:textSize="14sp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="12dp"
+                        android:baselineAligned="false">
+
+                        <!-- Personal Card -->
+                        <LinearLayout
+                            android:id="@+id/cardPersonal"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:padding="16dp"
+                            android:background="@drawable/selector_card_selection"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center">
+                            
+                            <ImageView
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:src="@drawable/ic_personal_user"
+                                app:tint="#0F766E"/>
+                            
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/register_personal"
+                                android:fontFamily="sans-serif-bold"
+                                android:textColor="#0F766E"
+                                android:textSize="12sp"/>
+                        </LinearLayout>
+
+                        <Space android:layout_width="12dp" android:layout_height="wrap_content"/>
+
+                        <!-- Business Card -->
+                        <LinearLayout
+                            android:id="@+id/cardBusiness"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:padding="16dp"
+                            android:background="@drawable/selector_card_selection"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center">
+
+                            <ImageView
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:src="@drawable/ic_business_building"
+                                app:tint="#64748B"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/register_business"
+                                android:fontFamily="sans-serif-medium"
+                                android:textColor="#64748B"
+                                android:textSize="12sp"/>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Form Fields -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/register_account_number"
+                        android:layout_marginTop="24dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="#64748B"
+                        android:textSize="14sp"/>
+                    <EditText
+                        android:id="@+id/etAccountNumber"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_input_premium"
+                        android:hint="@string/register_account_number_hint"
+                        android:paddingHorizontal="16dp"
+                        android:textSize="14sp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/register_bank_name"
+                        android:layout_marginTop="16dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="#64748B"
+                        android:textSize="14sp"/>
+                    <EditText
+                        android:id="@+id/etBankName"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_input_premium"
+                        android:hint="@string/register_bank_name_hint"
+                        android:paddingHorizontal="16dp"
+                        android:textSize="14sp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/register_account_name"
+                        android:layout_marginTop="16dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="#64748B"
+                        android:textSize="14sp"/>
+                    <EditText
+                        android:id="@+id/etAccountName"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_input_premium"
+                        android:hint="@string/register_account_name_hint"
+                        android:paddingHorizontal="16dp"
+                        android:textSize="14sp"/>
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/register_password"
+                        android:layout_marginTop="16dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="#64748B"
+                        android:textSize="14sp"/>
+                    <EditText
+                        android:id="@+id/etPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_input_premium"
+                        android:inputType="textPassword"
+                        android:hint="@string/register_password_hint"
+                        android:paddingHorizontal="16dp"
+                        android:textSize="14sp"/>
+
+                    <!-- Terms -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:orientation="horizontal"
+                        android:gravity="top">
+                        <CheckBox
+                            android:id="@+id/cbTerms"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:buttonTint="@color/neo_primary"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            android:layout_marginEnd="8dp"/>
+                        <TextView
+                            android:id="@+id/tvTermsText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/register_terms_text"
+                            android:textColor="#64748B"
+                            android:textSize="13sp"
+                            android:lineSpacingExtra="2dp"/>
+                    </LinearLayout>
+
+                    <!-- Register Button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnRegister"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:layout_marginTop="32dp"
+                        android:text="@string/register_button"
+                        android:textSize="16sp"
+                        android:fontFamily="sans-serif-bold"
+                        app:cornerRadius="30dp"
+                        android:backgroundTint="@color/neo_primary"
+                        android:stateListAnimator="@null"
+                        android:elevation="4dp"/>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
         </LinearLayout>
-    </RelativeLayout>
-</ScrollView>
+    </ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

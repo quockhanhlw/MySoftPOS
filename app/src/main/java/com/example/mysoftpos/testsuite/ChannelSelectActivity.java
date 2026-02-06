@@ -26,6 +26,7 @@ public class ChannelSelectActivity extends AppCompatActivity {
     private void navigateToTransaction(String channel) {
         Intent intent = new Intent(this, TransactionSelectActivity.class);
         intent.putExtra("CHANNEL", channel);
+        intent.putExtra("SCHEME", getIntent().getStringExtra("SCHEME"));
         startActivity(intent);
     }
 }

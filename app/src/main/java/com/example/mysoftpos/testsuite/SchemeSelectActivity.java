@@ -15,15 +15,15 @@ public class SchemeSelectActivity extends AppCompatActivity {
 
         // Setup Listeners
         if (findViewById(R.id.cardNapas) != null) {
-            findViewById(R.id.cardNapas).setOnClickListener(v -> navigateToChannel());
+            findViewById(R.id.cardNapas).setOnClickListener(v -> navigateToChannel("Napas"));
         }
 
         if (findViewById(R.id.cardVisa) != null) {
-            findViewById(R.id.cardVisa).setOnClickListener(v -> showComingSoon("Visa"));
+            findViewById(R.id.cardVisa).setOnClickListener(v -> navigateToChannel("Visa"));
         }
 
         if (findViewById(R.id.cardMaster) != null) {
-            findViewById(R.id.cardMaster).setOnClickListener(v -> showComingSoon("Mastercard"));
+            findViewById(R.id.cardMaster).setOnClickListener(v -> navigateToChannel("Mastercard"));
         }
 
         if (findViewById(R.id.btnBack) != null) {
@@ -31,8 +31,9 @@ public class SchemeSelectActivity extends AppCompatActivity {
         }
     }
 
-    private void navigateToChannel() {
+    private void navigateToChannel(String scheme) {
         Intent intent = new Intent(this, ChannelSelectActivity.class);
+        intent.putExtra("SCHEME", scheme);
         startActivity(intent);
     }
 

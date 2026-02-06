@@ -9,7 +9,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.mysoftpos"
+        applicationId = "com.example.mysoftpos.debug"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
