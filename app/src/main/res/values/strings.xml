@@ -24,16 +24,28 @@
     <string name="register_account_type">Account Type</string>
     <string name="register_personal">Personal</string>
     <string name="register_business">Business</string>
-    <string name="register_account_number">Username / ID</string>
-    <string name="register_account_number_hint">Choose a unique username</string>
-    <string name="register_bank_name">Bank Name</string>
-    <string name="register_bank_name_hint">Select your bank</string>
-    <string name="register_account_name">Full Name</string>
-    <string name="register_account_name_hint">Your legal name</string>
+    
+    <string name="register_username">Username</string>
+    <string name="register_username_hint">Choose a unique username</string>
+    
+    <string name="register_full_name">Full Name</string>
+    <string name="register_full_name_hint">Your legal name</string>
+    
+    <string name="register_dob">Date of Birth</string>
+    <string name="register_dob_hint">DD/MM/YYYY</string>
+    
+    <string name="register_phone">Phone Number</string>
+    <string name="register_phone_hint">Enter your phone number</string>
+    
+    <string name="register_address">Address</string>
+    <string name="register_address_hint">Enter your address</string>
+    
     <string name="register_password">Password</string>
     <string name="register_password_hint">Create a strong password</string>
+    
     <string name="register_confirm_password">Confirm Password</string>
     <string name="register_confirm_password_hint">Re-enter your password</string>
+    
     <string name="register_terms_text">By registering, you agree to our Terms &amp; Conditions and Privacy Policy</string>
     <string name="register_button">Create Account</string>
 
@@ -74,8 +86,14 @@
     <string name="dashboard_purchase">Purchase</string>
     <string name="dashboard_refund">Refund</string>
     <string name="dashboard_history">History</string>
-    <string name="dashboard_logon">Logon</string>
+    <string name="dashboard_logon">Log On</string>
     <string name="dashboard_settings">Settings</string>
+    <string name="dashboard_balance">Balance Inquiry</string>
+    <string name="dashboard_welcome">Welcome</string>
+    <string name="history_title">Transaction History</string>
+    <string name="history_empty">No recent transactions</string>
+    <string name="label_txn_ref">DT</string>
+    <string name="test_suite">Test Suite</string>
 
     <!-- Home tabs -->
     <string name="store_name">Store #1</string>
@@ -98,7 +116,41 @@
     <string name="btn_continue">Continue</string>
 
     <!-- Payment Success -->
-    <string name="payment_success">Transaction Successful</string>
+    <string name="payment_success">Payment Success</string>
+    <string name="enter_amount_title">Enter the amount</string>
+    <string name="swipe_currency_hint">Swipe currency to change</string>
+    <string name="btn_charge">CHARGE</string>
+    <string name="balance_inquiry_title">Balance Inquiry</string>
+    <string name="payment_title">Payment</string>
+    <string name="tab_manual_entry">Manual Entry</string>
+    <string name="tab_mock_track2">Mock Track 2</string>
+    <string name="card_pan_label">Card Number (PAN)</string>
+    <string name="card_expiry_label">Expiry Date (YYMM)</string>
+    <string name="pan_hint">1234 5678 9012 3456</string>
+    <string name="expiry_hint">2512</string>
+    <string name="btn_check_balance">Check Balance</string>
+    <string name="btn_pay">Pay</string>
+    <string name="reading_card_text">Reading Card...</string>
+    
+    <string name="msg_printing_receipt">Printing Receipt...</string>
+    <string name="msg_sharing_receipt">Sharing Receipt...</string>
+    <string name="txn_approved_subtitle">Payment completed successfully</string>
+    <string name="txn_failed_title">Transaction Failed</string>
+    <string name="txn_failed_status">Failed</string>
+    
+    <string name="err_validation_failed">Validation Failed: %s</string>
+    <string name="err_timeout_waiting">Timeout waiting for response</string>
+    <string name="err_network_error">Network Error: %s</string>
+    <string name="err_timeout_reversed">Transaction Timed Out (Reversal Sent)</string>
+    <string name="err_timeout_generic">Transaction Timed Out</string>
+    <string name="guest_user">Guest</string>
+    <string name="err_invalid_pan">Invalid PAN or Expiry</string>
+    <string name="msg_using_mock_track2">Using Mock Track 2...</string>
+    <string name="msg_card_detected">Card Detected</string>
+    <string name="status_approved">APPROVED</string>
+    <string name="status_declined">DECLINED</string>
+    <string name="status_pending">PENDING</string>
+    <string name="status_timeout">TIMEOUT</string>
 
     <!-- Card Fields -->
     <string name="card_pan">Card Number</string>
@@ -106,5 +158,78 @@
     <string name="card_cvv">Security Code</string>
     <string name="hint_yymm">YYMM</string>
     <string name="hint_cvv">CVV</string>
+
+    <!-- Terms Dialog -->
+    <string name="terms_title">Terms &amp; Conditions</string>
+
+    <!-- Error Messages (ResponseCodeHelper) -->
+    <string name="error_unknown">Unknown Error</string>
+    <string name="error_00">Transaction Successful</string>
+    <string name="error_01">Refer to Card Issuer</string>
+    <string name="error_03">Invalid Merchant</string>
+    <string name="error_04">Pick Up Card</string>
+    <string name="error_05">Do Not Honor</string>
+    <string name="error_12">Invalid Transaction</string>
+    <string name="error_13">Invalid Amount</string>
+    <string name="error_14">Invalid Card Number</string>
+    <string name="error_15">No Such Issuer</string>
+    <string name="error_21">No Action Taken</string>
+    <string name="error_25">Unable to Locate Record</string>
+    <string name="error_30">Format Error</string>
+    <string name="error_34">Suspected Fraud</string>
+    <string name="error_39">No Credit Account</string>
+    <string name="error_41">Lost Card</string>
+    <string name="error_43">Stolen Card</string>
+    <string name="error_51">Insufficient Funds</string>
+    <string name="error_53">No Savings Account</string>
+    <string name="error_54">Expired Card</string>
+    <string name="error_55">Incorrect PIN</string>
+    <string name="error_57">Transaction Not Permitted</string>
+    <string name="error_58">Transaction Not Permitted on Terminal</string>
+    <string name="error_59">Suspected Fraud</string>
+    <string name="error_61">Exceeds Withdrawal Limit</string>
+    <string name="error_62">Restricted Card</string>
+    <string name="error_63">Security Violation</string>
+    <string name="error_64">Original Amount Incorrect</string>
+    <string name="error_65">Exceeds Withdrawal Frequency</string>
+    <string name="error_68">Response Received Too Late</string>
+    <string name="error_75">Allowable PIN Tries Exceeded</string>
+    <string name="error_76">Invalid Account</string>
+    <string name="error_90">Cut-off in Progress</string>
+    <string name="error_91">Issuer or Switch Inoperative</string>
+    <string name="error_92">Routing Error</string>
+    <string name="error_94">Duplicate Transaction</string>
+    <string name="error_96">System Error</string>
+
+    <!-- ViewModel Errors -->
+    <string name="error_timeout">Transaction Timed Out</string>
+    <string name="error_timeout_reversal">Transaction Timed Out (Reversal Sent)</string>
+    
+    <!-- Purchase Amount -->
+    <string name="error_enter_amount">Please enter an amount</string>
+    <string name="error_amount_zero">Amount must be greater than 0</string>
+
+    <!-- Transaction Result -->
+    <string name="txn_approved">Transaction Approved</string>
+    <string name="txn_completed">Payment completed successfully</string>
+    <string name="txn_amount_label">Amount Charged</string>
+    <string name="txn_balance_label">Available Balance</string>
+    <string name="txn_id_label">Transaction ID</string>
+    <string name="txn_date_label">Date &amp; Time</string>
+    <string name="txn_type_label">Type</string>
+    <string name="txn_card_label">Card</string>
+    <string name="txn_status_label">Status</string>
+    <string name="txn_approved_status">Approved</string>
+    <string name="txn_print">Print</string>
+    <string name="txn_share">Share</string>
+    <string name="txn_back_dashboard">Back to Dashboard</string>
+
+    <!-- User Settings -->
+    <string name="settings_personal_group">Personal Settings</string>
+    <string name="settings_change_wallpaper">Change Wallpaper</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_service_group">Service Settings</string>
+    <string name="settings_change_password">Change Password</string>
+    <string name="settings_logout">Log Out</string>
 
 </resources>

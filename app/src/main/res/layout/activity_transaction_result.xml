@@ -58,7 +58,7 @@
                 android:id="@+id/tvTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Transaction Approved"
+                android:text="@string/txn_approved"
                 android:textColor="#22C55E"
                 android:textSize="20sp"
                 android:textStyle="bold"
@@ -71,7 +71,7 @@
                 android:id="@+id/tvSubtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Payment completed successfully"
+                android:text="@string/txn_completed"
                 android:textColor="#64748B"
                 android:textSize="14sp"
                 android:layout_marginTop="4dp"
@@ -90,9 +90,10 @@
 
             <!-- Amount -->
             <TextView
+                android:id="@+id/tvAmountLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Amount Charged"
+                android:text="@string/txn_amount_label"
                 android:textColor="#94A3B8"
                 android:textSize="13sp"
                 android:layout_marginTop="24dp"
@@ -138,7 +139,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp">
                     <TextView
-                        android:text="Transaction ID"
+                        android:text="@string/txn_id_label"
                         android:textColor="#94A3B8"
                         android:textSize="14sp"
                         android:layout_width="wrap_content"
@@ -160,7 +161,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp">
                     <TextView
-                        android:text="Date &amp; Time"
+                        android:text="@string/txn_date_label"
                         android:textColor="#94A3B8"
                         android:textSize="14sp"
                         android:layout_width="wrap_content"
@@ -182,7 +183,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp">
                     <TextView
-                        android:text="Type"
+                        android:text="@string/txn_type_label"
                         android:textColor="#94A3B8"
                         android:textSize="14sp"
                         android:layout_width="wrap_content"
@@ -204,7 +205,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp">
                     <TextView
-                        android:text="Card"
+                        android:text="@string/txn_card_label"
                         android:textColor="#94A3B8"
                         android:textSize="14sp"
                         android:layout_width="wrap_content"
@@ -225,14 +226,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content">
                     <TextView
-                        android:text="Status"
+                        android:text="@string/txn_status_label"
                         android:textColor="#94A3B8"
                         android:textSize="14sp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"/>
                     <TextView
                         android:id="@+id/tvStatus"
-                        android:text="Approved"
+                        android:text="@string/txn_approved_status"
                         android:textColor="#22C55E"
                         android:textSize="14sp"
                         android:textStyle="bold"
@@ -262,7 +263,7 @@
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:text="Print"
+            android:text="@string/txn_print"
             android:textAllCaps="false"
             android:textColor="#1E293B"
             android:background="@drawable/bg_outline_button"
@@ -274,7 +275,7 @@
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:text="Share"
+            android:text="@string/txn_share"
             android:textAllCaps="false"
             android:textColor="#1E293B"
             android:background="@drawable/bg_outline_button"
@@ -286,7 +287,7 @@
         android:id="@+id/btnClose"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Back to Dashboard"
+        android:text="@string/txn_back_dashboard"
         android:textAllCaps="false"
         android:paddingVertical="12dp"
         android:layout_marginHorizontal="24dp"

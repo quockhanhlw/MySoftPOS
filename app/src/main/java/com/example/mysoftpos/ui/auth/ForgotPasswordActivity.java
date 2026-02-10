@@ -12,7 +12,9 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
-public class ForgotPasswordActivity extends AppCompatActivity {
+import com.example.mysoftpos.ui.BaseActivity;
+
+public class ForgotPasswordActivity extends BaseActivity {
 
     private ImageView btnBack;
     private EditText etNewPassword;
@@ -113,10 +115,3 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         finish();
     }
 }
-
-
-
-
-
-
-

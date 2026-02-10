@@ -24,6 +24,17 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     }
 
     @Override
+    public LiveData<com.example.mysoftpos.data.local.entity.TransactionWithDetails> getTransactionWithDetailsById(
+            long id) {
+        return db.transactionDao().getTransactionWithDetailsById(id);
+    }
+
+    @Override
+    public com.example.mysoftpos.data.local.entity.TransactionWithDetails getTransactionWithDetailsByIdSync(long id) {
+        return db.transactionDao().getTransactionWithDetailsByIdSync(id);
+    }
+
+    @Override
     public void saveTransaction(
             String traceNumber, String amount, String status, String reqHex, String respHex, long timestamp,
             String merchantCode, String merchantName,

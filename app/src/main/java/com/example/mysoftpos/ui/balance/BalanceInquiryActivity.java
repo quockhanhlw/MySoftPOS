@@ -30,7 +30,9 @@ import com.example.mysoftpos.viewmodel.PurchaseViewModel;
  * Tab 0: Manual Entry (PAN + Expiry) -> DE 22 = 012
  * Tab 1: Mock Track 2 -> DE 22 = 022
  */
-public class BalanceInquiryActivity extends AppCompatActivity {
+import com.example.mysoftpos.ui.BaseActivity;
+
+public class BalanceInquiryActivity extends BaseActivity {
 
     private TabLayout tabLayout;
     private CardView cardManualEntry;
@@ -42,6 +44,7 @@ public class BalanceInquiryActivity extends AppCompatActivity {
 
     private PurchaseViewModel viewModel;
     private ConfigManager configManager;
+    private String lastUsedPan;
 
     private int currentMode = 0; // 0 = Manual, 1 = Mock
 
@@ -113,7 +116,7 @@ public class BalanceInquiryActivity extends AppCompatActivity {
             String expiry = etExpiry.getText().toString();
 
             if (pan.length() < 13 || expiry.length() != 4) {
-                Toast.makeText(this, "Invalid PAN or Expiry", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.err_invalid_pan), Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -135,7 +138,7 @@ public class BalanceInquiryActivity extends AppCompatActivity {
             }
 
             CardInputData cardData = new CardInputData(mockPan, mockExpiry, "022", trk2);
-            Toast.makeText(this, "Using Mock Track 2...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.msg_using_mock_track2), Toast.LENGTH_SHORT).show();
             processBalanceInquiry(cardData);
         });
 
@@ -226,7 +229,9 @@ public class BalanceInquiryActivity extends AppCompatActivity {
     private void processBalanceInquiry(CardInputData cardData) {
         String username = getIntent().getStringExtra("USERNAME");
         if (username == null)
-            username = "Guest";
+            username = getString(R.string.guest_user);
+
+        this.lastUsedPan = cardData.getPan(); // Store for Result Screen
         viewModel.processTransaction(cardData, "0", "704", TxnType.BALANCE_INQUIRY, username);
     }
 
@@ -246,14 +251,90 @@ public class BalanceInquiryActivity extends AppCompatActivity {
 
         if (isoResponse != null) {
             intent.putExtra("RAW_RESPONSE", isoResponse);
+            // Parse DE 54 for Balance
+            try {
+                if (isoResponse != null && isoResponse.length() > 0) {
+                    com.example.mysoftpos.iso8583.message.IsoMessage respMsg = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                            .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker.hexToBytes(isoResponse));
+                    String de54 = respMsg.getField(54);
+
+                    if (de54 != null && de54.length() >= 20) {
+                        String availableBalance = null;
+                        String ledgerBalance = null;
+                        String currency = null;
+
+                        for (int i = 0; i + 20 <= de54.length(); i += 20) {
+                            String block = de54.substring(i, i + 20);
+                            // Pos 3-4: Amount Type
+                            String amtType = block.substring(2, 4);
+                            // Pos 5-7: Currency
+                            String curr = block.substring(4, 7);
+                            // Pos 8: Sign
+                            char sign = block.charAt(7);
+                            // Pos 9-20: Amount
+                            String rawAmt = block.substring(8, 20);
+
+                            if (currency == null)
+                                currency = curr;
+
+                            if (rawAmt.startsWith("E")) {
+                                rawAmt = "OVERFLOW";
+                            }
+
+                            String formattedAmt = rawAmt;
+                            if (!"OVERFLOW".equals(rawAmt)) {
+                                try {
+                                    long val = Long.parseLong(rawAmt);
+                                    // Amount has 2 decimal positions per spec.
+                                    // For VND (704): no minor units, divide by 100
+                                    if ("704".equals(curr)) {
+                                        val = val / 100;
+                                    }
+                                    if (sign == 'D') {
+                                        formattedAmt = "-" + val;
+                                    } else {
+                                        formattedAmt = String.valueOf(val);
+                                    }
+                                } catch (NumberFormatException e) {
+                                    formattedAmt = rawAmt;
+                                }
+                            }
+
+                            if ("02".equals(amtType)) {
+                                availableBalance = formattedAmt;
+                            } else if ("01".equals(amtType)) {
+                                ledgerBalance = formattedAmt;
+                            }
+                        }
+
+                        // Prioritize Available
+                        if (availableBalance != null) {
+                            intent.putExtra("AMOUNT", availableBalance);
+                            intent.putExtra("BALANCE_TYPE", "Available");
+                        } else if (ledgerBalance != null) {
+                            intent.putExtra("AMOUNT", ledgerBalance);
+                            intent.putExtra("BALANCE_TYPE", "Ledger");
+                        }
+                        if (currency != null) {
+                            intent.putExtra("CURRENCY", currency);
+                        }
+                    }
+                }
+            } catch (Throwable e) {
+                e.printStackTrace();
+                // Do not crash, just ignore balance parsing
+                com.example.mysoftpos.utils.logging.FileLogger.logString(this, "ERROR",
+                        "Failed to parse DE54: " + e.getMessage());
+            }
         }
         if (isoRequest != null) {
             intent.putExtra("RAW_REQUEST", isoRequest);
         }
 
         // Receipt Extras
-        String maskedPan = etPan.getText().toString().length() > 4
-                ? "**** " + etPan.getText().toString().substring(etPan.getText().length() - 4)
+        String panToMask = (lastUsedPan != null) ? lastUsedPan : "";
+        String maskedPan = panToMask.length() > 4
+                ? "**** " + panToMask.substring(panToMask.length() - 4)
                 : "**** 0000";
         intent.putExtra("MASKED_PAN", maskedPan);
 

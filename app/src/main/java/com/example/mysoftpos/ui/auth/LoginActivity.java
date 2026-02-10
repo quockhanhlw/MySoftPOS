@@ -16,7 +16,9 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 
-public class LoginActivity extends AppCompatActivity {
+import com.example.mysoftpos.ui.BaseActivity;
+
+public class LoginActivity extends BaseActivity {
 
     private EditText etUsername;
     private EditText etPassword;

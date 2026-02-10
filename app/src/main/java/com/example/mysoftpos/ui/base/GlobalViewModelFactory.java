@@ -1,4 +1,5 @@
 package com.example.mysoftpos.ui.base;
+
 import com.example.mysoftpos.utils.config.ConfigManager;
 import com.example.mysoftpos.ui.base.GlobalViewModelFactory;
 
@@ -28,12 +29,14 @@ public class GlobalViewModelFactory implements ViewModelProvider.Factory {
                     serviceLocator.getDispatcherProvider());
         }
 
+        if (modelClass.isAssignableFrom(com.example.mysoftpos.viewmodel.TransactionDetailViewModel.class)) {
+            return (T) new com.example.mysoftpos.viewmodel.TransactionDetailViewModel(
+                    serviceLocator.getApplication(),
+                    serviceLocator.getTransactionRepository(),
+                    com.example.mysoftpos.utils.config.ConfigManager.getInstance(serviceLocator.getApplication()),
+                    serviceLocator.getDispatcherProvider());
+        }
+
         throw new IllegalArgumentException("Unknown ViewModel class: " + modelClass.getName());
     }
 }
-
-
-
-
-
-

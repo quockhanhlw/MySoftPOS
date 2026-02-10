@@ -13,7 +13,9 @@ import android.view.animation.AnimationUtils;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-public class WelcomeActivity extends AppCompatActivity {
+import com.example.mysoftpos.ui.BaseActivity;
+
+public class WelcomeActivity extends BaseActivity {
 
     // TODO: Set to false to re-enable login/register flow
     private static final boolean SKIP_LOGIN = false;

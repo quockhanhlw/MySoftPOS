@@ -60,7 +60,7 @@
                     android:id="@+id/tvWelcomeTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Welcome"
+                    android:text="@string/dashboard_welcome"
                     android:textSize="24sp"
                     android:textColor="@android:color/white"
                     android:fontFamily="sans-serif"
@@ -101,15 +101,7 @@
                     android:layout_marginStart="0dp"
                     app:tint="@android:color/white" />
 
-                <ImageView
-                    android:id="@+id/btnLogout"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:padding="12dp"
-                    android:src="@drawable/ic_logout"
-                    android:layout_gravity="end"
-                    android:layout_marginEnd="0dp"
-                    app:tint="@android:color/white" />
+                <!-- Logout Removed as per request -->
 
                 <ImageView
                     android:id="@+id/btnSettings"
@@ -180,7 +172,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Purchase"
+                        android:text="@string/dashboard_purchase"
                         android:textSize="16sp"
                         android:textColor="@color/neo_primary_dark"
                         android:fontFamily="sans-serif-medium"
@@ -218,7 +210,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Balance Inquiry"
+                        android:text="@string/dashboard_balance"
                         android:textSize="16sp"
                         android:textColor="@color/neo_primary_dark"
                         android:fontFamily="sans-serif-medium"
@@ -252,7 +244,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Test Suite"
+                    android:text="@string/test_suite"
                     android:textSize="18sp"
                     android:textColor="@color/neo_primary_dark"
                     android:fontFamily="sans-serif-medium"
@@ -287,7 +279,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Transaction History"
+                        android:text="@string/history_title"
                         android:textSize="18sp"
                         android:textColor="@color/neo_primary_dark"
                         android:fontFamily="sans-serif-bold"
@@ -303,7 +295,7 @@
                             android:id="@+id/tvEmptyHistory"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="No recent transactions"
+                            android:text="@string/history_empty"
                             android:gravity="center"
                             android:padding="20dp"
                             android:textColor="#999" />

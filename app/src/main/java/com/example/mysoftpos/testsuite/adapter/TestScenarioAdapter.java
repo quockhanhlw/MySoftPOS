@@ -3,6 +3,7 @@ package com.example.mysoftpos.testsuite.adapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -17,6 +18,7 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
 
     private List<TestScenario> scenarios = Collections.emptyList();
     private final OnItemClickListener listener;
+    private boolean multiMode = false;
 
     public interface OnItemClickListener {
         void onItemClick(TestScenario scenario);
@@ -31,6 +33,11 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
         notifyDataSetChanged();
     }
 
+    public void setMultiMode(boolean multiMode) {
+        this.multiMode = multiMode;
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -42,7 +49,7 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         TestScenario item = scenarios.get(position);
-        holder.bind(item, listener);
+        holder.bind(item, listener, multiMode);
     }
 
     @Override
@@ -57,6 +64,7 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
         final ImageView imgIcon;
         final ImageView ivArrow;
         final FrameLayout iconContainer;
+        final CheckBox cbSelect;
 
         ViewHolder(View view) {
             super(view);
@@ -66,31 +74,28 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
             imgIcon = view.findViewById(R.id.imgIcon);
             ivArrow = view.findViewById(R.id.ivArrow);
             iconContainer = view.findViewById(R.id.iconContainer);
+            cbSelect = view.findViewById(R.id.cbSelect);
         }
 
-        void bind(TestScenario item, OnItemClickListener listener) {
-            // Extract Code (DE 22)
+        void bind(TestScenario item, OnItemClickListener listener, boolean multiMode) {
             String code = item.getField(22);
             if (code == null)
                 code = "---";
 
-            // Title cleaning (remove code from description if redundant)
             String desc = item.getDescription();
-            // Optional: Clean title logic if needed
-
             tvTitle.setText(desc);
             chipBadge.setText(code);
 
-            // Dynamic Icon & Details logic
-            // Dynamic Icon & Details logic
-            // if ("011".equals(code) || "012".equals(code)) {
-            // imgIcon.setImageResource(R.drawable.ic_edit_note);
-            // } else ...
-            // Keeping static checkbox outline as requested by UI design match
-            // imgIcon.setImageResource(R.drawable.bg_checkbox_outline);
-
-            // Set Details (Bank Name or other info)
-            tvDetail.setText("Tap to run test case");
+            if (multiMode) {
+                cbSelect.setVisibility(View.VISIBLE);
+                cbSelect.setChecked(item.isSelected());
+                imgIcon.setVisibility(View.GONE);
+                tvDetail.setText(item.isSelected() ? "✅ Configured" : "Tap to configure");
+            } else {
+                cbSelect.setVisibility(View.GONE);
+                imgIcon.setVisibility(View.VISIBLE);
+                tvDetail.setText("Tap to run test case");
+            }
 
             itemView.setOnClickListener(v -> listener.onItemClick(item));
         }

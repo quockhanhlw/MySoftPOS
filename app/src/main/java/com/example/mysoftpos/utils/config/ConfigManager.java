@@ -130,8 +130,8 @@ public class ConfigManager {
             JSONObject obj = new JSONObject(json);
 
             defMcc = obj.optString("merchant_type_18", "5411");
-            defAcq = obj.optString("acquirer_id_32", "970406");
-            defFwd = obj.optString("forwarding_inst_33", "970406");
+            defAcq = obj.optString("acquirer_id_32", "970488");
+            defFwd = obj.optString("forwarding_inst_33", "970418");
             defTid = obj.optString("terminal_id_41", "AUTO0001");
             defMid = obj.optString("merchant_id_42", "MYSOFTPOSSHOP01");
 
@@ -182,7 +182,7 @@ public class ConfigManager {
 
             // Parse Server Config
             defIp = obj.optString("server_ip", "10.0.0.1");
-            defPort = obj.optInt("server_port", 8583);
+            defPort = obj.optInt("server_port", 1177);
 
             // Parse Admin Account
             JSONObject adminObj = obj.optJSONObject("admin_account");
@@ -222,8 +222,8 @@ public class ConfigManager {
             e.printStackTrace();
             // Fallbacks
             defMcc = "5411";
-            defAcq = "970406";
-            defFwd = "970406";
+            defAcq = "970488";
+            defFwd = "970488";
             defTid = "AUTO0001";
             defMid = "MYSOFTPOSSHOP01";
             defBank = "MYSOFTPOS BANK";
@@ -232,7 +232,7 @@ public class ConfigManager {
             defCurr = "704";
             // Check IP defaults
             defIp = "10.145.54.206";
-            defPort = 8583;
+            defPort = 1177;
 
             // Fallbacks for new fields
             defAmount = "000000100000";
@@ -247,25 +247,18 @@ public class ConfigManager {
     }
 
     public synchronized String getAndIncrementTrace() {
-        int trace = prefs.getInt(KEY_TRACE, 111200);
-        if (trace < 111200) {
-            trace = 111200;
+        int trace = prefs.getInt(KEY_TRACE, 111300);
+        if (trace < 111300) {
+            trace = 111300;
         }
         int next = (trace >= 999999) ? 1 : trace + 1;
         prefs.edit().putInt(KEY_TRACE, next).apply();
         return String.format(Locale.ROOT, "%06d", trace);
     }
 
+    // Removed duplicates
     private String defIp;
     private int defPort;
-
-    public String getServerIp() {
-        return defIp != null ? defIp : "10.145.54.206";
-    }
-
-    public int getServerPort() {
-        return defPort > 0 ? defPort : 8583;
-    }
 
     private String adminUser;
     private String adminPass;
@@ -314,15 +307,62 @@ public class ConfigManager {
     }
 
     public String getTerminalId() {
-        return defTid;
+        return prefs.getString(KEY_TID_41, defTid);
+    }
+
+    public void setTerminalId(String val) {
+        prefs.edit().putString(KEY_TID_41, val).apply();
     }
 
     public String getMerchantId() {
-        return defMid;
+        return prefs.getString(KEY_MID_42, defMid);
+    }
+
+    public void setMerchantId(String val) {
+        prefs.edit().putString(KEY_MID_42, val).apply();
     }
 
     public String getCurrencyCode49() {
         return defCurr;
+    }
+
+    // Server Config Overrides
+    public String getServerIp() {
+        return prefs.getString(KEY_IP, defIp != null ? defIp : "10.145.54.206");
+    }
+
+    public void setServerIp(String val) {
+        prefs.edit().putString(KEY_IP, val).apply();
+    }
+
+    public int getServerPort() {
+        return prefs.getInt(KEY_PORT, defPort > 0 ? defPort : 8583);
+    }
+
+    public void setServerPort(int val) {
+        prefs.edit().putInt(KEY_PORT, val).apply();
+    }
+
+    public int getTimeout() {
+        // Parse or default to 30000
+        String s = prefs.getString("timeout", "30000"); // Using "timeout" literal match from SettingsActivity
+        try {
+            return Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+            return 30000;
+        }
+    }
+
+    public void setTimeout(int val) {
+        prefs.edit().putString("timeout", String.valueOf(val)).apply();
+    }
+
+    public boolean isPinEncryptionEnabled() {
+        return prefs.getBoolean("encrypt_pin", true);
+    }
+
+    public void setPinEncryptionEnabled(boolean enabled) {
+        prefs.edit().putBoolean("encrypt_pin", enabled).apply();
     }
 
     public String getMerchantName() {

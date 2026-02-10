@@ -6,11 +6,13 @@ import com.example.mysoftpos.iso8583.TxnType;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-
+import android.widget.CheckBox;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.testsuite.model.TestScenario;
+import com.google.android.material.button.MaterialButton;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -18,21 +20,33 @@ public class TestSuiteActivity extends AppCompatActivity {
 
     private String channel;
     private String txnType;
-    // private ListView listView; // Removed
-    // private ArrayAdapter<String> adapter; // Removed
+    private String perfMode;
     private List<TestScenario> allScenarios;
     private List<TestScenario> displayedScenarios;
+    private com.example.mysoftpos.testsuite.adapter.TestScenarioAdapter adapter;
+
+    // Multi-thread UI
+    private View layoutSelectAll;
+    private CheckBox cbSelectAll;
+    private MaterialButton btnRunAll;
+
+    // Queue for sequential card/PIN config in "Select All"
+    private int selectAllIndex = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_test_suite); // Need to create this layout
+        setContentView(R.layout.activity_test_suite);
 
         channel = getIntent().getStringExtra("CHANNEL");
         txnType = getIntent().getStringExtra("TXN_TYPE");
+        perfMode = getIntent().getStringExtra("PERF_MODE");
+        if (perfMode == null)
+            perfMode = "SINGLE";
+
+        boolean isMulti = "MULTI".equals(perfMode);
 
         TextView tvTitle = findViewById(R.id.tvTitle);
-        // title kept as "Test Scenarios" or generic
 
         // Bind Summary Card
         TextView tvSummaryScheme = findViewById(R.id.tvSummaryScheme);
@@ -41,7 +55,7 @@ public class TestSuiteActivity extends AppCompatActivity {
 
         String scheme = getIntent().getStringExtra("SCHEME");
         if (scheme == null)
-            scheme = "Napas"; // Fallback
+            scheme = "Napas";
 
         tvSummaryScheme.setText(scheme);
         tvSummaryChannel.setText(channel);
@@ -49,50 +63,129 @@ public class TestSuiteActivity extends AppCompatActivity {
 
         androidx.recyclerview.widget.RecyclerView recyclerView = findViewById(R.id.recyclerViewCases);
 
-        // Load Data (Pass Activity Context for ConfigManager)
+        // Load Data
         allScenarios = TestDataProvider.generateAllScenarios(this);
         displayedScenarios = filterScenarios(allScenarios, channel, txnType);
 
-        com.example.mysoftpos.testsuite.adapter.TestScenarioAdapter adapter = new com.example.mysoftpos.testsuite.adapter.TestScenarioAdapter(
-                this::openRunner);
+        adapter = new com.example.mysoftpos.testsuite.adapter.TestScenarioAdapter(
+                this::onScenarioClicked);
 
         adapter.setScenarios(displayedScenarios);
+        adapter.setMultiMode(isMulti);
 
         recyclerView.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
+
+        // Multi-thread controls
+        layoutSelectAll = findViewById(R.id.layoutSelectAll);
+        cbSelectAll = findViewById(R.id.cbSelectAll);
+        btnRunAll = findViewById(R.id.btnRunAll);
+
+        if (isMulti) {
+            layoutSelectAll.setVisibility(View.VISIBLE);
+            btnRunAll.setVisibility(View.VISIBLE);
+
+            cbSelectAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (isChecked) {
+                    selectAllIndex = 0;
+                    configureNextForSelectAll();
+                } else {
+                    for (TestScenario s : displayedScenarios) {
+                        s.setSelected(false);
+                        s.setUserPin(null);
+                    }
+                    adapter.notifyDataSetChanged();
+                }
+            });
+
+            btnRunAll.setOnClickListener(v -> launchMultiThreadRunner());
+        }
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
     }
 
     private List<TestScenario> filterScenarios(List<TestScenario> src, String channel, String type) {
-        // Implement filtering if logic differs for ATM/POS or Purchase/Balance
-        // For now, return all for Purchase, maybe empty/different for Balance
-        if ("BALANCE".equals(type)) {
-            // Maybe return just one generic case or allow all?
-            // User instruction said: "Chọn Purchase thì hiện ra 1 danh sách các Testcase...
-            // Các testcase còn lại tương ứng với 1 DE 22 riêng"
-            return src;
-        }
         return src;
     }
 
-    private void openRunner(TestScenario scenario) {
+    private void onScenarioClicked(TestScenario scenario) {
+        if ("MULTI".equals(perfMode)) {
+            // Multi: configure card/PIN then mark selected
+            configureForMultiMode(scenario);
+        } else {
+            // Single: original flow
+            openRunnerSingle(scenario);
+        }
+    }
+
+    // ========================
+    // SINGLE-THREAD FLOW (existing)
+    // ========================
+
+    private void openRunnerSingle(TestScenario scenario) {
+        String de22 = scenario.getField(22);
+        if ("011".equals(de22) || "012".equals(de22)) {
+            checkPinAndLaunch(scenario);
+        } else {
+            showCardSelectionDialog(scenario, () -> checkPinAndLaunch(scenario));
+        }
+    }
+
+    private void showCardSelectionDialog(TestScenario scenario, Runnable onDone) {
+        final String[] cardOptions = {
+                "9704166606226219923=31016010000000123",
+                "9704306669144645257=31016010000000123",
+                "9704189991010867647=31016010000000123"
+        };
+
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        builder.setTitle("Select Card");
+
+        builder.setSingleChoiceItems(cardOptions, -1, (dialog, which) -> {
+            String selected = cardOptions[which];
+            applyCardData(scenario, selected);
+            dialog.dismiss();
+            onDone.run();
+        });
+
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
+        builder.show();
+    }
+
+    private void applyCardData(TestScenario scenario, String track2Raw) {
+        if (track2Raw.contains("=")) {
+            String[] parts = track2Raw.split("=");
+            String pan = parts[0];
+            String expiry = "";
+            if (parts.length > 1 && parts[1].length() >= 4) {
+                expiry = parts[1].substring(0, 4);
+            }
+            scenario.setField(2, pan);
+            scenario.setField(35, track2Raw);
+            scenario.setField(14, expiry);
+        }
+    }
+
+    private void checkPinAndLaunch(TestScenario scenario) {
         String de22 = scenario.getField(22);
         if ("011".equals(de22) || "021".equals(de22)) {
-            showPinDialog(scenario);
+            showPinDialog(scenario, pin -> launchRunner(scenario, pin));
         } else {
             launchRunner(scenario, null);
         }
     }
 
-    private void showPinDialog(TestScenario scenario) {
+    private interface PinCallback {
+        void onPin(String pin);
+    }
+
+    private void showPinDialog(TestScenario scenario, PinCallback callback) {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_pin_entry, null);
         builder.setView(dialogView);
         android.app.AlertDialog dialog = builder.create();
         dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
-        // UI References
         android.widget.ImageView[] dots = new android.widget.ImageView[] {
                 dialogView.findViewById(R.id.dot1),
                 dialogView.findViewById(R.id.dot2),
@@ -103,7 +196,6 @@ public class TestSuiteActivity extends AppCompatActivity {
         };
         StringBuilder pinBuilder = new StringBuilder();
 
-        // Keypad Listener
         View.OnClickListener numListener = v -> {
             if (pinBuilder.length() < 6) {
                 pinBuilder.append(((TextView) v).getText());
@@ -119,7 +211,6 @@ public class TestSuiteActivity extends AppCompatActivity {
             dialogView.findViewById(id).setOnClickListener(numListener);
         }
 
-        // Backspace
         dialogView.findViewById(R.id.btnBackspace).setOnClickListener(v -> {
             if (pinBuilder.length() > 0) {
                 pinBuilder.deleteCharAt(pinBuilder.length() - 1);
@@ -127,13 +218,11 @@ public class TestSuiteActivity extends AppCompatActivity {
             }
         });
 
-        // OK
         dialogView.findViewById(R.id.btnOk).setOnClickListener(v -> {
             dialog.dismiss();
-            launchRunner(scenario, pinBuilder.toString());
+            callback.onPin(pinBuilder.toString());
         });
 
-        // Cancel
         dialogView.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
 
         dialog.show();
@@ -151,25 +240,131 @@ public class TestSuiteActivity extends AppCompatActivity {
 
     private void launchRunner(TestScenario scenario, String userPin) {
         Intent intent = new Intent(this, RunnerActivity.class);
-
-        // Pass strictly generated logic fields
         intent.putExtra("DE_22", scenario.getField(22));
         intent.putExtra("DESC", scenario.getDescription());
         intent.putExtra("CHANNEL", channel);
         intent.putExtra("TXN_TYPE", txnType);
-
-        // Critical Data
         intent.putExtra("TRACK2", scenario.getField(35));
         intent.putExtra("PAN", scenario.getField(2));
         intent.putExtra("EXPIRY", scenario.getField(14));
 
-        // If user entered a PIN, pass it. Otherwise use default marker if present.
         if (userPin != null && !userPin.isEmpty()) {
             intent.putExtra("PIN_BLOCK", userPin);
         } else {
             intent.putExtra("PIN_BLOCK", scenario.getField(52));
         }
 
+        startActivity(intent);
+    }
+
+    // ========================
+    // MULTI-THREAD FLOW
+    // ========================
+
+    private void configureForMultiMode(TestScenario scenario) {
+        if (scenario.isSelected()) {
+            // Deselect
+            scenario.setSelected(false);
+            scenario.setUserPin(null);
+            adapter.notifyDataSetChanged();
+            updateSelectAllCheckbox();
+            return;
+        }
+
+        String de22 = scenario.getField(22);
+
+        // For 011/012: Manual entry modes — need card selection
+        // For 021/022: Swipe modes — need card selection
+        // Actually ALL modes (011, 012, 021, 022) need card selection per user request
+        Runnable afterCard = () -> {
+            if ("011".equals(de22) || "021".equals(de22)) {
+                // Need PIN
+                showPinDialog(scenario, pin -> {
+                    scenario.setUserPin(pin);
+                    scenario.setSelected(true);
+                    adapter.notifyDataSetChanged();
+                    updateSelectAllCheckbox();
+
+                    // Continue Select All queue
+                    if (selectAllIndex >= 0) {
+                        selectAllIndex++;
+                        configureNextForSelectAll();
+                    }
+                });
+            } else {
+                scenario.setSelected(true);
+                adapter.notifyDataSetChanged();
+                updateSelectAllCheckbox();
+
+                if (selectAllIndex >= 0) {
+                    selectAllIndex++;
+                    configureNextForSelectAll();
+                }
+            }
+        };
+
+        if ("011".equals(de22) || "012".equals(de22)) {
+            // Manual key-in: skip card selection, go to PIN
+            afterCard.run();
+        } else {
+            showCardSelectionDialog(scenario, afterCard);
+        }
+    }
+
+    private void configureNextForSelectAll() {
+        if (selectAllIndex >= displayedScenarios.size()) {
+            selectAllIndex = -1;
+            return;
+        }
+        TestScenario next = displayedScenarios.get(selectAllIndex);
+        if (next.isSelected()) {
+            selectAllIndex++;
+            configureNextForSelectAll();
+            return;
+        }
+        configureForMultiMode(next);
+    }
+
+    private void updateSelectAllCheckbox() {
+        boolean all = true;
+        for (TestScenario s : displayedScenarios) {
+            if (!s.isSelected()) {
+                all = false;
+                break;
+            }
+        }
+        cbSelectAll.setOnCheckedChangeListener(null);
+        cbSelectAll.setChecked(all);
+        cbSelectAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                selectAllIndex = 0;
+                configureNextForSelectAll();
+            } else {
+                for (TestScenario s : displayedScenarios) {
+                    s.setSelected(false);
+                    s.setUserPin(null);
+                }
+                adapter.notifyDataSetChanged();
+            }
+        });
+    }
+
+    private void launchMultiThreadRunner() {
+        ArrayList<TestScenario> selected = new ArrayList<>();
+        for (TestScenario s : displayedScenarios) {
+            if (s.isSelected())
+                selected.add(s);
+        }
+
+        if (selected.isEmpty()) {
+            Toast.makeText(this, "Please select at least one test case", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Intent intent = new Intent(this, MultiThreadRunnerActivity.class);
+        intent.putExtra("SCENARIOS", selected);
+        intent.putExtra("CHANNEL", channel);
+        intent.putExtra("TXN_TYPE", txnType);
         startActivity(intent);
     }
 }

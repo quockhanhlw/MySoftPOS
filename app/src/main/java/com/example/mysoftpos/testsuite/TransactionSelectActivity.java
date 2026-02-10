@@ -40,6 +40,7 @@ public class TransactionSelectActivity extends AppCompatActivity {
         intent.putExtra("CHANNEL", channel);
         intent.putExtra("TXN_TYPE", txnType);
         intent.putExtra("SCHEME", getIntent().getStringExtra("SCHEME"));
+        intent.putExtra("PERF_MODE", getIntent().getStringExtra("PERF_MODE"));
         startActivity(intent);
     }
 }

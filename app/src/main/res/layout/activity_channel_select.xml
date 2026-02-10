@@ -142,17 +142,11 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="POS Terminal"
+                            android:text="POS"
                             android:textColor="#0F172A"
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Point of Sale device"
-                            android:textColor="#64748B"
-                            android:textSize="14sp" />
                     </LinearLayout>
 
                     <ImageView
@@ -213,12 +207,6 @@
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Automated Teller Machine"
-                            android:textColor="#64748B"
-                            android:textSize="14sp" />
                     </LinearLayout>
 
                     <ImageView

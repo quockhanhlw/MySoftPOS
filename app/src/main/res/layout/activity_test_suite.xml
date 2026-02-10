@@ -135,6 +135,33 @@
             android:textSize="14sp"
             android:layout_marginBottom="8dp"/>
 
+        <!-- Select All (multi-thread only) -->
+        <LinearLayout
+            android:id="@+id/layoutSelectAll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/bg_summary_card"
+            android:visibility="gone">
+
+            <CheckBox
+                android:id="@+id/cbSelectAll"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Select All"
+                android:textColor="#0F172A"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewCases"
             android:layout_width="match_parent"
@@ -142,6 +169,20 @@
             android:layout_weight="1"
             android:clipToPadding="false"
             tools:listitem="@layout/item_test_scenario" />
+
+        <!-- Run Transaction button (multi-thread only) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRunAll"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="16dp"
+            android:text="Run Transaction"
+            android:textSize="16sp"
+            android:textAllCaps="false"
+            android:backgroundTint="#0F172A"
+            app:cornerRadius="12dp"
+            android:visibility="gone" />
 
     </LinearLayout>
 

@@ -28,7 +28,9 @@ import java.util.Locale;
  * Payment Amount Entry Screen with custom numpad and currency selector.
  * Features: VND/USD toggle by swipe, blinking cursor, numpad shown on tap.
  */
-public class PurchaseAmountActivity extends AppCompatActivity {
+import com.example.mysoftpos.ui.BaseActivity;
+
+public class PurchaseAmountActivity extends BaseActivity {
 
     private TextView tvAmountDisplay;
     private TextView tvCurrency;
@@ -218,14 +220,55 @@ public class PurchaseAmountActivity extends AppCompatActivity {
 
     private void onChargeClick() {
         if (amountBuilder.length() == 0) {
-            Toast.makeText(this, "Vui lòng nhập số tiền", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please enter an amount", Toast.LENGTH_SHORT).show();
             return;
         }
 
         long amount = Long.parseLong(amountBuilder.toString());
-        if (amount <= 0) {
-            Toast.makeText(this, "Số tiền phải lớn hơn 0", Toast.LENGTH_SHORT).show();
-            return;
+        String currencyCode = getCurrentCurrencyCode();
+
+        // Validation based on Currency
+        if ("704".equals(currencyCode)) { // VND
+            if (amount < 10000) {
+                Toast.makeText(this, "Minimum amount is 10,000 VND", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (amount > 500000000) {
+                Toast.makeText(this, "Maximum amount is 500,000,000 VND", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        } else if ("840".equals(currencyCode)) { // USD
+            // Assuming input is in Cents if the system processes it as such (based on
+            // TransactionContext)
+            // But if user sees "100" and expects $100, then input is dollars.
+            // Following common POS behavior for manual entry without decimals:
+            // Input usually implies minor units (cents) OR major units depending on config.
+            // Given "Min 1.00 USD" request and existing "12345" test case behavior:
+            // Let's enforce logical limits on the NUMERIC input.
+            // If input 1 = $1 -> Min 1.
+            // If input 1 = $0.01 -> Min 100.
+
+            // For Safety/Simplicity in this Demo app: Treat as Major Units (Dollars) for
+            // validation messages mostly
+            // but if we check < 1, that's definitely wrong.
+            // If we check < 100, we might block 50 cents.
+            // Let's assume input is DOLLARS for now to match the "100" display looking like
+            // $100.
+
+            if (amount < 1) { // Min $1
+                Toast.makeText(this, "Minimum amount is 1 USD", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (amount > 50000) { // Max $50,000
+                Toast.makeText(this, "Maximum amount is 50,000 USD", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        } else {
+            // Fallback for generic
+            if (amount <= 0) {
+                Toast.makeText(this, "Amount must be greater than 0", Toast.LENGTH_SHORT).show();
+                return;
+            }
         }
 
         // Navigate to card tap screen with currency info

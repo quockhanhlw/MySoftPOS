@@ -27,9 +27,17 @@
             android:id="@+id/imgIcon"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@drawable/bg_checkbox_outline"
-            app:tint="#94A3B8" />
+            android:src="@drawable/ic_check_circle"
+            app:tint="#CBD5E1" />
 
+        <!-- Multi-thread checkbox (hidden in single mode) -->
+        <CheckBox
+            android:id="@+id/cbSelect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:clickable="false"
+            android:focusable="false" />
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"

@@ -32,7 +32,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Balance Inquiry"
+            android:text="@string/balance_inquiry_title"
             android:textSize="18sp"
             android:textColor="@color/neo_primary_dark"
             android:fontFamily="sans-serif-medium"
@@ -59,12 +59,12 @@
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Manual Entry" />
+            android:text="@string/tab_manual_entry" />
 
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Mock Track 2" />
+            android:text="@string/tab_mock_track2" />
     </com.google.android.material.tabs.TabLayout>
 
     <!-- Manual Entry Card (Tab 0) - CENTERED & LARGER -->
@@ -89,7 +89,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Card Number (PAN)"
+                android:text="@string/card_pan_label"
                 android:textSize="16sp"
                 android:textColor="@color/neo_text_secondary" />
 
@@ -101,7 +101,7 @@
                 android:inputType="number"
                 android:maxLength="19"
                 android:textSize="18sp"
-                android:hint="1234 5678 9012 3456"
+                android:hint="@string/pan_hint"
                 android:background="@drawable/bg_input_rounded"
                 android:paddingHorizontal="16dp" />
 
@@ -109,7 +109,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:text="Expiry Date (YYMM)"
+                android:text="@string/card_expiry_label"
                 android:textSize="16sp"
                 android:textColor="@color/neo_text_secondary" />
 
@@ -121,7 +121,7 @@
                 android:inputType="number"
                 android:maxLength="4"
                 android:textSize="18sp"
-                android:hint="2512"
+                android:hint="@string/expiry_hint"
                 android:background="@drawable/bg_input_rounded"
                 android:paddingHorizontal="16dp" />
 
@@ -130,7 +130,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginTop="32dp"
-                android:text="Check Balance"
+                android:text="@string/btn_check_balance"
                 android:textSize="18sp"
                 app:backgroundTint="@color/neo_primary_dark"
                 app:cornerRadius="14dp" />
@@ -223,7 +223,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
-                android:text="Reading Card..."
+                android:text="@string/reading_card_text"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:textColor="@color/neo_primary_dark"

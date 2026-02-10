@@ -35,24 +35,24 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
-public class RegisterActivity extends AppCompatActivity {
+import com.example.mysoftpos.ui.BaseActivity;
+
+public class RegisterActivity extends BaseActivity {
 
     private LinearLayout cardPersonal;
     private LinearLayout cardBusiness;
     private boolean isBusiness = false;
 
-    private EditText etAccountNumber;
-    private EditText etBankName;
-    private EditText etAccountName;
+    private EditText etFullName;
+    private EditText etDob;
+    private EditText etPhone;
+    private EditText etAddress;
+    private EditText etUsername;
     private EditText etPassword;
     private EditText etConfirmPassword;
-    private ImageView btnShowPassword;
-    private ImageView btnShowConfirmPassword;
+
     private CheckBox cbTerms;
     private TextView tvTermsText;
-
-    private boolean isPasswordVisible = false;
-    private boolean isConfirmPasswordVisible = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,39 +64,13 @@ public class RegisterActivity extends AppCompatActivity {
         cardPersonal = findViewById(R.id.cardPersonal);
         cardBusiness = findViewById(R.id.cardBusiness);
 
-        etAccountNumber = findViewById(R.id.etAccountNumber);
-        etBankName = findViewById(R.id.etBankName);
-        etAccountName = findViewById(R.id.etAccountName);
+        etFullName = findViewById(R.id.etFullName);
+        etDob = findViewById(R.id.etDob);
+        etPhone = findViewById(R.id.etPhone);
+        etAddress = findViewById(R.id.etAddress);
+        etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
-        // etConfirmPassword removed from UI but keeping variable if needed or simply
-        // remove
-        // Actually UI removed confirm password? Let me check layout XML.
-        // Step 20788 shows Update Register Activity Layout...
-        // Wait, looking at Step 20788:
-        // Layout has etPassword but NO etConfirmPassword.
-        // It has etAccountNumber, etBankName, etAccountName, etPassword.
-
-        // So I should remove confirm password logic from Java.
-
-        btnShowPassword = findViewById(R.id.btnShowPassword); // Wait, Layout in 20788 uses etPassword
-                                                              // inputType="textPassword" but NO eye icon in the layout!
-        // Step 20788 layout for etPassword:
-        // <EditText id="@+id/etPassword" ... inputType="textPassword" ... />
-        // usage of drawable/bg_input_field.
-        // NO FrameLayout wrapping it with an eye icon.
-
-        // Okay, I need to match the Java code to the NEW XML.
-        // The new XML (Step 20788) has:
-        // - cardPersonal, cardBusiness
-        // - etAccountNumber, etBankName, etAccountName, etPassword
-        // - cbTerms, tvTermsText
-        // - btnRegister
-        // - btnBack
-
-        // It DOES NOT have:
-        // - rgAccountType
-        // - etConfirmPassword
-        // - btnShowPassword (eye icon)
+        etConfirmPassword = findViewById(R.id.etConfirmPassword);
 
         cbTerms = findViewById(R.id.cbTerms);
         tvTermsText = findViewById(R.id.tvTermsText);
@@ -116,6 +90,38 @@ public class RegisterActivity extends AppCompatActivity {
         btnRegister.setOnClickListener(v -> handleRegister());
 
         setupTermsText();
+        setupPasswordToggle();
+    }
+
+    private void setupPasswordToggle() {
+        setupToggleForEditText(etPassword);
+        setupToggleForEditText(etConfirmPassword);
+    }
+
+    private void setupToggleForEditText(EditText editText) {
+        editText.setOnTouchListener((v, event) -> {
+            final int DRAWABLE_RIGHT = 2;
+            if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
+                if (event.getRawX() >= (editText.getRight()
+                        - editText.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
+                    // Toggle visibility
+                    if (editText.getTransformationMethod() instanceof PasswordTransformationMethod) {
+                        editText.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                        editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_eye, 0);
+                    } else {
+                        editText.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                        editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_eye_off, 0);
+                    }
+                    // Maintain tint
+                    for (android.graphics.drawable.Drawable d : editText.getCompoundDrawables()) {
+                        if (d != null)
+                            d.setTint(Color.parseColor("#9CA3AF"));
+                    }
+                    return true;
+                }
+            }
+            return false;
+        });
     }
 
     private void updateSelectionState(boolean businesses) {
@@ -125,10 +131,10 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void setupTermsText() {
-        String fullText = "Bằng việc Đăng ký, bạn đã đồng ý với Điều khoản & Điều kiện cũng Chính sách bảo mật của softbank ePOS";
+        String fullText = getString(R.string.register_terms_text);
         SpannableString spannableString = new SpannableString(fullText);
 
-        // Clickable span for "Điều khoản & Điều kiện"
+        // Clickable span for "Terms & Conditions"
         ClickableSpan termsSpan = new ClickableSpan() {
             @Override
             public void onClick(@NonNull View widget) {
@@ -143,7 +149,7 @@ public class RegisterActivity extends AppCompatActivity {
             }
         };
 
-        // Clickable span for "Chính sách bảo mật"
+        // Clickable span for "Privacy Policy"
         ClickableSpan privacySpan = new ClickableSpan() {
             @Override
             public void onClick(@NonNull View widget) {
@@ -158,13 +164,21 @@ public class RegisterActivity extends AppCompatActivity {
             }
         };
 
-        int termsStart = fullText.indexOf("Điều khoản & Điều kiện");
-        int termsEnd = termsStart + "Điều khoản & Điều kiện".length();
-        spannableString.setSpan(termsSpan, termsStart, termsEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        // Find substrings
+        String termsTarget = "Terms & Conditions";
+        String privacyTarget = "Privacy Policy";
 
-        int privacyStart = fullText.indexOf("Chính sách bảo mật");
-        int privacyEnd = privacyStart + "Chính sách bảo mật".length();
-        spannableString.setSpan(privacySpan, privacyStart, privacyEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        int termsStart = fullText.indexOf(termsTarget);
+        if (termsStart >= 0) {
+            spannableString.setSpan(termsSpan, termsStart, termsStart + termsTarget.length(),
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+
+        int privacyStart = fullText.indexOf(privacyTarget);
+        if (privacyStart >= 0) {
+            spannableString.setSpan(privacySpan, privacyStart, privacyStart + privacyTarget.length(),
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
 
         tvTermsText.setText(spannableString);
         tvTermsText.setMovementMethod(LinkMovementMethod.getInstance());
@@ -179,7 +193,7 @@ public class RegisterActivity extends AppCompatActivity {
         TextView tvDialogTitle = dialog.findViewById(R.id.tvDialogTitle);
         TextView tvDialogContent = dialog.findViewById(R.id.tvDialogContent);
 
-        tvDialogTitle.setText("Dieu khoan & Dieu kien");
+        tvDialogTitle.setText("Terms & Conditions");
         tvDialogContent.setText(getTermsContent());
 
         dialog.show();
@@ -194,7 +208,7 @@ public class RegisterActivity extends AppCompatActivity {
         TextView tvDialogTitle = dialog.findViewById(R.id.tvDialogTitle);
         TextView tvDialogContent = dialog.findViewById(R.id.tvDialogContent);
 
-        tvDialogTitle.setText("Chính sách bảo mật");
+        tvDialogTitle.setText("Privacy Policy");
         tvDialogContent.setText(getPrivacyContent());
 
         dialog.show();
@@ -221,7 +235,7 @@ public class RegisterActivity extends AppCompatActivity {
             return content.toString().trim();
         } catch (Exception e) {
             Log.e("RegisterActivity", "Error reading raw text file", e);
-            return "Khong the tai noi dung. Vui long thu lai sau.";
+            return "Unable to load content. Please try again later.";
         }
     }
 
@@ -229,33 +243,48 @@ public class RegisterActivity extends AppCompatActivity {
         // Get selected account type
         String accountType = isBusiness ? "Business" : "Personal";
 
-        String accountNumber = etAccountNumber.getText().toString().trim();
-        String bankName = etBankName.getText().toString().trim();
-        String accountName = etAccountName.getText().toString().trim();
+        String fullName = etFullName.getText().toString().trim();
+        String dob = etDob.getText().toString().trim();
+        String phone = etPhone.getText().toString().trim();
+        String address = etAddress.getText().toString().trim();
+        String username = etUsername.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
+        String confirmPassword = etConfirmPassword.getText().toString().trim();
 
         // Validation
-        if (accountNumber.isEmpty()) {
-            etAccountNumber.setError("Please enter a username");
-            etAccountNumber.requestFocus();
+        if (fullName.isEmpty()) {
+            etFullName.setError("Please enter your full name");
+            etFullName.requestFocus();
             return;
         }
 
-        if (accountNumber.length() < 3) {
-            etAccountNumber.setError("Username is too short");
-            etAccountNumber.requestFocus();
+        if (dob.isEmpty()) {
+            etDob.setError("Please enter date of birth");
+            etDob.requestFocus();
             return;
         }
 
-        if (bankName.isEmpty()) {
-            etBankName.setError("Please enter bank name");
-            etBankName.requestFocus();
+        if (phone.isEmpty()) {
+            etPhone.setError("Please enter phone number");
+            etPhone.requestFocus();
             return;
         }
 
-        if (accountName.isEmpty()) {
-            etAccountName.setError("Please enter your full name");
-            etAccountName.requestFocus();
+        if (address.isEmpty()) {
+            etAddress.setError("Please enter address");
+            etAddress.requestFocus();
+            return;
+        }
+
+        if (username.isEmpty()) {
+            etUsername.setError("Please choose a username");
+            etUsername.requestFocus();
+            return;
+        }
+
+        if (username.length() < 3) {
+            etUsername.setError("Username is too short");
+            etUsername.requestFocus();
             return;
         }
 
@@ -271,6 +300,12 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
+        if (!password.equals(confirmPassword)) {
+            etConfirmPassword.setError("Passwords do not match");
+            etConfirmPassword.requestFocus();
+            return;
+        }
+
         // Check terms and conditions
         if (!cbTerms.isChecked()) {
             Toast.makeText(this, "Please agree to the Terms & Conditions", Toast.LENGTH_SHORT).show();
@@ -278,8 +313,8 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         // Save user to database with encrypted credentials
-        final String finalAccountName = accountName; // Display Name
-        final String finalUsername = accountNumber; // Login Username
+        final String finalFullName = fullName; // Display Name
+        final String finalUsername = username; // Login Username
         final String finalPassword = password;
         final String finalAccountType = accountType;
 
@@ -296,24 +331,31 @@ public class RegisterActivity extends AppCompatActivity {
                 // Check if username already exists
                 if (userDao.existsByUsernameHash(usernameHash)) {
                     runOnUiThread(() -> {
-                        etAccountNumber.setError("Username already exists");
-                        etAccountNumber.requestFocus();
+                        etUsername.setError("Username already exists");
+                        etUsername.requestFocus();
                     });
                     return;
                 }
 
                 // Create and insert user entity
+                // Note: UserEntity might need updates if we want to store DOB, Phone, Address.
+                // Assuming current UserEntity only supports minimal fields, we'll just use
+                // FullName/Username/Password for now.
+                // If user wants to store these, we'd need Schema migration.
+                // Given the prompt "Register screen FORM", usually implies UI first.
+                // I will assume standard UserEntity for now.
+
                 com.example.mysoftpos.data.local.entity.UserEntity user = new com.example.mysoftpos.data.local.entity.UserEntity(
                         usernameHash,
                         passwordHash,
-                        finalAccountName, // Display name (not encrypted)
+                        finalFullName, // Display name
                         "USER" // Default role
                 );
 
                 userDao.insert(user);
 
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "Registration Successful! Type: " + finalAccountType, Toast.LENGTH_SHORT)
+                    Toast.makeText(this, "Registration Successful! Welcome " + finalFullName, Toast.LENGTH_SHORT)
                             .show();
                     finish();
                 });

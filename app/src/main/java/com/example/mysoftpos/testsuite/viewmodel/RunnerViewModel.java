@@ -41,8 +41,8 @@ public class RunnerViewModel extends AndroidViewModel {
                         .getInstance(getApplication());
 
                 TransactionContext ctx = new TransactionContext();
-                // Fixed Amount per User Request: 3456789 -> 000345678900
-                ctx.amount4 = TransactionContext.formatAmount12("3456789");
+                // Fixed Amount per User Request: 12345 -> 000000012345
+                ctx.amount4 = TransactionContext.formatAmount12("12345");
                 ctx.stan11 = config.getAndIncrementTrace();
                 ctx.generateDateTime();
                 ctx.rrn37 = TransactionContext.calculateRrn(config.getServerId(), ctx.stan11);

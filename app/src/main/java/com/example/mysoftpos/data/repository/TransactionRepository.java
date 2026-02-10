@@ -10,6 +10,10 @@ public interface TransactionRepository {
     // DB Operations
     LiveData<List<TransactionEntity>> getAllTransactions();
 
+    LiveData<com.example.mysoftpos.data.local.entity.TransactionWithDetails> getTransactionWithDetailsById(long id);
+
+    com.example.mysoftpos.data.local.entity.TransactionWithDetails getTransactionWithDetailsByIdSync(long id);
+
     void saveTransaction(
             String traceNumber, String amount, String status, String reqHex, String respHex, long timestamp,
             String merchantCode, String merchantName,

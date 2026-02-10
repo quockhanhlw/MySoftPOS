@@ -1,14 +1,23 @@
 package com.example.mysoftpos.ui.settings;
 
 import com.example.mysoftpos.R;
+import com.example.mysoftpos.utils.LocaleHelper;
+import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.CheckBox;
+import android.widget.TextView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+
 public class SettingsActivity extends AppCompatActivity {
+
+    // Admin Views
     private TextInputEditText etServerIp;
     private TextInputEditText etPort;
     private TextInputEditText etTimeout;
@@ -17,77 +26,211 @@ public class SettingsActivity extends AppCompatActivity {
     private CheckBox cbEncryptPin;
     private MaterialButton btnSaveConfig;
     private MaterialButton btnPingTest;
-    private SharedPreferences sharedPreferences;
-    private static final String PREFS_NAME = "softpos_config";
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.onAttach(newBase));
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_settings);
+
+        String userRole = getIntent().getStringExtra("USER_ROLE");
+        boolean isAdmin = "ADMIN".equals(userRole);
+
+        if (isAdmin) {
+            setContentView(R.layout.activity_settings);
+            initAdminUI();
+        } else {
+            setContentView(R.layout.activity_settings_user);
+            initUserUI();
+        }
+    }
+
+    private void initAdminUI() {
+        View btnBack = findViewById(R.id.btnBack);
+        if (btnBack != null)
+            btnBack.setOnClickListener(v -> finish());
+
         etServerIp = findViewById(R.id.etServerIp);
         etPort = findViewById(R.id.etPort);
         etTimeout = findViewById(R.id.etTimeout);
         etTerminalId = findViewById(R.id.etTerminalId);
         etMerchantId = findViewById(R.id.etMerchantId);
         cbEncryptPin = findViewById(R.id.cbEncryptPin);
+
         btnSaveConfig = findViewById(R.id.btnSaveConfig);
         btnPingTest = findViewById(R.id.btnPingTest);
-        sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        loadConfiguration();
-        btnSaveConfig.setOnClickListener(v -> saveConfiguration());
-        btnPingTest.setOnClickListener(v -> performPingTest());
+
+        loadAdminConfiguration();
+
+        if (btnSaveConfig != null)
+            btnSaveConfig.setOnClickListener(v -> saveAdminConfiguration());
+        if (btnPingTest != null)
+            btnPingTest.setOnClickListener(v -> performPingTest());
+
+        // Initialize Common User Settings (now present in Admin layout too)
+        initCommonUI();
     }
-    private void loadConfiguration() {
-        etServerIp.setText(sharedPreferences.getString("server_ip", ""));
-        etPort.setText(String.valueOf(sharedPreferences.getInt("server_port", 8888))); // Changed to getInt
-        etTimeout.setText(sharedPreferences.getString("timeout", "30000"));
-        etTerminalId.setText(sharedPreferences.getString("terminal_id", ""));
-        etMerchantId.setText(sharedPreferences.getString("merchant_id", ""));
-        cbEncryptPin.setChecked(sharedPreferences.getBoolean("encrypt_pin", true));
+
+    private void initUserUI() {
+        // Find Views from activity_settings_user.xml
+        View btnBack = findViewById(R.id.btnBack);
+        if (btnBack != null)
+            btnBack.setOnClickListener(v -> finish());
+
+        initCommonUI();
     }
-    private void saveConfiguration() {
+
+    private void initCommonUI() {
+        LinearLayout btnChangeWallpaper = findViewById(R.id.btnChangeWallpaper);
+        LinearLayout btnChangeLanguage = findViewById(R.id.btnChangeLanguage);
+        LinearLayout btnChangePassword = findViewById(R.id.btnChangePassword);
+        MaterialButton btnLogout = findViewById(R.id.btnLogout);
+        TextView tvCurrentLanguage = findViewById(R.id.tvCurrentLanguage);
+
+        // Update Language Text
+        if (tvCurrentLanguage != null) {
+            String currentLang = LocaleHelper.getLanguage(this);
+            tvCurrentLanguage.setText("vi".equals(currentLang) ? "Tiếng Việt" : "English");
+        }
+
+        // Wallpaper Logic
+        if (btnChangeWallpaper != null) {
+            btnChangeWallpaper.setOnClickListener(v -> {
+                com.example.mysoftpos.utils.NotificationHelper.showNotification(this, "Wallpaper Feature Coming Soon!",
+                        R.drawable.ic_settings);
+            });
+        }
+
+        // Language Logic
+        if (btnChangeLanguage != null) {
+            btnChangeLanguage.setOnClickListener(v -> {
+                String current = LocaleHelper.getLanguage(this);
+                String newLang = "vi".equals(current) ? "en" : "vi";
+
+                LocaleHelper.setLocale(this, newLang);
+
+                // Restart App to apply changes
+                Intent intent = new Intent(this, com.example.mysoftpos.ui.dashboard.MainDashboardActivity.class);
+                // Pass back the user info so they don't have to login again if possible, or
+                // force logout.
+                // For now, let's just restart Dashboard with same user if we can, or just
+                // settings.
+                // If we restart Dashboard, we need user role.
+                String userRole = getIntent().getStringExtra("USER_ROLE");
+                if (userRole != null)
+                    intent.putExtra("USER_ROLE", userRole);
+                String username = getIntent().getStringExtra("USERNAME"); // Assuming passed
+                if (username != null)
+                    intent.putExtra("USERNAME", username);
+
+                intent.addFlags(
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK
+                                | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                finish();
+            });
+        }
+
+        // Password Logic
+        if (btnChangePassword != null) {
+            btnChangePassword.setOnClickListener(v -> {
+                // Show Custom Notification as requested
+                com.example.mysoftpos.utils.NotificationHelper.showNotification(this,
+                        "Change Password Dialog would appear here", R.drawable.ic_key);
+            });
+        }
+
+        // Logout Logic
+        if (btnLogout != null) {
+            btnLogout.setOnClickListener(v -> {
+                Intent intent = new Intent(this, com.example.mysoftpos.ui.auth.WelcomeActivity.class);
+                intent.addFlags(
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK
+                                | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                finish();
+            });
+        }
+    }
+
+    private void loadAdminConfiguration() {
+        com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
+                .getInstance(this);
+
+        if (etServerIp != null)
+            etServerIp.setText(config.getServerIp());
+        if (etPort != null)
+            etPort.setText(String.valueOf(config.getServerPort()));
+        if (etTimeout != null)
+            etTimeout.setText(String.valueOf(config.getTimeout()));
+        if (etTerminalId != null)
+            etTerminalId.setText(config.getTerminalId());
+        if (etMerchantId != null)
+            etMerchantId.setText(config.getMerchantId());
+        if (cbEncryptPin != null)
+            cbEncryptPin.setChecked(config.isPinEncryptionEnabled());
+    }
+
+    private void saveAdminConfiguration() {
         String serverIp = etServerIp.getText().toString().trim();
         String portStr = etPort.getText().toString().trim();
-        String timeout = etTimeout.getText().toString().trim();
+        String timeoutStr = etTimeout.getText().toString().trim();
         String terminalId = etTerminalId.getText().toString().trim();
         String merchantId = etMerchantId.getText().toString().trim();
+
         if (serverIp.isEmpty()) {
-            etServerIp.setError("Vui long nhap IP Server");
+            etServerIp.setError("Please enter Server IP");
             return;
         }
         if (portStr.isEmpty()) {
-            etPort.setError("Vui long nhap Port");
+            etPort.setError("Please enter Port");
             return;
         }
-        int port = Integer.parseInt(portStr);
-
         if (terminalId.isEmpty()) {
-            etTerminalId.setError("Vui long nhap Terminal ID");
+            etTerminalId.setError("Please enter Terminal ID");
             return;
         }
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString("server_ip", serverIp);
-        editor.putInt("server_port", port); // Changed to putInt and "server_port"
-        editor.putString("timeout", timeout);
-        editor.putString("terminal_id", terminalId);
-        editor.putString("merchant_id", merchantId);
-        editor.putBoolean("encrypt_pin", cbEncryptPin.isChecked());
-        editor.apply();
-        Toast.makeText(this, "Da luu cau hinh thanh cong!", Toast.LENGTH_SHORT).show();
+
+        int port;
+        try {
+            port = Integer.parseInt(portStr);
+        } catch (NumberFormatException e) {
+            etPort.setError("Invalid Port");
+            return;
+        }
+
+        int timeout;
+        try {
+            timeout = Integer.parseInt(timeoutStr);
+        } catch (NumberFormatException e) {
+            timeout = 30000;
+        }
+
+        com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
+                .getInstance(this);
+
+        config.setServerIp(serverIp);
+        config.setServerPort(port);
+        config.setTimeout(timeout);
+        config.setTerminalId(terminalId);
+        config.setMerchantId(merchantId);
+        config.setPinEncryptionEnabled(cbEncryptPin.isChecked());
+
+        Toast.makeText(this, "Configuration Saved!", Toast.LENGTH_SHORT).show();
         finish();
     }
+
     private void performPingTest() {
-        String serverIp = etServerIp.getText().toString().trim();
-        String port = etPort.getText().toString().trim();
-        if (serverIp.isEmpty() || port.isEmpty()) {
-            Toast.makeText(this, "Vui long nhap day du thong tin ket noi", Toast.LENGTH_SHORT).show();
-            return;
+        if (etServerIp != null) {
+            String serverIp = etServerIp.getText().toString().trim();
+            if (serverIp.isEmpty()) {
+                Toast.makeText(this, "Please enter Server IP", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Toast.makeText(this, "Ping to " + serverIp + "...", Toast.LENGTH_LONG).show();
         }
-        Toast.makeText(this, "Dang thuc hien Ping Test...", Toast.LENGTH_LONG).show();
     }
 }
-
-
-
-
-
-

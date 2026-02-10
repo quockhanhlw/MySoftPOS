@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient_light">
+
+    <!-- Content Container -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="16dp"
+            android:background="#FFFFFFFF"
+            android:elevation="4dp">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_back"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Back"
+                app:tint="@color/neo_primary_dark"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Transaction Details"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/neo_primary_dark"
+                android:layout_marginStart="16dp"/>
+        </LinearLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Amount Card -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp"
+                    android:layout_marginBottom="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="24dp"
+                        android:gravity="center">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Amount"
+                            android:textSize="14sp"
+                            android:textColor="#757575"/>
+
+                        <TextView
+                            android:id="@+id/tvDetailAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0 VND"
+                            android:textSize="32sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/neo_primary_dark"
+                            android:layout_marginTop="8dp"/>
+
+                        <TextView
+                            android:id="@+id/tvDetailStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="APPROVED"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="#4CAF50"
+                            android:background="@drawable/bg_status_pill_success"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="4dp"
+                            android:layout_marginTop="16dp"/>
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- Details List -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <include layout="@layout/item_detail_row" android:id="@+id/rowDate"/>
+                        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEEEEE"/>
+                        
+                        <include layout="@layout/item_detail_row" android:id="@+id/rowCard"/>
+                        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEEEEE"/>
+
+                        <include layout="@layout/item_detail_row" android:id="@+id/rowBank"/>
+                        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEEEEE"/>
+
+                        <include layout="@layout/item_detail_row" android:id="@+id/rowMid"/>
+                        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEEEEE"/>
+
+                        <include layout="@layout/item_detail_row" android:id="@+id/rowTid"/>
+                        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEEEEE"/>
+
+                        <include layout="@layout/item_detail_row" android:id="@+id/rowTrace"/>
+                        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEEEEE"/>
+
+                        <include layout="@layout/item_detail_row" android:id="@+id/rowRrn"/>
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- Footer Action -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:background="#FFFFFFFF"
+            android:elevation="16dp">
+
+            <Button
+                android:id="@+id/btnVoid"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Cancel Transaction"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:cornerRadius="28dp"
+                android:backgroundTint="#F44336"
+                android:textColor="#FFFFFF"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Overlay Loading -->
+    <FrameLayout
+        android:id="@+id/layoutLoading"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone">
+        
+        <ProgressBar
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/neo_primary"/>
+    </FrameLayout>
+
+</FrameLayout>

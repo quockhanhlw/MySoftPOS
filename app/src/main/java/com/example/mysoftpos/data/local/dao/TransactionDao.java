@@ -42,4 +42,11 @@ public interface TransactionDao {
     // Kept for direct ID access if needed
     @Query("SELECT * FROM transactions WHERE user_id = :userId ORDER BY timestamp DESC")
     androidx.lifecycle.LiveData<List<TransactionEntity>> getTransactionsByUserIdLive(long userId);
+
+    @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")
+    androidx.lifecycle.LiveData<com.example.mysoftpos.data.local.entity.TransactionWithDetails> getTransactionWithDetailsById(
+            long id);
+
+    @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")
+    com.example.mysoftpos.data.local.entity.TransactionWithDetails getTransactionWithDetailsByIdSync(long id);
 }

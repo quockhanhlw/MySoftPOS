@@ -35,7 +35,9 @@ import com.google.android.material.tabs.TabLayout;
  * Tab 0: Manual Entry (PAN + Expiry) -> DE 22 = 012
  * Tab 1: Mock Track 2 -> DE 22 = 022
  */
-public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapter.ReaderCallback {
+import com.example.mysoftpos.ui.BaseActivity;
+
+public class PurchaseCardActivity extends BaseActivity implements NfcAdapter.ReaderCallback {
 
     private NfcAdapter nfcAdapter;
     private PurchaseViewModel viewModel;
@@ -156,7 +158,7 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
             String expiry = etExpiry.getText().toString();
 
             if (pan.length() < 13 || expiry.length() != 4) {
-                Toast.makeText(this, "Invalid PAN or Expiry", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.err_invalid_pan), Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -178,7 +180,7 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
             }
 
             CardInputData mockData = new CardInputData(mockPan, mockExp, "022", trk2);
-            Toast.makeText(this, "Using Mock Track 2...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.msg_using_mock_track2), Toast.LENGTH_SHORT).show();
             processTransaction(mockData);
         });
     }
@@ -283,7 +285,7 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
 
         CardInputData mockData = new CardInputData(mockPan, mockExp, "022", trk2);
         runOnUiThread(() -> {
-            Toast.makeText(this, "Card Detected", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.msg_card_detected), Toast.LENGTH_SHORT).show();
             processTransaction(mockData);
         });
     }
@@ -291,7 +293,7 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
     private void processTransaction(CardInputData card) {
         String username = getIntent().getStringExtra("USERNAME");
         if (username == null)
-            username = "Guest";
+            username = getString(R.string.guest_user);
         viewModel.processTransaction(card, amount, currencyCode, txnType, username);
     }
 
@@ -311,10 +313,27 @@ public class PurchaseCardActivity extends AppCompatActivity implements NfcAdapte
         intent.putExtra("AMOUNT", amount);
         intent.putExtra("CURRENCY", currency);
 
-        // New Extras for Receipt
-        intent.putExtra("MASKED_PAN", etPan.getText().toString().length() > 4
-                ? "**** " + etPan.getText().toString().substring(etPan.getText().length() - 4)
-                : "**** 0000"); // Basic mask for manual, Mock will override if we pass it
+        // Calculate Masked PAN correctly based on Mode
+        String maskedPan = "**** 0000";
+        if (currentMode == 0) { // Manual
+            String rawPan = etPan.getText().toString();
+            if (rawPan.length() > 4) {
+                maskedPan = "**** " + rawPan.substring(rawPan.length() - 4);
+            }
+        } else { // Mock/NFC
+            String rawPan = configManager.getMockPan(); // Default mock
+            // Try to extract from Track 2 if available and used
+            String trk2 = configManager.getTrack2("022");
+            if (trk2 != null && trk2.contains("=")) {
+                String[] parts = trk2.split("=");
+                rawPan = parts[0];
+            }
+            if (rawPan != null && rawPan.length() > 4) {
+                maskedPan = "**** " + rawPan.substring(rawPan.length() - 4);
+            }
+        }
+
+        intent.putExtra("MASKED_PAN", maskedPan);
 
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm:ss dd/MM/yyyy", Locale.getDefault());
         intent.putExtra("TXN_DATE", sdf.format(new java.util.Date()));

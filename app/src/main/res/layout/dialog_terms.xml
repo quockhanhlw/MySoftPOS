@@ -17,7 +17,7 @@
                 android:id="@+id/tvDialogTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Điều khoản"
+                android:text="@string/terms_title"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:textColor="@color/black"

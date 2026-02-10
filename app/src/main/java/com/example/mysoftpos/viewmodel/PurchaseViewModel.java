@@ -1,5 +1,6 @@
 package com.example.mysoftpos.viewmodel;
 
+import com.example.mysoftpos.R;
 import com.example.mysoftpos.utils.logging.ResponseCodeHelper;
 import com.example.mysoftpos.utils.logging.FileLogger;
 
@@ -58,7 +59,7 @@ public class PurchaseViewModel extends BaseViewModel {
 
                 TransactionValidator.ValidationResult v = TransactionValidator.validate(card, amount, isPurchase);
                 if (v != TransactionValidator.ValidationResult.VALID) {
-                    postError("Validation Failed: " + v);
+                    postError(getApplication().getString(R.string.err_validation_failed, v.toString()));
                     return;
                 }
 
@@ -248,19 +249,19 @@ public class PurchaseViewModel extends BaseViewModel {
 
                 entity.status = "TIMEOUT_REVERSED";
                 repository.updateTransactionStatus(ctx.stan11, entity.status);
-                postError("Giao dịch lỗi Time Out (Đã gửi hủy)");
+                postError(getApplication().getString(R.string.err_timeout_reversed));
 
             } catch (SocketTimeoutException e) {
                 entity.status = "TIMEOUT_REVERSAL_NO_RSP";
                 repository.updateTransactionStatus(ctx.stan11, entity.status);
-                postError("Giao dịch lỗi Time Out");
+                postError(getApplication().getString(R.string.err_timeout_generic));
             }
 
         } catch (Exception e) {
             Log.e(TAG, "Reversal Failed", e);
             entity.status = "TIMEOUT_REVERSAL_FAILED";
             repository.updateTransactionStatus(ctx.stan11, entity.status);
-            postError("Giao dịch lỗi Time Out");
+            postError(getApplication().getString(R.string.err_timeout_generic));
         }
     }
 }

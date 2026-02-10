@@ -15,7 +15,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import com.example.mysoftpos.iso8583.TxnType;
 
-public class TransactionResultActivity extends AppCompatActivity {
+import com.example.mysoftpos.ui.BaseActivity;
+
+public class TransactionResultActivity extends BaseActivity {
 
     public static final String EXTRA_RESULT_TYPE = "RESULT_TYPE";
     public static final String EXTRA_MESSAGE = "MESSAGE";
@@ -73,7 +75,7 @@ public class TransactionResultActivity extends AppCompatActivity {
         tvType.setText(txnTypeStr != null ? txnTypeStr : "Transaction");
 
         // Format Amount
-        if (amount != null) {
+        if (amount != null && !"OVERFLOW".equals(amount)) {
             try {
                 long val = Long.parseLong(amount);
                 java.text.NumberFormat nf = java.text.NumberFormat
@@ -81,14 +83,12 @@ public class TransactionResultActivity extends AppCompatActivity {
                 if ("USD".equals(currency)) {
                     nf = java.text.NumberFormat.getCurrencyInstance(java.util.Locale.US);
                 }
-                tvAmount.setText(nf.format(val)); // Implicit 100/1000 divisor omitted for simplicity matching previous
-                                                  // logic, or dividing by 1 should be checked
-                // Assuming amount passed is RAW, we might need to decimalize?
-                // Previous logic in PurchaseCardActivity: formatAmount just added commas.
-                // Let's assume standard int display for now unless specific requirement.
+                tvAmount.setText(nf.format(val));
             } catch (Exception e) {
                 tvAmount.setText(amount);
             }
+        } else if ("OVERFLOW".equals(amount)) {
+            tvAmount.setText("> 10,000,000,000");
         } else {
             tvAmount.setText("---");
         }
@@ -96,30 +96,53 @@ public class TransactionResultActivity extends AppCompatActivity {
         // Stylize based on Result
         if (type == ResultType.SUCCESS) {
             // Checked Green Default
-            tvTitle.setText("Transaction Approved");
-            tvSubtitle.setText("Payment completed successfully");
-            tvStatus.setText("Approved");
+            tvTitle.setText(R.string.txn_approved);
+            tvSubtitle.setText(R.string.txn_approved_subtitle);
+            tvStatus.setText(R.string.txn_approved_status);
             tvStatus.setTextColor(Color.parseColor("#22C55E")); // Green
 
             ivIcon.setImageResource(R.drawable.ic_check);
             // layoutIcon background is already green circle
             bgHeader.setBackgroundColor(Color.parseColor("#D1FAE5")); // Light Green
 
+            // Special Label for Balance Inquiry
+            if ("BALANCE_INQUIRY".equals(txnTypeStr)) {
+                TextView tvAmountLabel = findViewById(R.id.tvAmountLabel);
+                String balanceType = getIntent().getStringExtra("BALANCE_TYPE");
+                if (tvAmountLabel != null) {
+                    if ("Ledger".equals(balanceType)) {
+                        tvAmountLabel.setText("Ledger Balance"); // Or localized string if avail
+                    } else {
+                        tvAmountLabel.setText(R.string.txn_balance_label);
+                    }
+                }
+            }
+
         } else {
             // Failure Red
-            tvTitle.setText("Transaction Failed");
-            tvSubtitle.setText(getIntent().getStringExtra(EXTRA_MESSAGE));
-            tvStatus.setText("Failed");
-            tvStatus.setTextColor(Color.parseColor("#EF4444")); // Red
+            if (tvTitle != null) {
+                tvTitle.setText(R.string.txn_failed_title);
+                tvTitle.setTextColor(Color.parseColor("#EF4444"));
+            }
+            if (tvSubtitle != null)
+                tvSubtitle.setText(getIntent().getStringExtra(EXTRA_MESSAGE));
+            if (tvStatus != null) {
+                tvStatus.setText(R.string.txn_failed_status);
+                tvStatus.setTextColor(Color.parseColor("#EF4444"));
+            }
 
-            ivIcon.setImageResource(R.drawable.ic_close); // Ensure icon exists or use fallback
-            // Update Icon Background to Red
-            android.graphics.drawable.GradientDrawable bgShape = new android.graphics.drawable.GradientDrawable();
-            bgShape.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-            bgShape.setColor(Color.parseColor("#EF4444"));
-            layoutIcon.setBackground(bgShape);
+            if (ivIcon != null)
+                ivIcon.setImageResource(R.drawable.ic_close);
 
-            bgHeader.setBackgroundColor(Color.parseColor("#FEE2E2")); // Light Red
+            if (layoutIcon != null) {
+                android.graphics.drawable.GradientDrawable bgShape = new android.graphics.drawable.GradientDrawable();
+                bgShape.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+                bgShape.setColor(Color.parseColor("#EF4444"));
+                layoutIcon.setBackground(bgShape);
+            }
+
+            if (bgHeader != null)
+                bgHeader.setBackgroundColor(Color.parseColor("#FEE2E2")); // Light Red
         }
 
         // Actions
@@ -131,11 +154,13 @@ public class TransactionResultActivity extends AppCompatActivity {
         });
 
         btnPrint.setOnClickListener(v -> {
-            android.widget.Toast.makeText(this, "Printing Receipt...", android.widget.Toast.LENGTH_SHORT).show();
+            android.widget.Toast
+                    .makeText(this, getString(R.string.msg_printing_receipt), android.widget.Toast.LENGTH_SHORT).show();
         });
 
         btnShare.setOnClickListener(v -> {
-            android.widget.Toast.makeText(this, "Sharing Receipt...", android.widget.Toast.LENGTH_SHORT).show();
+            android.widget.Toast
+                    .makeText(this, getString(R.string.msg_sharing_receipt), android.widget.Toast.LENGTH_SHORT).show();
         });
     }
 

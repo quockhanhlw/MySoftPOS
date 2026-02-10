@@ -182,7 +182,7 @@ public class Iso8583Builder {
                 : (originalCtx.txnType == TxnType.BALANCE_INQUIRY ? "6011" : "5411"));
 
         // DE 32: Acquirer ID (from 0200)
-        String acquirerId = originalCtx.acquirerId32 != null ? originalCtx.acquirerId32 : "970406";
+        String acquirerId = originalCtx.acquirerId32 != null ? originalCtx.acquirerId32 : "970488";
         m.setField(IsoField.ACQUIRER_ID_32, acquirerId);
 
         // DE 37: RRN (from 0200)
