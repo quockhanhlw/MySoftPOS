@@ -51,4 +51,14 @@ public class TestScenario implements Serializable {
     public String getPosEntryMode() {
         return getField(22);
     }
+
+    private String txnType;
+
+    public String getTxnType() {
+        return txnType;
+    }
+
+    public void setTxnType(String txnType) {
+        this.txnType = txnType;
+    }
 }

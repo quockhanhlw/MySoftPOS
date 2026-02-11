@@ -7,23 +7,22 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.mysoftpos.R;
+import com.example.mysoftpos.domain.service.TransactionExecutor;
+import com.example.mysoftpos.domain.service.TransactionResult;
 import com.example.mysoftpos.domain.model.CardInputData;
 import com.example.mysoftpos.iso8583.TransactionContext;
-import com.example.mysoftpos.iso8583.builder.Iso8583Builder;
-import com.example.mysoftpos.iso8583.message.IsoMessage;
-import com.example.mysoftpos.iso8583.util.StandardIsoPacker;
 import com.example.mysoftpos.testsuite.model.TestScenario;
-import com.example.mysoftpos.utils.config.ConfigManager;
+import com.example.mysoftpos.utils.PanUtils;
+import com.example.mysoftpos.utils.logging.ResponseCodeHelper;
 
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Runs multiple test scenarios concurrently using a thread pool.
- * Each scenario runs in its own thread. Results are logged to the UI.
+ * Each scenario runs in its own thread via TransactionExecutor.
  */
 public class MultiThreadRunnerActivity extends AppCompatActivity {
 
@@ -31,6 +30,7 @@ public class MultiThreadRunnerActivity extends AppCompatActivity {
     private TextView tvStatus;
     private ScrollView scrollLog;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private TransactionExecutor transactionExecutor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,11 +41,15 @@ public class MultiThreadRunnerActivity extends AppCompatActivity {
         tvStatus = findViewById(R.id.tvStatus);
         scrollLog = findViewById(R.id.scrollLog);
 
+        transactionExecutor = com.example.mysoftpos.di.ServiceLocator.getInstance(getApplicationContext())
+                .getTransactionExecutor();
+
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
         @SuppressWarnings("unchecked")
-        ArrayList<TestScenario> scenarios = (ArrayList<TestScenario>) getIntent().getSerializableExtra("SCENARIOS");
-        String txnType = getIntent().getStringExtra("TXN_TYPE");
+        ArrayList<TestScenario> scenarios = (ArrayList<TestScenario>) getIntent()
+                .getSerializableExtra(com.example.mysoftpos.utils.IntentKeys.SCENARIOS);
+        String txnType = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE);
 
         if (scenarios == null || scenarios.isEmpty()) {
             appendLog("No scenarios selected.");
@@ -69,26 +73,39 @@ public class MultiThreadRunnerActivity extends AppCompatActivity {
             int idx = i + 1;
 
             pool.execute(() -> {
-                String tag = "[T" + idx + " " + scenario.getField(22) + "]";
+                String typeToRun = scenario.getTxnType() != null ? scenario.getTxnType() : txnType;
+                String tag = "[T" + idx + " " + typeToRun + " " + scenario.getField(22) + "]";
                 appendLog(tag + " Starting...\n");
 
                 try {
-                    String result = runSingleTransaction(scenario, txnType, tag);
-                    if (result.contains("PASS")) {
+                    TransactionResult result = runSingleTransaction(scenario, typeToRun, tag);
+
+                    appendLog(tag + " Packed Hex (" + result.reqHex.length() / 2 + " bytes):\n" + result.reqHex + "\n");
+                    appendLog(tag + " Response Hex:\n" + result.respHex + "\n");
+
+                    String reason = ResponseCodeHelper.getMessage(result.rc);
+                    if (result.approved) {
                         passed.incrementAndGet();
+                        appendLog(tag + " *** STATUS: PASS ***\n");
+                        appendLog(tag + " RC: " + result.rc + " (" + reason + ")\n");
                     } else {
                         failed.incrementAndGet();
+                        appendLog(tag + " *** STATUS: FAIL ***\n");
+                        appendLog(tag + " RC: " + result.rc + " - Reason: " + reason + "\n");
                     }
+                } catch (java.net.SocketTimeoutException e) {
+                    failed.incrementAndGet();
+                    appendLog(tag + " *** STATUS: FAIL ***\n");
+                    appendLog(tag + " Error: Timeout waiting for response.\n");
                 } catch (Exception e) {
                     failed.incrementAndGet();
-                    appendLog(tag + " ERROR: " + e.getMessage() + "\n");
+                    appendLog(tag + " *** STATUS: FAIL ***\n");
+                    appendLog(tag + " Error: " + e.getMessage() + "\n");
                 }
 
                 int done = completed.incrementAndGet();
-                mainHandler.post(() -> {
-                    tvStatus.setText("Completed " + done + "/" + threadCount
-                            + " (Pass: " + passed.get() + " / Fail: " + failed.get() + ")");
-                });
+                mainHandler.post(() -> tvStatus.setText("Completed " + done + "/" + threadCount
+                        + " (Pass: " + passed.get() + " / Fail: " + failed.get() + ")"));
 
                 if (done == threadCount) {
                     appendLog("\n=== ALL TESTS COMPLETE ===\n");
@@ -99,125 +116,48 @@ public class MultiThreadRunnerActivity extends AppCompatActivity {
         }
     }
 
-    private String runSingleTransaction(TestScenario scenario, String txnType, String tag) throws Exception {
-        ConfigManager config = ConfigManager.getInstance(getApplicationContext());
+    private TransactionResult runSingleTransaction(TestScenario scenario, String txnType, String tag)
+            throws Exception {
+        TransactionExecutor.LogCallback logger = msg -> appendLog(tag + " " + msg + "\n");
 
-        // Build Context
-        TransactionContext ctx = new TransactionContext();
-        ctx.amount4 = TransactionContext.formatAmount12("12345");
-        ctx.stan11 = config.getAndIncrementTrace();
-        ctx.generateDateTime();
-        ctx.rrn37 = TransactionContext.calculateRrn(config.getServerId(), ctx.stan11);
+        // 1. Build Context
+        TransactionContext ctx = TransactionExecutor.buildContext(getApplicationContext(), txnType);
 
-        if ("BALANCE".equals(txnType)) {
-            ctx.processingCode3 = "300000";
-        } else {
-            ctx.processingCode3 = "000000";
-        }
-        ctx.posCondition25 = config.getPosConditionCode();
-        ctx.mcc18 = config.getMcc18();
-        ctx.acquirerId32 = config.getAcquirerId32();
-        ctx.terminalId41 = config.getTerminalId();
-        ctx.merchantId42 = config.getMerchantId();
-        ctx.merchantNameLocation43 = config.getMerchantName();
-        ctx.currency49 = config.getCurrencyCode49();
-        ctx.ip = config.getServerIp();
-        ctx.port = config.getServerPort();
-
-        // Card Data
+        // 2. Prepare Card
         String de22 = scenario.getField(22);
-        String pan = scenario.getField(2);
-        String expiry = scenario.getField(14);
-        String track2 = scenario.getField(35);
-        String pinData = scenario.getUserPin();
+        CardInputData card = TransactionExecutor.prepareCard(
+                getApplicationContext(), de22,
+                scenario.getField(2), scenario.getField(14),
+                scenario.getField(35), scenario.getUserPin(),
+                ctx, logger);
 
-        if ((pan == null || pan.isEmpty()) && track2 != null) {
-            String[] parts = track2.split("[=D]");
-            if (parts.length > 0)
-                pan = parts[0];
-            if (parts.length > 1 && parts[1].length() >= 4) {
-                expiry = parts[1].substring(0, 4);
-            }
-        }
-        if (pan == null)
-            pan = config.getMockPan();
+        // 3. Execute
+        TransactionResult result = transactionExecutor.execute(
+                getApplicationContext(), ctx, card, txnType, logger, tag);
 
-        CardInputData card = new CardInputData(pan, expiry, de22, track2);
-
-        // PIN Block
-        if (pinData != null && !pinData.isEmpty() && pan != null) {
-            try {
-                String clearBlock = com.example.mysoftpos.iso8583.util.PinBlockGenerator
-                        .calculateClearBlock(pinData, pan);
-                ctx.pinBlock52 = clearBlock;
-                ctx.encryptPin = true;
-                card.setPinBlock(clearBlock);
-                appendLog(tag + " PIN Block: " + clearBlock + "\n");
-            } catch (Exception e) {
-                appendLog(tag + " PIN Error: " + e.getMessage() + "\n");
-            }
-        }
-
-        // Build Message
-        IsoMessage msg;
-        if ("BALANCE".equals(txnType)) {
-            ctx.amount4 = "000000000000";
-            msg = Iso8583Builder.buildBalanceMsg(ctx, card);
-        } else {
-            msg = Iso8583Builder.buildPurchaseMsg(ctx, card);
-        }
-
-        appendLog(tag + " Built " + msg.getMti() + " | STAN=" + ctx.stan11 + "\n");
-
-        // Pack & Send
-        byte[] packed = StandardIsoPacker.pack(msg);
-        com.example.mysoftpos.utils.logging.FileLogger.logTestSuitePacket(getApplicationContext(), "SEND " + tag,
-                packed);
-
-        appendLog(tag + " Sending to " + ctx.ip + ":" + ctx.port + "...\n");
-
-        com.example.mysoftpos.data.remote.IsoNetworkClient client = new com.example.mysoftpos.data.remote.IsoNetworkClient(
-                ctx.ip, ctx.port);
-        byte[] responseBytes = client.sendAndReceive(packed);
-
-        com.example.mysoftpos.utils.logging.FileLogger.logTestSuitePacket(getApplicationContext(), "RECV " + tag,
-                responseBytes);
-
-        // Unpack & check RC
-        IsoMessage respMsg = new StandardIsoPacker().unpack(responseBytes);
-        String rc = respMsg.getField(39);
-
-        String result;
-        if ("00".equals(rc)) {
-            result = "PASS";
-            appendLog(tag + " ✅ PASS (RC: 00 - Approved)\n");
-        } else {
-            result = "FAIL";
-            appendLog(tag + " ❌ FAIL (RC: " + rc + ")\n");
-        }
-
-        // Save to DB
+        // 4. Save to DB
         try {
-            String maskedPan = pan != null && pan.length() >= 10
-                    ? pan.substring(0, 6) + "******" + pan.substring(pan.length() - 4)
-                    : pan;
-            String bin = (pan != null && pan.length() >= 6) ? pan.substring(0, 6) : "";
-            String last4 = (pan != null && pan.length() >= 4) ? pan.substring(pan.length() - 4) : "";
+            String pan = card.getPan();
+            com.example.mysoftpos.domain.model.TransactionRecord record = new com.example.mysoftpos.domain.model.TransactionRecord.Builder()
+                    .setTraceNumber(ctx.stan11)
+                    .setAmount(ctx.amount4)
+                    .setStatus(result.status)
+                    .setRequestHex(result.reqHex)
+                    .setResponseHex(result.respHex)
+                    .setTimestamp(System.currentTimeMillis())
+                    .setMerchantCode(ctx.merchantId42)
+                    .setMerchantName(ctx.merchantNameLocation43)
+                    .setTerminalCode(ctx.terminalId41)
+                    .setPanMasked(PanUtils.mask(pan))
+                    .setBin(PanUtils.getBin(pan))
+                    .setLast4(PanUtils.getLast4(pan))
+                    .setScheme(PanUtils.detectScheme(pan))
+                    .setUsername("TEST_MULTI")
+                    .build();
 
-            new com.example.mysoftpos.data.local.DatabaseManager(getApplicationContext())
-                    .saveTransaction(
-                            ctx.stan11,
-                            ctx.amount4,
-                            "00".equals(rc) ? "APPROVED" : "DECLINED",
-                            StandardIsoPacker.bytesToHex(packed),
-                            StandardIsoPacker.bytesToHex(responseBytes),
-                            System.currentTimeMillis(),
-                            ctx.merchantId42,
-                            ctx.merchantNameLocation43,
-                            ctx.terminalId41,
-                            maskedPan, bin, last4,
-                            "Napas",
-                            "TEST_MULTI");
+            com.example.mysoftpos.di.ServiceLocator.getInstance(getApplicationContext())
+                    .getTransactionRepository()
+                    .saveTransaction(record);
         } catch (Exception e) {
             appendLog(tag + " DB Error: " + e.getMessage() + "\n");
         }

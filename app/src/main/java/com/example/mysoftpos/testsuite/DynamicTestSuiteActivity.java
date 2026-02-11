@@ -45,7 +45,7 @@ public class DynamicTestSuiteActivity extends AppCompatActivity {
     private void openSuite(TestSuiteEntity suite) {
         Intent intent = new Intent(this, DynamicTestCaseActivity.class);
         intent.putExtra("SUITE_ID", suite.id);
-        intent.putExtra("SUITE_NAME", suite.name);
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.SUITE_NAME, suite.name);
         startActivity(intent);
     }
 
@@ -74,8 +74,3 @@ public class DynamicTestSuiteActivity extends AppCompatActivity {
         builder.show();
     }
 }
-
-
-
-
-

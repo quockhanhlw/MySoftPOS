@@ -36,7 +36,7 @@ public class SettingsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        String userRole = getIntent().getStringExtra("USER_ROLE");
+        String userRole = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USER_ROLE);
         boolean isAdmin = "ADMIN".equals(userRole);
 
         if (isAdmin) {
@@ -119,13 +119,17 @@ public class SettingsActivity extends AppCompatActivity {
                 // For now, let's just restart Dashboard with same user if we can, or just
                 // settings.
                 // If we restart Dashboard, we need user role.
-                String userRole = getIntent().getStringExtra("USER_ROLE");
-                if (userRole != null)
-                    intent.putExtra("USER_ROLE", userRole);
-                String username = getIntent().getStringExtra("USERNAME"); // Assuming passed
-                if (username != null)
-                    intent.putExtra("USERNAME", username);
+                String userRole = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USER_ROLE);
+                if (userRole == null)
+                    userRole = "USER";
 
+                String username = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME); // Assuming
+                                                                                                               // passed
+                if (username == null)
+                    username = "Guest";
+
+                intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USER_ROLE, userRole);
+                intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, username);
                 intent.addFlags(
                         Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK
                                 | Intent.FLAG_ACTIVITY_CLEAR_TASK);

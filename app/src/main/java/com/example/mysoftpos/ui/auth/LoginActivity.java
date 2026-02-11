@@ -127,9 +127,9 @@ public class LoginActivity extends BaseActivity {
 
     private void navigateToDashboard(String role, String username) {
         Toast.makeText(this, "Login Successful!", Toast.LENGTH_SHORT).show();
-        Intent intent = new Intent(LoginActivity.this, MainDashboardActivity.class);
-        intent.putExtra("USER_ROLE", role);
-        intent.putExtra("USERNAME", username);
+        Intent intent = new Intent(LoginActivity.this, com.example.mysoftpos.ui.dashboard.MainDashboardActivity.class);
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USER_ROLE, role);
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, username);
         startActivity(intent);
         finish();
     }

@@ -38,9 +38,9 @@ public class TestSuiteActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test_suite);
 
-        channel = getIntent().getStringExtra("CHANNEL");
-        txnType = getIntent().getStringExtra("TXN_TYPE");
-        perfMode = getIntent().getStringExtra("PERF_MODE");
+        channel = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.CHANNEL);
+        txnType = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE);
+        perfMode = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.PERF_MODE);
         if (perfMode == null)
             perfMode = "SINGLE";
 
@@ -53,7 +53,7 @@ public class TestSuiteActivity extends AppCompatActivity {
         TextView tvSummaryChannel = findViewById(R.id.tvSummaryChannel);
         TextView tvSummaryType = findViewById(R.id.tvSummaryType);
 
-        String scheme = getIntent().getStringExtra("SCHEME");
+        String scheme = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME);
         if (scheme == null)
             scheme = "Napas";
 
@@ -84,6 +84,7 @@ public class TestSuiteActivity extends AppCompatActivity {
         if (isMulti) {
             layoutSelectAll.setVisibility(View.VISIBLE);
             btnRunAll.setVisibility(View.VISIBLE);
+            btnRunAll.setText("Done");
 
             cbSelectAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 if (isChecked) {
@@ -98,7 +99,7 @@ public class TestSuiteActivity extends AppCompatActivity {
                 }
             });
 
-            btnRunAll.setOnClickListener(v -> launchMultiThreadRunner());
+            btnRunAll.setOnClickListener(v -> returnSelectedScenarios());
         }
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
@@ -110,10 +111,8 @@ public class TestSuiteActivity extends AppCompatActivity {
 
     private void onScenarioClicked(TestScenario scenario) {
         if ("MULTI".equals(perfMode)) {
-            // Multi: configure card/PIN then mark selected
             configureForMultiMode(scenario);
         } else {
-            // Single: original flow
             openRunnerSingle(scenario);
         }
     }
@@ -125,10 +124,37 @@ public class TestSuiteActivity extends AppCompatActivity {
     private void openRunnerSingle(TestScenario scenario) {
         String de22 = scenario.getField(22);
         if ("011".equals(de22) || "012".equals(de22)) {
-            checkPinAndLaunch(scenario);
+            showPanSelectionDialog(scenario, () -> checkPinAndLaunch(scenario));
         } else {
             showCardSelectionDialog(scenario, () -> checkPinAndLaunch(scenario));
         }
+    }
+
+    private void applyPanData(TestScenario scenario, String pan) {
+        scenario.setField(2, pan);
+        scenario.setField(14, "3101");
+        scenario.setField(35, null);
+    }
+
+    private void showPanSelectionDialog(TestScenario scenario, Runnable onDone) {
+        final String[] panOptions = {
+                "9704166606226219923",
+                "9704306669144645257",
+                "9704189991010867647"
+        };
+
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        builder.setTitle("Select Card (PAN)");
+
+        builder.setSingleChoiceItems(panOptions, -1, (dialog, which) -> {
+            String selected = panOptions[which];
+            applyPanData(scenario, selected);
+            dialog.dismiss();
+            onDone.run();
+        });
+
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
+        builder.show();
     }
 
     private void showCardSelectionDialog(TestScenario scenario, Runnable onDone) {
@@ -240,18 +266,18 @@ public class TestSuiteActivity extends AppCompatActivity {
 
     private void launchRunner(TestScenario scenario, String userPin) {
         Intent intent = new Intent(this, RunnerActivity.class);
-        intent.putExtra("DE_22", scenario.getField(22));
-        intent.putExtra("DESC", scenario.getDescription());
-        intent.putExtra("CHANNEL", channel);
-        intent.putExtra("TXN_TYPE", txnType);
-        intent.putExtra("TRACK2", scenario.getField(35));
-        intent.putExtra("PAN", scenario.getField(2));
-        intent.putExtra("EXPIRY", scenario.getField(14));
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.DE22, scenario.getField(22));
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.DESC, scenario.getDescription());
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.CHANNEL, channel);
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE, txnType);
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.TRACK2, scenario.getField(35));
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.PAN, scenario.getField(2));
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.EXPIRY, scenario.getField(14));
 
         if (userPin != null && !userPin.isEmpty()) {
-            intent.putExtra("PIN_BLOCK", userPin);
+            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.PIN_BLOCK, userPin);
         } else {
-            intent.putExtra("PIN_BLOCK", scenario.getField(52));
+            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.PIN_BLOCK, scenario.getField(52));
         }
 
         startActivity(intent);
@@ -263,7 +289,6 @@ public class TestSuiteActivity extends AppCompatActivity {
 
     private void configureForMultiMode(TestScenario scenario) {
         if (scenario.isSelected()) {
-            // Deselect
             scenario.setSelected(false);
             scenario.setUserPin(null);
             adapter.notifyDataSetChanged();
@@ -273,19 +298,14 @@ public class TestSuiteActivity extends AppCompatActivity {
 
         String de22 = scenario.getField(22);
 
-        // For 011/012: Manual entry modes — need card selection
-        // For 021/022: Swipe modes — need card selection
-        // Actually ALL modes (011, 012, 021, 022) need card selection per user request
         Runnable afterCard = () -> {
             if ("011".equals(de22) || "021".equals(de22)) {
-                // Need PIN
                 showPinDialog(scenario, pin -> {
                     scenario.setUserPin(pin);
                     scenario.setSelected(true);
                     adapter.notifyDataSetChanged();
                     updateSelectAllCheckbox();
 
-                    // Continue Select All queue
                     if (selectAllIndex >= 0) {
                         selectAllIndex++;
                         configureNextForSelectAll();
@@ -304,8 +324,7 @@ public class TestSuiteActivity extends AppCompatActivity {
         };
 
         if ("011".equals(de22) || "012".equals(de22)) {
-            // Manual key-in: skip card selection, go to PIN
-            afterCard.run();
+            showPanSelectionDialog(scenario, afterCard);
         } else {
             showCardSelectionDialog(scenario, afterCard);
         }
@@ -349,22 +368,17 @@ public class TestSuiteActivity extends AppCompatActivity {
         });
     }
 
-    private void launchMultiThreadRunner() {
+    private void returnSelectedScenarios() {
         ArrayList<TestScenario> selected = new ArrayList<>();
         for (TestScenario s : displayedScenarios) {
             if (s.isSelected())
                 selected.add(s);
         }
 
-        if (selected.isEmpty()) {
-            Toast.makeText(this, "Please select at least one test case", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        Intent intent = new Intent(this, MultiThreadRunnerActivity.class);
-        intent.putExtra("SCENARIOS", selected);
-        intent.putExtra("CHANNEL", channel);
-        intent.putExtra("TXN_TYPE", txnType);
-        startActivity(intent);
+        Intent data = new Intent();
+        data.putExtra(com.example.mysoftpos.utils.IntentKeys.SELECTED_SCENARIOS, selected);
+        data.putExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE, txnType);
+        setResult(RESULT_OK, data);
+        finish();
     }
 }

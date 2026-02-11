@@ -150,21 +150,23 @@ public class TransactionDetailActivity extends BaseActivity {
                     com.example.mysoftpos.ui.result.TransactionResultActivity.ResultType.TRANSACTION_FAILED);
         }
         intent.putExtra(com.example.mysoftpos.ui.result.TransactionResultActivity.EXTRA_MESSAGE, message);
-        intent.putExtra("TXN_TYPE", "VOID");
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE, "VOID");
 
         // Pass transaction data if available
         if (cachedTxnDetails != null && cachedTxnDetails.transaction != null) {
-            intent.putExtra("AMOUNT", cachedTxnDetails.transaction.amount);
-            intent.putExtra("TXN_ID", cachedTxnDetails.transaction.traceNumber);
+            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.AMOUNT, cachedTxnDetails.transaction.amount);
+            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.TXN_ID, cachedTxnDetails.transaction.traceNumber);
 
             // Date
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm:ss dd/MM/yyyy",
                     java.util.Locale.getDefault());
-            intent.putExtra("TXN_DATE", sdf.format(new java.util.Date(cachedTxnDetails.transaction.timestamp)));
+            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.TXN_DATE,
+                    sdf.format(new java.util.Date(cachedTxnDetails.transaction.timestamp)));
+            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.SUCCESS, true);
 
             // Card
             if (cachedTxnDetails.card != null) {
-                intent.putExtra("MASKED_PAN", cachedTxnDetails.card.panMasked);
+                intent.putExtra(com.example.mysoftpos.utils.IntentKeys.MASKED_PAN, cachedTxnDetails.card.panMasked);
             }
 
             // Currency from requestHex DE 49

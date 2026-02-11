@@ -39,7 +39,7 @@
         android:layout_marginTop="24dp"
         android:clipToPadding="false"
         android:paddingBottom="24dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/btnRunTransaction"
         app:layout_constraintTop_toBottomOf="@id/btnBack">
 
         <LinearLayout
@@ -48,24 +48,24 @@
             android:orientation="vertical"
             android:paddingHorizontal="16dp">
 
-             <!-- Instruction Card -->
+            <!-- Instruction Card -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
                 android:background="@drawable/bg_header_instruction"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:padding="16dp"
-                android:layout_marginBottom="24dp">
+                android:padding="16dp">
 
                 <FrameLayout
                     android:layout_width="48dp"
                     android:layout_height="48dp"
+                    android:alpha="0.8"
                     android:background="@drawable/bg_header_instruction"
-                    android:backgroundTint="#FFFFFF"
-                    android:alpha="0.8">
+                    android:backgroundTint="#FFFFFF">
                     <!-- Tinted for icon container -->
-                     <ImageView
+                    <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_gravity="center"
@@ -97,140 +97,194 @@
             </LinearLayout>
 
 
-            <!-- Purchase -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/btnPurchase"
+            <!-- Purchase Row -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?attr/selectableItemBackground"
-                app:cardBackgroundColor="@android:color/white"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp"
-                app:strokeColor="#EEF2F6"
-                app:strokeWidth="1dp">
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <CheckBox
+                    android:id="@+id/cbPurchase"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
+                    android:layout_marginEnd="4dp"
+                    android:buttonTint="#018786"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:visibility="gone" />
 
-                    <FrameLayout
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:background="@drawable/bg_icon_container_teal">
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btnPurchase"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    app:cardBackgroundColor="@android:color/white"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="#EEF2F6"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="16dp">
+
+                        <FrameLayout
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_icon_container_teal">
+
+                            <ImageView
+                                android:id="@+id/iconPurchase"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_credit_card"
+                                app:tint="@android:color/white" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Purchase"
+                                android:textColor="#0F172A"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Payment transaction test"
+                                android:textColor="#64748B"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+
                         <ImageView
-                            android:id="@+id/iconPurchase"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_credit_card"
-                            app:tint="@android:color/white" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="16dp"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Purchase"
-                            android:textColor="#0F172A"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Payment transaction test"
-                            android:textColor="#64748B"
-                            android:textSize="14sp" />
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_arrow_right"
+                            app:tint="#94A3B8" />
                     </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
 
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_arrow_right"
-                        app:tint="#94A3B8" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Balance Inquiry -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/btnBalance"
+            <!-- Balance Inquiry Row -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?attr/selectableItemBackground"
-                app:cardBackgroundColor="@android:color/white"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp"
-                app:strokeColor="#EEF2F6"
-                app:strokeWidth="1dp">
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <CheckBox
+                    android:id="@+id/cbBalance"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
+                    android:layout_marginEnd="4dp"
+                    android:buttonTint="#018786"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:visibility="gone" />
 
-                    <FrameLayout
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:background="@drawable/bg_icon_container_teal">
-                         <ImageView
-                            android:id="@+id/iconBalance"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_search"
-                            app:tint="@android:color/white" />
-                    </FrameLayout>
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btnBalance"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    app:cardBackgroundColor="@android:color/white"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="#EEF2F6"
+                    app:strokeWidth="1dp">
 
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="16dp"
-                        android:orientation="vertical">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="16dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Balance Inquiry"
-                            android:textColor="#0F172A"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                        <FrameLayout
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_icon_container_teal">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                            <ImageView
+                                android:id="@+id/iconBalance"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_search"
+                                app:tint="@android:color/white" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="Balance check test"
-                            android:textColor="#64748B"
-                            android:textSize="14sp" />
+                            android:layout_marginStart="16dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Balance Inquiry"
+                                android:textColor="#0F172A"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Balance check test"
+                                android:textColor="#64748B"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_arrow_right"
+                            app:tint="#94A3B8" />
                     </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_arrow_right"
-                        app:tint="#94A3B8" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
 
         </LinearLayout>
 
     </ScrollView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnRunTransaction"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:paddingVertical="12dp"
+        android:text="Run Transaction"
+        android:textAllCaps="false"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        app:cornerRadius="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

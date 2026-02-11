@@ -23,13 +23,15 @@ public class TransactionDetailViewModel extends BaseViewModel {
 
     private final TransactionRepository repository;
     private final ConfigManager configManager;
+    private final IsoNetworkClient isoNetworkClient;
     private final MutableLiveData<TransactionState> state = new MutableLiveData<>();
 
     public TransactionDetailViewModel(Application application, TransactionRepository repository,
-            ConfigManager configManager, DispatcherProvider dispatchers) {
+            ConfigManager configManager, DispatcherProvider dispatchers, IsoNetworkClient isoNetworkClient) {
         super(application, dispatchers);
         this.repository = repository;
         this.configManager = configManager;
+        this.isoNetworkClient = isoNetworkClient;
     }
 
     public LiveData<TransactionState> getState() {
@@ -104,8 +106,8 @@ public class TransactionDetailViewModel extends BaseViewModel {
                 com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "SEND 0420 (VOID)", packed);
 
                 // 6. Send
-                IsoNetworkClient client = new IsoNetworkClient(ctx.ip, ctx.port);
-                byte[] responseBytes = client.sendAndReceive(packed);
+                // Use injected client
+                byte[] responseBytes = isoNetworkClient.sendAndReceive(ctx.ip, ctx.port, packed);
 
                 // 7. Handle Response
                 com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "RECV 0430 (VOID)",

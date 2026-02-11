@@ -58,8 +58,8 @@ public class MainDashboardActivity extends BaseActivity {
         setContentView(R.layout.activity_main_dashboard);
 
         // Get user info
-        String userRoleArg = getIntent().getStringExtra("USER_ROLE");
-        String usernameArg = getIntent().getStringExtra("USERNAME");
+        String userRoleArg = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USER_ROLE);
+        String usernameArg = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME);
         if (userRoleArg == null)
             userRoleArg = "USER";
 
@@ -100,14 +100,14 @@ public class MainDashboardActivity extends BaseActivity {
         // Purchase Action
         btnPurchase.setOnClickListener(v -> {
             Intent intent = new Intent(this, PurchaseAmountActivity.class);
-            intent.putExtra("USERNAME", username);
+            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, username);
             startActivity(intent);
         });
 
         // Balance Action
         btnBalance.setOnClickListener(v -> {
             Intent intent = new Intent(this, BalanceInquiryActivity.class);
-            intent.putExtra("USERNAME", username);
+            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, username);
             startActivity(intent);
         });
 
@@ -122,8 +122,8 @@ public class MainDashboardActivity extends BaseActivity {
         // Settings Action
         btnSettings.setOnClickListener(v -> {
             Intent intent = new Intent(this, SettingsActivity.class);
-            intent.putExtra("USER_ROLE", userRole);
-            intent.putExtra("USERNAME", username);
+            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USER_ROLE, userRole);
+            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, username);
             startActivity(intent);
         });
 
@@ -197,7 +197,7 @@ public class MainDashboardActivity extends BaseActivity {
     private void setupHistoryObserver() {
         AppDatabase db = AppDatabase.getInstance(this);
         // Get username from Intent (already retrieved in onCreate)
-        String currentUsername = getIntent().getStringExtra("USERNAME");
+        String currentUsername = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME);
         if (currentUsername == null)
             currentUsername = "Guest";
 

@@ -24,9 +24,10 @@ public class ChannelSelectActivity extends AppCompatActivity {
     }
 
     private void navigateToTransaction(String channel) {
-        Intent intent = new Intent(this, PerformanceSelectActivity.class);
-        intent.putExtra("CHANNEL", channel);
-        intent.putExtra("SCHEME", getIntent().getStringExtra("SCHEME"));
+        Intent intent = new Intent(this, PerformanceSelectActivity.class); // Fix: use PerformanceSelectActivity
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.CHANNEL, channel);
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME,
+                getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME));
         startActivity(intent);
     }
 }

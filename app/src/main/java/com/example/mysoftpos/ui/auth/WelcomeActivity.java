@@ -27,8 +27,8 @@ public class WelcomeActivity extends BaseActivity {
         if (SKIP_LOGIN) {
             // Bypass login - go directly to Dashboard as USER
             Intent intent = new Intent(this, MainDashboardActivity.class);
-            intent.putExtra("USER_ROLE", "USER");
-            intent.putExtra("USERNAME", "Guest");
+            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USER_ROLE, "USER");
+            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, "Guest");
             startActivity(intent);
             finish();
             return;

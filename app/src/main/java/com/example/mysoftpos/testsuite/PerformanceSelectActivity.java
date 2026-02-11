@@ -19,9 +19,11 @@ public class PerformanceSelectActivity extends AppCompatActivity {
 
     private void navigate(String perfMode) {
         Intent intent = new Intent(this, TransactionSelectActivity.class);
-        intent.putExtra("CHANNEL", getIntent().getStringExtra("CHANNEL"));
-        intent.putExtra("SCHEME", getIntent().getStringExtra("SCHEME"));
-        intent.putExtra("PERF_MODE", perfMode);
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.CHANNEL,
+                getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.CHANNEL));
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME,
+                getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME));
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.PERF_MODE, perfMode);
         startActivity(intent);
     }
 }

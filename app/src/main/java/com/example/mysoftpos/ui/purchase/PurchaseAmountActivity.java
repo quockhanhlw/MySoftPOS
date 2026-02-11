@@ -116,7 +116,7 @@ public class PurchaseAmountActivity extends BaseActivity {
     }
 
     private String getUsername() {
-        String u = getIntent().getStringExtra("USERNAME");
+        String u = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME);
         return u != null ? u : "Guest";
     }
 
@@ -273,11 +273,11 @@ public class PurchaseAmountActivity extends BaseActivity {
 
         // Navigate to card tap screen with currency info
         Intent intent = new Intent(this, PurchaseCardActivity.class);
-        intent.putExtra("TXN_TYPE", "PURCHASE");
-        intent.putExtra("AMOUNT", amountBuilder.toString());
-        intent.putExtra("CURRENCY", getCurrentCurrency()); // VND or USD
-        intent.putExtra("CURRENCY_CODE", getCurrentCurrencyCode()); // 704 or 840
-        intent.putExtra("USERNAME", getUsername());
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE, "PURCHASE");
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.AMOUNT, amountBuilder.toString());
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.CURRENCY, getCurrentCurrency()); // VND or USD
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.CURRENCY_CODE, getCurrentCurrencyCode()); // 704 or 840
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, getUsername());
         startActivity(intent);
     }
 

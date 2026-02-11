@@ -18,6 +18,7 @@ import com.example.mysoftpos.iso8583.message.IsoMessage;
 import com.example.mysoftpos.iso8583.TransactionContext;
 import com.example.mysoftpos.iso8583.TxnType;
 import com.example.mysoftpos.ui.base.BaseViewModel;
+import com.example.mysoftpos.utils.PanUtils;
 import com.example.mysoftpos.utils.config.ConfigManager;
 import com.example.mysoftpos.utils.threading.DispatcherProvider;
 import com.example.mysoftpos.iso8583.util.StandardIsoPacker;
@@ -29,13 +30,15 @@ public class PurchaseViewModel extends BaseViewModel {
     private static final String TAG = "PurchaseViewModel";
     private final TransactionRepository repository;
     private final ConfigManager configManager;
+    private final IsoNetworkClient isoNetworkClient;
     private final MutableLiveData<TransactionState> state = new MutableLiveData<>();
 
     public PurchaseViewModel(Application application, TransactionRepository repository, ConfigManager configManager,
-            DispatcherProvider dispatchers) {
+            DispatcherProvider dispatchers, IsoNetworkClient isoNetworkClient) {
         super(application, dispatchers);
         this.repository = repository;
         this.configManager = configManager;
+        this.isoNetworkClient = isoNetworkClient;
     }
 
     public LiveData<TransactionState> getState() {
@@ -49,12 +52,10 @@ public class PurchaseViewModel extends BaseViewModel {
         launchIo(() -> {
             TransactionContext ctx = new TransactionContext();
             TransactionEntity entity = new TransactionEntity();
-            // entity.username = username; // Removed in 3NF refactor
 
             try {
                 // Validation
                 boolean isPurchase = (txnType == TxnType.PURCHASE);
-                // DE4: Format amount based on currency (VND=704, USD=840)
                 String amtF4 = isPurchase ? TransactionContext.formatAmount12(amount, currencyCode) : "000000000000";
 
                 TransactionValidator.ValidationResult v = TransactionValidator.validate(card, amount, isPurchase);
@@ -63,43 +64,31 @@ public class PurchaseViewModel extends BaseViewModel {
                     return;
                 }
 
-                // Context
+                // Build Context
                 ctx.txnType = txnType;
                 ctx.amount4 = amtF4;
                 ctx.stan11 = configManager.getAndIncrementTrace();
                 ctx.generateDateTime();
                 ctx.rrn37 = TransactionContext.calculateRrn(configManager.getServerId(), ctx.stan11);
-
-                // Set Processing Code based on Txn Type
-                if (txnType == TxnType.BALANCE_INQUIRY) {
-                    ctx.processingCode3 = configManager.getProcessingCodeBalance();
-                } else {
-                    ctx.processingCode3 = configManager.getProcessingCodePurchase();
-                }
-
-                // Configurable Fields
+                ctx.processingCode3 = (txnType == TxnType.BALANCE_INQUIRY)
+                        ? configManager.getProcessingCodeBalance()
+                        : configManager.getProcessingCodePurchase();
                 ctx.mcc18 = configManager.getMcc18();
                 ctx.posCondition25 = configManager.getPosConditionCode();
                 ctx.acquirerId32 = configManager.getAcquirerId32();
                 ctx.fwdInst33 = configManager.getForwardingInst33();
-                // Use passed currency code (704 for VND, 840 for USD)
                 ctx.currency49 = currencyCode != null ? currencyCode : configManager.getCurrencyCode49();
                 ctx.terminalId41 = configManager.getTerminalId();
                 ctx.merchantId42 = configManager.getMerchantId();
 
-                // DE 43 Customization for USD
-                String usdCode = configManager.getUsdCurrencyCode(); // "840" from config
-
+                // DE 43 customization for USD
+                String usdCode = configManager.getUsdCurrencyCode();
                 if (usdCode.equals(ctx.currency49)) {
-                    // Replace Country Code (last 3 chars) with country suffix
                     String base43 = configManager.getMerchantName();
-                    String suffix = configManager.getUsdCountrySuffix(); // "840" from config
-
-                    if (base43.length() >= 3) {
-                        ctx.merchantNameLocation43 = base43.substring(0, base43.length() - 3) + suffix;
-                    } else {
-                        ctx.merchantNameLocation43 = base43;
-                    }
+                    String suffix = configManager.getUsdCountrySuffix();
+                    ctx.merchantNameLocation43 = base43.length() >= 3
+                            ? base43.substring(0, base43.length() - 3) + suffix
+                            : base43;
                 } else {
                     ctx.merchantNameLocation43 = configManager.getMerchantName();
                 }
@@ -107,99 +96,68 @@ public class PurchaseViewModel extends BaseViewModel {
                 ctx.ip = configManager.getServerIp();
                 ctx.port = configManager.getServerPort();
 
-                // Build Request
+                // Build & Pack
                 IsoMessage req = (txnType == TxnType.BALANCE_INQUIRY)
                         ? Iso8583Builder.buildBalanceMsg(ctx, card)
                         : Iso8583Builder.buildPurchaseMsg(ctx, card);
 
-                // Pack
                 byte[] packed = StandardIsoPacker.pack(req);
                 String requestHex = StandardIsoPacker.bytesToHex(packed);
 
-                // --- 1. LOG REQUEST (Before Network) ---
-                com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "SEND 0200", packed);
-                com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "SEND DETAIL",
-                        StandardIsoPacker.logIsoMessage(req));
+                FileLogger.logPacket(getApplication(), "SEND 0200", packed);
+                FileLogger.logString(getApplication(), "SEND DETAIL", StandardIsoPacker.logIsoMessage(req));
 
-                // --- 1. LOG REQUEST (Before Network) ---
-                com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "SEND 0200", packed);
-                com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "SEND DETAIL",
-                        StandardIsoPacker.logIsoMessage(req));
-
-                // DB Log (Initial Save)
+                // Save PENDING
                 String pan = card.getPan();
-                String panMasked = (pan != null && pan.length() > 6)
-                        ? pan.substring(0, 6) + "******" + pan.substring(pan.length() - 4)
-                        : pan;
-                String bin = (pan != null && pan.length() >= 6) ? pan.substring(0, 6) : "";
-                String last4 = (pan != null && pan.length() >= 4) ? pan.substring(pan.length() - 4) : "";
-                // Simple Scheme detection (can be improved)
-                String scheme = "Unknown";
-                if (pan != null) {
-                    if (pan.startsWith("4"))
-                        scheme = "Visa";
-                    else if (pan.startsWith("5"))
-                        scheme = "Mastercard";
-                    else if (pan.startsWith("9704"))
-                        scheme = "Napas";
-                }
-
-                repository.saveTransaction(
-                        ctx.stan11,
-                        amount,
-                        "PENDING",
-                        requestHex,
-                        null,
-                        System.currentTimeMillis(),
-                        ctx.merchantId42,
-                        ctx.merchantNameLocation43,
-                        ctx.terminalId41,
-                        panMasked,
-                        bin,
-                        last4,
-                        scheme,
-                        username);
+                com.example.mysoftpos.domain.model.TransactionRecord record = new com.example.mysoftpos.domain.model.TransactionRecord.Builder()
+                        .setTraceNumber(ctx.stan11)
+                        .setAmount(amount)
+                        .setStatus("PENDING")
+                        .setRequestHex(requestHex)
+                        .setResponseHex(null)
+                        .setTimestamp(System.currentTimeMillis())
+                        .setMerchantCode(ctx.merchantId42)
+                        .setMerchantName(ctx.merchantNameLocation43)
+                        .setTerminalCode(ctx.terminalId41)
+                        .setPanMasked(PanUtils.mask(pan))
+                        .setBin(PanUtils.getBin(pan))
+                        .setLast4(PanUtils.getLast4(pan))
+                        .setScheme(PanUtils.detectScheme(pan))
+                        .setUsername(username)
+                        .build();
+                repository.saveTransaction(record);
 
                 // Network Send
-                IsoNetworkClient client = new IsoNetworkClient(ctx.ip, ctx.port);
                 byte[] resp;
                 try {
-                    resp = client.sendAndReceive(packed);
+                    // Use injected client
+                    resp = isoNetworkClient.sendAndReceive(ctx.ip, ctx.port, packed);
                 } catch (SocketTimeoutException e) {
-                    com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "ERROR",
-                            "Timeout waiting for response");
+                    FileLogger.logString(getApplication(), "ERROR", "Timeout waiting for response");
                     handleAutoReversal(ctx, card, entity);
                     return;
                 } catch (Exception e) {
-                    com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "ERROR",
-                            "Network Error: " + e.getMessage());
+                    FileLogger.logString(getApplication(), "ERROR", "Network Error: " + e.getMessage());
                     throw e;
                 }
 
-                // --- 2. LOG RESPONSE (Immediately after Network) ---
+                // Process Response
                 String responseHex = StandardIsoPacker.bytesToHex(resp);
-                com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "RECV 0210", resp);
-
-                // IMPORTANT: Update DB with Response Hex BEFORE Unpacking (in case unpack
-                // fails)
+                FileLogger.logPacket(getApplication(), "RECV 0210", resp);
                 repository.updateTransactionResponseHex(ctx.stan11, responseHex);
 
-                // 3. Unpack & Check Response
                 IsoMessage respMsg = new StandardIsoPacker().unpack(resp);
-                // Log Detail AFTER unpacking
-                com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "RECV DETAIL",
-                        StandardIsoPacker.logIsoMessage(respMsg));
+                FileLogger.logString(getApplication(), "RECV DETAIL", StandardIsoPacker.logIsoMessage(respMsg));
 
                 String rc = respMsg.getField(IsoField.RESPONSE_CODE_39);
-                entity.responseHex = responseHex;
                 boolean isApproved = "00".equals(rc);
                 entity.status = isApproved ? "APPROVED" : "DECLINED " + rc;
+                entity.responseHex = responseHex;
 
-                // 4. Update Status (Final Step)
                 repository.updateTransactionStatus(ctx.stan11, entity.status);
 
                 launchUi(() -> {
-                    String msg = com.example.mysoftpos.utils.logging.ResponseCodeHelper.getMessage(rc);
+                    String msg = ResponseCodeHelper.getMessage(rc);
                     if (isApproved) {
                         state.setValue(TransactionState.success(msg, responseHex, requestHex));
                     } else {
@@ -225,25 +183,23 @@ public class PurchaseViewModel extends BaseViewModel {
             IsoMessage rev = Iso8583Builder.buildReversalAdvice(ctx, card, newTrace);
             byte[] packedRev = StandardIsoPacker.pack(rev);
 
-            com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "SEND 0420 (Reversal)",
-                    packedRev);
-            com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "SEND 0420 DETAIL",
-                    StandardIsoPacker.logIsoMessage(rev));
+            FileLogger.logPacket(getApplication(), "SEND 0420 (Reversal)", packedRev);
+            FileLogger.logString(getApplication(), "SEND 0420 DETAIL", StandardIsoPacker.logIsoMessage(rev));
 
             entity.status = "TIMEOUT_REVERSAL_INIT";
             repository.updateTransactionStatus(ctx.stan11, entity.status);
 
-            IsoNetworkClient revClient = new IsoNetworkClient(ctx.ip, ctx.port);
             try {
-                byte[] revResp = revClient.sendAndReceive(packedRev);
-                com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "RECV 0430", revResp);
+                // Use injected client
+                byte[] revResp = isoNetworkClient.sendAndReceive(ctx.ip, ctx.port, packedRev);
+                FileLogger.logPacket(getApplication(), "RECV 0430", revResp);
 
                 try {
                     IsoMessage revRespMsg = new StandardIsoPacker().unpack(revResp);
-                    com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "RECV 0430 DETAIL",
+                    FileLogger.logString(getApplication(), "RECV 0430 DETAIL",
                             StandardIsoPacker.logIsoMessage(revRespMsg));
                 } catch (Exception e) {
-                    com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "RECV 0430 ERROR",
+                    FileLogger.logString(getApplication(), "RECV 0430 ERROR",
                             "Failed to unpack: " + e.getMessage());
                 }
 

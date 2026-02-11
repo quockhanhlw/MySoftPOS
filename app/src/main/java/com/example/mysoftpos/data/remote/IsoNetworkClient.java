@@ -15,16 +15,12 @@ public class IsoNetworkClient {
     private static final String TAG = "IsoNetworkClient";
     private static final int DEFAULT_TIMEOUT_MS = 30000;
 
-    private final String host;
-    private final int port;
     private int timeoutMs = DEFAULT_TIMEOUT_MS;
 
-    public IsoNetworkClient(String host, int port) {
-        this.host = host;
-        this.port = port;
+    public IsoNetworkClient() {
     }
 
-    public byte[] sendAndReceive(byte[] requestData) throws IOException {
+    public byte[] sendAndReceive(String host, int port, byte[] requestData) throws IOException {
         Log.d(TAG, "Connecting to " + host + ":" + port);
 
         try (Socket socket = new Socket()) {
@@ -139,8 +135,3 @@ public class IsoNetworkClient {
         return sb.toString();
     }
 }
-
-
-
-
-

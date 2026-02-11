@@ -58,12 +58,13 @@ public class TransactionResultActivity extends BaseActivity {
 
         // Get Data
         ResultType type = (ResultType) getIntent().getSerializableExtra(EXTRA_RESULT_TYPE);
-        String amount = getIntent().getStringExtra("AMOUNT");
-        String currency = getIntent().getStringExtra("CURRENCY");
-        String maskedPan = getIntent().getStringExtra("MASKED_PAN");
-        String txnDate = getIntent().getStringExtra("TXN_DATE");
-        String txnId = getIntent().getStringExtra("TXN_ID");
-        String txnTypeStr = getIntent().getStringExtra("TXN_TYPE");
+        String amount = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.AMOUNT);
+        String currency = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.CURRENCY);
+        String maskedPan = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.MASKED_PAN);
+        String txnDate = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.TXN_DATE);
+        String txnId = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.TXN_ID);
+        String txnTypeStr = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE);
+        boolean success = getIntent().getBooleanExtra(com.example.mysoftpos.utils.IntentKeys.SUCCESS, false);
 
         if (type == null)
             type = ResultType.SYSTEM_ERROR;
@@ -79,7 +80,7 @@ public class TransactionResultActivity extends BaseActivity {
             try {
                 long val = Long.parseLong(amount);
                 java.text.NumberFormat nf = java.text.NumberFormat
-                        .getCurrencyInstance(new java.util.Locale("vi", "VN"));
+                        .getCurrencyInstance(new java.util.Locale.Builder().setLanguage("vi").setRegion("VN").build());
                 if ("USD".equals(currency)) {
                     nf = java.text.NumberFormat.getCurrencyInstance(java.util.Locale.US);
                 }
@@ -106,14 +107,14 @@ public class TransactionResultActivity extends BaseActivity {
             bgHeader.setBackgroundColor(Color.parseColor("#D1FAE5")); // Light Green
 
             // Special Label for Balance Inquiry
-            if ("BALANCE_INQUIRY".equals(txnTypeStr)) {
+            if (TxnType.BALANCE_INQUIRY.name().equals(txnTypeStr)) {
                 TextView tvAmountLabel = findViewById(R.id.tvAmountLabel);
-                String balanceType = getIntent().getStringExtra("BALANCE_TYPE");
+                String balanceType = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.BALANCE_TYPE);
                 if (tvAmountLabel != null) {
-                    if ("Ledger".equals(balanceType)) {
-                        tvAmountLabel.setText("Ledger Balance"); // Or localized string if avail
+                    if (balanceType != null) {
+                        tvAmountLabel.setText(balanceType + " Balance");
                     } else {
-                        tvAmountLabel.setText(R.string.txn_balance_label);
+                        tvAmountLabel.setText("Available Balance");
                     }
                 }
             }

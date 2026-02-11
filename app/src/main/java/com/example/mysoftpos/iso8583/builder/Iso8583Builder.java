@@ -106,7 +106,7 @@ public class Iso8583Builder {
         if ("011".equals(de22) || "012".equals(de22)) {
             // Manual/Magstripe Entry → Include Expiry (DE 14), Exclude Track 2 (DE 35)
             m.setField(IsoField.EXPIRATION_DATE_14, card.getExpiryDate());
-        } else if ("901".equals(de22) || "902".equals(de22) || "022".equals(de22)) {
+        } else if ("021".equals(de22) || "022".equals(de22) || "901".equals(de22) || "902".equals(de22)) {
             // Contactless → Include Track 2 (DE 35)
             if (card.getTrack2() != null && !card.getTrack2().isEmpty()) {
                 m.setField(IsoField.TRACK2_35, card.getTrack2().replace('=', 'D'));

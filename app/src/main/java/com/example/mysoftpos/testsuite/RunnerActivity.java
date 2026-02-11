@@ -6,6 +6,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import com.example.mysoftpos.R;
+import com.example.mysoftpos.iso8583.TransactionContext;
 import com.example.mysoftpos.testsuite.viewmodel.RunnerViewModel;
 
 public class RunnerActivity extends AppCompatActivity {
@@ -16,42 +17,42 @@ public class RunnerActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_runner); // Will create layout
+        setContentView(R.layout.activity_runner);
 
         tvLog = findViewById(R.id.tvLog);
         viewModel = new ViewModelProvider(this).get(RunnerViewModel.class);
 
         // Get Intent Data
-        String de22 = getIntent().getStringExtra("DE_22");
-        String desc = getIntent().getStringExtra("DESC");
-        String channel = getIntent().getStringExtra("CHANNEL");
+        android.content.Intent i = getIntent();
+        String de22 = i.getStringExtra(com.example.mysoftpos.utils.IntentKeys.DE22);
+        String desc = i.getStringExtra(com.example.mysoftpos.utils.IntentKeys.DESC);
+        String txnType = i.getStringExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE);
+        String pan = i.getStringExtra(com.example.mysoftpos.utils.IntentKeys.PAN);
+        String expiry = i.getStringExtra(com.example.mysoftpos.utils.IntentKeys.EXPIRY);
+        String pinBlock = i.getStringExtra(com.example.mysoftpos.utils.IntentKeys.PIN_BLOCK);
+        String track2 = i.getStringExtra(com.example.mysoftpos.utils.IntentKeys.TRACK2);
 
         TextView tvTitle = findViewById(R.id.tvTitle);
         tvTitle.setText(desc);
 
         findViewById(R.id.btnRun).setOnClickListener(v -> {
-            runTransaction(de22);
+            tvLog.setText("Starting Transaction...\nMode: " + de22 + "\n");
+            viewModel.runTransaction(de22, track2, pan, expiry, pinBlock, txnType);
         });
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
-        // Observe Logs
+        // Observe Preview (field breakdown on load)
+        viewModel.getPreviewMessage().observe(this, preview -> {
+            tvLog.setText(preview);
+        });
+
+        // Observe Run result (appended after preview)
         viewModel.getLogMessage().observe(this, log -> {
             tvLog.append(log + "\n");
         });
-    }
 
-    private void runTransaction(String de22) {
-        tvLog.setText("Starting Transaction...\nMode: " + de22 + "\n");
-
-        android.content.Intent i = getIntent();
-        String txnType = i.getStringExtra("TXN_TYPE");
-        viewModel.runTransaction(
-                de22,
-                i.getStringExtra("TRACK2"),
-                i.getStringExtra("PAN"),
-                i.getStringExtra("EXPIRY"),
-                i.getStringExtra("PIN_BLOCK"),
-                txnType);
+        // Build and display ISO message preview immediately
+        viewModel.previewTransaction(de22, track2, pan, expiry, pinBlock, txnType);
     }
 }

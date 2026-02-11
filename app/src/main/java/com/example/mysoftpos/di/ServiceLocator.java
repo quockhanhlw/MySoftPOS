@@ -44,6 +44,23 @@ public class ServiceLocator {
         return appDatabase;
     }
 
+    private com.example.mysoftpos.data.remote.IsoNetworkClient isoNetworkClient;
+    private com.example.mysoftpos.domain.service.TransactionExecutor transactionExecutor;
+
+    public com.example.mysoftpos.data.remote.IsoNetworkClient getIsoNetworkClient() {
+        if (isoNetworkClient == null) {
+            isoNetworkClient = new com.example.mysoftpos.data.remote.IsoNetworkClient();
+        }
+        return isoNetworkClient;
+    }
+
+    public com.example.mysoftpos.domain.service.TransactionExecutor getTransactionExecutor() {
+        if (transactionExecutor == null) {
+            transactionExecutor = new com.example.mysoftpos.domain.service.TransactionExecutor(getIsoNetworkClient());
+        }
+        return transactionExecutor;
+    }
+
     public TransactionRepository getTransactionRepository() {
         if (transactionRepository == null) {
             transactionRepository = new TransactionRepositoryImpl(appDatabase, dispatcherProvider);
@@ -51,8 +68,3 @@ public class ServiceLocator {
         return transactionRepository;
     }
 }
-
-
-
-
-

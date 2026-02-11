@@ -24,7 +24,7 @@ public class DynamicTestCaseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dynamic_test_case);
 
-        String suiteName = getIntent().getStringExtra("SUITE_NAME");
+        String suiteName = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.SUITE_NAME);
         suiteId = getIntent().getLongExtra("SUITE_ID", -1);
 
         TextView tvTitle = findViewById(R.id.tvTitle);
@@ -56,8 +56,3 @@ public class DynamicTestCaseActivity extends AppCompatActivity {
         // Need to query TemplateRepository first
     }
 }
-
-
-
-
-

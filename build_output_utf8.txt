@@ -1,0 +1,228 @@
+﻿> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:dataBindingGenBaseClassesDebug UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+
+> Task :app:compileDebugJavaWithJavac FAILED
+./gradlew : C:\Users\
+Laptop\AndroidStudioP
+rojects\MySoftPOS\app
+\src\main\java\com\ex
+ample\mysoftpos\viewm
+odel\TransactionDetai
+lViewModel.java:107: 
+error: constructor 
+IsoNetworkClient in 
+class 
+IsoNetworkClient 
+cannot be applied to 
+given types;
+At line:1 char:1
++ ./gradlew compileDe
+bugJavaWithJavac > 
+build_output.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (C:\User   
+ s\Laptop...to gi    
+ven types;:Strin    
+g) [], RemoteExc    
+eption
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+                
+IsoNetworkClient 
+client = new IsoNetwo
+rkClient(ctx.ip, 
+ctx.port);
+                     
+                     
+^
+  required: no 
+arguments
+  found:    
+String,int
+  reason: actual and 
+formal argument 
+lists differ in 
+length
+C:\Users\Laptop\Andro
+idStudioProjects\MySo
+ftPOS\app\src\main\ja
+va\com\example\mysoft
+pos\viewmodel\Transac
+tionDetailViewModel.j
+ava:108: error: 
+method 
+sendAndReceive in 
+class 
+IsoNetworkClient 
+cannot be applied to 
+given types;
+                
+byte[] responseBytes 
+= client.sendAndRecei
+ve(packed);
+                     
+                     
+   ^
+  required: 
+String,int,byte[]
+  found:    byte[]
+  reason: actual and 
+formal argument 
+lists differ in 
+length
+Note: C:\Users\Laptop
+\AndroidStudioProject
+s\MySoftPOS\app\src\m
+ain\java\com\example\
+mysoftpos\testsuite\M
+ultiThreadRunnerActiv
+ity.java uses or 
+overrides a 
+deprecated API.
+Note: Recompile with 
+-Xlint:deprecation 
+for details.
+Note: C:\Users\Laptop
+\AndroidStudioProject
+s\MySoftPOS\app\src\m
+ain\java\com\example\
+mysoftpos\ui\base\Glo
+balViewModelFactory.j
+ava uses unchecked 
+or unsafe operations.
+Note: Recompile with 
+-Xlint:unchecked for 
+details.
+2 errors
+
+[Incubating] Problems report is available at: file:///C:/Users/Laptop/AndroidStudioProjects/MySoftPOS/build/reports/problems/problems-report.html
+
+FAILURE: Build 
+failed with an 
+exception.
+
+* What went wrong:
+Execution failed for 
+task ':app:compileDeb
+ugJavaWithJavac'.
+> Compilation 
+failed; see the 
+compiler output 
+below.
+  C:\Users\Laptop\And
+roidStudioProjects\My
+SoftPOS\app\src\main\
+java\com\example\myso
+ftpos\viewmodel\Trans
+actionDetailViewModel
+.java:107: error: 
+constructor 
+IsoNetworkClient in 
+class 
+IsoNetworkClient 
+cannot be applied to 
+given types;
+                  
+IsoNetworkClient 
+client = new IsoNetwo
+rkClient(ctx.ip, 
+ctx.port);
+                     
+                     
+  ^
+    required: no 
+arguments
+    found:    
+String,int
+    reason: actual 
+and formal argument 
+lists differ in 
+length
+  C:\Users\Laptop\And
+roidStudioProjects\My
+SoftPOS\app\src\main\
+java\com\example\myso
+ftpos\viewmodel\Trans
+actionDetailViewModel
+.java:108: error: 
+method 
+sendAndReceive in 
+class 
+IsoNetworkClient 
+cannot be applied to 
+given types;
+                  
+byte[] responseBytes 
+= client.sendAndRecei
+ve(packed);
+                     
+                     
+     ^
+    required: 
+String,int,byte[]
+    found:    byte[]
+    reason: actual 
+and formal argument 
+lists differ in 
+length
+  Note: C:\Users\Lapt
+op\AndroidStudioProje
+cts\MySoftPOS\app\src
+\main\java\com\exampl
+e\mysoftpos\testsuite
+\MultiThreadRunnerAct
+ivity.java uses or 
+overrides a 
+deprecated API.
+  Note: Recompile 
+with 
+-Xlint:deprecation 
+for details.
+  Note: C:\Users\Lapt
+op\AndroidStudioProje
+cts\MySoftPOS\app\src
+\main\java\com\exampl
+e\mysoftpos\ui\base\G
+lobalViewModelFactory
+.java uses unchecked 
+or unsafe operations.
+  Note: Recompile 
+with 
+-Xlint:unchecked for 
+details.
+  2 errors
+
+* Try:
+> Check your code 
+and dependencies to 
+fix the compilation 
+error(s)
+> Run with --scan to 
+get full insights.
+
+BUILD FAILED in 2s
+19 actionable tasks: 1 executed, 18 up-to-date

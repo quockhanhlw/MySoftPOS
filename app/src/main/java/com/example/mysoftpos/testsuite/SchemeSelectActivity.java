@@ -33,7 +33,7 @@ public class SchemeSelectActivity extends AppCompatActivity {
 
     private void navigateToChannel(String scheme) {
         Intent intent = new Intent(this, ChannelSelectActivity.class);
-        intent.putExtra("SCHEME", scheme);
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME, scheme);
         startActivity(intent);
     }
 

@@ -35,46 +35,46 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     }
 
     @Override
-    public void saveTransaction(
-            String traceNumber, String amount, String status, String reqHex, String respHex, long timestamp,
-            String merchantCode, String merchantName,
-            String terminalCode,
-            String panMasked, String bin, String last4, String scheme,
-            String username) {
+    public void saveTransaction(com.example.mysoftpos.domain.model.TransactionRecord record) {
         dispatchers.io().execute(() -> {
             // 1. Merchant
-            com.example.mysoftpos.data.local.entity.MerchantEntity merchant = db.merchantDao().getByCode(merchantCode);
+            com.example.mysoftpos.data.local.entity.MerchantEntity merchant = db.merchantDao()
+                    .getByCode(record.merchantCode);
             long merchantId;
             if (merchant == null) {
                 merchantId = db.merchantDao()
-                        .insert(new com.example.mysoftpos.data.local.entity.MerchantEntity(merchantCode, merchantName));
+                        .insert(new com.example.mysoftpos.data.local.entity.MerchantEntity(record.merchantCode,
+                                record.merchantName));
             } else {
                 merchantId = merchant.id;
             }
 
             // 2. Terminal
-            com.example.mysoftpos.data.local.entity.TerminalEntity terminal = db.terminalDao().getByCode(terminalCode);
+            com.example.mysoftpos.data.local.entity.TerminalEntity terminal = db.terminalDao()
+                    .getByCode(record.terminalCode);
             long terminalId;
             if (terminal == null) {
                 terminalId = db.terminalDao()
-                        .insert(new com.example.mysoftpos.data.local.entity.TerminalEntity(terminalCode, merchantId));
+                        .insert(new com.example.mysoftpos.data.local.entity.TerminalEntity(record.terminalCode,
+                                merchantId));
             } else {
                 terminalId = terminal.id;
             }
 
             // 3. Card
-            com.example.mysoftpos.data.local.entity.CardEntity card = db.cardDao().getByPanMasked(panMasked);
+            com.example.mysoftpos.data.local.entity.CardEntity card = db.cardDao().getByPanMasked(record.panMasked);
             long cardId;
             if (card == null) {
                 cardId = db.cardDao()
-                        .insert(new com.example.mysoftpos.data.local.entity.CardEntity(panMasked, bin, last4, scheme));
+                        .insert(new com.example.mysoftpos.data.local.entity.CardEntity(record.panMasked, record.bin,
+                                record.last4, record.scheme));
             } else {
                 cardId = card.id;
             }
 
             // 4. User
-            String userIdHash = (username != null)
-                    ? com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username)
+            String userIdHash = (record.username != null)
+                    ? com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(record.username)
                     : null;
             com.example.mysoftpos.data.local.entity.UserEntity user = (userIdHash != null)
                     ? db.userDao().getByUsernameHashSync(userIdHash)
@@ -83,12 +83,12 @@ public class TransactionRepositoryImpl implements TransactionRepository {
 
             // 5. Transaction
             TransactionEntity txn = new TransactionEntity();
-            txn.traceNumber = traceNumber;
-            txn.amount = amount;
-            txn.status = status;
-            txn.requestHex = reqHex;
-            txn.responseHex = respHex;
-            txn.timestamp = timestamp;
+            txn.traceNumber = record.traceNumber;
+            txn.amount = record.amount;
+            txn.status = record.status;
+            txn.requestHex = record.reqHex;
+            txn.responseHex = record.respHex;
+            txn.timestamp = record.timestamp;
             txn.terminalId = terminalId;
             txn.cardId = cardId;
             txn.userId = userId;
