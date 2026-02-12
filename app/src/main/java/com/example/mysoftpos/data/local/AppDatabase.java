@@ -18,7 +18,7 @@ import com.example.mysoftpos.data.local.dao.*;
         MerchantEntity.class,
         TerminalEntity.class,
         CardEntity.class
-}, version = 7, exportSchema = false) // Bumped version to 7
+}, version = 8, exportSchema = false) // Bumped version to 8
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract TransactionDao transactionDao();

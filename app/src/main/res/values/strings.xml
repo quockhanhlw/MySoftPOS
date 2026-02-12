@@ -56,6 +56,19 @@
     <string name="forgot_password_confirm">Confirm New Password</string>
     <string name="forgot_password_hint">········</string>
     <string name="forgot_password_button">Reset Password</string>
+    <string name="forgot_password_subtitle">Enter your registered email or phone to receive a code</string>
+
+    <!-- Missing Register Strings -->
+    <string name="register_subtitle">Please fill in your details</string>
+    <string name="register_login_prompt">Already have an account?</string>
+    <string name="register_login_action">Log In</string>
+    <string name="register_hint_fullname">Full Name</string>
+    <string name="register_hint_dob">Date of Birth</string>
+    <string name="register_hint_phone">Phone Number</string>
+    <string name="register_hint_address">Address</string>
+    <string name="register_hint_username">Username</string>
+    <string name="register_hint_password">Password</string>
+    <string name="register_hint_confirm_password">Confirm Password</string>
 
     <!-- Common -->
     <string name="back">Back</string>

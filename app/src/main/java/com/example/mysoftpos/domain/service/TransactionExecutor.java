@@ -36,8 +36,14 @@ public class TransactionExecutor {
     private static final LogCallback NOOP = msg -> {
     };
 
-    // Kept static as it's a pure utility function
-    public static TransactionContext buildContext(Context appContext, String txnType) {
+    // Overload for backward compatibility
+    public static TransactionContext buildContext(Context appContext, String txnType, String amount) {
+        return buildContext(appContext, txnType, amount, null, null);
+    }
+
+    // Updated to accept Currency and Country codes
+    public static TransactionContext buildContext(Context appContext, String txnType, String amount,
+            String currencyCode, String countryCode) {
         ConfigManager config = ConfigManager.getInstance(appContext);
 
         TransactionContext ctx = new TransactionContext();
@@ -45,12 +51,21 @@ public class TransactionExecutor {
         ctx.generateDateTime();
         ctx.rrn37 = TransactionContext.calculateRrn(config.getServerId(), ctx.stan11);
 
+        // Usage defaults if not provided (VND/704)
+        String safeCurrency = (currencyCode != null && !currencyCode.isEmpty()) ? currencyCode : "704";
+        String safeCountry = (countryCode != null && !countryCode.isEmpty()) ? countryCode : "704";
+
         if ("BALANCE".equals(txnType)) {
             ctx.processingCode3 = "300000";
             ctx.amount4 = "000000000000";
         } else {
             ctx.processingCode3 = "000000";
-            ctx.amount4 = TransactionContext.formatAmount12("12345");
+            // Pass currency code to formatter
+            if (amount != null && !amount.isEmpty()) {
+                ctx.amount4 = TransactionContext.formatAmount12(amount, safeCurrency);
+            } else {
+                ctx.amount4 = TransactionContext.formatAmount12("12345", safeCurrency);
+            }
         }
 
         ctx.posCondition25 = config.getPosConditionCode();
@@ -59,7 +74,11 @@ public class TransactionExecutor {
         ctx.terminalId41 = config.getTerminalId();
         ctx.merchantId42 = config.getMerchantId();
         ctx.merchantNameLocation43 = config.getMerchantName();
-        ctx.currency49 = config.getCurrencyCode49();
+
+        // Set Currency (49) and Country (19)
+        ctx.currency49 = safeCurrency;
+        ctx.country19 = safeCountry;
+
         ctx.ip = config.getServerIp();
         ctx.port = config.getServerPort();
 

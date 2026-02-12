@@ -23,10 +23,13 @@ public class ChannelSelectActivity extends AppCompatActivity {
     }
 
     private void navigateToTransaction(String channel) {
-        Intent intent = new Intent(this, PerformanceSelectActivity.class); // Fix: use PerformanceSelectActivity
+        // Skip Performance Selection - Default to MULTI (remove Single-thread option)
+        Intent intent = new Intent(this, TransactionSelectActivity.class);
         intent.putExtra(com.example.mysoftpos.utils.IntentKeys.CHANNEL, channel);
         intent.putExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME,
                 getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME));
+        // Force Multi-thread mode
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.PERF_MODE, "MULTI");
         startActivity(intent);
     }
 }

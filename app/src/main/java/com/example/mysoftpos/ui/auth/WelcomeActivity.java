@@ -37,20 +37,16 @@ public class WelcomeActivity extends BaseActivity {
         setContentView(R.layout.activity_welcome);
 
         // Bind Views
-        ImageView ivHero = findViewById(R.id.ivHero);
-        View btnLogin = findViewById(R.id.btnLogin);
-        View tvRegister = findViewById(R.id.tvRegister);
 
-        // Start Pulse Animation
-        Animation pulse = AnimationUtils.loadAnimation(this, R.anim.pulse);
-        ivHero.startAnimation(pulse);
+        View btnLogin = findViewById(R.id.btnLogin);
+        View btnRegister = findViewById(R.id.btnRegister);
 
         // Click Listeners
         btnLogin.setOnClickListener(v -> {
             startActivity(new Intent(this, LoginActivity.class));
         });
 
-        tvRegister.setOnClickListener(v -> {
+        btnRegister.setOnClickListener(v -> {
             startActivity(new Intent(this, RegisterActivity.class));
         });
     }

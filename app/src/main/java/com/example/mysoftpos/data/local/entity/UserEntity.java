@@ -10,7 +10,11 @@ import androidx.room.PrimaryKey;
  * Entity representing a registered user.
  * Username and password are stored as SHA-256 hashes.
  */
-@Entity(tableName = "users", indices = { @Index(value = { "username_hash" }, unique = true) })
+@Entity(tableName = "users", indices = {
+        @Index(value = { "username_hash" }, unique = true),
+        @Index(value = { "email" }, unique = true),
+        @Index(value = { "phone" }, unique = true)
+})
 public class UserEntity {
 
     @PrimaryKey(autoGenerate = true)
@@ -25,6 +29,15 @@ public class UserEntity {
     @ColumnInfo(name = "display_name")
     public String displayName; // Plain text display name
 
+    @ColumnInfo(name = "email")
+    public String email;
+
+    @ColumnInfo(name = "phone")
+    public String phone;
+
+    @ColumnInfo(name = "dob")
+    public String dob;
+
     @ColumnInfo(name = "role")
     public String role; // "ADMIN" or "USER"
 
@@ -35,11 +48,15 @@ public class UserEntity {
     }
 
     @Ignore
-    public UserEntity(String usernameHash, String passwordHash, String displayName, String role) {
+    public UserEntity(String usernameHash, String passwordHash, String displayName, String role, String email,
+            String phone, String dob) {
         this.usernameHash = usernameHash;
         this.passwordHash = passwordHash;
         this.displayName = displayName;
         this.role = role;
+        this.email = email;
+        this.phone = phone;
+        this.dob = dob;
         this.createdAt = System.currentTimeMillis();
     }
 }

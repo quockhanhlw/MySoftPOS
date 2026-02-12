@@ -17,16 +17,6 @@ import com.google.android.material.textfield.TextInputEditText;
 
 public class SettingsActivity extends AppCompatActivity {
 
-    // Admin Views
-    private TextInputEditText etServerIp;
-    private TextInputEditText etPort;
-    private TextInputEditText etTimeout;
-    private TextInputEditText etTerminalId;
-    private TextInputEditText etMerchantId;
-    private CheckBox cbEncryptPin;
-    private MaterialButton btnSaveConfig;
-    private MaterialButton btnPingTest;
-
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(LocaleHelper.onAttach(newBase));
@@ -53,25 +43,214 @@ public class SettingsActivity extends AppCompatActivity {
         if (btnBack != null)
             btnBack.setOnClickListener(v -> finish());
 
-        etServerIp = findViewById(R.id.etServerIp);
-        etPort = findViewById(R.id.etPort);
-        etTimeout = findViewById(R.id.etTimeout);
-        etTerminalId = findViewById(R.id.etTerminalId);
-        etMerchantId = findViewById(R.id.etMerchantId);
-        cbEncryptPin = findViewById(R.id.cbEncryptPin);
+        LinearLayout btnConnectionSettings = findViewById(R.id.btnConnectionSettings);
+        LinearLayout btnIdentitySettings = findViewById(R.id.btnIdentitySettings);
+        LinearLayout btnSecuritySettings = findViewById(R.id.btnSecuritySettings);
 
-        btnSaveConfig = findViewById(R.id.btnSaveConfig);
-        btnPingTest = findViewById(R.id.btnPingTest);
-
-        loadAdminConfiguration();
-
-        if (btnSaveConfig != null)
-            btnSaveConfig.setOnClickListener(v -> saveAdminConfiguration());
-        if (btnPingTest != null)
-            btnPingTest.setOnClickListener(v -> performPingTest());
+        if (btnConnectionSettings != null)
+            btnConnectionSettings.setOnClickListener(v -> showConnectionDialog());
+        if (btnIdentitySettings != null)
+            btnIdentitySettings.setOnClickListener(v -> showIdentityDialog());
+        if (btnSecuritySettings != null)
+            btnSecuritySettings.setOnClickListener(v -> showSecurityDialog());
 
         // Initialize Common User Settings (now present in Admin layout too)
         initCommonUI();
+    }
+
+    private void showConnectionDialog() {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_admin_connection, null);
+        builder.setView(view);
+        android.app.AlertDialog dialog = builder.create();
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0)); // Transparent needed
+                                                                                                  // for rounded corners
+                                                                                                  // if root has
+                                                                                                  // background
+        // Ideally set background in XML root or use style, but here we can just rely on
+        // the view's background from XML if set,
+        // or wrap in CardView in XML. The XML I wrote has root background? No.
+        // Let's set the dialog background to white rounded if possible, or just
+        // standard.
+        // Actually, the XML I wrote works best if wrapped in a CardView or if I set
+        // background here.
+        view.setBackgroundResource(R.drawable.bg_dialog_rounded); // Assuming this drawable exists or similar
+
+        TextInputEditText etServerIp = view.findViewById(R.id.etServerIp);
+        TextInputEditText etPort = view.findViewById(R.id.etPort);
+        TextInputEditText etTimeout = view.findViewById(R.id.etTimeout);
+        MaterialButton btnPingTest = view.findViewById(R.id.btnPingTest);
+        MaterialButton btnCancel = view.findViewById(R.id.btnCancel);
+        MaterialButton btnSave = view.findViewById(R.id.btnSave);
+
+        // Load Config
+        com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
+                .getInstance(this);
+        etServerIp.setText(config.getServerIp());
+        etPort.setText(String.valueOf(config.getServerPort()));
+        etTimeout.setText(String.valueOf(config.getTimeout()));
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnPingTest.setOnClickListener(v -> {
+            String serverIp = etServerIp.getText().toString().trim();
+            String portStr = etPort.getText().toString().trim();
+            performPingTest(serverIp, portStr);
+        });
+
+        btnSave.setOnClickListener(v -> {
+            String serverIp = etServerIp.getText().toString().trim();
+            String portStr = etPort.getText().toString().trim();
+            String timeoutStr = etTimeout.getText().toString().trim();
+
+            if (serverIp.isEmpty()) {
+                etServerIp.setError("Required");
+                return;
+            }
+            if (portStr.isEmpty()) {
+                etPort.setError("Required");
+                return;
+            }
+
+            int port;
+            try {
+                port = Integer.parseInt(portStr);
+            } catch (NumberFormatException e) {
+                etPort.setError("Invalid");
+                return;
+            }
+
+            int timeout;
+            try {
+                timeout = Integer.parseInt(timeoutStr);
+            } catch (NumberFormatException e) {
+                timeout = 30000;
+            }
+
+            config.setServerIp(serverIp);
+            config.setServerPort(port);
+            config.setTimeout(timeout);
+
+            Toast.makeText(this, "Connection Settings Saved", Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    private void showIdentityDialog() {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_admin_identity, null);
+        builder.setView(view);
+        android.app.AlertDialog dialog = builder.create();
+        // view.setBackgroundResource(R.drawable.bg_dialog_rounded);
+        // If bg_dialog_rounded doesn't exist, use white
+        view.setBackgroundColor(android.graphics.Color.WHITE);
+
+        TextInputEditText etTerminalId = view.findViewById(R.id.etTerminalId);
+        TextInputEditText etMerchantId = view.findViewById(R.id.etMerchantId);
+        MaterialButton btnCancel = view.findViewById(R.id.btnCancel);
+        MaterialButton btnSave = view.findViewById(R.id.btnSave);
+
+        com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
+                .getInstance(this);
+        etTerminalId.setText(config.getTerminalId());
+        etMerchantId.setText(config.getMerchantId());
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnSave.setOnClickListener(v -> {
+            String terminalId = etTerminalId.getText().toString().trim();
+            String merchantId = etMerchantId.getText().toString().trim();
+
+            if (terminalId.isEmpty()) {
+                etTerminalId.setError("Required");
+                return;
+            }
+            if (merchantId.isEmpty()) {
+                etMerchantId.setError("Required");
+                return;
+            }
+
+            config.setTerminalId(terminalId);
+            config.setMerchantId(merchantId);
+
+            Toast.makeText(this, "Identity Settings Saved", Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    private void showSecurityDialog() {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_admin_security, null);
+        builder.setView(view);
+        android.app.AlertDialog dialog = builder.create();
+        view.setBackgroundColor(android.graphics.Color.WHITE);
+
+        CheckBox cbEncryptPin = view.findViewById(R.id.cbEncryptPin);
+        MaterialButton btnCancel = view.findViewById(R.id.btnCancel);
+        MaterialButton btnSave = view.findViewById(R.id.btnSave);
+
+        com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
+                .getInstance(this);
+        cbEncryptPin.setChecked(config.isPinEncryptionEnabled());
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnSave.setOnClickListener(v -> {
+            config.setPinEncryptionEnabled(cbEncryptPin.isChecked());
+            Toast.makeText(this, "Security Settings Saved", Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    private void performPingTest(String serverIp, String portStr) {
+        if (serverIp.isEmpty() || portStr.isEmpty()) {
+            Toast.makeText(this, "Please check IP and Port", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        int port;
+        try {
+            port = Integer.parseInt(portStr);
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "Invalid Port", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        android.app.ProgressDialog pd = new android.app.ProgressDialog(this);
+        pd.setMessage("Ping " + serverIp + ":" + port + "...");
+        pd.setCancelable(false);
+        pd.show();
+
+        new Thread(() -> {
+            try (java.net.Socket socket = new java.net.Socket()) {
+                socket.connect(new java.net.InetSocketAddress(serverIp, port), 5000);
+                runOnUiThread(() -> {
+                    pd.dismiss();
+                    showPingResult(true, "Connection Successful!");
+                });
+            } catch (java.io.IOException e) {
+                runOnUiThread(() -> {
+                    pd.dismiss();
+                    showPingResult(false, "Connection Failed:\n" + e.getMessage());
+                });
+            }
+        }).start();
+    }
+
+    private void showPingResult(boolean success, String message) {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(success ? "Success" : "Failed")
+                .setMessage(message)
+                .setIcon(success ? R.drawable.ic_check_circle : R.drawable.ic_error)
+                .setPositiveButton("OK", null)
+                .show();
     }
 
     private void initUserUI() {
@@ -99,8 +278,8 @@ public class SettingsActivity extends AppCompatActivity {
         // Wallpaper Logic
         if (btnChangeWallpaper != null) {
             btnChangeWallpaper.setOnClickListener(v -> {
-                com.example.mysoftpos.utils.NotificationHelper.showNotification(this, "Wallpaper Feature Coming Soon!",
-                        R.drawable.ic_settings);
+                com.example.mysoftpos.utils.NotificationHelper.showNotification(this, "Wallpaper",
+                        "Feature Coming Soon!", false);
             });
         }
 
@@ -114,17 +293,11 @@ public class SettingsActivity extends AppCompatActivity {
 
                 // Restart App to apply changes
                 Intent intent = new Intent(this, com.example.mysoftpos.ui.dashboard.MainDashboardActivity.class);
-                // Pass back the user info so they don't have to login again if possible, or
-                // force logout.
-                // For now, let's just restart Dashboard with same user if we can, or just
-                // settings.
-                // If we restart Dashboard, we need user role.
                 String userRole = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USER_ROLE);
                 if (userRole == null)
                     userRole = "USER";
 
-                String username = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME); // Assuming
-                                                                                                               // passed
+                String username = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME);
                 if (username == null)
                     username = "Guest";
 
@@ -141,9 +314,8 @@ public class SettingsActivity extends AppCompatActivity {
         // Password Logic
         if (btnChangePassword != null) {
             btnChangePassword.setOnClickListener(v -> {
-                // Show Custom Notification as requested
-                com.example.mysoftpos.utils.NotificationHelper.showNotification(this,
-                        "Change Password Dialog would appear here", R.drawable.ic_key);
+                com.example.mysoftpos.utils.NotificationHelper.showNotification(this, "Password",
+                        "Change Password Dialog would appear here", false);
             });
         }
 
@@ -158,122 +330,5 @@ public class SettingsActivity extends AppCompatActivity {
                 finish();
             });
         }
-    }
-
-    private void loadAdminConfiguration() {
-        com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
-                .getInstance(this);
-
-        if (etServerIp != null)
-            etServerIp.setText(config.getServerIp());
-        if (etPort != null)
-            etPort.setText(String.valueOf(config.getServerPort()));
-        if (etTimeout != null)
-            etTimeout.setText(String.valueOf(config.getTimeout()));
-        if (etTerminalId != null)
-            etTerminalId.setText(config.getTerminalId());
-        if (etMerchantId != null)
-            etMerchantId.setText(config.getMerchantId());
-        if (cbEncryptPin != null)
-            cbEncryptPin.setChecked(config.isPinEncryptionEnabled());
-    }
-
-    private void saveAdminConfiguration() {
-        String serverIp = etServerIp.getText().toString().trim();
-        String portStr = etPort.getText().toString().trim();
-        String timeoutStr = etTimeout.getText().toString().trim();
-        String terminalId = etTerminalId.getText().toString().trim();
-        String merchantId = etMerchantId.getText().toString().trim();
-
-        if (serverIp.isEmpty()) {
-            etServerIp.setError("Please enter Server IP");
-            return;
-        }
-        if (portStr.isEmpty()) {
-            etPort.setError("Please enter Port");
-            return;
-        }
-        if (terminalId.isEmpty()) {
-            etTerminalId.setError("Please enter Terminal ID");
-            return;
-        }
-
-        int port;
-        try {
-            port = Integer.parseInt(portStr);
-        } catch (NumberFormatException e) {
-            etPort.setError("Invalid Port");
-            return;
-        }
-
-        int timeout;
-        try {
-            timeout = Integer.parseInt(timeoutStr);
-        } catch (NumberFormatException e) {
-            timeout = 30000;
-        }
-
-        com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
-                .getInstance(this);
-
-        config.setServerIp(serverIp);
-        config.setServerPort(port);
-        config.setTimeout(timeout);
-        config.setTerminalId(terminalId);
-        config.setMerchantId(merchantId);
-        config.setPinEncryptionEnabled(cbEncryptPin.isChecked());
-
-        Toast.makeText(this, "Configuration Saved!", Toast.LENGTH_SHORT).show();
-        finish();
-    }
-
-    private void performPingTest() {
-        String serverIp = etServerIp.getText().toString().trim();
-        String portStr = etPort.getText().toString().trim();
-
-        if (serverIp.isEmpty() || portStr.isEmpty()) {
-            Toast.makeText(this, "Please enter IP and Port", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        int port;
-        try {
-            port = Integer.parseInt(portStr);
-        } catch (NumberFormatException e) {
-            Toast.makeText(this, "Invalid Port", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        android.app.ProgressDialog pd = new android.app.ProgressDialog(this);
-        pd.setMessage("Connecting to " + serverIp + ":" + port + "...");
-        pd.setCancelable(false);
-        pd.show();
-
-        new Thread(() -> {
-            try (java.net.Socket socket = new java.net.Socket()) {
-                // Try to connect with a 5-second timeout
-                socket.connect(new java.net.InetSocketAddress(serverIp, port), 5000);
-
-                runOnUiThread(() -> {
-                    pd.dismiss();
-                    showResultDialog(true, "Connection Successful!\nHost is reachable.");
-                });
-            } catch (java.io.IOException e) {
-                final String errorMsg = "Connection Failed:\n" + e.getMessage();
-                runOnUiThread(() -> {
-                    pd.dismiss();
-                    showResultDialog(false, errorMsg);
-                });
-            }
-        }).start();
-    }
-
-    private void showResultDialog(boolean success, String message) {
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle(success ? "Connection Test Passed" : "Connection Test Failed")
-                .setMessage(message)
-                .setIcon(success ? R.drawable.ic_check_circle : R.drawable.ic_error)
-                .setPositiveButton("OK", null)
-                .show();
     }
 }

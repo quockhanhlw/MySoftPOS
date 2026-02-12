@@ -79,4 +79,18 @@ public class TestScenario implements Serializable {
     public void setCustom(boolean custom) {
         isCustom = custom;
     }
+
+    public boolean isConfigured() {
+        // Must have Amount (DE 4) - Except for BALANCE
+        if (!"BALANCE".equals(txnType)) {
+            String amount = getField(4);
+            if (amount == null || amount.isEmpty())
+                return false;
+        }
+
+        // Must have Card Data (DE 2 or DE 35)
+        String pan = getField(2);
+        String track2 = getField(35);
+        return (pan != null && !pan.isEmpty()) || (track2 != null && !track2.isEmpty());
+    }
 }

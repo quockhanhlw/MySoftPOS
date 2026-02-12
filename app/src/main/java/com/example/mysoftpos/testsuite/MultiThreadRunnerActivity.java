@@ -121,7 +121,7 @@ public class MultiThreadRunnerActivity extends AppCompatActivity {
         TransactionExecutor.LogCallback logger = msg -> appendLog(tag + " " + msg + "\n");
 
         // 1. Build Context
-        TransactionContext ctx = TransactionExecutor.buildContext(getApplicationContext(), txnType);
+        TransactionContext ctx = TransactionExecutor.buildContext(getApplicationContext(), txnType, null);
 
         // 2. Prepare Card
         String de22 = scenario.getField(22);

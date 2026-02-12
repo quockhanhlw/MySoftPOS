@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- Full Name -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/register_hint_fullname"
+        android:textColor="@color/auth_text_title"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"/>
+
+    <EditText
+        android:id="@+id/etFullName"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@drawable/bg_auth_input"
+        android:paddingHorizontal="16dp"
+        android:hint="John Doe"
+        android:textColorHint="@color/auth_text_hint"
+        android:textColor="@color/auth_text_title"
+        android:inputType="textPersonName" />
+
+    <!-- Date of Birth -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/register_hint_dob"
+        android:textColor="@color/auth_text_title"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"/>
+
+    <EditText
+        android:id="@+id/etDob"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@drawable/bg_auth_input"
+        android:paddingHorizontal="16dp"
+        android:hint="DD/MM/YYYY"
+        android:textColorHint="@color/auth_text_hint"
+        android:textColor="@color/auth_text_title"
+        android:inputType="date" />
+
+    <!-- Phone Number -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/register_hint_phone"
+        android:textColor="@color/auth_text_title"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"/>
+
+    <EditText
+        android:id="@+id/etPhone"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@drawable/bg_auth_input"
+        android:paddingHorizontal="16dp"
+        android:hint="+84 901 234 567"
+        android:textColorHint="@color/auth_text_hint"
+        android:textColor="@color/auth_text_title"
+        android:inputType="phone" />
+
+    <!-- Email -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Email Address"
+        android:textColor="@color/auth_text_title"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"/>
+
+    <EditText
+        android:id="@+id/etEmail"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@drawable/bg_auth_input"
+        android:paddingHorizontal="16dp"
+        android:hint="user@example.com"
+        android:textColorHint="@color/auth_text_hint"
+        android:textColor="@color/auth_text_title"
+        android:inputType="textEmailAddress" />
+
+    <!-- Address -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/register_hint_address"
+        android:textColor="@color/auth_text_title"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"/>
+
+    <EditText
+        android:id="@+id/etAddress"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@drawable/bg_auth_input"
+        android:paddingHorizontal="16dp"
+        android:hint="123 Street, City"
+        android:textColorHint="@color/auth_text_hint"
+        android:textColor="@color/auth_text_title"
+        android:inputType="textPostalAddress" />
+
+    <!-- Next Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnNextStep"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="32dp"
+        android:text="Next Step"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:backgroundTint="@null"
+        android:background="@drawable/bg_auth_button"
+        android:textColor="@android:color/white"
+        app:icon="@drawable/ic_arrow_right"
+        app:iconGravity="textEnd"
+        app:iconTint="@color/white"
+        app:cornerRadius="16dp"/>
+
+</LinearLayout>

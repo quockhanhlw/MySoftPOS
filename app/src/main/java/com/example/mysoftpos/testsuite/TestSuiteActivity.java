@@ -1,7 +1,5 @@
 package com.example.mysoftpos.testsuite;
 
-import com.example.mysoftpos.utils.config.ConfigManager;
-import com.example.mysoftpos.iso8583.TxnType;
 import com.example.mysoftpos.iso8583.spec.NapasFieldSpecConfig;
 
 import android.content.Intent;
@@ -59,7 +57,7 @@ public class TestSuiteActivity extends AppCompatActivity {
 
         boolean isMulti = "MULTI".equals(perfMode);
 
-        TextView tvTitle = findViewById(R.id.tvTitle);
+        // TextView tvTitle = findViewById(R.id.tvTitle); // Unused
 
         // Bind Summary Card
         TextView tvSummaryScheme = findViewById(R.id.tvSummaryScheme);
@@ -78,10 +76,15 @@ public class TestSuiteActivity extends AppCompatActivity {
 
         // Load Built-in Data
         allScenarios = TestDataProvider.generateAllScenarios(this);
+        // Ensure built-in scenarios know the current Transaction Type
+        for (TestScenario s : allScenarios) {
+            s.setTxnType(txnType);
+        }
 
         adapter = new com.example.mysoftpos.testsuite.adapter.TestScenarioAdapter(
                 this::onScenarioClicked,
-                this::onScenarioLongClicked);
+                this::onScenarioLongClicked,
+                this::onScenarioToggle);
 
         adapter.setMultiMode(isMulti);
 
@@ -110,7 +113,37 @@ public class TestSuiteActivity extends AppCompatActivity {
             btnDeleteMode.setOnClickListener(v -> toggleDeleteMode());
         }
 
-        findViewById(R.id.btnBack).setOnClickListener(v -> onBackPressed());
+        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (deleteMode) {
+                    toggleDeleteMode(); // Exit delete mode
+                    return;
+                }
+
+                if (selectionMode && "MULTI".equals(perfMode)) {
+                    // Exit selection mode
+                    selectionMode = false;
+                    adapter.setSelectionMode(false);
+                    layoutSelectAll.setVisibility(View.GONE);
+                    btnRunAll.setVisibility(View.GONE);
+
+                    // Clear selections
+                    for (TestScenario s : displayedScenarios) {
+                        s.setSelected(false);
+                        s.setUserPin(null);
+                    }
+                    adapter.notifyDataSetChanged(); // Refresh UI
+                    return;
+                }
+
+                // Default back behavior
+                setEnabled(false);
+                getOnBackPressedDispatcher().onBackPressed();
+            }
+        });
+
+        findViewById(R.id.btnBack).setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 
         // Custom Cases Observer
         repository.getCustomCasesByType(txnType).observe(this, entities -> {
@@ -139,6 +172,52 @@ public class TestSuiteActivity extends AppCompatActivity {
             }
             refreshList();
         });
+    }
+
+    private void onScenarioToggle(TestScenario scenario) {
+        // In Delete Mode, checkbox simply toggles selection for deletion
+        if (deleteMode) {
+            if (scenario.isCustom()) {
+                scenario.setSelected(!scenario.isSelected());
+                adapter.notifyDataSetChanged();
+            } else {
+                Toast.makeText(this, "Cannot delete built-in scenarios", Toast.LENGTH_SHORT).show();
+            }
+            return;
+        }
+
+        // Toggle from Unchecked -> Checked
+        if (!scenario.isSelected()) {
+            // Revert visual toggle immediately (so it stays unchecked until config is done)
+            adapter.notifyDataSetChanged();
+
+            // ALWAYS open Configuration Flow (User Request: "Not just tick")
+            // This allows user to Pick Card / Enter PIN explicitly
+            configureScenario(scenario);
+            return;
+        }
+
+        // Toggle from Checked -> Unchecked
+        scenario.setSelected(false);
+        adapter.notifyDataSetChanged();
+    }
+
+    private void checkPinAndConfig(TestScenario scenario) {
+        String de22 = scenario.getField(22);
+        if ("011".equals(de22) || "021".equals(de22)) {
+            showPinDialog(scenario, pin -> {
+                scenario.setUserPin(pin);
+                // Auto-select after full config
+                scenario.setSelected(true);
+                adapter.notifyDataSetChanged();
+                Toast.makeText(this, "Configured & Selected!", Toast.LENGTH_SHORT).show();
+            });
+        } else {
+            // Auto-select after full config
+            scenario.setSelected(true);
+            adapter.notifyDataSetChanged();
+            Toast.makeText(this, "Configured & Selected!", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void setupMultiMode() {
@@ -172,22 +251,22 @@ public class TestSuiteActivity extends AppCompatActivity {
             // Enter Delete Mode
             fabAdd.setVisibility(View.GONE);
             btnDeleteMode.setImageResource(R.drawable.ic_close); // Change icon to close
-            btnDeleteMode.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFEF4444)); // Red bg for
-                                                                                                         // active?
+            btnDeleteMode.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFEF4444)); // Red bg
 
             layoutSelectAll.setVisibility(View.VISIBLE);
             btnRunAll.setVisibility(View.VISIBLE);
             btnRunAll.setText("Delete Selected");
             btnRunAll.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFEF4444)); // Red button
 
-            adapter.setMultiMode(true); // Show checkboxes
+            // IMPORTANT: Set BOTH multiMode and selectionMode to true for checkboxes to
+            // appear
+            adapter.setMultiMode(true);
+            adapter.setSelectionMode(true);
 
-            // Logic for "Select All" in Delete Mode (simpler, no PIN config)
+            // Logic for "Select All" in Delete Mode
             cbSelectAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 for (TestScenario s : displayedScenarios) {
-                    // Only select Custom cases for deletion?
-                    // Or let user select all but filter later.
-                    // Assuming built-in cannot be selected/deleted.
+                    // Only select Custom cases for deletion
                     if (s.isCustom())
                         s.setSelected(isChecked);
                 }
@@ -205,7 +284,9 @@ public class TestSuiteActivity extends AppCompatActivity {
             layoutSelectAll.setVisibility(View.GONE);
             btnRunAll.setVisibility(View.GONE);
 
+            // Reset Adapter State
             adapter.setMultiMode(false);
+            adapter.setSelectionMode(false);
 
             // clear selection
             for (TestScenario s : displayedScenarios)
@@ -251,10 +332,6 @@ public class TestSuiteActivity extends AppCompatActivity {
         adapter.setScenarios(displayedScenarios);
     }
 
-    private List<TestScenario> filterScenarios(List<TestScenario> src, String channel, String type) {
-        return src;
-    }
-
     private boolean selectionMode = false;
 
     private void onScenarioClicked(TestScenario scenario) {
@@ -270,16 +347,41 @@ public class TestSuiteActivity extends AppCompatActivity {
         }
 
         if ("MULTI".equals(perfMode)) {
-            if (selectionMode) {
-                configureForMultiMode(scenario);
-            } else {
-                // If not in selection mode, maybe show a hint?
-                Toast.makeText(this, "Long press to select items", Toast.LENGTH_SHORT).show();
-            }
+            // In Multi Mode, clicking an item simply opens the Configuration Dialogs
+            // functionality (Amount -> Card -> Pin -> Done).
+            // It does NOT toggle selection (that's what the checkbox is for).
+            configureScenario(scenario);
             return;
         }
 
         openRunnerSingle(scenario);
+    }
+
+    private void configureScenario(TestScenario scenario) {
+        Runnable onAmountConfigured = () -> {
+            // 2. Card
+            if (scenario.isCustom() && hasCardData(scenario)) {
+                checkPinAndConfig(scenario);
+                return;
+            }
+
+            String de22 = scenario.getField(22);
+            if ("011".equals(de22) || "012".equals(de22)) {
+                showPanSelectionDialog(scenario, () -> checkPinAndConfig(scenario));
+            } else {
+                showCardSelectionDialog(scenario, () -> checkPinAndConfig(scenario));
+            }
+        };
+
+        // Skip Amount Input for Balance Inquiry
+        if ("BALANCE".equals(txnType)) {
+            onAmountConfigured.run();
+            return;
+        }
+
+        // Similar to openRunnerSingle but doesn't launch
+        // 1. Amount
+        showAmountInput(scenario, onAmountConfigured);
     }
 
     private void onScenarioLongClicked(TestScenario scenario) {
@@ -292,7 +394,11 @@ public class TestSuiteActivity extends AppCompatActivity {
                 btnRunAll.setVisibility(View.VISIBLE);
 
                 // Select the item that was long-pressed
-                configureForMultiMode(scenario);
+                // User requested: Just show boxes, don't tick yet
+                // scenario.setSelected(true);
+                adapter.notifyDataSetChanged();
+
+                Toast.makeText(this, "Selection Mode Enabled. Tap checkbox to select.", Toast.LENGTH_SHORT).show();
             }
             return;
         }
@@ -305,34 +411,6 @@ public class TestSuiteActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public void onBackPressed() {
-        if (selectionMode && "MULTI".equals(perfMode)) {
-            // Exit selection mode
-            selectionMode = false;
-            adapter.setSelectionMode(false);
-            layoutSelectAll.setVisibility(View.GONE);
-            btnRunAll.setVisibility(View.GONE);
-
-            // Clear selections
-            for (TestScenario s : displayedScenarios) {
-                s.setSelected(false);
-                s.setUserPin(null);
-            }
-            adapter.notifyDataSetChanged(); // Refresh UI
-            return;
-        }
-        super.onBackPressed();
-    }
-
-    private void showDeleteDialog(TestScenario scenario) {
-        // Deprecated single delete in favor of batch delete or keep as option?
-        // User asked for "Batch delete", but keeping single delete on long press (if we
-        // had it) is fine.
-        // But here I'm replacing the long click to just open Edit.
-        // I'll implement batch delete separately.
-    }
-
     private void showAddEditDialog(TestScenario existing) {
         boolean isEdit = existing != null;
 
@@ -340,8 +418,10 @@ public class TestSuiteActivity extends AppCompatActivity {
         View view = getLayoutInflater().inflate(R.layout.dialog_add_edit_test_case, null);
         builder.setView(view);
         android.app.AlertDialog dialog = builder.create();
-        dialog.getWindow()
-                .setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
         // styling
 
         // Bind Views
@@ -572,6 +652,25 @@ public class TestSuiteActivity extends AppCompatActivity {
     // ========================
 
     private void openRunnerSingle(TestScenario scenario) {
+        // Skip Amount Input for Balance Inquiry
+        if ("BALANCE".equals(txnType)) {
+            proceedWithRunner(scenario);
+            return;
+        }
+
+        // If Custom scenario has a valid amount, use it directly (Skip Dialog)
+        if (scenario.isCustom()) {
+            String currentAmount = scenario.getField(4);
+            if (currentAmount != null && !currentAmount.isEmpty()) {
+                proceedWithRunner(scenario);
+                return;
+            }
+        }
+
+        showAmountInput(scenario, () -> proceedWithRunner(scenario));
+    }
+
+    private void proceedWithRunner(TestScenario scenario) {
         // Custom test cases with saved card data skip the card selection dialog
         if (scenario.isCustom() && hasCardData(scenario)) {
             checkPinAndLaunch(scenario);
@@ -584,6 +683,91 @@ public class TestSuiteActivity extends AppCompatActivity {
         } else {
             showCardSelectionDialog(scenario, () -> checkPinAndLaunch(scenario));
         }
+    }
+
+    private void showAmountInput(TestScenario scenario, Runnable onConfirmed) {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_amount_input, null);
+        builder.setView(view);
+        android.app.AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        android.widget.TextView tvTitle = view.findViewById(R.id.tvDialogTitle);
+        tvTitle.setText("Amount (" + scenario.getDescription() + ")");
+
+        com.google.android.material.textfield.TextInputEditText etAmount = view.findViewById(R.id.etAmount);
+        com.google.android.material.textfield.TextInputLayout tilAmount = view.findViewById(R.id.tilAmount);
+
+        android.widget.RadioGroup rgCurrency = view.findViewById(R.id.rgCurrency);
+        android.widget.RadioButton rbVnd = view.findViewById(R.id.rbVnd);
+        android.widget.RadioButton rbUsd = view.findViewById(R.id.rbUsd);
+
+        String current = scenario.getField(4);
+        if (current != null) {
+            etAmount.setText(current);
+        } else {
+            etAmount.setText("");
+        }
+
+        // Pre-select Currency
+        String currentCurr = scenario.getField(49);
+        if ("840".equals(currentCurr)) {
+            rbUsd.setChecked(true);
+            tilAmount.setSuffixText("USD");
+        } else {
+            rbVnd.setChecked(true);
+            tilAmount.setSuffixText("VND");
+        }
+
+        // Listener to update Suffix
+        rgCurrency.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.rbUsd) {
+                tilAmount.setSuffixText("USD");
+            } else {
+                tilAmount.setSuffixText("VND");
+            }
+        });
+
+        etAmount.requestFocus();
+        // Show keyboard?
+
+        view.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
+        view.findViewById(R.id.btnConfirm).setOnClickListener(v -> {
+            String val = etAmount.getText().toString().trim();
+            if (val.isEmpty()) {
+                etAmount.setError("Required");
+                return;
+            }
+            try {
+                long l = Long.parseLong(val);
+                if (l <= 0) {
+                    etAmount.setError("Must be > 0");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                etAmount.setError("Invalid number");
+                return;
+            }
+
+            // Save Amount (DE 4)
+            scenario.setField(4, val);
+
+            // Save Currency (DE 49) and Country Code (DE 19)
+            if (rbUsd.isChecked()) {
+                scenario.setField(49, "840"); // USD
+                scenario.setField(19, "840"); // USD Country Code
+            } else {
+                scenario.setField(49, "704"); // VND
+                scenario.setField(19, "704"); // VND Country Code
+            }
+
+            dialog.dismiss();
+            onConfirmed.run();
+        });
+
+        dialog.show();
     }
 
     private boolean hasCardData(TestScenario scenario) {
@@ -606,45 +790,67 @@ public class TestSuiteActivity extends AppCompatActivity {
     }
 
     private void showPanSelectionDialog(TestScenario scenario, Runnable onDone) {
-        final String[] panOptions = {
+        final java.util.List<String> panOptions = java.util.Arrays.asList(
                 "9704166606226219923",
                 "9704306669144645257",
-                "9704189991010867647"
-        };
+                "9704189991010867647");
 
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle("Select Card (PAN)");
+        View view = getLayoutInflater().inflate(R.layout.dialog_card_selection, null);
+        builder.setView(view);
+        android.app.AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
 
-        builder.setSingleChoiceItems(panOptions, -1, (dialog, which) -> {
-            String selected = panOptions[which];
-            applyPanData(scenario, selected);
-            dialog.dismiss();
-            onDone.run();
-        });
+        TextView tvTitle = view.findViewById(R.id.tvDialogTitle);
+        tvTitle.setText("Select Card (PAN)");
 
-        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
-        builder.show();
+        androidx.recyclerview.widget.RecyclerView rv = view.findViewById(R.id.recyclerViewCards);
+        rv.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
+
+        com.example.mysoftpos.testsuite.adapter.CardOptionAdapter adapter = new com.example.mysoftpos.testsuite.adapter.CardOptionAdapter(
+                panOptions, selected -> {
+                    applyPanData(scenario, selected);
+                    dialog.dismiss();
+                    onDone.run();
+                });
+        rv.setAdapter(adapter);
+
+        view.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
     }
 
     private void showCardSelectionDialog(TestScenario scenario, Runnable onDone) {
-        final String[] cardOptions = {
+        final java.util.List<String> cardOptions = java.util.Arrays.asList(
                 "9704166606226219923=31016010000000123",
                 "9704306669144645257=31016010000000123",
-                "9704189991010867647=31016010000000123"
-        };
+                "9704189991010867647=31016010000000123");
 
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle("Select Card");
+        View view = getLayoutInflater().inflate(R.layout.dialog_card_selection, null);
+        builder.setView(view);
+        android.app.AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
 
-        builder.setSingleChoiceItems(cardOptions, -1, (dialog, which) -> {
-            String selected = cardOptions[which];
-            applyCardData(scenario, selected);
-            dialog.dismiss();
-            onDone.run();
-        });
+        TextView tvTitle = view.findViewById(R.id.tvDialogTitle);
+        tvTitle.setText("Select Card");
 
-        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
-        builder.show();
+        androidx.recyclerview.widget.RecyclerView rv = view.findViewById(R.id.recyclerViewCards);
+        rv.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
+
+        com.example.mysoftpos.testsuite.adapter.CardOptionAdapter adapter = new com.example.mysoftpos.testsuite.adapter.CardOptionAdapter(
+                cardOptions, selected -> {
+                    applyCardData(scenario, selected);
+                    dialog.dismiss();
+                    onDone.run();
+                });
+        rv.setAdapter(adapter);
+
+        view.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
     }
 
     private void applyCardData(TestScenario scenario, String track2Raw) {
@@ -664,9 +870,12 @@ public class TestSuiteActivity extends AppCompatActivity {
     private void checkPinAndLaunch(TestScenario scenario) {
         String de22 = scenario.getField(22);
         if ("011".equals(de22) || "021".equals(de22)) {
-            showPinDialog(scenario, pin -> launchRunner(scenario, pin));
+            showPinDialog(scenario, pin -> {
+                scenario.setUserPin(pin);
+                launchRunner(scenario);
+            });
         } else {
-            launchRunner(scenario, null);
+            launchRunner(scenario);
         }
     }
 
@@ -733,23 +942,31 @@ public class TestSuiteActivity extends AppCompatActivity {
         }
     }
 
-    private void launchRunner(TestScenario scenario, String userPin) {
-        Intent intent = new Intent(this, RunnerActivity.class);
-        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.DE22, scenario.getField(22));
-        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.DESC, scenario.getDescription());
-        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.CHANNEL, channel);
-        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE, txnType);
-        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.TRACK2, scenario.getField(35));
-        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.PAN, scenario.getField(2));
-        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.EXPIRY, scenario.getField(14));
-
-        if (userPin != null && !userPin.isEmpty()) {
-            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.PIN_BLOCK, userPin);
-        } else {
-            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.PIN_BLOCK, scenario.getField(52));
+    private void launchRunner(TestScenario scenario) {
+        String pinBlock = null;
+        if ("PIN_BLOCK_PRESENT".equals(scenario.getField(52))) {
+            // Check if we have a specific user entered PIN
+            if (scenario.getUserPin() != null) {
+                pinBlock = scenario.getUserPin(); // This is raw PIN, RunnerViewModel generates block
+            } else {
+                pinBlock = "123456"; // Default
+            }
         }
 
-        startActivity(intent);
+        android.content.Intent i = new android.content.Intent(this, RunnerActivity.class);
+        i.putExtra(com.example.mysoftpos.utils.IntentKeys.DESC, scenario.getDescription());
+        i.putExtra(com.example.mysoftpos.utils.IntentKeys.DE22, scenario.getField(22));
+        i.putExtra(com.example.mysoftpos.utils.IntentKeys.PAN, scenario.getField(2));
+        i.putExtra(com.example.mysoftpos.utils.IntentKeys.EXPIRY, scenario.getField(14));
+        i.putExtra(com.example.mysoftpos.utils.IntentKeys.TRACK2, scenario.getField(35));
+        i.putExtra(com.example.mysoftpos.utils.IntentKeys.PIN_BLOCK, pinBlock);
+        i.putExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE,
+                scenario.getTxnType() != null ? scenario.getTxnType() : "PURCHASE");
+
+        // Pass the amount (DE 4)
+        i.putExtra(com.example.mysoftpos.utils.IntentKeys.AMOUNT, scenario.getField(4));
+
+        startActivity(i);
     }
 
     // ========================

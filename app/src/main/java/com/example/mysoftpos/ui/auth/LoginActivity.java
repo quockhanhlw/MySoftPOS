@@ -18,23 +18,19 @@ public class LoginActivity extends BaseActivity {
 
     private EditText etUsername;
     private EditText etPassword;
-    private ImageView btnShowPassword;
-    private boolean isPasswordVisible = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        ImageView btnBack = findViewById(R.id.btnBack);
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
-        btnShowPassword = findViewById(R.id.btnShowPassword);
+
         TextView tvForgotPassword = findViewById(R.id.tvForgotPassword);
         MaterialButton btnLogin = findViewById(R.id.btnLogin);
 
-        btnBack.setOnClickListener(v -> finish());
-        btnShowPassword.setOnClickListener(v -> togglePasswordVisibility());
+        // Password visibility is handled by TextInputLayout endIcon
 
         tvForgotPassword.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, ForgotPasswordActivity.class);
@@ -44,25 +40,12 @@ public class LoginActivity extends BaseActivity {
         btnLogin.setOnClickListener(v -> handleLogin());
     }
 
-    private void togglePasswordVisibility() {
-        if (isPasswordVisible) {
-            etPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
-            btnShowPassword.setImageResource(R.drawable.ic_eye_off);
-            isPasswordVisible = false;
-        } else {
-            etPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
-            btnShowPassword.setImageResource(R.drawable.ic_eye);
-            isPasswordVisible = true;
-        }
-        etPassword.setSelection(etPassword.getText().length());
-    }
-
     private void handleLogin() {
         String username = etUsername.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
         if (username.isEmpty()) {
-            etUsername.setError("Please enter your username");
+            etUsername.setError("Please enter email or phone");
             etUsername.requestFocus();
             return;
         }
@@ -93,15 +76,28 @@ public class LoginActivity extends BaseActivity {
                         .getInstance(this);
                 com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
 
+                // 1. Try finding by Username Hash
                 String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(finalUsername);
                 com.example.mysoftpos.data.local.entity.UserEntity user = userDao.findByUsernameHash(usernameHash);
+
+                // 2. If not found, try finding by Email
+                if (user == null) {
+                    user = userDao.findByEmail(finalUsername);
+                }
+
+                // 3. If still not found, try finding by Phone
+                if (user == null) {
+                    user = userDao.findByPhone(finalUsername);
+                }
 
                 if (user != null) {
                     String inputPasswordHash = com.example.mysoftpos.utils.security.PasswordUtils
                             .hashSHA256(finalPassword);
                     if (inputPasswordHash.equals(user.passwordHash)) {
-                        String displayName = user.displayName != null ? user.displayName : finalUsername;
-                        runOnUiThread(() -> navigateToDashboard(user.role, displayName));
+                        String displayName = user.displayName != null ? user.displayName : "User";
+
+                        final com.example.mysoftpos.data.local.entity.UserEntity finalUser = user;
+                        runOnUiThread(() -> navigateToDashboard(finalUser.role, displayName));
                         return;
                     }
                 }

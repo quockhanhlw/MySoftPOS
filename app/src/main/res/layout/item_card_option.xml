@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="4dp"
+    android:layout_marginVertical="6dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    app:cardBackgroundColor="#039BE5"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="4dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="20dp">
+
+        <!-- Chip Icon -->
+        <ImageView
+            android:id="@+id/ivChip"
+            android:layout_width="32dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_sim_card"
+            app:tint="#FFD700" 
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- NFC Icon (Optional aesthetic) -->
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_nfc"
+            app:tint="#64748B"
+            android:layout_marginStart="12dp"
+            app:layout_constraintStart_toEndOf="@id/ivChip"
+            app:layout_constraintTop_toTopOf="@id/ivChip"
+            app:layout_constraintBottom_toBottomOf="@id/ivChip"/>
+
+        <!-- Bank/Brand Name (Top Right) -->
+        <TextView
+            android:id="@+id/tvBankName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="NAPAS"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:letterSpacing="0.1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- PAN -->
+        <TextView
+            android:id="@+id/tvPan"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:fontFamily="monospace"
+            android:textColor="#E2E8F0"
+            android:textSize="18sp"
+            android:letterSpacing="0.15"
+            tools:text="9704 1985 .... 8888"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/ivChip" />
+
+        <!-- Expiry Label -->
+        <TextView
+            android:id="@+id/tvExpiryLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VALID THRU"
+            android:textColor="#94A3B8"
+            android:textSize="9sp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvPan" />
+
+        <!-- Expiry Date -->
+        <TextView
+            android:id="@+id/tvExpiry"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#F8FAFC"
+            android:textSize="14sp"
+            android:fontFamily="monospace"
+            tools:text="12/25"
+            app:layout_constraintStart_toStartOf="@id/tvExpiryLabel"
+            app:layout_constraintTop_toBottomOf="@id/tvExpiryLabel" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

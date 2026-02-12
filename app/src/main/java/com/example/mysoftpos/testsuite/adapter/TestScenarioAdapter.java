@@ -19,6 +19,7 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
     private List<TestScenario> scenarios = Collections.emptyList();
     private final OnItemClickListener listener;
     private final OnItemLongClickListener longListener;
+    private final OnItemToggleListener toggleListener;
     private boolean multiMode = false;
     private boolean selectionMode = false;
 
@@ -30,9 +31,15 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
         void onItemLongClick(TestScenario scenario);
     }
 
-    public TestScenarioAdapter(OnItemClickListener listener, OnItemLongClickListener longListener) {
+    public interface OnItemToggleListener {
+        void onItemToggle(TestScenario scenario);
+    }
+
+    public TestScenarioAdapter(OnItemClickListener listener, OnItemLongClickListener longListener,
+            OnItemToggleListener toggleListener) {
         this.listener = listener;
         this.longListener = longListener;
+        this.toggleListener = toggleListener;
     }
 
     public void setScenarios(List<TestScenario> scenarios) {
@@ -61,7 +68,7 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         TestScenario item = scenarios.get(position);
-        holder.bind(item, listener, longListener, multiMode, selectionMode);
+        holder.bind(item, listener, longListener, toggleListener, multiMode, selectionMode);
     }
 
     @Override
@@ -73,9 +80,6 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
         final TextView tvTitle;
         final TextView tvDetail;
         final TextView chipBadge;
-        final ImageView imgIcon;
-        final ImageView ivArrow;
-        final FrameLayout iconContainer;
         final CheckBox cbSelect;
         final ImageView ivEdit;
 
@@ -84,15 +88,12 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
             tvTitle = view.findViewById(R.id.tvTitle);
             tvDetail = view.findViewById(R.id.tvDetail);
             chipBadge = view.findViewById(R.id.chipBadge);
-            imgIcon = view.findViewById(R.id.imgIcon);
-            ivArrow = view.findViewById(R.id.ivArrow);
-            iconContainer = view.findViewById(R.id.iconContainer);
             cbSelect = view.findViewById(R.id.cbSelect);
             ivEdit = view.findViewById(R.id.ivEdit);
         }
 
         void bind(TestScenario item, OnItemClickListener listener, OnItemLongClickListener longListener,
-                boolean multiMode, boolean selectionMode) {
+                OnItemToggleListener toggleListener, boolean multiMode, boolean selectionMode) {
             String code = item.getField(22);
             if (code == null)
                 code = "---";
@@ -111,12 +112,16 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
             if (multiMode && selectionMode) {
                 cbSelect.setVisibility(View.VISIBLE);
                 cbSelect.setChecked(item.isSelected());
-                imgIcon.setVisibility(View.GONE);
-                tvDetail.setText(item.isSelected() ? "✅ Configured" : "Tap to configure");
+
+                if (item.isSelected()) {
+                    tvDetail.setText("Selected");
+                } else {
+                    tvDetail.setText("Tap to select");
+                }
                 ivEdit.setVisibility(View.GONE);
             } else {
                 cbSelect.setVisibility(View.GONE);
-                imgIcon.setVisibility(View.VISIBLE);
+
                 // In multi-thread mode (but selection OFF), show "Long press to select" or
                 // standard text
                 if (multiMode) {
@@ -129,6 +134,14 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
             }
 
             itemView.setOnClickListener(v -> listener.onItemClick(item));
+
+            // Separate listener for Checkbox
+            cbSelect.setOnClickListener(v -> {
+                if (toggleListener != null) {
+                    toggleListener.onItemToggle(item);
+                }
+            });
+
             itemView.setOnLongClickListener(v -> {
                 if (longListener != null) {
                     longListener.onItemLongClick(item);

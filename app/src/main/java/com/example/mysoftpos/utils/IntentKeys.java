@@ -18,6 +18,7 @@ public final class IntentKeys {
     public static final String AMOUNT = "AMOUNT";
     public static final String CURRENCY = "CURRENCY";
     public static final String CURRENCY_CODE = "CURRENCY_CODE";
+    public static final String COUNTRY_CODE = "COUNTRY_CODE";
     public static final String SUCCESS = "SUCCESS";
     public static final String MASKED_PAN = "MASKED_PAN";
     public static final String TXN_DATE = "TXN_DATE";

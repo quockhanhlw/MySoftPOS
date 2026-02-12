@@ -1,157 +1,165 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8FAFC">
+    android:orientation="vertical"
+    android:background="@color/auth_background"
+    tools:context=".ui.auth.LoginActivity">
 
-    <!-- Curved Header Background -->
-    <View
-        android:id="@+id/viewHeader"
-        android:layout_width="match_parent"
-        android:layout_height="220dp"
-        android:background="@drawable/bg_header_curved"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <!-- Back Button -->
-    <ImageView
-        android:id="@+id/btnBack"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="48dp"
-        android:padding="8dp"
-        android:src="@drawable/ic_back"
-        app:tint="#FFFFFF"
-        android:background="@drawable/bg_glass_card"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <!-- Header Text -->
-    <TextView
-        android:id="@+id/tvTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="24dp"
-        android:text="@string/login_title"
-        android:fontFamily="sans-serif-bold"
-        android:textSize="32sp"
-        android:textColor="#FFFFFF"
-        app:layout_constraintTop_toBottomOf="@id/btnBack"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <TextView
-        android:id="@+id/tvSubtitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="4dp"
-        android:text="@string/login_description"
-        android:textSize="16sp"
-        android:textColor="#E2E8F0"
-        app:layout_constraintTop_toBottomOf="@id/tvTitle"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <!-- Login Form Container -->
-    <androidx.cardview.widget.CardView
+    <!-- Header Section -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="32dp"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="8dp"
-        app:cardBackgroundColor="#FFFFFF"
-        app:layout_constraintTop_toBottomOf="@id/tvSubtitle">
+        android:orientation="vertical"
+        android:padding="32dp">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_app_logo"
+            app:tint="@color/auth_accent_start" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/login_title"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="@color/auth_text_title"
+            android:layout_marginTop="24dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/login_description"
+            android:textSize="16sp"
+            android:textColor="@color/auth_text_body"
+            android:layout_marginTop="8dp" />
+
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:paddingHorizontal="32dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/login_username_label"
-                android:fontFamily="sans-serif-medium"
-                android:textColor="#64748B"
-                android:textSize="14sp"
-                android:layout_marginBottom="8dp"/>
-
-            <EditText
-                android:id="@+id/etUsername"
+            <!-- Card Container -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:background="@drawable/bg_input_premium"
-                android:hint="@string/login_username_hint"
-                android:paddingHorizontal="16dp"
-                android:textColor="#1E293B"
-                android:textSize="16sp"
-                android:singleLine="true"/>
-
-            <TextView
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/login_password_label"
-                android:fontFamily="sans-serif-medium"
-                android:textColor="#64748B"
-                android:textSize="14sp"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="8dp"/>
+                android:orientation="vertical"
+                android:background="@drawable/bg_auth_card_white"
+                android:elevation="0dp">
 
-            <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-                
+                <!-- Email/Phone Input -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Email or Phone"
+                    android:textColor="@color/auth_text_title"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp"/>
+
                 <EditText
-                    android:id="@+id/etPassword"
+                    android:id="@+id/etUsername"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
-                    android:background="@drawable/bg_input_premium"
-                    android:hint="@string/login_password_hint"
-                    android:inputType="textPassword"
+                    android:background="@drawable/bg_auth_input"
                     android:paddingHorizontal="16dp"
-                    android:paddingEnd="48dp"
-                    android:textColor="#1E293B"
-                    android:textSize="16sp"
-                    android:singleLine="true"/>
+                    android:hint="user@example.com"
+                    android:textColorHint="@color/auth_text_hint"
+                    android:textColor="@color/auth_text_title"
+                    android:inputType="textEmailAddress" />
 
-                <ImageView
-                    android:id="@+id/btnShowPassword"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/ic_eye_off"
-                    android:padding="12dp"
-                    android:layout_gravity="end|center_vertical"
-                    app:tint="#94A3B8"/>
-            </FrameLayout>
+                <!-- Password Input -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/login_password_label"
+                    android:textColor="@color/auth_text_title"
+                    android:textStyle="bold"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="8dp"/>
 
-            <TextView
-                android:id="@+id/tvForgotPassword"
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <EditText
+                        android:id="@+id/etPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:background="@drawable/bg_auth_input"
+                        android:paddingHorizontal="16dp"
+                        android:hint="••••••••"
+                        android:textColorHint="@color/auth_text_hint"
+                        android:textColor="@color/auth_text_title"
+                        android:inputType="textPassword" />
+                    
+                    <!-- Eye Icon could go here, omitting for simplicity in this pass -->
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/tvForgotPassword"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/login_forgot_password"
+                    android:textColor="@color/auth_text_link"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="16dp"
+                    android:textStyle="bold" />
+
+                <!-- Login Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnLogin"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:layout_marginTop="32dp"
+                    android:text="@string/login_button"
+                    android:textColor="@android:color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="@null"
+                    android:background="@drawable/bg_auth_button"
+                    app:cornerRadius="16dp"
+                    android:elevation="4dp"/>
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:layout_marginTop="16dp"
-                android:text="@string/login_forgot_password"
-                android:textColor="@color/neo_primary"
-                android:fontFamily="sans-serif-medium"
-                android:textSize="14sp"/>
+                android:orientation="horizontal"
+                android:layout_gravity="center"
+                android:paddingBottom="32dp">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnLogin"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:layout_marginTop="32dp"
-                android:text="@string/login_button"
-                android:textSize="16sp"
-                android:fontFamily="sans-serif-bold"
-                app:cornerRadius="30dp"
-                android:backgroundTint="@color/neo_primary"
-                android:stateListAnimator="@null"
-                android:elevation="4dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Don't have an account? "
+                    android:textColor="@color/auth_text_body" />
+
+                <TextView
+                    android:id="@+id/tvRegister"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Sign Up"
+                    android:textColor="@color/auth_text_link"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+</LinearLayout>

@@ -45,14 +45,18 @@ public class RunnerViewModel extends AndroidViewModel {
     /**
      * Build ISO message and show field breakdown without sending.
      */
+    /**
+     * Build ISO message and show field breakdown without sending.
+     */
     public void previewTransaction(String de22, String track2Data, String panData, String expiryData,
-            String pinBlockData, String txnType) {
+            String pinBlockData, String txnType, String amount, String currencyCode, String countryCode) {
         executor.execute(() -> {
             try {
                 StringBuilder sb = new StringBuilder();
                 TransactionExecutor.LogCallback logger = msg -> sb.append(msg).append("\n");
 
-                TransactionContext ctx = TransactionExecutor.buildContext(getApplication(), txnType);
+                TransactionContext ctx = TransactionExecutor.buildContext(getApplication(), txnType, amount,
+                        currencyCode, countryCode);
                 CardInputData card = TransactionExecutor.prepareCard(
                         getApplication(), de22, panData, expiryData, track2Data, pinBlockData, ctx, logger);
 
@@ -80,14 +84,15 @@ public class RunnerViewModel extends AndroidViewModel {
     }
 
     public void runTransaction(String de22, String track2Data, String panData, String expiryData,
-            String pinBlockData, String txnType) {
+            String pinBlockData, String txnType, String amount, String currencyCode, String countryCode) {
         executor.execute(() -> {
             try {
                 StringBuilder sb = new StringBuilder();
 
                 TransactionExecutor.LogCallback logger = msg -> sb.append(msg).append("\n");
 
-                TransactionContext ctx = TransactionExecutor.buildContext(getApplication(), txnType);
+                TransactionContext ctx = TransactionExecutor.buildContext(getApplication(), txnType, amount,
+                        currencyCode, countryCode);
 
                 CardInputData card = TransactionExecutor.prepareCard(
                         getApplication(), de22, panData, expiryData, track2Data, pinBlockData, ctx, logger);

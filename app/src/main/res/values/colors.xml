@@ -140,8 +140,31 @@
     <color name="neo_keypad_pressed">#E0E7EF</color>
     <color name="neo_keypad_text">#0A2463</color>
 
-    <!-- Typography -->
-    <color name="neo_text_amount">#0A2463</color>
-    <color name="neo_text_label">#64748B</color>
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!--                    CLEAN LIGHT THEME (User Requested)                -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    
+    <!-- Backgrounds -->
+    <color name="auth_background">#FFFFFF</color>
+    <color name="auth_surface">#F8FAFC</color> <!-- Very light gray for contrast -->
+    
+    <!-- Text -->
+    <color name="auth_text_title">#1E293B</color> <!-- Slate 800 -->
+    <color name="auth_text_body">#64748B</color>  <!-- Slate 500 -->
+    <color name="auth_text_hint">#94A3B8</color>  <!-- Slate 400 -->
+    <color name="auth_text_link">#3B82F6</color>  <!-- Blue 500 -->
+    
+    <!-- Accents / Gradients -->
+    <color name="auth_accent_start">#3B82F6</color> <!-- Blue 500 -->
+    <color name="auth_accent_end">#06B6D4</color>   <!-- Cyan 500 -->
+    <color name="auth_shadow">#1A64748B</color>     <!-- Soft shadow -->
+
+    <!-- Inputs -->
+    <color name="auth_input_bg">#F1F5F9</color>     <!-- Slate 100 -->
+    <color name="auth_input_stroke">#E2E8F0</color> <!-- Slate 200 -->
+    
+    <!-- Neo-Fintech (Kept for reference or alternative elements) -->
     <color name="neo_text_secondary">#64748B</color>
+    <color name="neo_text_label">#64748B</color>
+    <color name="neo_text_amount">#1E293B</color>
 </resources>

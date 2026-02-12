@@ -1,343 +1,103 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8FAFC">
+    android:orientation="vertical"
+    android:background="@color/auth_background"
+    tools:context=".ui.auth.RegisterActivity">
 
-    <!-- Header Background -->
-    <View
+    <!-- Header Section -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="180dp"
-        android:background="@drawable/bg_header_curved"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:layout_marginBottom="24dp">
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true">
-
-        <LinearLayout
-            android:layout_width="match_parent"
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="24dp"
-            android:paddingTop="32dp"
-            android:paddingBottom="48dp">
+            android:layout_gravity="start"
+            android:src="@drawable/ic_back"
+            android:padding="8dp"
+            app:tint="@color/text_primary"
+            android:background="?attr/selectableItemBackgroundBorderless"/>
 
-            <!-- Nav Header -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+        <ImageView
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@drawable/logo"
+            android:contentDescription="@string/app_name" 
+            android:layout_marginTop="-24dp"/>
 
-                <ImageView
-                    android:id="@+id/btnBack"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:src="@drawable/ic_back"
-                    android:padding="8dp"
-                    android:background="@drawable/bg_glass_card"
-                    app:tint="#FFFFFF"/>
-                
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:text="@string/register_title"
-                    android:fontFamily="sans-serif-bold"
-                    android:textSize="24sp"
-                    android:textColor="#FFFFFF"/>
-            </LinearLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/register_title"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:layout_marginTop="16dp" />
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/register_description"
-                android:textColor="#E2E8F0"
-                android:textSize="14sp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/register_subtitle"
+            android:textSize="14sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginTop="8dp" />
 
-            <!-- Main Card -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                app:cardCornerRadius="24dp"
-                app:cardElevation="8dp"
-                app:cardBackgroundColor="#FFFFFF">
+    </LinearLayout>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="24dp">
+    <!-- Content Area (Steps) -->
+    <ViewFlipper
+        android:id="@+id/viewFlipper"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:inAnimation="@android:anim/slide_in_left"
+        android:outAnimation="@android:anim/slide_out_right">
 
-                    <!-- Account Type Selection -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/register_account_type"
-                        android:fontFamily="sans-serif-medium"
-                        android:textColor="#64748B"
-                        android:textSize="14sp"/>
+        <!-- Step 1 -->
+        <include
+            android:id="@+id/layoutStep1"
+            layout="@layout/layout_register_step1" />
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginTop="12dp"
-                        android:baselineAligned="false">
+        <!-- Step 2 -->
+        <include
+            android:id="@+id/layoutStep2"
+            layout="@layout/layout_register_step2" />
 
-                        <!-- Personal Card -->
-                        <LinearLayout
-                            android:id="@+id/cardPersonal"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:padding="16dp"
-                            android:background="@drawable/selector_card_selection"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:gravity="center">
-                            
-                            <ImageView
-                                android:layout_width="32dp"
-                                android:layout_height="32dp"
-                                android:src="@drawable/ic_personal_user"
-                                app:tint="#0F766E"/>
-                            
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="@string/register_personal"
-                                android:fontFamily="sans-serif-bold"
-                                android:textColor="#0F766E"
-                                android:textSize="12sp"/>
-                        </LinearLayout>
+    </ViewFlipper>
 
-                        <Space android:layout_width="12dp" android:layout_height="wrap_content"/>
+    <!-- Footer (Login Link) -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:layout_gravity="center_horizontal">
 
-                        <!-- Business Card -->
-                        <LinearLayout
-                            android:id="@+id/cardBusiness"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:padding="16dp"
-                            android:background="@drawable/selector_card_selection"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:gravity="center">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/register_login_prompt"
+            android:textColor="@color/text_secondary" />
 
-                            <ImageView
-                                android:layout_width="32dp"
-                                android:layout_height="32dp"
-                                android:src="@drawable/ic_business_building"
-                                app:tint="#64748B"/>
+        <TextView
+            android:id="@+id/tvLogin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/register_login_action"
+            android:textColor="@color/primary"
+            android:textStyle="bold"
+            android:layout_marginStart="4dp"
+            android:clickable="true"
+            android:focusable="true"/>
+    </LinearLayout>
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="@string/register_business"
-                                android:fontFamily="sans-serif-medium"
-                                android:textColor="#64748B"
-                                android:textSize="12sp"/>
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <!-- Form Fields -->
-                    
-                    <!-- Full Name -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/register_full_name"
-                        android:layout_marginTop="24dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:textColor="#64748B"
-                        android:textSize="14sp"/>
-                    <EditText
-                        android:id="@+id/etFullName"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input_premium"
-                        android:hint="@string/register_full_name_hint"
-                        android:inputType="textPersonName"
-                        android:paddingHorizontal="16dp"
-                        android:textSize="14sp"/>
-
-                    <!-- Date of Birth -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/register_dob"
-                        android:layout_marginTop="16dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:textColor="#64748B"
-                        android:textSize="14sp"/>
-                    <EditText
-                        android:id="@+id/etDob"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input_premium"
-                        android:hint="@string/register_dob_hint"
-                        android:inputType="date"
-                        android:paddingHorizontal="16dp"
-                        android:textSize="14sp"/>
-
-                    <!-- Phone Number -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/register_phone"
-                        android:layout_marginTop="16dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:textColor="#64748B"
-                        android:textSize="14sp"/>
-                    <EditText
-                        android:id="@+id/etPhone"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input_premium"
-                        android:hint="@string/register_phone_hint"
-                        android:inputType="phone"
-                        android:paddingHorizontal="16dp"
-                        android:textSize="14sp"/>
-
-                    <!-- Address -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/register_address"
-                        android:layout_marginTop="16dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:textColor="#64748B"
-                        android:textSize="14sp"/>
-                    <EditText
-                        android:id="@+id/etAddress"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input_premium"
-                        android:hint="@string/register_address_hint"
-                        android:inputType="textPostalAddress"
-                        android:paddingHorizontal="16dp"
-                        android:textSize="14sp"/>
-
-                    <!-- Username -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/register_username"
-                        android:layout_marginTop="16dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:textColor="#64748B"
-                        android:textSize="14sp"/>
-                    <EditText
-                        android:id="@+id/etUsername"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input_premium"
-                        android:hint="@string/register_username_hint"
-                        android:paddingHorizontal="16dp"
-                        android:textSize="14sp"/>
-                    
-                    <!-- Password -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/register_password"
-                        android:layout_marginTop="16dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:textColor="#64748B"
-                        android:textSize="14sp"/>
-                    <EditText
-                        android:id="@+id/etPassword"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input_premium"
-                        android:inputType="textPassword"
-                        android:hint="@string/register_password_hint"
-                        android:paddingHorizontal="16dp"
-                        android:drawableEnd="@drawable/ic_eye_off"
-                        android:drawableTint="#9CA3AF"
-                        android:textSize="14sp"/>
-
-                    <!-- Confirm Password -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/register_confirm_password"
-                        android:layout_marginTop="16dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:textColor="#64748B"
-                        android:textSize="14sp"/>
-                    <EditText
-                        android:id="@+id/etConfirmPassword"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input_premium"
-                        android:inputType="textPassword"
-                        android:hint="@string/register_confirm_password_hint"
-                        android:paddingHorizontal="16dp"
-                        android:drawableEnd="@drawable/ic_eye_off"
-                        android:drawableTint="#9CA3AF"
-                        android:textSize="14sp"/>
-
-                    <!-- Terms -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="24dp"
-                        android:orientation="horizontal"
-                        android:gravity="top">
-                        <CheckBox
-                            android:id="@+id/cbTerms"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:buttonTint="@color/neo_primary"
-                            android:minWidth="0dp"
-                            android:minHeight="0dp"
-                            android:layout_marginEnd="8dp"/>
-                        <TextView
-                            android:id="@+id/tvTermsText"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/register_terms_text"
-                            android:textColor="#64748B"
-                            android:textSize="13sp"
-                            android:lineSpacingExtra="2dp"/>
-                    </LinearLayout>
-
-                    <!-- Register Button -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnRegister"
-                        android:layout_width="match_parent"
-                        android:layout_height="60dp"
-                        android:layout_marginTop="32dp"
-                        android:text="@string/register_button"
-                        android:textSize="16sp"
-                        android:fontFamily="sans-serif-bold"
-                        app:cornerRadius="30dp"
-                        android:backgroundTint="@color/neo_primary"
-                        android:stateListAnimator="@null"
-                        android:elevation="4dp"/>
-
-                </LinearLayout>
-
-            </androidx.cardview.widget.CardView>
-        </LinearLayout>
-    </ScrollView>
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>
