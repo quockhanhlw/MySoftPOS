@@ -20,13 +20,19 @@ public class TestCaseAdapter extends RecyclerView.Adapter<TestCaseAdapter.ViewHo
 
     private List<TestCaseEntity> cases = new ArrayList<>();
     private final OnItemClickListener listener;
+    private final OnItemLongClickListener longListener;
 
     public interface OnItemClickListener {
         void onItemClick(TestCaseEntity testCase);
     }
 
-    public TestCaseAdapter(OnItemClickListener listener) {
+    public interface OnItemLongClickListener {
+        void onItemLongClick(TestCaseEntity testCase);
+    }
+
+    public TestCaseAdapter(OnItemClickListener listener, OnItemLongClickListener longListener) {
         this.listener = listener;
+        this.longListener = longListener;
     }
 
     public void setCases(List<TestCaseEntity> cases) {
@@ -61,6 +67,10 @@ public class TestCaseAdapter extends RecyclerView.Adapter<TestCaseAdapter.ViewHo
         }
 
         holder.itemView.setOnClickListener(v -> listener.onItemClick(testCase));
+        holder.itemView.setOnLongClickListener(v -> {
+            longListener.onItemLongClick(testCase);
+            return true;
+        });
     }
 
     @Override
@@ -79,9 +89,3 @@ public class TestCaseAdapter extends RecyclerView.Adapter<TestCaseAdapter.ViewHo
         }
     }
 }
-
-
-
-
-
-

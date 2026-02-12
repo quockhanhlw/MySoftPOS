@@ -1,7 +1,6 @@
 package com.example.mysoftpos.ui.dashboard;
 
 import com.example.mysoftpos.R;
-import com.example.mysoftpos.data.local.dao.TransactionDao;
 import com.example.mysoftpos.ui.purchase.PurchaseAmountActivity;
 import com.example.mysoftpos.ui.balance.BalanceInquiryActivity;
 import com.example.mysoftpos.ui.settings.SettingsActivity;
@@ -14,16 +13,12 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
+
 import androidx.lifecycle.Observer;
 
 import com.example.mysoftpos.data.local.AppDatabase;
 import com.example.mysoftpos.data.local.entity.TransactionEntity;
-import com.example.mysoftpos.utils.config.ConfigManager;
 
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;

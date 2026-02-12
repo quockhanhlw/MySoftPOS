@@ -6,6 +6,7 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+import androidx.room.Transaction;
 import androidx.room.Update;
 import java.util.List;
 
@@ -43,10 +44,12 @@ public interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE user_id = :userId ORDER BY timestamp DESC")
     androidx.lifecycle.LiveData<List<TransactionEntity>> getTransactionsByUserIdLive(long userId);
 
+    @Transaction
     @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")
     androidx.lifecycle.LiveData<com.example.mysoftpos.data.local.entity.TransactionWithDetails> getTransactionWithDetailsById(
             long id);
 
+    @Transaction
     @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")
     com.example.mysoftpos.data.local.entity.TransactionWithDetails getTransactionWithDetailsByIdSync(long id);
 }

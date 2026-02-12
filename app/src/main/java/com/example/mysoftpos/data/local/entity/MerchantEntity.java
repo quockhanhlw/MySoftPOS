@@ -2,6 +2,7 @@ package com.example.mysoftpos.data.local.entity;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 import androidx.room.Index;
 
@@ -19,6 +20,7 @@ public class MerchantEntity {
     public MerchantEntity() {
     }
 
+    @Ignore
     public MerchantEntity(String merchantCode, String merchantNameLocation) {
         this.merchantCode = merchantCode;
         this.merchantNameLocation = merchantNameLocation;

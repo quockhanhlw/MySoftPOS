@@ -1,9 +1,8 @@
 package com.example.mysoftpos.utils.config;
 
-import com.example.mysoftpos.utils.config.ConfigManager;
-
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
 
 import android.content.res.AssetManager;
 import org.json.JSONObject;
@@ -219,7 +218,7 @@ public class ConfigManager {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("ConfigManager", "Load config", e);
             // Fallbacks
             defMcc = "5411";
             defAcq = "970488";

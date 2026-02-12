@@ -35,12 +35,13 @@ public class DynamicTestSuiteViewModel extends AndroidViewModel {
         });
     }
 
+    public void updateSuite(TestSuiteEntity suite) {
+        executor.execute(() -> {
+            dao.update(suite);
+        });
+    }
+
     public void deleteSuite(TestSuiteEntity suite) {
         executor.execute(() -> dao.delete(suite));
     }
 }
-
-
-
-
-

@@ -1,6 +1,6 @@
 package com.example.mysoftpos.iso8583.util;
 
-import com.example.mysoftpos.iso8583.util.StandardIsoPacker;
+import android.util.Log;
 
 import com.example.mysoftpos.iso8583.message.IsoMessage;
 import java.io.ByteArrayOutputStream;
@@ -166,10 +166,7 @@ public class StandardIsoPacker {
                     String lenStr = String.format(Locale.ROOT, "%02d", len);
                     baos.write(lenStr.getBytes(StandardCharsets.US_ASCII));
                     baos.write(val.getBytes(StandardCharsets.US_ASCII));
-                    if (i == 32) {
-                        System.out.println("DEBUG_ISO_PACKER_32: Len=" + lenStr + " Val=" + val);
-                        android.util.Log.d("ISO_DEBUG", "DE 32 Packed: " + lenStr + val);
-                    }
+
                 } else if (def.type == FieldType.LLLVAR) {
                     int len = val.length();
                     String lenStr = String.format(Locale.ROOT, "%03d", len);
@@ -330,7 +327,7 @@ public class StandardIsoPacker {
             IsoMessage msg = new StandardIsoPacker().unpack(responseData);
             return msg.getField(fieldId);
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("IsoPacker", "unpackField", e);
             return null;
         }
     }

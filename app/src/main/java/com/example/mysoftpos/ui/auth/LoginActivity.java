@@ -1,9 +1,6 @@
 package com.example.mysoftpos.ui.auth;
 
 import com.example.mysoftpos.R;
-import com.example.mysoftpos.data.local.dao.UserDao;
-import com.example.mysoftpos.data.local.entity.UserEntity;
-import com.example.mysoftpos.ui.dashboard.MainDashboardActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -13,7 +10,6 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 
 import com.example.mysoftpos.ui.BaseActivity;

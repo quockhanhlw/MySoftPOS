@@ -1,6 +1,7 @@
 package com.example.mysoftpos.testsuite.viewmodel;
 
 import android.app.Application;
+import android.util.Log;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -118,7 +119,7 @@ public class RunnerViewModel extends AndroidViewModel {
                 logMessage.postValue("\n*** STATUS: FAIL ***\nError: Timeout waiting for response.");
             } catch (Exception e) {
                 logMessage.postValue("\n*** STATUS: FAIL ***\nError: " + e.getMessage());
-                e.printStackTrace();
+                Log.e("RunnerVM", "Run transaction", e);
             }
         });
     }
@@ -147,7 +148,7 @@ public class RunnerViewModel extends AndroidViewModel {
             logMessage.postValue("Transaction saved to History (Trace: " + ctx.stan11 + ")");
         } catch (Exception e) {
             logMessage.postValue("Error saving to DB: " + e.getMessage());
-            e.printStackTrace();
+            Log.e("RunnerVM", "Save to DB", e);
         }
     }
 }

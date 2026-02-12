@@ -3,6 +3,7 @@ package com.example.mysoftpos.data.local.entity;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
+import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
@@ -23,6 +24,7 @@ public class TerminalEntity {
     public TerminalEntity() {
     }
 
+    @Ignore
     public TerminalEntity(String terminalCode, long merchantId) {
         this.terminalCode = terminalCode;
         this.merchantId = merchantId;

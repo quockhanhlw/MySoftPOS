@@ -1,6 +1,6 @@
 package com.example.mysoftpos.iso8583.builder;
 
-import com.example.mysoftpos.iso8583.builder.ConfigurableIsoBuilder;
+import android.util.Log;
 import com.example.mysoftpos.iso8583.TransactionContext;
 
 import com.example.mysoftpos.iso8583.message.IsoMessage;
@@ -51,7 +51,7 @@ public class ConfigurableIsoBuilder {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("IsoBuilder", "Build error", e);
         }
 
         return msg;

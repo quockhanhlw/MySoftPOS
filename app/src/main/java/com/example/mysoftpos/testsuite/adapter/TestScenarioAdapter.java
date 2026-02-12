@@ -18,14 +18,21 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
 
     private List<TestScenario> scenarios = Collections.emptyList();
     private final OnItemClickListener listener;
+    private final OnItemLongClickListener longListener;
     private boolean multiMode = false;
+    private boolean selectionMode = false;
 
     public interface OnItemClickListener {
         void onItemClick(TestScenario scenario);
     }
 
-    public TestScenarioAdapter(OnItemClickListener listener) {
+    public interface OnItemLongClickListener {
+        void onItemLongClick(TestScenario scenario);
+    }
+
+    public TestScenarioAdapter(OnItemClickListener listener, OnItemLongClickListener longListener) {
         this.listener = listener;
+        this.longListener = longListener;
     }
 
     public void setScenarios(List<TestScenario> scenarios) {
@@ -35,6 +42,11 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
 
     public void setMultiMode(boolean multiMode) {
         this.multiMode = multiMode;
+        notifyDataSetChanged();
+    }
+
+    public void setSelectionMode(boolean selectionMode) {
+        this.selectionMode = selectionMode;
         notifyDataSetChanged();
     }
 
@@ -49,7 +61,7 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         TestScenario item = scenarios.get(position);
-        holder.bind(item, listener, multiMode);
+        holder.bind(item, listener, longListener, multiMode, selectionMode);
     }
 
     @Override
@@ -65,6 +77,7 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
         final ImageView ivArrow;
         final FrameLayout iconContainer;
         final CheckBox cbSelect;
+        final ImageView ivEdit;
 
         ViewHolder(View view) {
             super(view);
@@ -75,29 +88,60 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
             ivArrow = view.findViewById(R.id.ivArrow);
             iconContainer = view.findViewById(R.id.iconContainer);
             cbSelect = view.findViewById(R.id.cbSelect);
+            ivEdit = view.findViewById(R.id.ivEdit);
         }
 
-        void bind(TestScenario item, OnItemClickListener listener, boolean multiMode) {
+        void bind(TestScenario item, OnItemClickListener listener, OnItemLongClickListener longListener,
+                boolean multiMode, boolean selectionMode) {
             String code = item.getField(22);
             if (code == null)
                 code = "---";
 
             String desc = item.getDescription();
             tvTitle.setText(desc);
-            chipBadge.setText(code);
 
-            if (multiMode) {
+            if (item.isCustom()) {
+                chipBadge.setText("CUSTOM");
+                chipBadge.setBackgroundResource(R.drawable.bg_badge_custom); // Need to create this or use generic
+            } else {
+                chipBadge.setText(code);
+                chipBadge.setBackgroundResource(R.drawable.bg_badge_default); // Assuming exists or default
+            }
+
+            if (multiMode && selectionMode) {
                 cbSelect.setVisibility(View.VISIBLE);
                 cbSelect.setChecked(item.isSelected());
                 imgIcon.setVisibility(View.GONE);
                 tvDetail.setText(item.isSelected() ? "✅ Configured" : "Tap to configure");
+                ivEdit.setVisibility(View.GONE);
             } else {
                 cbSelect.setVisibility(View.GONE);
                 imgIcon.setVisibility(View.VISIBLE);
-                tvDetail.setText("Tap to run test case");
+                // In multi-thread mode (but selection OFF), show "Long press to select" or
+                // standard text
+                if (multiMode) {
+                    tvDetail.setText("Long press to select");
+                } else {
+                    tvDetail.setText("Tap to run test case");
+                }
+                // Show Edit button only for custom cases
+                ivEdit.setVisibility(item.isCustom() ? View.VISIBLE : View.GONE);
             }
 
             itemView.setOnClickListener(v -> listener.onItemClick(item));
+            itemView.setOnLongClickListener(v -> {
+                if (longListener != null) {
+                    longListener.onItemLongClick(item);
+                    return true;
+                }
+                return false;
+            });
+
+            // Edit Button Click
+            ivEdit.setOnClickListener(v -> {
+                if (longListener != null)
+                    longListener.onItemLongClick(item);
+            });
         }
     }
 }

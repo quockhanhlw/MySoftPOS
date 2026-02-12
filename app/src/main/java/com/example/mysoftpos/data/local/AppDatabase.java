@@ -1,16 +1,5 @@
 package com.example.mysoftpos.data.local;
 
-import com.example.mysoftpos.data.local.dao.UserDao;
-import com.example.mysoftpos.data.local.entity.UserEntity;
-import com.example.mysoftpos.data.local.entity.TestCaseEntity;
-import com.example.mysoftpos.data.local.dao.TransactionDao;
-import com.example.mysoftpos.data.local.dao.TestCaseDao;
-import com.example.mysoftpos.data.local.dao.TransactionTemplateDao;
-import com.example.mysoftpos.data.local.dao.TestSuiteDao;
-import com.example.mysoftpos.data.local.entity.TransactionTemplateEntity;
-import com.example.mysoftpos.data.local.entity.TestSuiteEntity;
-import com.example.mysoftpos.data.local.entity.TransactionEntity;
-
 import android.content.Context;
 
 import androidx.room.Database;
@@ -29,7 +18,7 @@ import com.example.mysoftpos.data.local.dao.*;
         MerchantEntity.class,
         TerminalEntity.class,
         CardEntity.class
-}, version = 5, exportSchema = false) // Bumped version to 5 and destructive migration enabled below
+}, version = 7, exportSchema = false) // Bumped version to 7
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract TransactionDao transactionDao();

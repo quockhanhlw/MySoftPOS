@@ -2,6 +2,7 @@ package com.example.mysoftpos.data.local.entity;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 import androidx.room.Index;
 
@@ -25,6 +26,7 @@ public class CardEntity {
     public CardEntity() {
     }
 
+    @Ignore
     public CardEntity(String panMasked, String bin, String last4, String scheme) {
         this.panMasked = panMasked;
         this.bin = bin;

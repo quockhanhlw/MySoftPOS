@@ -46,13 +46,24 @@ public class TestCaseRepository {
                 dao.insert(entity);
 
             } catch (Exception e) {
-                e.printStackTrace();
+                android.util.Log.e("TestCaseRepo", "Save result", e);
             }
         });
     }
+
+    public void insert(TestCaseEntity entity) {
+        executor.execute(() -> dao.insert(entity));
+    }
+
+    public void update(TestCaseEntity entity) {
+        executor.execute(() -> dao.update(entity));
+    }
+
+    public void delete(TestCaseEntity entity) {
+        executor.execute(() -> dao.delete(entity));
+    }
+
+    public LiveData<List<TestCaseEntity>> getCustomCasesByType(String type) {
+        return dao.getCustomCasesByType(type);
+    }
 }
-
-
-
-
-

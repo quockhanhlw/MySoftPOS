@@ -16,18 +16,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import com.google.android.material.button.MaterialButton;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
-/**
- * Payment Amount Entry Screen with custom numpad and currency selector.
- * Features: VND/USD toggle by swipe, blinking cursor, numpad shown on tap.
- */
 import com.example.mysoftpos.ui.BaseActivity;
 
 public class PurchaseAmountActivity extends BaseActivity {

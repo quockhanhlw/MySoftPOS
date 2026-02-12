@@ -140,7 +140,7 @@ public class BalanceInquiryActivity extends BaseCardEntryActivity {
                 intent.putExtra(com.example.mysoftpos.utils.IntentKeys.CURRENCY, currency);
 
         } catch (Throwable e) {
-            e.printStackTrace();
+            android.util.Log.e("BalanceInquiry", "Parse DE54", e);
             com.example.mysoftpos.utils.logging.FileLogger.logString(this, "ERROR",
                     "Failed to parse DE54: " + e.getMessage());
         }

@@ -1,6 +1,6 @@
 package com.example.mysoftpos.data.local.dao;
+
 import com.example.mysoftpos.data.local.entity.TestCaseEntity;
-import com.example.mysoftpos.data.local.dao.TestCaseDao;
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
@@ -25,10 +25,7 @@ public interface TestCaseDao {
 
     @Delete
     void delete(TestCaseEntity testCase);
+
+    @Query("SELECT * FROM test_cases WHERE transaction_type = :type AND suite_id = -1 ORDER BY timestamp DESC")
+    LiveData<List<TestCaseEntity>> getCustomCasesByType(String type);
 }
-
-
-
-
-
-

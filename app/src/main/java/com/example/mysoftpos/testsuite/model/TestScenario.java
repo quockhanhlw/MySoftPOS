@@ -53,6 +53,8 @@ public class TestScenario implements Serializable {
     }
 
     private String txnType;
+    private long id = -1;
+    private boolean isCustom = false;
 
     public String getTxnType() {
         return txnType;
@@ -60,5 +62,21 @@ public class TestScenario implements Serializable {
 
     public void setTxnType(String txnType) {
         this.txnType = txnType;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public boolean isCustom() {
+        return isCustom;
+    }
+
+    public void setCustom(boolean custom) {
+        isCustom = custom;
     }
 }

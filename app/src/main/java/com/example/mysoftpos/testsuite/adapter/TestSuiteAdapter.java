@@ -18,13 +18,19 @@ public class TestSuiteAdapter extends RecyclerView.Adapter<TestSuiteAdapter.View
 
     private List<TestSuiteEntity> suites = new ArrayList<>();
     private final OnItemClickListener listener;
+    private final OnItemLongClickListener longListener;
 
     public interface OnItemClickListener {
         void onItemClick(TestSuiteEntity suite);
     }
 
-    public TestSuiteAdapter(OnItemClickListener listener) {
+    public interface OnItemLongClickListener {
+        void onItemLongClick(TestSuiteEntity suite);
+    }
+
+    public TestSuiteAdapter(OnItemClickListener listener, OnItemLongClickListener longListener) {
         this.listener = listener;
+        this.longListener = longListener;
     }
 
     public void setSuites(List<TestSuiteEntity> suites) {
@@ -48,6 +54,10 @@ public class TestSuiteAdapter extends RecyclerView.Adapter<TestSuiteAdapter.View
         holder.text2.setText(suite.description + "\nCreated: " + date);
 
         holder.itemView.setOnClickListener(v -> listener.onItemClick(suite));
+        holder.itemView.setOnLongClickListener(v -> {
+            longListener.onItemLongClick(suite);
+            return true;
+        });
     }
 
     @Override
@@ -66,8 +76,3 @@ public class TestSuiteAdapter extends RecyclerView.Adapter<TestSuiteAdapter.View
         }
     }
 }
-
-
-
-
-

@@ -30,7 +30,7 @@ public class DynamicTestSuiteActivity extends AppCompatActivity {
         RecyclerView recyclerView = findViewById(R.id.recyclerViewSuites);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        adapter = new TestSuiteAdapter(this::openSuite);
+        adapter = new TestSuiteAdapter(this::openSuite, this::showOptionsDialog);
         recyclerView.setAdapter(adapter);
 
         viewModel = new ViewModelProvider(this).get(DynamicTestSuiteViewModel.class);
@@ -49,11 +49,58 @@ public class DynamicTestSuiteActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    private void showOptionsDialog(TestSuiteEntity suite) {
+        CharSequence[] options = { "Rename", "Delete" };
+        new AlertDialog.Builder(this)
+                .setTitle(suite.name)
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        showEditSuiteDialog(suite);
+                    } else {
+                        new AlertDialog.Builder(this)
+                                .setTitle("Delete Suite")
+                                .setMessage("Are you sure you want to delete this suite and all its cases?")
+                                .setPositiveButton("Delete", (d, w) -> viewModel.deleteSuite(suite))
+                                .setNegativeButton("Cancel", null)
+                                .show();
+                    }
+                })
+                .show();
+    }
+
+    private void showEditSuiteDialog(TestSuiteEntity suite) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Edit Test Suite");
+
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_add_suite, null);
+        final EditText etName = view.findViewById(R.id.etSuiteName);
+        final EditText etDesc = view.findViewById(R.id.etSuiteDesc);
+
+        etName.setText(suite.name);
+        etDesc.setText(suite.description);
+
+        builder.setView(view);
+
+        builder.setPositiveButton("Update", (dialog, which) -> {
+            String name = etName.getText().toString().trim();
+            String desc = etDesc.getText().toString().trim();
+            if (name.isEmpty()) {
+                Toast.makeText(this, "Name required", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            suite.name = name;
+            suite.description = desc;
+            viewModel.updateSuite(suite);
+        });
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+
+        builder.show();
+    }
+
     private void showAddSuiteDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("New Test Suite");
 
-        // Simple Layout for Dialog
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_add_suite, null);
         final EditText etName = view.findViewById(R.id.etSuiteName);
         final EditText etDesc = view.findViewById(R.id.etSuiteDesc);

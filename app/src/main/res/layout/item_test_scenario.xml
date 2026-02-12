@@ -67,6 +67,17 @@
                 tools:text="Standard approval flow" />
         </LinearLayout>
 
+        <ImageView
+            android:id="@+id/ivEdit"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="8dp"
+            android:src="@drawable/ic_edit"
+            app:tint="#64748B"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
         <!-- Hidden elements needed for binding but not shown -->
         <FrameLayout
             android:id="@+id/iconContainer"

@@ -127,7 +127,7 @@ public class TransactionDetailViewModel extends BaseViewModel {
                 }
 
             } catch (Exception e) {
-                e.printStackTrace();
+                android.util.Log.e("TxnDetailVM", "Void error", e);
                 postError("Void Error: " + e.getMessage());
             }
         });

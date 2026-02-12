@@ -1,15 +1,10 @@
 package com.example.mysoftpos.data.local.entity;
-import com.example.mysoftpos.data.local.entity.TestCaseEntity;
-import com.example.mysoftpos.data.local.entity.TestSuiteEntity;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
-import androidx.room.ForeignKey;
-import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "test_cases", foreignKeys = @ForeignKey(entity = TestSuiteEntity.class, parentColumns = "id", childColumns = "suite_id", onDelete = ForeignKey.CASCADE), indices = {
-        @Index("suite_id") })
+@Entity(tableName = "test_cases")
 public class TestCaseEntity {
     @PrimaryKey(autoGenerate = true)
     public long id;
@@ -32,15 +27,24 @@ public class TestCaseEntity {
     @ColumnInfo(name = "res_file_path")
     public String responseFilePath; // Path to saved .bin/.iso file
 
+    @ColumnInfo(name = "amount")
+    public String amount;
+
+    @ColumnInfo(name = "de22")
+    public String de22;
+
+    @ColumnInfo(name = "pan")
+    public String pan;
+
+    @ColumnInfo(name = "expiry")
+    public String expiry;
+
+    @ColumnInfo(name = "track2")
+    public String track2;
+
     @ColumnInfo(name = "timestamp")
     public long timestamp;
 
     public TestCaseEntity() {
     }
 }
-
-
-
-
-
-

@@ -228,13 +228,52 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void performPingTest() {
-        if (etServerIp != null) {
-            String serverIp = etServerIp.getText().toString().trim();
-            if (serverIp.isEmpty()) {
-                Toast.makeText(this, "Please enter Server IP", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            Toast.makeText(this, "Ping to " + serverIp + "...", Toast.LENGTH_LONG).show();
+        String serverIp = etServerIp.getText().toString().trim();
+        String portStr = etPort.getText().toString().trim();
+
+        if (serverIp.isEmpty() || portStr.isEmpty()) {
+            Toast.makeText(this, "Please enter IP and Port", Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        int port;
+        try {
+            port = Integer.parseInt(portStr);
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "Invalid Port", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        android.app.ProgressDialog pd = new android.app.ProgressDialog(this);
+        pd.setMessage("Connecting to " + serverIp + ":" + port + "...");
+        pd.setCancelable(false);
+        pd.show();
+
+        new Thread(() -> {
+            try (java.net.Socket socket = new java.net.Socket()) {
+                // Try to connect with a 5-second timeout
+                socket.connect(new java.net.InetSocketAddress(serverIp, port), 5000);
+
+                runOnUiThread(() -> {
+                    pd.dismiss();
+                    showResultDialog(true, "Connection Successful!\nHost is reachable.");
+                });
+            } catch (java.io.IOException e) {
+                final String errorMsg = "Connection Failed:\n" + e.getMessage();
+                runOnUiThread(() -> {
+                    pd.dismiss();
+                    showResultDialog(false, errorMsg);
+                });
+            }
+        }).start();
+    }
+
+    private void showResultDialog(boolean success, String message) {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(success ? "Connection Test Passed" : "Connection Test Failed")
+                .setMessage(message)
+                .setIcon(success ? R.drawable.ic_check_circle : R.drawable.ic_error)
+                .setPositiveButton("OK", null)
+                .show();
     }
 }
