@@ -69,6 +69,29 @@
     <string name="register_hint_username">Username</string>
     <string name="register_hint_password">Password</string>
     <string name="register_hint_confirm_password">Confirm Password</string>
+    <string name="register_step1_title">Personal Information</string>
+    <string name="register_step2_title">Account Security</string>
+    <string name="register_next_step">Next Step</string>
+    <string name="register_back">Back</string>
+
+    <!-- Login Extras -->
+    <string name="login_email_label">Email or Phone</string>
+    <string name="login_no_account">Don\'t have an account?</string>
+    <string name="login_sign_up">Sign Up</string>
+
+    <!-- Forgot Password Extras -->
+    <string name="forgot_email_label">Email or Phone</string>
+    <string name="forgot_code_label">Verification Code</string>
+    <string name="forgot_send_code">Send Verification Code</string>
+    <string name="forgot_verify">Verify Code</string>
+    <string name="forgot_resend_code">Resend Code</string>
+    <string name="forgot_remember_password">Remember your password?</string>
+    <string name="forgot_back_to_login">Log In</string>
+
+    <!-- Welcome Features -->
+    <string name="feature_contactless">Contactless</string>
+    <string name="feature_secure">Secure</string>
+    <string name="feature_fast">Fast</string>
 
     <!-- Common -->
     <string name="back">Back</string>

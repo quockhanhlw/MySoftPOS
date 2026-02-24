@@ -6,125 +6,185 @@
     android:orientation="vertical"
     android:padding="24dp">
 
+    <!-- Step Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/register_step1_title"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@color/neo_primary_dark"
+        android:layout_marginBottom="20dp" />
+
     <!-- Full Name -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/register_hint_fullname"
-        android:textColor="@color/auth_text_title"
+        android:textSize="13sp"
         android:textStyle="bold"
-        android:layout_marginBottom="8dp"/>
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="6dp" />
 
-    <EditText
-        android:id="@+id/etFullName"
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="@drawable/bg_auth_input"
-        android:paddingHorizontal="16dp"
-        android:hint="John Doe"
-        android:textColorHint="@color/auth_text_hint"
-        android:textColor="@color/auth_text_title"
-        android:inputType="textPersonName" />
-
-    <!-- Date of Birth -->
-    <TextView
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/register_hint_dob"
-        android:textColor="@color/auth_text_title"
-        android:textStyle="bold"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp"/>
+        app:boxBackgroundMode="outline"
+        app:boxBackgroundColor="@color/auth_input_bg"
+        app:boxCornerRadiusTopStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxStrokeColor="@color/auth_input_stroke"
+        app:boxStrokeWidth="1dp"
+        app:hintEnabled="false"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-    <EditText
-        android:id="@+id/etDob"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="@drawable/bg_auth_input"
-        android:paddingHorizontal="16dp"
-        android:hint="DD/MM/YYYY"
-        android:textColorHint="@color/auth_text_hint"
-        android:textColor="@color/auth_text_title"
-        android:inputType="date" />
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etFullName"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="John Doe"
+            android:textColorHint="@color/text_muted"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
+            android:inputType="textPersonName"
+            android:background="@null" />
+
+    </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Phone Number -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/register_hint_phone"
-        android:textColor="@color/auth_text_title"
+        android:textSize="13sp"
         android:textStyle="bold"
+        android:textColor="@color/text_primary"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp"/>
+        android:layout_marginBottom="6dp" />
 
-    <EditText
-        android:id="@+id/etPhone"
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="@drawable/bg_auth_input"
-        android:paddingHorizontal="16dp"
-        android:hint="+84 901 234 567"
-        android:textColorHint="@color/auth_text_hint"
-        android:textColor="@color/auth_text_title"
-        android:inputType="phone" />
+        android:layout_height="wrap_content"
+        app:boxBackgroundMode="outline"
+        app:boxBackgroundColor="@color/auth_input_bg"
+        app:boxCornerRadiusTopStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxStrokeColor="@color/auth_input_stroke"
+        app:boxStrokeWidth="1dp"
+        app:hintEnabled="false"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etPhone"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="+84 901 234 567"
+            android:textColorHint="@color/text_muted"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
+            android:inputType="phone"
+            android:background="@null" />
+
+    </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Email -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Email Address"
-        android:textColor="@color/auth_text_title"
+        android:text="Email"
+        android:textSize="13sp"
         android:textStyle="bold"
+        android:textColor="@color/text_primary"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp"/>
+        android:layout_marginBottom="6dp" />
 
-    <EditText
-        android:id="@+id/etEmail"
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="@drawable/bg_auth_input"
-        android:paddingHorizontal="16dp"
-        android:hint="user@example.com"
-        android:textColorHint="@color/auth_text_hint"
-        android:textColor="@color/auth_text_title"
-        android:inputType="textEmailAddress" />
+        android:layout_height="wrap_content"
+        app:boxBackgroundMode="outline"
+        app:boxBackgroundColor="@color/auth_input_bg"
+        app:boxCornerRadiusTopStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxStrokeColor="@color/auth_input_stroke"
+        app:boxStrokeWidth="1dp"
+        app:hintEnabled="false"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etEmail"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="user@example.com"
+            android:textColorHint="@color/text_muted"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
+            android:inputType="textEmailAddress"
+            android:background="@null" />
+
+    </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Address -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/register_hint_address"
-        android:textColor="@color/auth_text_title"
+        android:textSize="13sp"
         android:textStyle="bold"
+        android:textColor="@color/text_primary"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp"/>
+        android:layout_marginBottom="6dp" />
 
-    <EditText
-        android:id="@+id/etAddress"
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="@drawable/bg_auth_input"
-        android:paddingHorizontal="16dp"
-        android:hint="123 Street, City"
-        android:textColorHint="@color/auth_text_hint"
-        android:textColor="@color/auth_text_title"
-        android:inputType="textPostalAddress" />
+        android:layout_height="wrap_content"
+        app:boxBackgroundMode="outline"
+        app:boxBackgroundColor="@color/auth_input_bg"
+        app:boxCornerRadiusTopStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxStrokeColor="@color/auth_input_stroke"
+        app:boxStrokeWidth="1dp"
+        app:hintEnabled="false"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etAddress"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="123 Street, City"
+            android:textColorHint="@color/text_muted"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
+            android:inputType="textPostalAddress"
+            android:background="@null" />
+
+    </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Next Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnNextStep"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginTop="32dp"
-        android:text="Next Step"
-        android:textSize="16sp"
+        android:layout_height="52dp"
+        android:layout_marginTop="28dp"
+        android:text="@string/register_next_step"
+        android:textSize="15sp"
         android:textStyle="bold"
+        android:textAllCaps="false"
+        android:letterSpacing="0.02"
         app:backgroundTint="@null"
-        android:background="@drawable/bg_auth_button"
+        android:background="@drawable/bg_button_primary_gradient"
         android:textColor="@android:color/white"
         app:icon="@drawable/ic_arrow_right"
         app:iconGravity="textEnd"
-        app:iconTint="@color/white"
-        app:cornerRadius="16dp"/>
+        app:iconTint="@android:color/white"
+        app:cornerRadius="14dp"
+        app:rippleColor="#33FFFFFF" />
 
 </LinearLayout>

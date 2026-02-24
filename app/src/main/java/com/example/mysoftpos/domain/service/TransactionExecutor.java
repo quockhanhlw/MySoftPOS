@@ -73,7 +73,22 @@ public class TransactionExecutor {
         ctx.acquirerId32 = config.getAcquirerId32();
         ctx.terminalId41 = config.getTerminalId();
         ctx.merchantId42 = config.getMerchantId();
-        ctx.merchantNameLocation43 = config.getMerchantName();
+        ctx.merchantId42 = config.getMerchantId();
+
+        // DE 43: Dynamic Country Code
+        String baseName = config.getMerchantName();
+        // Ensure baseName is at least 37 chars or padded, then replace last 3 chars
+        if (baseName.length() > 37) {
+            baseName = baseName.substring(0, 37);
+        } else {
+            baseName = String.format("%-37s", baseName);
+        }
+
+        String alphaCountry = "VNM"; // Default
+        if ("840".equals(safeCountry)) {
+            alphaCountry = "USA";
+        }
+        ctx.merchantNameLocation43 = baseName + alphaCountry;
 
         // Set Currency (49) and Country (19)
         ctx.currency49 = safeCurrency;
@@ -155,7 +170,11 @@ public class TransactionExecutor {
             msg = Iso8583Builder.buildPurchaseMsg(ctx, card);
         }
 
-        logger.log("Built " + msg.getMti() + " | STAN=" + ctx.stan11);
+        if (logger != null) {
+            logger.log("Built " + msg.getMti() + " | STAN=" + ctx.stan11);
+            logger.log("--- ISO REQUEST DETAIL ---\n" + StandardIsoPacker.logIsoMessage(msg)
+                    + "--------------------------");
+        }
 
         // 2. Pack
         byte[] packed = StandardIsoPacker.pack(msg);
@@ -166,7 +185,9 @@ public class TransactionExecutor {
                 StandardIsoPacker.logIsoMessage(msg));
 
         // 3. Send
-        logger.log("Sending to " + ctx.ip + ":" + ctx.port + "...");
+        if (logger != null) {
+            logger.log("Sending to " + ctx.ip + ":" + ctx.port + "...");
+        }
 
         // Use injected client
         byte[] responseBytes = isoNetworkClient.sendAndReceive(ctx.ip, ctx.port, packed);
@@ -179,6 +200,11 @@ public class TransactionExecutor {
 
         FileLogger.logTestSuiteString(appContext, logTag + " RECV DETAIL",
                 StandardIsoPacker.logIsoMessage(respMsg));
+
+        if (logger != null) {
+            logger.log("--- ISO RESPONSE DETAIL ---\n" + StandardIsoPacker.logIsoMessage(respMsg)
+                    + "---------------------------");
+        }
 
         // 5. Result
         String rc = respMsg.getField(39);

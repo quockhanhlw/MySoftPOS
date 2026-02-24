@@ -66,4 +66,12 @@ public class TestCaseRepository {
     public LiveData<List<TestCaseEntity>> getCustomCasesByType(String type) {
         return dao.getCustomCasesByType(type);
     }
+
+    public LiveData<List<TestCaseEntity>> getCustomCasesBySchemeAndType(String scheme, String type) {
+        return dao.getCustomCasesBySchemeAndType(scheme, type);
+    }
+
+    public LiveData<List<TestCaseEntity>> getCustomCasesByScheme(String scheme) {
+        return dao.getCustomCasesByScheme(scheme);
+    }
 }

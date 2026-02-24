@@ -16,6 +16,8 @@ import com.example.mysoftpos.iso8583.message.IsoMessage;
 import com.example.mysoftpos.iso8583.util.StandardIsoPacker;
 import com.example.mysoftpos.utils.PanUtils;
 import com.example.mysoftpos.utils.logging.ResponseCodeHelper;
+import com.example.mysoftpos.testsuite.model.Scheme;
+import com.example.mysoftpos.testsuite.storage.SchemeRepository;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,7 +51,8 @@ public class RunnerViewModel extends AndroidViewModel {
      * Build ISO message and show field breakdown without sending.
      */
     public void previewTransaction(String de22, String track2Data, String panData, String expiryData,
-            String pinBlockData, String txnType, String amount, String currencyCode, String countryCode) {
+            String pinBlockData, String txnType, String amount, String currencyCode, String countryCode,
+            String schemeName) {
         executor.execute(() -> {
             try {
                 StringBuilder sb = new StringBuilder();
@@ -57,6 +60,8 @@ public class RunnerViewModel extends AndroidViewModel {
 
                 TransactionContext ctx = TransactionExecutor.buildContext(getApplication(), txnType, amount,
                         currencyCode, countryCode);
+                applySchemeConnection(ctx, schemeName);
+
                 CardInputData card = TransactionExecutor.prepareCard(
                         getApplication(), de22, panData, expiryData, track2Data, pinBlockData, ctx, logger);
 
@@ -67,14 +72,15 @@ public class RunnerViewModel extends AndroidViewModel {
                     msg = Iso8583Builder.buildPurchaseMsg(ctx, card);
                 }
 
-                sb.append("=== ISO MESSAGE PREVIEW ===\n");
+                sb.append("=== ISO MESSAGE PREVIEW ===").append("\n");
+                sb.append("Server: ").append(ctx.ip).append(":").append(ctx.port).append("\n");
                 sb.append(StandardIsoPacker.logIsoMessage(msg));
 
                 byte[] packed = StandardIsoPacker.pack(msg);
                 String reqHex = StandardIsoPacker.bytesToHex(packed);
                 sb.append("\nPacked Hex (").append(reqHex.length() / 2).append(" bytes):\n");
                 sb.append(reqHex).append("\n");
-                sb.append("===========================\n");
+                sb.append("===========================").append("\n");
 
                 previewMessage.postValue(sb.toString());
             } catch (Exception e) {
@@ -84,7 +90,8 @@ public class RunnerViewModel extends AndroidViewModel {
     }
 
     public void runTransaction(String de22, String track2Data, String panData, String expiryData,
-            String pinBlockData, String txnType, String amount, String currencyCode, String countryCode) {
+            String pinBlockData, String txnType, String amount, String currencyCode, String countryCode,
+            String schemeName) {
         executor.execute(() -> {
             try {
                 StringBuilder sb = new StringBuilder();
@@ -93,11 +100,13 @@ public class RunnerViewModel extends AndroidViewModel {
 
                 TransactionContext ctx = TransactionExecutor.buildContext(getApplication(), txnType, amount,
                         currencyCode, countryCode);
+                applySchemeConnection(ctx, schemeName);
 
                 CardInputData card = TransactionExecutor.prepareCard(
                         getApplication(), de22, panData, expiryData, track2Data, pinBlockData, ctx, logger);
 
                 sb.append("Building ").append("BALANCE".equals(txnType) ? "Balance Inquiry" : "Purchase")
+                        .append(" → ").append(ctx.ip).append(":").append(ctx.port)
                         .append("...\n");
 
                 TransactionResult result = transactionExecutor.execute(
@@ -127,6 +136,22 @@ public class RunnerViewModel extends AndroidViewModel {
                 Log.e("RunnerVM", "Run transaction", e);
             }
         });
+    }
+
+    /** Override ctx.ip/port from per-scheme config if available */
+    private void applySchemeConnection(TransactionContext ctx, String schemeName) {
+        if (schemeName == null || schemeName.isEmpty())
+            return;
+        try {
+            SchemeRepository repo = new SchemeRepository(getApplication());
+            Scheme scheme = repo.getByName(schemeName);
+            if (scheme != null && scheme.hasConnectionConfig()) {
+                ctx.ip = scheme.getServerIp();
+                ctx.port = scheme.getServerPort();
+            }
+        } catch (Exception e) {
+            Log.w("RunnerVM", "Failed to load scheme config: " + e.getMessage());
+        }
     }
 
     private void saveTransactionToDb(TransactionContext ctx, CardInputData card, TransactionResult result) {

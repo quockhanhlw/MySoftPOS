@@ -5,11 +5,18 @@ import com.example.mysoftpos.data.local.dao.UserDao;
 import com.example.mysoftpos.data.local.entity.UserEntity;
 import com.example.mysoftpos.ui.BaseActivity;
 
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
+
+import com.google.android.material.button.MaterialButton;
 
 public class ForgotPasswordActivity extends BaseActivity {
 
@@ -28,6 +35,8 @@ public class ForgotPasswordActivity extends BaseActivity {
     // State
     private UserEntity foundUser;
     private static final String MOCK_CODE = "123456";
+    private boolean newPassVisible = false;
+    private boolean confirmPassVisible = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,32 +44,69 @@ public class ForgotPasswordActivity extends BaseActivity {
         setContentView(R.layout.activity_forgot_password);
 
         viewFlipper = findViewById(R.id.viewFlipper);
-        View btnBack = findViewById(R.id.btnBack);
+        MaterialButton btnBack = findViewById(R.id.btnBack);
 
         // Step 1
         etInput = findViewById(R.id.etEmailPhone);
-        View btnSendCode = findViewById(R.id.btnSendCode);
+        MaterialButton btnSendCode = findViewById(R.id.btnSendCode);
 
         // Step 2
         etCode = findViewById(R.id.etCode);
-        View btnVerify = findViewById(R.id.btnVerifyCode);
-        // View btnResend = findViewById(R.id.btnResend); // Not in new layout
+        MaterialButton btnVerify = findViewById(R.id.btnVerifyCode);
 
         // Step 3
         etNewPassword = findViewById(R.id.etNewPassword);
         etConfirmPassword = findViewById(R.id.etConfirmPassword);
-        View btnReset = findViewById(R.id.btnResetPassword);
+        MaterialButton btnReset = findViewById(R.id.btnResetPassword);
+
+        // Password toggle — New Password
+        setupPasswordToggle(etNewPassword, () -> newPassVisible, v -> newPassVisible = v);
+
+        // Password toggle — Confirm Password
+        setupPasswordToggle(etConfirmPassword, () -> confirmPassVisible, v -> confirmPassVisible = v);
 
         btnBack.setOnClickListener(v -> handleBack());
 
         btnSendCode.setOnClickListener(v -> handleSendCode());
         btnVerify.setOnClickListener(v -> handleVerifyCode());
-        /*
-         * btnResend.setOnClickListener(v -> {
-         * Toast.makeText(this, "Code resent: " + MOCK_CODE, Toast.LENGTH_SHORT).show();
-         * });
-         */
         btnReset.setOnClickListener(v -> handleResetPassword());
+    }
+
+    private interface BoolGetter {
+        boolean get();
+    }
+
+    private interface BoolSetter {
+        void set(boolean v);
+    }
+
+    private void setupPasswordToggle(EditText et, BoolGetter getter, BoolSetter setter) {
+        et.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                et.getCompoundDrawablesRelative()[0], null,
+                getDrawable(R.drawable.ic_baseline_visibility_off_24), null);
+        et.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                Drawable end = et.getCompoundDrawablesRelative()[2];
+                if (end != null && event.getRawX() >= (et.getRight() - end.getBounds().width() - et.getPaddingEnd())) {
+                    boolean visible = !getter.get();
+                    setter.set(visible);
+                    if (visible) {
+                        et.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                        et.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                                et.getCompoundDrawablesRelative()[0], null,
+                                getDrawable(R.drawable.ic_baseline_visibility_24), null);
+                    } else {
+                        et.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                        et.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                                et.getCompoundDrawablesRelative()[0], null,
+                                getDrawable(R.drawable.ic_baseline_visibility_off_24), null);
+                    }
+                    et.setSelection(et.getText().length());
+                    return true;
+                }
+            }
+            return false;
+        });
     }
 
     private void handleBack() {

@@ -20,9 +20,12 @@ import android.view.View;
 import android.view.Window;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ViewFlipper;
+
+import com.google.android.material.button.MaterialButton;
 
 import androidx.annotation.NonNull;
 
@@ -33,19 +36,11 @@ import java.nio.charset.StandardCharsets;
 
 public class RegisterActivity extends BaseActivity {
 
-    private ViewFlipper viewFlipper;
-
     // Step 1 Views
     private EditText etFullName;
-    private EditText etDob;
     private EditText etPhone;
     private EditText etEmail;
-    private EditText etAddress;
-
-    // Step 2 Views
-    private EditText etUsername;
     private EditText etPassword;
-    private EditText etConfirmPassword;
     private CheckBox cbTerms;
     private TextView tvTermsText;
 
@@ -54,109 +49,53 @@ public class RegisterActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
-        // Initialize Main Views
-        viewFlipper = findViewById(R.id.viewFlipper);
-        View btnBack = findViewById(R.id.btnBack);
-        TextView tvLogin = findViewById(R.id.tvLogin);
-
-        // Initialize Step 1 Views
+        // Bind Views
         etFullName = findViewById(R.id.etFullName);
-        etDob = findViewById(R.id.etDob);
         etPhone = findViewById(R.id.etPhone);
         etEmail = findViewById(R.id.etEmail);
-        etAddress = findViewById(R.id.etAddress);
-        View btnNextStep = findViewById(R.id.btnNextStep);
-
-        // Initialize Step 2 Views
-        etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
-        etConfirmPassword = findViewById(R.id.etConfirmPassword);
         cbTerms = findViewById(R.id.cbTerms);
         tvTermsText = findViewById(R.id.tvTermsText);
-        View btnBackStep = findViewById(R.id.btnBackStep);
-        View btnRegister = findViewById(R.id.btnRegister);
+
+        MaterialButton btnRegister = findViewById(R.id.btnRegister);
+        TextView tvLogin = findViewById(R.id.tvLogin);
+        MaterialButton btnBack = findViewById(R.id.btnBack);
+
+        // Back button
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
 
         // Listeners
-        btnBack.setOnClickListener(v -> handleBack());
         if (tvLogin != null)
-            tvLogin.setOnClickListener(v -> finish()); // Just finish to go back to Login/Welcome
+            tvLogin.setOnClickListener(v -> finish());
 
-        if (btnNextStep != null)
-            btnNextStep.setOnClickListener(v -> handleNextStep());
-        if (btnBackStep != null)
-            btnBackStep.setOnClickListener(v -> viewFlipper.showPrevious());
         if (btnRegister != null)
             btnRegister.setOnClickListener(v -> handleRegister());
 
         setupTermsText();
     }
 
-    private void handleBack() {
-        if (viewFlipper.getDisplayedChild() > 0) {
-            viewFlipper.showPrevious();
-        } else {
-            finish();
-        }
-    }
-
-    @Override
-    public void onBackPressed() {
-        handleBack();
-    }
-
-    private void handleNextStep() {
+    private void handleRegister() {
         String fullName = etFullName.getText().toString().trim();
-        String dob = etDob.getText().toString().trim();
         String phone = etPhone.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
-        String address = etAddress.getText().toString().trim();
+        String password = etPassword.getText().toString().trim();
 
         if (fullName.isEmpty()) {
             etFullName.setError("Required");
-            return;
-        }
-        if (dob.isEmpty()) {
-            etDob.setError("Required");
-            return;
-        }
-        if (phone.isEmpty()) {
-            etPhone.setError("Required");
             return;
         }
         if (email.isEmpty()) {
             etEmail.setError("Required");
             return;
         }
-        // Address optional? Let's make it required as per original code
-        if (address.isEmpty()) {
-            etAddress.setError("Required");
-            return;
-        }
-
-        // Proceed to Step 2
-        viewFlipper.showNext();
-    }
-
-    private void handleRegister() {
-        String username = etUsername.getText().toString().trim();
-        String password = etPassword.getText().toString().trim();
-        String confirmPassword = etConfirmPassword.getText().toString().trim();
-
-        if (username.isEmpty()) {
-            etUsername.setError("Required");
+        if (phone.isEmpty()) {
+            etPhone.setError("Required");
             return;
         }
         if (password.isEmpty()) {
             etPassword.setError("Required");
-            return;
-        }
-        if (confirmPassword.isEmpty()) {
-            etConfirmPassword.setError("Required");
-            return;
-        }
-
-        if (!password.equals(confirmPassword)) {
-            etConfirmPassword.setError("Passwords mismatch");
             return;
         }
 
@@ -165,16 +104,13 @@ public class RegisterActivity extends BaseActivity {
             return;
         }
 
-        // Gather all data
-        String fullName = etFullName.getText().toString().trim();
-        String dob = etDob.getText().toString().trim();
-        String phone = etPhone.getText().toString().trim();
-        String email = etEmail.getText().toString().trim();
+        // Use Email as Username for simplicity in this new design
+        String username = email;
 
-        registerUser(fullName, dob, phone, email, username, password);
+        registerUser(fullName, phone, email, username, password);
     }
 
-    private void registerUser(String fullName, String dob, String phone, String email, String username,
+    private void registerUser(String fullName, String phone, String email, String username,
             String password) {
         new Thread(() -> {
             try {
@@ -185,24 +121,19 @@ public class RegisterActivity extends BaseActivity {
                 // Check duplicates
                 String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
 
-                if (userDao.existsByUsernameHash(usernameHash)) {
-                    runOnUiThread(() -> {
-                        etUsername.setError("Username taken");
-                        viewFlipper.setDisplayedChild(1);
-                    });
-                    return;
-                }
-                if (userDao.existsByEmail(email)) {
+                // Check if email/username exists
+                if (userDao.existsByUsernameHash(usernameHash) || userDao.existsByEmail(email)) {
                     runOnUiThread(() -> {
                         Toast.makeText(this, "Email already registered", Toast.LENGTH_SHORT).show();
-                        viewFlipper.setDisplayedChild(0);
+                        etEmail.setError("Already registered");
                     });
                     return;
                 }
+
                 if (userDao.existsByPhone(phone)) {
                     runOnUiThread(() -> {
                         Toast.makeText(this, "Phone already registered", Toast.LENGTH_SHORT).show();
-                        viewFlipper.setDisplayedChild(0);
+                        etPhone.setError("Already registered");
                     });
                     return;
                 }
@@ -216,7 +147,7 @@ public class RegisterActivity extends BaseActivity {
                         "USER",
                         email,
                         phone,
-                        dob);
+                        null);
 
                 userDao.insert(user);
 

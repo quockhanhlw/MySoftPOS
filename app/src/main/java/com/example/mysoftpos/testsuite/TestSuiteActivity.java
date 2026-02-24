@@ -20,10 +20,12 @@ public class TestSuiteActivity extends AppCompatActivity {
     private String channel;
     private String txnType;
     private String perfMode;
+    private String scheme;
     private List<TestScenario> allScenarios = new ArrayList<>(); // Built-in
     private List<TestScenario> customScenarios = new ArrayList<>(); // DB-loaded
     private List<TestScenario> displayedScenarios = new ArrayList<>();
     private com.example.mysoftpos.testsuite.adapter.TestScenarioAdapter adapter;
+    private ArrayList<TestScenario> preSelectedScenarios;
 
     // Multi-thread UI
     private View layoutSelectAll;
@@ -55,6 +57,12 @@ public class TestSuiteActivity extends AppCompatActivity {
         if (perfMode == null)
             perfMode = "SINGLE";
 
+        // Restore selection if available
+        if (getIntent().hasExtra(com.example.mysoftpos.utils.IntentKeys.SELECTED_SCENARIOS)) {
+            preSelectedScenarios = (ArrayList<TestScenario>) getIntent()
+                    .getSerializableExtra(com.example.mysoftpos.utils.IntentKeys.SELECTED_SCENARIOS);
+        }
+
         boolean isMulti = "MULTI".equals(perfMode);
 
         // TextView tvTitle = findViewById(R.id.tvTitle); // Unused
@@ -64,7 +72,7 @@ public class TestSuiteActivity extends AppCompatActivity {
         TextView tvSummaryChannel = findViewById(R.id.tvSummaryChannel);
         TextView tvSummaryType = findViewById(R.id.tvSummaryType);
 
-        String scheme = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME);
+        scheme = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME);
         if (scheme == null)
             scheme = "Napas";
 
@@ -75,8 +83,7 @@ public class TestSuiteActivity extends AppCompatActivity {
         androidx.recyclerview.widget.RecyclerView recyclerView = findViewById(R.id.recyclerViewCases);
 
         // Load Built-in Data
-        allScenarios = TestDataProvider.generateAllScenarios(this);
-        // Ensure built-in scenarios know the current Transaction Type
+        allScenarios = TestDataProvider.generateScenarios(this, scheme);
         for (TestScenario s : allScenarios) {
             s.setTxnType(txnType);
         }
@@ -105,12 +112,11 @@ public class TestSuiteActivity extends AppCompatActivity {
             fabAdd.setVisibility(View.VISIBLE);
             fabAdd.setOnClickListener(v -> showAddEditDialog(null));
 
-            // Show Delete Mode Button if custom scenarios exist (handled in observer but
-            // let's just show it)
-            // But logic to hide/show based on list size is better. For now always
-            // available.
             btnDeleteMode.setVisibility(View.VISIBLE);
             btnDeleteMode.setOnClickListener(v -> toggleDeleteMode());
+
+            // Setup selection controls (hidden initially, shown on long-press)
+            setupSingleModeSelection();
         }
 
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
@@ -121,19 +127,9 @@ public class TestSuiteActivity extends AppCompatActivity {
                     return;
                 }
 
-                if (selectionMode && "MULTI".equals(perfMode)) {
-                    // Exit selection mode
-                    selectionMode = false;
-                    adapter.setSelectionMode(false);
-                    layoutSelectAll.setVisibility(View.GONE);
-                    btnRunAll.setVisibility(View.GONE);
-
-                    // Clear selections
-                    for (TestScenario s : displayedScenarios) {
-                        s.setSelected(false);
-                        s.setUserPin(null);
-                    }
-                    adapter.notifyDataSetChanged(); // Refresh UI
+                if (selectionMode) {
+                    // Save selections and return to TransactionSelectActivity
+                    returnSelectedScenarios();
                     return;
                 }
 
@@ -146,7 +142,7 @@ public class TestSuiteActivity extends AppCompatActivity {
         findViewById(R.id.btnBack).setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 
         // Custom Cases Observer
-        repository.getCustomCasesByType(txnType).observe(this, entities -> {
+        repository.getCustomCasesBySchemeAndType(scheme, txnType).observe(this, entities -> {
             customScenarios.clear();
             if (entities != null) {
                 for (com.example.mysoftpos.data.local.entity.TestCaseEntity entity : entities) {
@@ -191,9 +187,9 @@ public class TestSuiteActivity extends AppCompatActivity {
             // Revert visual toggle immediately (so it stays unchecked until config is done)
             adapter.notifyDataSetChanged();
 
-            // ALWAYS open Configuration Flow (User Request: "Not just tick")
-            // This allows user to Pick Card / Enter PIN explicitly
-            configureScenario(scenario);
+            if (!configuringInProgress) {
+                configureScenario(scenario);
+            }
             return;
         }
 
@@ -210,6 +206,8 @@ public class TestSuiteActivity extends AppCompatActivity {
                 // Auto-select after full config
                 scenario.setSelected(true);
                 adapter.notifyDataSetChanged();
+                configuringInProgress = false;
+                updateRunAllButton();
                 Toast.makeText(this, "Configured & Selected!", Toast.LENGTH_SHORT).show();
             });
         } else {
@@ -217,6 +215,21 @@ public class TestSuiteActivity extends AppCompatActivity {
             scenario.setSelected(true);
             adapter.notifyDataSetChanged();
             Toast.makeText(this, "Configured & Selected!", Toast.LENGTH_SHORT).show();
+
+            configuringInProgress = false;
+            updateRunAllButton();
+        }
+    }
+
+    private void updateRunAllButton() {
+        if (displayedScenarios == null)
+            return;
+        long count = displayedScenarios.stream().filter(TestScenario::isSelected).count();
+        String label = "MULTI".equals(perfMode) ? "Run Transaction" : "Confirm Selection";
+        if (count > 0) {
+            btnRunAll.setText(label + " (" + count + ")");
+        } else {
+            btnRunAll.setText(label);
         }
     }
 
@@ -242,6 +255,59 @@ public class TestSuiteActivity extends AppCompatActivity {
         });
 
         btnRunAll.setOnClickListener(v -> returnSelectedScenarios());
+    }
+
+    private void setupSingleModeSelection() {
+        // Always show selection controls in single mode
+        selectionMode = true;
+        adapter.setMultiMode(true);
+        adapter.setSelectionMode(true);
+        layoutSelectAll.setVisibility(View.VISIBLE);
+        btnRunAll.setVisibility(View.VISIBLE);
+        btnRunAll.setText("Confirm Selection");
+        btnRunAll.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF0F172A));
+
+        cbSelectAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            for (TestScenario s : displayedScenarios) {
+                s.setSelected(isChecked);
+            }
+            adapter.notifyDataSetChanged();
+            updateRunAllButton();
+        });
+
+        btnRunAll.setOnClickListener(v -> {
+            ArrayList<TestScenario> selected = new ArrayList<>();
+            for (TestScenario s : displayedScenarios) {
+                if (s.isSelected())
+                    selected.add(s);
+            }
+            if (selected.isEmpty()) {
+                Toast.makeText(this, "No test cases selected", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            // Return selected scenarios to caller
+            returnSelectedScenarios();
+        });
+    }
+
+    private void exitSelectionMode() {
+        selectionMode = false;
+        adapter.setMultiMode("MULTI".equals(perfMode));
+        adapter.setSelectionMode(false);
+        layoutSelectAll.setVisibility(View.GONE);
+        btnRunAll.setVisibility(View.GONE);
+        cbSelectAll.setChecked(false);
+
+        for (TestScenario s : displayedScenarios) {
+            s.setSelected(false);
+        }
+        adapter.notifyDataSetChanged();
+
+        // Restore SINGLE mode controls
+        if (!"MULTI".equals(perfMode)) {
+            fabAdd.setVisibility(View.VISIBLE);
+            btnDeleteMode.setVisibility(View.VISIBLE);
+        }
     }
 
     private void toggleDeleteMode() {
@@ -284,14 +350,24 @@ public class TestSuiteActivity extends AppCompatActivity {
             layoutSelectAll.setVisibility(View.GONE);
             btnRunAll.setVisibility(View.GONE);
 
-            // Reset Adapter State
-            adapter.setMultiMode(false);
-            adapter.setSelectionMode(false);
+            // Reset Adapter State — restore to single-mode selection
+            if ("MULTI".equals(perfMode)) {
+                adapter.setMultiMode(false);
+                adapter.setSelectionMode(false);
+            } else {
+                // Single mode: re-enable selection mode
+                adapter.setMultiMode(true);
+                adapter.setSelectionMode(true);
+                layoutSelectAll.setVisibility(View.VISIBLE);
+                btnRunAll.setVisibility(View.VISIBLE);
+                selectionMode = true;
+            }
 
             // clear selection
             for (TestScenario s : displayedScenarios)
                 s.setSelected(false);
             adapter.notifyDataSetChanged();
+            updateRunAllButton();
         }
     }
 
@@ -330,9 +406,87 @@ public class TestSuiteActivity extends AppCompatActivity {
         displayedScenarios.addAll(allScenarios); // Built-in first
         displayedScenarios.addAll(customScenarios); // Custom appended
         adapter.setScenarios(displayedScenarios);
+
+        // Restore selections if this is the first load or if we have
+        // preSelectedScenarios
+        if (preSelectedScenarios != null && !preSelectedScenarios.isEmpty()) {
+            for (TestScenario ds : displayedScenarios) {
+                for (TestScenario ps : preSelectedScenarios) {
+                    boolean match = false;
+                    if (ds.isCustom() && ps.isCustom()) {
+                        match = ds.getId() == ps.getId();
+                    } else if (!ds.isCustom() && !ps.isCustom()) {
+                        match = ds.getDescription().equals(ps.getDescription());
+                    }
+
+                    if (match) {
+                        ds.setSelected(true);
+                        // Restore config if available
+                        if (ps.getField(4) != null)
+                            ds.setField(4, ps.getField(4)); // Amount
+                        if (ps.getField(19) != null)
+                            ds.setField(19, ps.getField(19)); // Country
+                        if (ps.getField(49) != null)
+                            ds.setField(49, ps.getField(49)); // Currency
+                        if (ps.getField(2) != null)
+                            ds.setField(2, ps.getField(2)); // PAN
+                        if (ps.getField(22) != null)
+                            ds.setField(22, ps.getField(22)); // DE22
+                        if (ps.getUserPin() != null)
+                            ds.setUserPin(ps.getUserPin());
+                        break;
+                    }
+                }
+            }
+
+            // AUTO-ENABLE Selection Mode UI if we have any matches
+            long matchCount = 0;
+            for (TestScenario s : displayedScenarios) {
+                if (s.isSelected())
+                    matchCount++;
+            }
+
+            if (matchCount > 0 && adapter != null) {
+                selectionMode = true; // Enable activity-level selection mode (for back press)
+                if ("MULTI".equals(perfMode)) {
+                    // Only strictly enforce in Multi Mode if needed,
+                    // but Delete Mode also uses this.
+                    // Here we are in likely multi mode or just restoring selection.
+                }
+
+                adapter.setSelectionMode(true); // Show checkboxes
+                layoutSelectAll.setVisibility(View.VISIBLE);
+                btnRunAll.setVisibility(View.VISIBLE);
+                updateRunAllButton();
+
+                // Also update checkbox "Select All" state if all are selected?
+                if (matchCount == displayedScenarios.size()) {
+                    cbSelectAll.setChecked(true);
+                }
+            }
+
+            // Clear after restoring to avoid re-applying logic if not needed,
+            // OR keep it? Better clear it so it doesn't interfere with future refreshes
+            // (e.g. after adding custom case)
+            // But wait, if user adds a custom case, refreshList is called. We probably want
+            // to keep selections?
+            // Existing selections in displayedScenarios are preserved?
+            // displayedScenarios is recreated: `displayedScenarios = new ArrayList<>();`
+            // So we DO need to persist selection state or re-apply it.
+            // But `allScenarios` (built-in) might lose state if we don't save it back to
+            // `allScenarios`?
+            // Actually `allScenarios` content is static/generated.
+            // The `displayedScenarios` are what the adapter shows.
+
+            // If I clear `preSelectedScenarios`, subsequent refreshes won't restore.
+            // But subsequent refreshes usually happen when data changes.
+            // Let's clear it to be safe, users can re-select if they add new items.
+            // preSelectedScenarios = null;
+        }
     }
 
     private boolean selectionMode = false;
+    private boolean configuringInProgress = false;
 
     private void onScenarioClicked(TestScenario scenario) {
         if (deleteMode) {
@@ -347,17 +501,26 @@ public class TestSuiteActivity extends AppCompatActivity {
         }
 
         if ("MULTI".equals(perfMode)) {
-            // In Multi Mode, clicking an item simply opens the Configuration Dialogs
-            // functionality (Amount -> Card -> Pin -> Done).
-            // It does NOT toggle selection (that's what the checkbox is for).
-            configureScenario(scenario);
+            if (selectionMode) {
+                configureScenario(scenario);
+            } else {
+                Toast.makeText(this, "Long press to select test cases.", Toast.LENGTH_SHORT).show();
+            }
             return;
         }
 
-        openRunnerSingle(scenario);
+        // Single mode — tap to configure & select, or deselect
+        if (scenario.isSelected()) {
+            scenario.setSelected(false);
+            adapter.notifyDataSetChanged();
+            updateRunAllButton();
+        } else if (!configuringInProgress) {
+            configureScenario(scenario);
+        }
     }
 
     private void configureScenario(TestScenario scenario) {
+        configuringInProgress = true;
         Runnable onAmountConfigured = () -> {
             // 2. Card
             if (scenario.isCustom() && hasCardData(scenario)) {
@@ -373,8 +536,9 @@ public class TestSuiteActivity extends AppCompatActivity {
             }
         };
 
-        // Skip Amount Input for Balance Inquiry
-        if ("BALANCE".equals(txnType)) {
+        // Skip Amount Input for Balance Inquiry (check scenario's own txnType)
+        String scenarioTxnType = scenario.getTxnType() != null ? scenario.getTxnType() : txnType;
+        if ("BALANCE".equals(scenarioTxnType)) {
             onAmountConfigured.run();
             return;
         }
@@ -385,29 +549,21 @@ public class TestSuiteActivity extends AppCompatActivity {
     }
 
     private void onScenarioLongClicked(TestScenario scenario) {
-        if ("MULTI".equals(perfMode) && !deleteMode) {
-            if (!selectionMode) {
-                // Enter Selection Mode
-                selectionMode = true;
-                adapter.setSelectionMode(true);
-                layoutSelectAll.setVisibility(View.VISIBLE);
-                btnRunAll.setVisibility(View.VISIBLE);
-
-                // Select the item that was long-pressed
-                // User requested: Just show boxes, don't tick yet
-                // scenario.setSelected(true);
-                adapter.notifyDataSetChanged();
-
-                Toast.makeText(this, "Selection Mode Enabled. Tap checkbox to select.", Toast.LENGTH_SHORT).show();
-            }
+        if (deleteMode) {
             return;
         }
-
-        // Existing Single-thread edit logic
-        if (scenario.isCustom()) {
-            showAddEditDialog(scenario);
-        } else {
-            Toast.makeText(this, "Cannot edit built-in scenarios", Toast.LENGTH_SHORT).show();
+        // In SINGLE mode, selection is always active — long press does nothing extra
+        // In MULTI mode, long press activates selection mode
+        if ("MULTI".equals(perfMode) && !selectionMode) {
+            selectionMode = true;
+            adapter.setMultiMode(true);
+            adapter.setSelectionMode(true);
+            layoutSelectAll.setVisibility(View.VISIBLE);
+            btnRunAll.setVisibility(View.VISIBLE);
+            fabAdd.setVisibility(View.GONE);
+            btnDeleteMode.setVisibility(View.GONE);
+            adapter.notifyDataSetChanged();
+            Toast.makeText(this, "Selection Mode. Tap to select test cases.", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -605,6 +761,7 @@ public class TestSuiteActivity extends AppCompatActivity {
                 entity.suiteId = -1;
                 entity.name = name;
                 entity.transactionType = txnType;
+                entity.scheme = scheme;
                 entity.timestamp = System.currentTimeMillis();
                 entity.status = "NEW";
 
@@ -733,7 +890,10 @@ public class TestSuiteActivity extends AppCompatActivity {
         etAmount.requestFocus();
         // Show keyboard?
 
-        view.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
+        view.findViewById(R.id.btnCancel).setOnClickListener(v -> {
+            configuringInProgress = false;
+            dialog.dismiss();
+        });
         view.findViewById(R.id.btnConfirm).setOnClickListener(v -> {
             String val = etAmount.getText().toString().trim();
             if (val.isEmpty()) {
@@ -817,7 +977,10 @@ public class TestSuiteActivity extends AppCompatActivity {
                 });
         rv.setAdapter(adapter);
 
-        view.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
+        view.findViewById(R.id.btnCancel).setOnClickListener(v -> {
+            configuringInProgress = false;
+            dialog.dismiss();
+        });
         dialog.show();
     }
 
@@ -849,7 +1012,10 @@ public class TestSuiteActivity extends AppCompatActivity {
                 });
         rv.setAdapter(adapter);
 
-        view.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
+        view.findViewById(R.id.btnCancel).setOnClickListener(v -> {
+            configuringInProgress = false;
+            dialog.dismiss();
+        });
         dialog.show();
     }
 
@@ -888,7 +1054,9 @@ public class TestSuiteActivity extends AppCompatActivity {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_pin_entry, null);
         builder.setView(dialogView);
         android.app.AlertDialog dialog = builder.create();
-        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
 
         android.widget.ImageView[] dots = new android.widget.ImageView[] {
                 dialogView.findViewById(R.id.dot1),
@@ -927,7 +1095,10 @@ public class TestSuiteActivity extends AppCompatActivity {
             callback.onPin(pinBuilder.toString());
         });
 
-        dialogView.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
+        dialogView.findViewById(R.id.btnCancel).setOnClickListener(v -> {
+            configuringInProgress = false;
+            dialog.dismiss();
+        });
 
         dialog.show();
     }
@@ -965,6 +1136,9 @@ public class TestSuiteActivity extends AppCompatActivity {
 
         // Pass the amount (DE 4)
         i.putExtra(com.example.mysoftpos.utils.IntentKeys.AMOUNT, scenario.getField(4));
+
+        // Pass scheme for per-scheme connection config
+        i.putExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME, scheme);
 
         startActivity(i);
     }

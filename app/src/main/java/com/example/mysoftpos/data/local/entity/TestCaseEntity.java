@@ -42,6 +42,9 @@ public class TestCaseEntity {
     @ColumnInfo(name = "track2")
     public String track2;
 
+    @ColumnInfo(name = "scheme")
+    public String scheme; // "Napas", "Visa", etc.
+
     @ColumnInfo(name = "timestamp")
     public long timestamp;
 

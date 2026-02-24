@@ -4,44 +4,47 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
-import android.content.res.AssetManager;
 import org.json.JSONObject;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
+/**
+ * Centralized configuration manager.
+ * Loads defaults from pos_config.json, allows runtime overrides via
+ * SharedPreferences.
+ */
 public class ConfigManager {
 
+    private static final String TAG = "ConfigManager";
     private static final String PREF_NAME = "softpos_config";
-
-    // Keys match JSON keys for simplicity where possible, but mapped to Pref keys
     private static final String KEY_TRACE = "trace_number";
-
-    private static final String KEY_MCC_18 = "mcc_18";
-    private static final String KEY_ACQ_32 = "acquirer_id_32";
-    private static final String KEY_FWD_33 = "forwarding_inst_33";
-    private static final String KEY_TID_41 = "terminal_id_41";
-    private static final String KEY_MID_42 = "merchant_id_42";
-
-    // F43 Components
-    private static final String KEY_BANK_43 = "bank_name_43";
-    private static final String KEY_LOC_43 = "location_43";
-    private static final String KEY_COUNTRY_TEXT_43 = "country_text_43";
-
-    private static final String KEY_CURRENCY_49 = "currency_code_49";
-
     private static final String KEY_IP = "server_ip";
     private static final String KEY_PORT = "server_port";
+    private static final String KEY_TIMEOUT = "timeout";
+    private static final String KEY_TID = "terminal_id";
+    private static final String KEY_MID = "merchant_id";
+    private static final String KEY_ENCRYPT_PIN = "encrypt_pin";
+
+    private static final int DEFAULT_TRACE_START = 111300;
 
     private final SharedPreferences prefs;
     private static ConfigManager instance;
 
-    // In-Memory Defaults from JSON
-    private String defMcc, defAcq, defFwd, defTid, defMid, defBank, defLoc, defCountryTxt, defCurr;
+    // Cached values from JSON
+    private String serverIp, serverId;
+    private int serverPort, timeoutMs;
+    private String terminalId, merchantId, merchantType;
+    private String bankName, location, countryCode;
+    private String acquirerId, forwardingInst, currencyCode, posConditionCode;
+    private String procPurchase, procBalance, procVoid;
+    private String adminUser, adminPass;
+    private String usdCode, usdCountry;
+    private int amountMax, panMinLen, panMaxLen;
 
     private ConfigManager(Context context) {
         this.prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        loadDefaultConfig(context);
+        loadConfig(context);
     }
 
     public static synchronized ConfigManager getInstance(Context context) {
@@ -51,59 +54,219 @@ public class ConfigManager {
         return instance;
     }
 
-    // Transaction Defaults
-    private String defAmount, mockPan, mockExpiry;
+    private void loadConfig(Context context) {
+        try (InputStream is = context.getAssets().open("pos_config.json")) {
+            byte[] buffer = new byte[is.available()];
+            is.read(buffer);
+            JSONObject config = new JSONObject(new String(buffer, StandardCharsets.UTF_8));
 
-    // ISO Constants
-    private String procPurchase, procBalance, posCondition, mccBalance;
+            // Server
+            JSONObject server = config.optJSONObject("server");
+            if (server != null) {
+                serverIp = server.optString("ip", "10.145.54.206");
+                serverPort = server.optInt("port", 8583);
+                timeoutMs = server.optInt("timeout_ms", 30000);
+                serverId = server.optString("server_id", "01");
+            }
 
-    // Track 2 Map (Legacy support if needed)
-    private java.util.Map<String, String> track2Map = new java.util.HashMap<>();
+            // Terminal
+            JSONObject terminal = config.optJSONObject("terminal");
+            if (terminal != null) {
+                terminalId = terminal.optString("terminal_id", "AUTO0001");
+                merchantId = terminal.optString("merchant_id", "MYSOFTPOSSHOP01");
+                merchantType = terminal.optString("merchant_type", "5411");
 
-    // Test Case Config Map
-    private java.util.Map<String, TestCaseConfig> testCaseMap = new java.util.HashMap<>();
+                JSONObject merchant = terminal.optJSONObject("merchant_name");
+                if (merchant != null) {
+                    bankName = merchant.optString("bank_name", "MYSOFTPOS BANK");
+                    location = merchant.optString("location", "HA NOI");
+                    countryCode = merchant.optString("country_code", "VNM");
+                }
+            }
 
-    public static class TestCaseConfig {
-        public String track2;
-        public String pan;
-        public String expiry;
-        public String description;
-    }
+            // ISO Fields
+            JSONObject isoFields = config.optJSONObject("iso_fields");
+            if (isoFields != null) {
+                acquirerId = isoFields.optString("acquirer_id_32", "970488");
+                forwardingInst = isoFields.optString("forwarding_inst_33", "970418");
+                currencyCode = isoFields.optString("currency_code_49", "704");
+                posConditionCode = isoFields.optString("pos_condition_code_25", "00");
+            }
 
-    public TestCaseConfig getTestCaseConfig(String de22) {
-        if (testCaseMap.containsKey(de22)) {
-            return testCaseMap.get(de22);
+            // Processing Codes
+            JSONObject procCodes = config.optJSONObject("processing_codes");
+            if (procCodes != null) {
+                procPurchase = procCodes.optString("purchase", "000000");
+                procBalance = procCodes.optString("balance_inquiry", "300000");
+                procVoid = procCodes.optString("void", "000000");
+            }
+
+            // Currency Rules
+            JSONObject currRules = config.optJSONObject("currency_rules");
+            if (currRules != null) {
+                JSONObject usd = currRules.optJSONObject("usd");
+                if (usd != null) {
+                    usdCode = usd.optString("code", "840");
+                    usdCountry = usd.optString("country", "840");
+                }
+            }
+
+            // Admin
+            JSONObject admin = config.optJSONObject("admin_account");
+            if (admin != null) {
+                adminUser = admin.optString("username", "admin");
+                adminPass = admin.optString("password", "admin123456789");
+            }
+
+            // Validation
+            JSONObject validation = config.optJSONObject("validation");
+            if (validation != null) {
+                panMinLen = validation.optInt("pan_min_length", 13);
+                panMaxLen = validation.optInt("pan_max_length", 19);
+                amountMax = validation.optInt("amount_max", 100000000);
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to load config", e);
+            setDefaults();
         }
-        return null;
     }
 
-    public String getTrack2(String de22) {
-        if (testCaseMap.containsKey(de22)) {
-            TestCaseConfig cfg = testCaseMap.get(de22);
-            if (cfg.track2 != null)
-                return cfg.track2;
+    private void setDefaults() {
+        serverIp = "10.145.54.206";
+        serverPort = 8583;
+        timeoutMs = 30000;
+        serverId = "01";
+        terminalId = "AUTO0001";
+        merchantId = "MYSOFTPOSSHOP01";
+        merchantType = "5411";
+        bankName = "MYSOFTPOS BANK";
+        location = "HA NOI";
+        countryCode = "VNM";
+        acquirerId = "970488";
+        forwardingInst = "970418";
+        currencyCode = "704";
+        posConditionCode = "00";
+        procPurchase = "000000";
+        procBalance = "300000";
+        procVoid = "000000";
+        adminUser = "admin";
+        adminPass = "admin123456789";
+        usdCode = "840";
+        usdCountry = "840";
+        panMinLen = 13;
+        panMaxLen = 19;
+        amountMax = 100000000;
+    }
+
+    // ==================== TRACE NUMBER ====================
+    public synchronized String getAndIncrementTrace() {
+        int trace = prefs.getInt(KEY_TRACE, DEFAULT_TRACE_START);
+        if (trace < DEFAULT_TRACE_START)
+            trace = DEFAULT_TRACE_START;
+        int next = (trace >= 999999) ? 1 : trace + 1;
+        prefs.edit().putInt(KEY_TRACE, next).apply();
+        return String.format(Locale.ROOT, "%06d", trace);
+    }
+
+    // ==================== SERVER ====================
+    public String getServerIp() {
+        return prefs.getString(KEY_IP, serverIp);
+    }
+
+    public void setServerIp(String ip) {
+        prefs.edit().putString(KEY_IP, ip).apply();
+    }
+
+    public int getServerPort() {
+        try {
+            return prefs.getInt(KEY_PORT, serverPort);
+        } catch (ClassCastException e) {
+            try {
+                String val = prefs.getString(KEY_PORT, String.valueOf(serverPort));
+                if (val != null) {
+                    int p = Integer.parseInt(val);
+                    setServerPort(p); // Self-heal
+                    return p;
+                }
+            } catch (Exception ignored) {
+            }
+            return serverPort;
         }
-        if (track2Map.containsKey(de22)) {
-            return track2Map.get(de22);
+    }
+
+    public void setServerPort(int port) {
+        prefs.edit().putInt(KEY_PORT, port).apply();
+    }
+
+    public int getTimeout() {
+        try {
+            return prefs.getInt(KEY_TIMEOUT, timeoutMs);
+        } catch (ClassCastException e) {
+            try {
+                String val = prefs.getString(KEY_TIMEOUT, String.valueOf(timeoutMs));
+                if (val != null) {
+                    int t = Integer.parseInt(val);
+                    setTimeout(t); // Self-heal
+                    return t;
+                }
+            } catch (Exception ignored) {
+            }
+            return timeoutMs;
         }
-        // Fallback or Default
-        return track2Map.get("012");
     }
 
-    // Getters for Defaults
-    public String getDefaultAmount() {
-        return defAmount;
+    public void setTimeout(int ms) {
+        prefs.edit().putInt(KEY_TIMEOUT, ms).apply();
     }
 
-    public String getMockPan() {
-        return mockPan;
+    public String getServerId() {
+        return serverId;
     }
 
-    public String getMockExpiry() {
-        return mockExpiry;
+    // ==================== TERMINAL ====================
+    public String getTerminalId() {
+        return prefs.getString(KEY_TID, terminalId);
     }
 
-    // Getters for ISO Constants
+    public void setTerminalId(String tid) {
+        prefs.edit().putString(KEY_TID, tid).apply();
+    }
+
+    public String getMerchantId() {
+        return prefs.getString(KEY_MID, merchantId);
+    }
+
+    public void setMerchantId(String mid) {
+        prefs.edit().putString(KEY_MID, mid).apply();
+    }
+
+    public String getMcc18() {
+        return merchantType;
+    }
+
+    public String getMerchantName() {
+        return String.format(Locale.ROOT, "%-22s %-13s %s", bankName, location, countryCode);
+    }
+
+    // ==================== ISO FIELDS ====================
+    public String getAcquirerId32() {
+        return acquirerId;
+    }
+
+    public String getForwardingInst33() {
+        return forwardingInst;
+    }
+
+    public String getCurrencyCode49() {
+        return currencyCode;
+    }
+
+    public String getPosConditionCode() {
+        return posConditionCode;
+    }
+
+    // ==================== PROCESSING CODES ====================
     public String getProcessingCodePurchase() {
         return procPurchase;
     }
@@ -112,264 +275,65 @@ public class ConfigManager {
         return procBalance;
     }
 
-    public String getPosConditionCode() {
-        return posCondition;
+    public String getProcessingCodeVoid() {
+        return procVoid;
     }
 
-    public String getMerchantTypeBalance() {
-        return mccBalance;
-    }
-
-    private void loadDefaultConfig(Context context) {
-        try (InputStream is = context.getAssets().open("pos_config.json")) {
-            int size = is.available();
-            byte[] buffer = new byte[size];
-            is.read(buffer);
-            String json = new String(buffer, StandardCharsets.UTF_8);
-            JSONObject obj = new JSONObject(json);
-
-            defMcc = obj.optString("merchant_type_18", "5411");
-            defAcq = obj.optString("acquirer_id_32", "970488");
-            defFwd = obj.optString("forwarding_inst_33", "970418");
-            defTid = obj.optString("terminal_id_41", "AUTO0001");
-            defMid = obj.optString("merchant_id_42", "MYSOFTPOSSHOP01");
-
-            JSONObject f43 = obj.optJSONObject("merchant_name_43");
-            if (f43 != null) {
-                defBank = f43.optString("bank_name", "MYSOFTPOS BANK");
-                defLoc = f43.optString("location", "HA NOI");
-                defCountryTxt = f43.optString("country_code", "VNM");
-            } else {
-                defBank = "MYSOFTPOS BANK";
-                defLoc = "HA NOI";
-                defCountryTxt = "VNM";
-            }
-
-            defCurr = obj.optString("currency_code_49", "704");
-
-            // Parse Test Case Definitions
-            JSONObject tcObj = obj.optJSONObject("test_cases");
-            if (tcObj != null) {
-                java.util.Iterator<String> keys = tcObj.keys();
-                while (keys.hasNext()) {
-                    String key = keys.next();
-                    JSONObject item = tcObj.optJSONObject(key);
-                    if (item != null) {
-                        TestCaseConfig config = new TestCaseConfig();
-                        config.track2 = item.optString("track2", null);
-                        // If track2 is empty string in JSON, treat as null
-                        if (config.track2 != null && config.track2.isEmpty())
-                            config.track2 = null;
-
-                        config.pan = item.optString("pan", null);
-                        config.expiry = item.optString("expiry", null);
-                        config.description = item.optString("description", "");
-                        testCaseMap.put(key, config);
-                    }
-                }
-            }
-
-            // Legacy Track 2 parsing (Removed in favor of test_cases, but kept map for
-            // safety if needed)
-            // ...
-
-            // Parse Transaction Defaults (Root Level in JSON)
-            defAmount = obj.optString("default_amount", "000000100000");
-            mockPan = obj.optString("mock_pan", "970418xxxxxx1234");
-            mockExpiry = obj.optString("mock_expiry", "2512");
-            defServerId = obj.optString("server_id", "01");
-
-            // Parse Server Config
-            defIp = obj.optString("server_ip", "10.0.0.1");
-            defPort = obj.optInt("server_port", 1177);
-
-            // Parse Admin Account
-            JSONObject adminObj = obj.optJSONObject("admin_account");
-            if (adminObj != null) {
-                adminUser = adminObj.optString("username", "admin");
-                adminPass = adminObj.optString("password", "admin123456789");
-            } else {
-                adminUser = "admin";
-                adminPass = "admin123456789"; // Fallback
-            }
-
-            // Parse Currency Rules
-            JSONObject currRules = obj.optJSONObject("currency_rules");
-            if (currRules != null) {
-                usdCode = currRules.optString("usd_code", "840");
-                usdCountrySuffix = currRules.optString("usd_country_code", "840");
-            } else {
-                usdCode = "840";
-                usdCountrySuffix = "840";
-            }
-
-            // Parse ISO Constants
-            JSONObject isoConst = obj.optJSONObject("iso_constants");
-            if (isoConst != null) {
-                procPurchase = isoConst.optString("processing_code_purchase", "000000");
-                procBalance = isoConst.optString("processing_code_balance", "300000");
-                posCondition = isoConst.optString("pos_condition_code", "00");
-                mccBalance = isoConst.optString("merchant_type_balance", "6011");
-            } else {
-                procPurchase = "000000";
-                procBalance = "300000";
-                posCondition = "00";
-                mccBalance = "6011";
-            }
-
-        } catch (Exception e) {
-            Log.e("ConfigManager", "Load config", e);
-            // Fallbacks
-            defMcc = "5411";
-            defAcq = "970488";
-            defFwd = "970488";
-            defTid = "AUTO0001";
-            defMid = "MYSOFTPOSSHOP01";
-            defBank = "MYSOFTPOS BANK";
-            defLoc = "HA NOI";
-            defCountryTxt = "VNM";
-            defCurr = "704";
-            // Check IP defaults
-            defIp = "10.145.54.206";
-            defPort = 1177;
-
-            // Fallbacks for new fields
-            defAmount = "000000100000";
-
-            mockPan = "970418xxxxxx1234";
-            mockExpiry = "2512";
-            procPurchase = "000000";
-            procBalance = "300000";
-            posCondition = "00";
-            mccBalance = "6011";
-        }
-    }
-
-    public synchronized String getAndIncrementTrace() {
-        int trace = prefs.getInt(KEY_TRACE, 111300);
-        if (trace < 111300) {
-            trace = 111300;
-        }
-        int next = (trace >= 999999) ? 1 : trace + 1;
-        prefs.edit().putInt(KEY_TRACE, next).apply();
-        return String.format(Locale.ROOT, "%06d", trace);
-    }
-
-    // Removed duplicates
-    private String defIp;
-    private int defPort;
-
-    private String adminUser;
-    private String adminPass;
-
-    public String getAdminUsername() {
-        return adminUser != null ? adminUser : "admin";
-    }
-
-    public String getAdminPassword() {
-        return adminPass != null ? adminPass : "admin123456789";
-    }
-
-    // Currency Rules
-    private String usdCode;
-    private String usdCountrySuffix;
-
+    // ==================== CURRENCY ====================
     public String getUsdCurrencyCode() {
-        return usdCode != null ? usdCode : "840";
+        return usdCode;
     }
 
     public String getUsdCountrySuffix() {
-        return usdCountrySuffix != null ? usdCountrySuffix : "840";
+        return usdCountry;
     }
 
-    // ...
-    private String defServerId; // New field
-
-    // ...
-    public String getServerId() {
-        return defServerId != null ? defServerId : "01";
+    // ==================== ADMIN ====================
+    public String getAdminUsername() {
+        return adminUser;
     }
 
-    // ...
-
-    // Supported Fields - FORCE DEFAULTS (JSON) TO BYPASS STALE PREFS
-    public String getMcc18() {
-        return defMcc;
+    public String getAdminPassword() {
+        return adminPass;
     }
 
-    public String getAcquirerId32() {
-        return defAcq;
-    }
-
-    public String getForwardingInst33() {
-        return defFwd;
-    }
-
-    public String getTerminalId() {
-        return prefs.getString(KEY_TID_41, defTid);
-    }
-
-    public void setTerminalId(String val) {
-        prefs.edit().putString(KEY_TID_41, val).apply();
-    }
-
-    public String getMerchantId() {
-        return prefs.getString(KEY_MID_42, defMid);
-    }
-
-    public void setMerchantId(String val) {
-        prefs.edit().putString(KEY_MID_42, val).apply();
-    }
-
-    public String getCurrencyCode49() {
-        return defCurr;
-    }
-
-    // Server Config Overrides
-    public String getServerIp() {
-        return prefs.getString(KEY_IP, defIp != null ? defIp : "10.145.54.206");
-    }
-
-    public void setServerIp(String val) {
-        prefs.edit().putString(KEY_IP, val).apply();
-    }
-
-    public int getServerPort() {
-        return prefs.getInt(KEY_PORT, defPort > 0 ? defPort : 8583);
-    }
-
-    public void setServerPort(int val) {
-        prefs.edit().putInt(KEY_PORT, val).apply();
-    }
-
-    public int getTimeout() {
-        // Parse or default to 30000
-        String s = prefs.getString("timeout", "30000"); // Using "timeout" literal match from SettingsActivity
-        try {
-            return Integer.parseInt(s);
-        } catch (NumberFormatException e) {
-            return 30000;
-        }
-    }
-
-    public void setTimeout(int val) {
-        prefs.edit().putString("timeout", String.valueOf(val)).apply();
-    }
-
+    // ==================== SECURITY ====================
     public boolean isPinEncryptionEnabled() {
-        return prefs.getBoolean("encrypt_pin", true);
+        return prefs.getBoolean(KEY_ENCRYPT_PIN, true);
     }
 
     public void setPinEncryptionEnabled(boolean enabled) {
-        prefs.edit().putBoolean("encrypt_pin", enabled).apply();
+        prefs.edit().putBoolean(KEY_ENCRYPT_PIN, enabled).apply();
     }
 
-    public String getMerchantName() {
-        String bank = defBank;
-        String loc = defLoc;
-        String ctry = defCountryTxt;
+    // ==================== VALIDATION ====================
+    public int getPanMinLength() {
+        return panMinLen;
+    }
 
-        // Format strict 40 bytes
-        return String.format("%-22s %-13s %s", bank, loc, ctry);
+    public int getPanMaxLength() {
+        return panMaxLen;
+    }
+
+    public int getAmountMax() {
+        return amountMax;
+    }
+
+    // ==================== DEFAULTS (Hardcoded for backward compatibility)
+    // ====================
+    public String getDefaultAmount() {
+        return "100000";
+    }
+
+    public String getMockPan() {
+        return "9704189991010867647";
+    }
+
+    public String getMockExpiry() {
+        return "3101";
+    }
+
+    public String getTrack2(String de22) {
+        return "9704189991010867647=31016010000000123";
     }
 }

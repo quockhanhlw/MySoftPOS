@@ -167,4 +167,18 @@
     <color name="neo_text_secondary">#64748B</color>
     <color name="neo_text_label">#64748B</color>
     <color name="neo_text_amount">#1E293B</color>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!--                    AUTH REDESIGN (Teal Theme)                        -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <color name="teal_primary">#00ACC1</color>
+    <color name="teal_light">#4DD0E1</color>
+    <color name="teal_dark">#007C91</color>
+    <color name="auth_bg_white">#FFFFFF</color>
+    <color name="auth_text_header">#102A43</color>
+    <color name="auth_text_sub">#627D98</color>
+    <color name="auth_input_bg_focused">#F0FCFF</color>
+    <color name="auth_input_border">#D9E2EC</color>
+    <color name="auth_input_border_focused">#00ACC1</color>
+    <color name="auth_error">#D32F2F</color>
 </resources>

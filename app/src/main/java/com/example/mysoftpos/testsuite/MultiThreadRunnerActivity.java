@@ -14,6 +14,8 @@ import com.example.mysoftpos.iso8583.TransactionContext;
 import com.example.mysoftpos.testsuite.model.TestScenario;
 import com.example.mysoftpos.utils.PanUtils;
 import com.example.mysoftpos.utils.logging.ResponseCodeHelper;
+import com.example.mysoftpos.testsuite.model.Scheme;
+import com.example.mysoftpos.testsuite.storage.SchemeRepository;
 
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
@@ -50,6 +52,7 @@ public class MultiThreadRunnerActivity extends AppCompatActivity {
         ArrayList<TestScenario> scenarios = (ArrayList<TestScenario>) getIntent()
                 .getSerializableExtra(com.example.mysoftpos.utils.IntentKeys.SCENARIOS);
         String txnType = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE);
+        String schemeName = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME);
 
         if (scenarios == null || scenarios.isEmpty()) {
             appendLog("No scenarios selected.");
@@ -78,7 +81,7 @@ public class MultiThreadRunnerActivity extends AppCompatActivity {
                 appendLog(tag + " Starting...\n");
 
                 try {
-                    TransactionResult result = runSingleTransaction(scenario, typeToRun, tag);
+                    TransactionResult result = runSingleTransaction(scenario, typeToRun, tag, schemeName);
 
                     appendLog(tag + " Packed Hex (" + result.reqHex.length() / 2 + " bytes):\n" + result.reqHex + "\n");
                     appendLog(tag + " Response Hex:\n" + result.respHex + "\n");
@@ -116,12 +119,29 @@ public class MultiThreadRunnerActivity extends AppCompatActivity {
         }
     }
 
-    private TransactionResult runSingleTransaction(TestScenario scenario, String txnType, String tag)
+    private TransactionResult runSingleTransaction(TestScenario scenario, String txnType, String tag, String schemeName)
             throws Exception {
         TransactionExecutor.LogCallback logger = msg -> appendLog(tag + " " + msg + "\n");
 
         // 1. Build Context
-        TransactionContext ctx = TransactionExecutor.buildContext(getApplicationContext(), txnType, null);
+        String amount = scenario.getField(4);
+        String currency = scenario.getField(49);
+        String country = scenario.getField(19);
+        TransactionContext ctx = TransactionExecutor.buildContext(getApplicationContext(), txnType, amount, currency,
+                country);
+
+        // Override per-scheme IP/port if configured
+        if (schemeName != null && !schemeName.isEmpty()) {
+            try {
+                SchemeRepository repo = new SchemeRepository(getApplicationContext());
+                Scheme scheme = repo.getByName(schemeName);
+                if (scheme != null && scheme.hasConnectionConfig()) {
+                    ctx.ip = scheme.getServerIp();
+                    ctx.port = scheme.getServerPort();
+                }
+            } catch (Exception ignored) {
+            }
+        }
 
         // 2. Prepare Card
         String de22 = scenario.getField(22);

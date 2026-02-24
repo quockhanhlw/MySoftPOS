@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8FAFC">
+    android:background="#F8FAFC"
+    android:fitsSystemWindows="true">
 
     <!-- Top Navigation -->
     <ImageView
@@ -64,7 +65,6 @@
                     android:background="@drawable/bg_header_instruction"
                     android:backgroundTint="#FFFFFF"
                     android:alpha="0.8">
-                    <!-- Tinted for icon container -->
                      <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"

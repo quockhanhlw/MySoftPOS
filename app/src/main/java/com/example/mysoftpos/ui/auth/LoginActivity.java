@@ -3,10 +3,14 @@ package com.example.mysoftpos.ui.auth;
 import com.example.mysoftpos.R;
 
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.method.HideReturnsTransformationMethod;
 import android.text.method.PasswordTransformationMethod;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -18,6 +22,7 @@ public class LoginActivity extends BaseActivity {
 
     private EditText etUsername;
     private EditText etPassword;
+    private boolean passwordVisible = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,8 +32,43 @@ public class LoginActivity extends BaseActivity {
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
 
+        // Password toggle
+        etPassword.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                etPassword.getCompoundDrawablesRelative()[0], null,
+                getDrawable(R.drawable.ic_baseline_visibility_off_24), null);
+        etPassword.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                Drawable end = etPassword.getCompoundDrawablesRelative()[2];
+                if (end != null && event
+                        .getRawX() >= (etPassword.getRight() - end.getBounds().width() - etPassword.getPaddingEnd())) {
+                    passwordVisible = !passwordVisible;
+                    if (passwordVisible) {
+                        etPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                        etPassword.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                                etPassword.getCompoundDrawablesRelative()[0], null,
+                                getDrawable(R.drawable.ic_baseline_visibility_24), null);
+                    } else {
+                        etPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                        etPassword.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                                etPassword.getCompoundDrawablesRelative()[0], null,
+                                getDrawable(R.drawable.ic_baseline_visibility_off_24), null);
+                    }
+                    etPassword.setSelection(etPassword.getText().length());
+                    return true;
+                }
+            }
+            return false;
+        });
+
         TextView tvForgotPassword = findViewById(R.id.tvForgotPassword);
         MaterialButton btnLogin = findViewById(R.id.btnLogin);
+        MaterialButton btnBack = findViewById(R.id.btnBack);
+        TextView tvSignUp = findViewById(R.id.tvSignUp);
+
+        // Back button
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
 
         // Password visibility is handled by TextInputLayout endIcon
 
@@ -36,6 +76,14 @@ public class LoginActivity extends BaseActivity {
             Intent intent = new Intent(LoginActivity.this, ForgotPasswordActivity.class);
             startActivity(intent);
         });
+
+        // Sign up link
+        if (tvSignUp != null) {
+            tvSignUp.setOnClickListener(v -> {
+                Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
+                startActivity(intent);
+            });
+        }
 
         btnLogin.setOnClickListener(v -> handleLogin());
     }

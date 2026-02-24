@@ -6,90 +6,157 @@
     android:orientation="vertical"
     android:padding="24dp">
 
+    <!-- Step Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/register_step2_title"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@color/neo_primary_dark"
+        android:layout_marginBottom="20dp" />
+
     <!-- Username -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/register_hint_username"
-        android:textColor="@color/auth_text_title"
+        android:textSize="13sp"
         android:textStyle="bold"
-        android:layout_marginBottom="8dp"/>
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="6dp" />
 
-    <EditText
-        android:id="@+id/etUsername"
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="@drawable/bg_auth_input"
-        android:paddingHorizontal="16dp"
-        android:hint="cooluser123"
-        android:textColorHint="@color/auth_text_hint"
-        android:textColor="@color/auth_text_title"
-        android:inputType="textNoSuggestions" />
+        android:layout_height="wrap_content"
+        app:boxBackgroundMode="outline"
+        app:boxBackgroundColor="@color/auth_input_bg"
+        app:boxCornerRadiusTopStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxStrokeColor="@color/auth_input_stroke"
+        app:boxStrokeWidth="1dp"
+        app:hintEnabled="false"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etUsername"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="cooluser123"
+            android:textColorHint="@color/text_muted"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
+            android:inputType="textNoSuggestions"
+            android:background="@null" />
+
+    </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Password -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/register_hint_password"
-        android:textColor="@color/auth_text_title"
+        android:textSize="13sp"
         android:textStyle="bold"
+        android:textColor="@color/text_primary"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp"/>
+        android:layout_marginBottom="6dp" />
 
-    <EditText
-        android:id="@+id/etPassword"
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="@drawable/bg_auth_input"
-        android:paddingHorizontal="16dp"
-        android:hint="••••••••"
-        android:textColorHint="@color/auth_text_hint"
-        android:textColor="@color/auth_text_title"
-        android:inputType="textPassword" />
+        android:layout_height="wrap_content"
+        app:boxBackgroundMode="outline"
+        app:boxBackgroundColor="@color/auth_input_bg"
+        app:boxCornerRadiusTopStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxStrokeColor="@color/auth_input_stroke"
+        app:boxStrokeWidth="1dp"
+        app:hintEnabled="false"
+        app:passwordToggleEnabled="true"
+        app:passwordToggleTint="@color/text_muted"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etPassword"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="••••••••"
+            android:textColorHint="@color/text_muted"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
+            android:inputType="textPassword"
+            android:background="@null" />
+
+    </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Confirm Password -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/register_hint_confirm_password"
-        android:textColor="@color/auth_text_title"
+        android:textSize="13sp"
         android:textStyle="bold"
+        android:textColor="@color/text_primary"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp"/>
+        android:layout_marginBottom="6dp" />
 
-    <EditText
-        android:id="@+id/etConfirmPassword"
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="@drawable/bg_auth_input"
-        android:paddingHorizontal="16dp"
-        android:hint="••••••••"
-        android:textColorHint="@color/auth_text_hint"
-        android:textColor="@color/auth_text_title"
-        android:inputType="textPassword" />
+        android:layout_height="wrap_content"
+        app:boxBackgroundMode="outline"
+        app:boxBackgroundColor="@color/auth_input_bg"
+        app:boxCornerRadiusTopStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxStrokeColor="@color/auth_input_stroke"
+        app:boxStrokeWidth="1dp"
+        app:hintEnabled="false"
+        app:passwordToggleEnabled="true"
+        app:passwordToggleTint="@color/text_muted"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etConfirmPassword"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="••••••••"
+            android:textColorHint="@color/text_muted"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
+            android:inputType="textPassword"
+            android:background="@null" />
+
+    </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Terms Checkbox -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="20dp"
         android:gravity="center_vertical">
 
-        <CheckBox
+        <com.google.android.material.checkbox.MaterialCheckBox
             android:id="@+id/cbTerms"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:buttonTint="@color/auth_accent_start" />
+            app:buttonTint="@color/primary" />
 
         <TextView
             android:id="@+id/tvTermsText"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:text="@string/register_terms_text"
-            android:textColor="@color/auth_text_body"
-            android:textSize="14sp"
-            android:layout_marginStart="8dp"/>
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
+            android:lineSpacingExtra="2dp" />
+
     </LinearLayout>
 
     <!-- Action Buttons -->
@@ -97,39 +164,44 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginTop="32dp">
+        android:layout_marginTop="24dp">
 
+        <!-- Back Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBackStep"
-            android:layout_width="wrap_content"
-            android:layout_height="60dp"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
             android:layout_weight="1"
-            android:text="Back"
-            android:textSize="16sp"
+            android:text="@string/register_back"
+            android:textSize="15sp"
             android:textStyle="bold"
-            app:cornerRadius="16dp"
+            android:textAllCaps="false"
+            android:textColor="@color/primary"
             app:backgroundTint="@android:color/transparent"
-            app:strokeColor="@color/auth_accent_start"
-            app:strokeWidth="1dp"
-            android:textColor="@color/auth_accent_start"
-            android:layout_marginEnd="16dp"
-            android:stateListAnimator="@null"/>
+            android:background="@drawable/bg_button_outline"
+            app:cornerRadius="14dp"
+            app:rippleColor="#1A3B82F6"
+            android:stateListAnimator="@null"
+            android:layout_marginEnd="12dp" />
 
+        <!-- Register Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRegister"
-            android:layout_width="wrap_content"
-            android:layout_height="60dp"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
             android:layout_weight="2"
             android:text="@string/register_button"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold"
-            app:cornerRadius="16dp"
+            android:textAllCaps="false"
+            android:letterSpacing="0.02"
+            android:textColor="@android:color/white"
             app:backgroundTint="@null"
-            android:background="@drawable/bg_auth_button"
-            android:textColor="@android:color/white" />
-            
+            android:background="@drawable/bg_button_primary_gradient"
+            app:cornerRadius="14dp"
+            app:rippleColor="#33FFFFFF" />
+
     </LinearLayout>
 
 </LinearLayout>
-
 

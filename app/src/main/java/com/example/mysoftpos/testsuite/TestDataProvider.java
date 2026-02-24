@@ -1,7 +1,5 @@
 package com.example.mysoftpos.testsuite;
 
-import com.example.mysoftpos.utils.config.ConfigManager;
-
 import com.example.mysoftpos.testsuite.model.TestScenario;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,15 +10,37 @@ import java.util.List;
  */
 public class TestDataProvider {
 
-    private static final String PAN = "9704189991010867647"; // Updated per User Request
-    private static final String EXP_DATE = "3101"; // YYMM
+    // Test Card Data - Hardcoded
+    private static final String PAN_1 = "9704189991010867647";
+    private static final String EXP_1 = "3101";
+    private static final String TRACK2_1 = "9704189991010867647=31016010000000123";
 
-    // Track 2 Templates (PAN + 'D' + ExpDate + ServiceCode + Discretionary)
-    // 022 Magstripe: 9704189991010867647=31016010000000123
-    private static final String TRACK2_SC_101 = "9704189991010867647D31016010000000123";
+    private static final String PAN_2 = "9704186870000505297";
+    private static final String EXP_2 = "2808";
+    private static final String TRACK2_2 = "9704186870000505297=28086010000000456";
+
+    private static final String PAN_3 = "9704180000000001";
+    private static final String EXP_3 = "2512";
+    private static final String TRACK2_3 = "9704180000000001=25126010000000789";
 
     public static List<TestScenario> generateAllScenarios(android.content.Context context) {
         return generateNapasTestCases(context);
+    }
+
+    /**
+     * Generates test cases based on scheme.
+     * Only Napas has preset test cases; others return empty list.
+     */
+    public static List<TestScenario> generateScenarios(android.content.Context context, String scheme) {
+        if (scheme == null)
+            return new ArrayList<>();
+        switch (scheme.toLowerCase()) {
+            case "napas":
+                return generateNapasTestCases(context);
+            default:
+                // Visa, Mastercard, custom schemes: no preset test cases
+                return new ArrayList<>();
+        }
     }
 
     /**
@@ -35,79 +55,46 @@ public class TestDataProvider {
 
         for (String code : codes) {
             String modeStr = getModeName(code);
-            // User Request: 021 should NOT have PIN code (even though it ends in 1)
             boolean isPin = code.endsWith("1") && !"021".equals(code);
             String desc = String.format("%s (%s)", modeStr, code);
 
-            String mti = "0200";
-
-            TestScenario s = new TestScenario(mti, desc);
+            TestScenario s = new TestScenario("0200", desc);
 
             // Common Fields
-            s.setField(3, "000000"); // Processing Code
-            s.setField(22, code); // DE 22 (Entry Mode)
+            s.setField(3, "000000");
+            s.setField(22, code);
 
-            // RULES: DE 35 (Track 2) & DE 55 (Chip Data) & DE 52 (PIN) Logic
-            configureFieldsForCode(s, code, isPin, context);
-
-            // Resolve Bank Name from PAN/Track 2
-            String pan = s.getField(2);
-            String track2 = s.getField(35);
-            if (track2 != null && !track2.isEmpty()) {
-                // Extract PAN from Track 2 (Separator D or =)
-                String[] parts = track2.split("[D=]");
-                if (parts.length > 0) {
-                    pan = parts[0];
-                }
-            }
-            String bankName = com.example.mysoftpos.utils.card.BinResolver.getBankName(pan);
-            // Append Bank Name simply
-            if (!bankName.equals("Unknown")) {
-                s.setDescription(s.getDescription() + " - " + bankName);
-            }
+            // Configure fields based on code
+            configureFieldsForCode(s, code, isPin);
 
             list.add(s);
         }
         return list;
     }
 
-    private static void configureFieldsForCode(TestScenario s, String code, boolean isPin,
-            android.content.Context context) {
-        // --- Rule 1: Load Data from ConfigManager (JSON) ---
-        // Includes: Track 2, PAN (Manual), Expiry (Manual)
-        com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
-                .getInstance(context);
-
-        com.example.mysoftpos.utils.config.ConfigManager.TestCaseConfig tcConfig = config.getTestCaseConfig(code);
-
-        if (tcConfig != null) {
-            // Set Track 2 if present
-            if (tcConfig.track2 != null) {
-                s.setField(35, tcConfig.track2);
-            }
-
-            // Set PAN/Expiry if present (Manual Entry)
-            if (tcConfig.pan != null) {
-                s.setField(2, tcConfig.pan);
-            }
-            if (tcConfig.expiry != null) {
-                s.setField(14, tcConfig.expiry);
-            }
-
-            // Append Config Description
-            if (tcConfig.description != null && !tcConfig.description.isEmpty()) {
-                s.setDescription(s.getDescription() + " [" + tcConfig.description + "]");
-            }
-        } else {
-            // Fallback for codes not in JSON (should not happen if JSON is complete)
-            // Or handle legacy hardcoded defaults if needed?
-            // User requested "use JSON", so strict JSON usage is preferred.
+    private static void configureFieldsForCode(TestScenario s, String code, boolean isPin) {
+        // Set Track 2 / PAN / Expiry based on DE 22 code
+        switch (code) {
+            case "011": // Manual Key-in with PIN
+                s.setField(2, PAN_1);
+                s.setField(14, EXP_1);
+                break;
+            case "012": // Manual Key-in without PIN
+                s.setField(2, PAN_2);
+                s.setField(14, EXP_2);
+                break;
+            case "021": // Magstripe with PIN
+                s.setField(35, TRACK2_1);
+                break;
+            case "022": // Magstripe without PIN
+                s.setField(35, TRACK2_1);
+                break;
+            default:
+                s.setField(35, TRACK2_1);
+                break;
         }
 
-        // --- Rule 2: DE 55 Presense ---
-        // COMPLETELY REMOVED per User Request
-
-        // --- Rule 3: PIN Block (DE 52) ---
+        // PIN Block (DE 52)
         if (isPin) {
             s.setField(52, "PIN_BLOCK_PRESENT");
         }
@@ -120,7 +107,6 @@ public class TestDataProvider {
             return "Manual Key-in";
         if (code.startsWith("03"))
             return "QR Code";
-        // 901/902 and Chip/NFC Removed as per user request
         return "Unknown";
     }
 }

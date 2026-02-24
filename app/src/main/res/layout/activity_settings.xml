@@ -251,42 +251,6 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- Connection Settings -->
-                <LinearLayout
-                    android:id="@+id/btnConnectionSettings"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:gravity="center_vertical"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="?attr/selectableItemBackground">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_signal"
-                        app:tint="@color/primary" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="16dp"
-                        android:text="Connection Setup"
-                        android:textColor="@color/text_primary"
-                        android:textSize="16sp"
-                        android:fontFamily="sans-serif-medium"/>
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_arrow_right"
-                        app:tint="#CBD5E1" />
-                </LinearLayout>
-
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F1F5F9" android:layout_marginStart="56dp"/>
 
                 <!-- Identity Settings -->
                 <LinearLayout

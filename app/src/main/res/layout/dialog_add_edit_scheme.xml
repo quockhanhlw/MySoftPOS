@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="8dp">
+
+        <!-- ═══ Title Row ═══ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="20dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvDialogTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Add Scheme"
+                    android:textColor="#0F172A"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tvDialogSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Configure a new card network"
+                    android:textColor="#94A3B8"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Delete button (only for non-built-in, shown in edit mode) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDelete"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                android:visibility="gone"
+                app:icon="@drawable/ic_delete"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="22dp"
+                app:iconTint="#EF4444"
+                app:rippleColor="#22EF4444" />
+        </LinearLayout>
+
+        <!-- ═══ Live Preview Card ═══ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/bg_input_rounded"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <FrameLayout
+                android:id="@+id/previewIconContainer"
+                android:layout_width="60dp"
+                android:layout_height="60dp">
+
+                <TextView
+                    android:id="@+id/tvPreviewLetter"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="?"
+                    android:textColor="#FFFFFF"
+                    android:textSize="26sp"
+                    android:textStyle="bold" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/tvPreviewName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="New Scheme"
+                android:textColor="#475569"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <!-- ═══ Name ═══ -->
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:hint="Scheme Name"
+            app:boxCornerRadiusBottomEnd="14dp"
+            app:boxCornerRadiusBottomStart="14dp"
+            app:boxCornerRadiusTopEnd="14dp"
+            app:boxCornerRadiusTopStart="14dp"
+            app:boxStrokeColor="#00897B"
+            app:hintTextColor="#00897B">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etSchemeName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:textColor="#0F172A"
+                android:textSize="15sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ═══ BIN Prefix ═══ -->
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:hint="BIN Prefix (e.g. 9704, 4, 5)"
+            app:boxCornerRadiusBottomEnd="14dp"
+            app:boxCornerRadiusBottomStart="14dp"
+            app:boxCornerRadiusTopEnd="14dp"
+            app:boxCornerRadiusTopStart="14dp"
+            app:boxStrokeColor="#00897B"
+            app:hintTextColor="#00897B">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etPrefix"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:textColor="#0F172A"
+                android:textSize="15sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ═══ Icon Letter ═══ -->
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="Icon Letter"
+            app:boxCornerRadiusBottomEnd="14dp"
+            app:boxCornerRadiusBottomStart="14dp"
+            app:boxCornerRadiusTopEnd="14dp"
+            app:boxCornerRadiusTopStart="14dp"
+            app:boxStrokeColor="#00897B"
+            app:counterEnabled="true"
+            app:counterMaxLength="1"
+            app:hintTextColor="#00897B">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etIconLetter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:inputType="textCapCharacters"
+                android:maxLength="1"
+                android:textColor="#0F172A"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ═══ Color Picker ═══ -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="Icon Color"
+            android:textColor="#475569"
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:id="@+id/colorPicker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="horizontal">
+
+            <View android:id="@+id/colorBlue"   android:tag="#1565C0" android:layout_width="42dp" android:layout_height="42dp" android:layout_marginHorizontal="5dp" android:background="@drawable/bg_circle_white" />
+            <View android:id="@+id/colorNavy"   android:tag="#1A237E" android:layout_width="42dp" android:layout_height="42dp" android:layout_marginHorizontal="5dp" android:background="@drawable/bg_circle_white" />
+            <View android:id="@+id/colorRed"    android:tag="#C62828" android:layout_width="42dp" android:layout_height="42dp" android:layout_marginHorizontal="5dp" android:background="@drawable/bg_circle_white" />
+            <View android:id="@+id/colorTeal"   android:tag="#00695C" android:layout_width="42dp" android:layout_height="42dp" android:layout_marginHorizontal="5dp" android:background="@drawable/bg_circle_white" />
+            <View android:id="@+id/colorOrange" android:tag="#E65100" android:layout_width="42dp" android:layout_height="42dp" android:layout_marginHorizontal="5dp" android:background="@drawable/bg_circle_white" />
+            <View android:id="@+id/colorPurple" android:tag="#6A1B9A" android:layout_width="42dp" android:layout_height="42dp" android:layout_marginHorizontal="5dp" android:background="@drawable/bg_circle_white" />
+        </LinearLayout>
+
+        <!-- ═══ Connection Config Section ═══ -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="16dp"
+            android:background="#E2E8F0" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="8dp"
+                android:src="@drawable/ic_baseline_settings_ethernet_24"
+                app:tint="#00897B" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="Connection Config"
+                android:textColor="#0F172A"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <!-- Server IP -->
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:hint="Server IP (e.g. 192.168.1.100)"
+            app:boxCornerRadiusBottomEnd="14dp"
+            app:boxCornerRadiusBottomStart="14dp"
+            app:boxCornerRadiusTopEnd="14dp"
+            app:boxCornerRadiusTopStart="14dp"
+            app:boxStrokeColor="#00897B"
+            app:hintTextColor="#00897B">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etServerIp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:textColor="#0F172A"
+                android:textSize="15sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Port + Timeout side-by-side -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:hint="Port"
+                app:boxCornerRadiusBottomEnd="14dp"
+                app:boxCornerRadiusBottomStart="14dp"
+                app:boxCornerRadiusTopEnd="14dp"
+                app:boxCornerRadiusTopStart="14dp"
+                app:boxStrokeColor="#00897B"
+                app:hintTextColor="#00897B">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etServerPort"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:textColor="#0F172A"
+                    android:textSize="15sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:hint="Timeout (ms)"
+                app:boxCornerRadiusBottomEnd="14dp"
+                app:boxCornerRadiusBottomStart="14dp"
+                app:boxCornerRadiusTopEnd="14dp"
+                app:boxCornerRadiusTopStart="14dp"
+                app:boxStrokeColor="#00897B"
+                app:hintTextColor="#00897B">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etTimeout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:textColor="#0F172A"
+                    android:textSize="15sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+
+        <!-- Test Connection button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTestConnection"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="16dp"
+            android:text="🔌  Test Connection"
+            android:textColor="#00897B"
+            android:textSize="14sp"
+            android:textAllCaps="false"
+            app:cornerRadius="14dp"
+            app:strokeColor="#00897B"
+            app:strokeWidth="1.5dp" />
+
+        <!-- Connection status indicator -->
+        <TextView
+            android:id="@+id/tvConnectionStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:textSize="13sp"
+            android:visibility="gone" />
+
+        <!-- Info hint -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Leave empty to use global settings"
+            android:textColor="#94A3B8"
+            android:textSize="12sp"
+            android:gravity="center" />
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="8dp"
+            android:gravity="end"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDialogCancel"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cancel"
+                android:textColor="#94A3B8" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDialogSave"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Save"
+                android:backgroundTint="#00897B"
+                app:cornerRadius="14dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>
+

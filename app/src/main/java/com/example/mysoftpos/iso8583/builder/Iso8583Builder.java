@@ -37,6 +37,7 @@ public class Iso8583Builder {
         m.setField(IsoField.LOCAL_TIME_12, ctx.localTime12);
         m.setField(IsoField.LOCAL_DATE_13, ctx.localDate13);
         m.setField(IsoField.MERCHANT_TYPE_18, ctx.mcc18);
+        m.setField(IsoField.COUNTRY_CODE_19, ctx.country19);
 
         // DE 22: POS Entry Mode
         String de22 = card.getPosEntryMode();
@@ -118,6 +119,7 @@ public class Iso8583Builder {
         }
 
         m.setField(IsoField.MERCHANT_TYPE_18, ctx.mcc18); // 6011 for Balance
+        m.setField(IsoField.COUNTRY_CODE_19, ctx.country19);
         m.setField(IsoField.POS_CONDITION_CODE_25, ctx.posCondition25);
         m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32);
         m.setField(IsoField.RRN_37, ctx.rrn37);

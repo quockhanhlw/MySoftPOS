@@ -34,6 +34,7 @@ public class RunnerActivity extends AppCompatActivity {
         String amount = i.getStringExtra(com.example.mysoftpos.utils.IntentKeys.AMOUNT);
         String currencyCode = i.getStringExtra(com.example.mysoftpos.utils.IntentKeys.CURRENCY_CODE);
         String countryCode = i.getStringExtra(com.example.mysoftpos.utils.IntentKeys.COUNTRY_CODE);
+        String scheme = i.getStringExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME);
 
         TextView tvTitle = findViewById(R.id.tvTitle);
         tvTitle.setText(desc);
@@ -42,7 +43,8 @@ public class RunnerActivity extends AppCompatActivity {
             tvLog.setText("Starting Transaction...\nMode: " + de22 + "\nAmount: "
                     + (amount != null ? amount : "Default") + "\nCurrency: "
                     + (currencyCode != null ? currencyCode : "Default (704)") + "\n");
-            viewModel.runTransaction(de22, track2, pan, expiry, pinBlock, txnType, amount, currencyCode, countryCode);
+            viewModel.runTransaction(de22, track2, pan, expiry, pinBlock, txnType, amount, currencyCode, countryCode,
+                    scheme);
         });
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
@@ -58,6 +60,7 @@ public class RunnerActivity extends AppCompatActivity {
         });
 
         // Build and display ISO message preview immediately
-        viewModel.previewTransaction(de22, track2, pan, expiry, pinBlock, txnType, amount, currencyCode, countryCode);
+        viewModel.previewTransaction(de22, track2, pan, expiry, pinBlock, txnType, amount, currencyCode, countryCode,
+                scheme);
     }
 }

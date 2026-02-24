@@ -135,11 +135,17 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
 
             itemView.setOnClickListener(v -> listener.onItemClick(item));
 
-            // Separate listener for Checkbox
+            // Separate listener for Checkbox — use onClickListener
+            // and prevent itemView from also receiving the click
             cbSelect.setOnClickListener(v -> {
                 if (toggleListener != null) {
                     toggleListener.onItemToggle(item);
                 }
+            });
+            // Prevent checkbox clicks from also triggering itemView click
+            cbSelect.setOnTouchListener((v, event) -> {
+                v.getParent().requestDisallowInterceptTouchEvent(true);
+                return false;
             });
 
             itemView.setOnLongClickListener(v -> {
