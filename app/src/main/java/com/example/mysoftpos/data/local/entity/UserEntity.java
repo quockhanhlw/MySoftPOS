@@ -12,7 +12,6 @@ import androidx.room.PrimaryKey;
  */
 @Entity(tableName = "users", indices = {
         @Index(value = { "username_hash" }, unique = true),
-        @Index(value = { "email" }, unique = true),
         @Index(value = { "phone" }, unique = true)
 })
 public class UserEntity {
@@ -44,6 +43,15 @@ public class UserEntity {
     @ColumnInfo(name = "created_at")
     public long createdAt;
 
+    @ColumnInfo(name = "admin_id")
+    public String adminId; // username hash of admin who manages this user
+
+    @ColumnInfo(name = "server_ip")
+    public String serverIp;
+
+    @ColumnInfo(name = "server_port")
+    public int serverPort;
+
     public UserEntity() {
     }
 
@@ -58,5 +66,7 @@ public class UserEntity {
         this.phone = phone;
         this.dob = dob;
         this.createdAt = System.currentTimeMillis();
+        this.serverIp = "";
+        this.serverPort = 0;
     }
 }

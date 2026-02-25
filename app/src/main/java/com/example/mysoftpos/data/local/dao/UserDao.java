@@ -1,12 +1,15 @@
 package com.example.mysoftpos.data.local.dao;
 
-import com.example.mysoftpos.data.local.dao.UserDao;
 import com.example.mysoftpos.data.local.entity.UserEntity;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+
+import java.util.List;
 
 /**
  * DAO for User operations.
@@ -19,6 +22,9 @@ public interface UserDao {
 
     @androidx.room.Update
     void update(UserEntity user);
+
+    @Delete
+    void delete(UserEntity user);
 
     @Query("SELECT * FROM users WHERE username_hash = :usernameHash LIMIT 1")
     UserEntity findByUsernameHash(String usernameHash);
@@ -43,4 +49,10 @@ public interface UserDao {
 
     @Query("SELECT EXISTS(SELECT 1 FROM users WHERE phone = :phone)")
     boolean existsByPhone(String phone);
+
+    @Query("SELECT * FROM users WHERE admin_id = :adminId ORDER BY created_at DESC")
+    LiveData<List<UserEntity>> getAllByAdminId(String adminId);
+
+    @Query("SELECT * FROM users WHERE admin_id = :adminId ORDER BY created_at DESC")
+    List<UserEntity> getAllByAdminIdSync(String adminId);
 }

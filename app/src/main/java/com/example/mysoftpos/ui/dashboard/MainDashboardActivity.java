@@ -55,11 +55,13 @@ public class MainDashboardActivity extends BaseActivity {
         // Get user info
         String userRoleArg = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USER_ROLE);
         String usernameArg = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME);
+        String displayNameArg = getIntent().getStringExtra("DISPLAY_NAME");
         if (userRoleArg == null)
             userRoleArg = "USER";
 
         final String userRole = userRoleArg;
         final String username = (usernameArg != null) ? usernameArg : getString(R.string.guest_user);
+        final String displayName = (displayNameArg != null) ? displayNameArg : username;
 
         // Bind Views
         tvMerchantName = findViewById(R.id.tvMerchantName);
@@ -69,12 +71,13 @@ public class MainDashboardActivity extends BaseActivity {
         View btnPurchase = findViewById(R.id.btnPurchase);
         View btnBalance = findViewById(R.id.btnBalance);
         View btnTestSuite = findViewById(R.id.btnTestSuite);
+        View btnUserManagement = findViewById(R.id.btnUserManagement);
         ImageView btnSettings = findViewById(R.id.btnSettings);
         // ImageView btnLogout = findViewById(R.id.btnLogout); // Removed
         ImageView btnHome = findViewById(R.id.btnHome);
 
-        // Set Welcome Name
-        tvMerchantName.setText(username);
+        // Set Welcome Name (display name, not email)
+        tvMerchantName.setText(displayName);
 
         // --- ROLE BASED UI ---
         boolean isAdmin = "ADMIN".equals(userRole);
@@ -84,11 +87,17 @@ public class MainDashboardActivity extends BaseActivity {
             if (btnTestSuite != null) {
                 btnTestSuite.setVisibility(View.VISIBLE);
             }
+            if (btnUserManagement != null) {
+                btnUserManagement.setVisibility(View.VISIBLE);
+            }
         } else {
             btnPurchase.setVisibility(View.VISIBLE);
             btnBalance.setVisibility(View.VISIBLE);
             if (btnTestSuite != null) {
                 btnTestSuite.setVisibility(View.GONE);
+            }
+            if (btnUserManagement != null) {
+                btnUserManagement.setVisibility(View.GONE);
             }
         }
 
@@ -110,6 +119,15 @@ public class MainDashboardActivity extends BaseActivity {
         if (btnTestSuite != null) {
             btnTestSuite.setOnClickListener(v -> {
                 Intent intent = new Intent(this, com.example.mysoftpos.testsuite.SchemeSelectActivity.class);
+                startActivity(intent);
+            });
+        }
+
+        // User Management Action (Admin Only)
+        if (btnUserManagement != null) {
+            btnUserManagement.setOnClickListener(v -> {
+                Intent intent = new Intent(this, com.example.mysoftpos.ui.admin.UserManagementActivity.class);
+                intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, username);
                 startActivity(intent);
             });
         }

@@ -199,6 +199,10 @@ public class ConfigManager {
         prefs.edit().putInt(KEY_PORT, port).apply();
     }
 
+    public void resetServerConfig() {
+        prefs.edit().remove(KEY_IP).remove(KEY_PORT).apply();
+    }
+
     public int getTimeout() {
         try {
             return prefs.getInt(KEY_TIMEOUT, timeoutMs);

@@ -115,7 +115,9 @@ public class LoginActivity extends BaseActivity {
                         .getInstance(this);
                 if (finalUsername.equals(config.getAdminUsername())
                         && finalPassword.equals(config.getAdminPassword())) {
-                    runOnUiThread(() -> navigateToDashboard("ADMIN", config.getAdminUsername()));
+                    config.resetServerConfig();
+                    runOnUiThread(
+                            () -> navigateToDashboard("ADMIN", config.getAdminUsername(), config.getAdminUsername()));
                     return;
                 }
 
@@ -124,18 +126,18 @@ public class LoginActivity extends BaseActivity {
                         .getInstance(this);
                 com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
 
-                // 1. Try finding by Username Hash
-                String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(finalUsername);
-                com.example.mysoftpos.data.local.entity.UserEntity user = userDao.findByUsernameHash(usernameHash);
+                // 1. Try finding by Phone (primary login method)
+                com.example.mysoftpos.data.local.entity.UserEntity user = userDao.findByPhone(finalUsername);
 
-                // 2. If not found, try finding by Email
+                // 2. If not found, try finding by Email (fallback)
                 if (user == null) {
                     user = userDao.findByEmail(finalUsername);
                 }
 
-                // 3. If still not found, try finding by Phone
+                // 3. If still not found, try by Username Hash
                 if (user == null) {
-                    user = userDao.findByPhone(finalUsername);
+                    String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(finalUsername);
+                    user = userDao.findByUsernameHash(usernameHash);
                 }
 
                 if (user != null) {
@@ -144,8 +146,18 @@ public class LoginActivity extends BaseActivity {
                     if (inputPasswordHash.equals(user.passwordHash)) {
                         String displayName = user.displayName != null ? user.displayName : "User";
 
+                        // Reset config to defaults so we don't inherit previous user's config
+                        config.resetServerConfig();
+
+                        // Apply user's server config (set by admin)
+                        if (user.serverIp != null && !user.serverIp.isEmpty() && user.serverPort > 0) {
+                            config.setServerIp(user.serverIp);
+                            config.setServerPort(user.serverPort);
+                        }
+
                         final com.example.mysoftpos.data.local.entity.UserEntity finalUser = user;
-                        runOnUiThread(() -> navigateToDashboard(finalUser.role, displayName));
+                        // Pass email (login identifier) as USERNAME for UserManagement admin lookup
+                        runOnUiThread(() -> navigateToDashboard(finalUser.role, displayName, finalUser.email));
                         return;
                     }
                 }
@@ -165,11 +177,12 @@ public class LoginActivity extends BaseActivity {
         }).start();
     }
 
-    private void navigateToDashboard(String role, String username) {
+    private void navigateToDashboard(String role, String displayName, String loginId) {
         Toast.makeText(this, "Login Successful!", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(LoginActivity.this, com.example.mysoftpos.ui.dashboard.MainDashboardActivity.class);
         intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USER_ROLE, role);
-        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, username);
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, loginId != null ? loginId : displayName);
+        intent.putExtra("DISPLAY_NAME", displayName);
         startActivity(intent);
         finish();
     }

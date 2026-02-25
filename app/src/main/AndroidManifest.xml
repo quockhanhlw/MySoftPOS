@@ -70,6 +70,12 @@
         <activity android:name=".testsuite.DynamicTestSuiteActivity" android:label="Test Suites" />
         <activity android:name=".testsuite.DynamicTestCaseActivity" android:label="Test Cases" />
 
+        <!-- Admin Activities -->
+        <activity
+            android:name=".ui.admin.UserManagementActivity"
+            android:exported="false"
+            android:label="User Management" />
+
         <!-- Purchase Activities -->
         <activity
             android:name=".ui.purchase.PurchaseAmountActivity"
@@ -81,10 +87,6 @@
             android:exported="false"
             android:label="Card" />
 
-        <activity
-            android:name=".ui.purchase.PaymentSuccessActivity"
-            android:exported="false"
-            android:label="Success" />
 
         <!-- Balance Inquiry Activity -->
         <activity

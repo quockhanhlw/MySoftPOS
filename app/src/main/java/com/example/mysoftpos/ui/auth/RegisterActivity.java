@@ -147,7 +147,7 @@ public class RegisterActivity extends BaseActivity {
                         usernameHash,
                         passwordHash,
                         fullName,
-                        "USER",
+                        "ADMIN",
                         email,
                         phone,
                         null);

@@ -18,7 +18,7 @@ import com.example.mysoftpos.data.local.dao.*;
         MerchantEntity.class,
         TerminalEntity.class,
         CardEntity.class
-}, version = 9, exportSchema = false) // Bumped: added scheme column to test_cases
+}, version = 11, exportSchema = false) // Bumped: removed email unique constraint, phone is primary login
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract TransactionDao transactionDao();
