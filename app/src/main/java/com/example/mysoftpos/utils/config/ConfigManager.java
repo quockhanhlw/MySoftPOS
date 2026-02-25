@@ -38,7 +38,6 @@ public class ConfigManager {
     private String bankName, location, countryCode;
     private String acquirerId, forwardingInst, currencyCode, posConditionCode;
     private String procPurchase, procBalance, procVoid;
-    private String adminUser, adminPass;
     private String usdCode, usdCountry;
     private int amountMax, panMinLen, panMaxLen;
 
@@ -111,12 +110,7 @@ public class ConfigManager {
                 }
             }
 
-            // Admin
-            JSONObject admin = config.optJSONObject("admin_account");
-            if (admin != null) {
-                adminUser = admin.optString("username", "admin");
-                adminPass = admin.optString("password", "admin123456789");
-            }
+            // Removed Admin logic from Config
 
             // Validation
             JSONObject validation = config.optJSONObject("validation");
@@ -150,8 +144,6 @@ public class ConfigManager {
         procPurchase = "000000";
         procBalance = "300000";
         procVoid = "000000";
-        adminUser = "admin";
-        adminPass = "admin123456789";
         usdCode = "840";
         usdCountry = "840";
         panMinLen = 13;
@@ -292,14 +284,7 @@ public class ConfigManager {
         return usdCountry;
     }
 
-    // ==================== ADMIN ====================
-    public String getAdminUsername() {
-        return adminUser;
-    }
-
-    public String getAdminPassword() {
-        return adminPass;
-    }
+    // Removed ADMIN methods
 
     // ==================== SECURITY ====================
     public boolean isPinEncryptionEnabled() {

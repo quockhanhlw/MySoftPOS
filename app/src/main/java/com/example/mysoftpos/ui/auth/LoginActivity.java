@@ -110,16 +110,8 @@ public class LoginActivity extends BaseActivity {
 
         new Thread(() -> {
             try {
-                // Check admin (from Config)
                 com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
                         .getInstance(this);
-                if (finalUsername.equals(config.getAdminUsername())
-                        && finalPassword.equals(config.getAdminPassword())) {
-                    config.resetServerConfig();
-                    runOnUiThread(
-                            () -> navigateToDashboard("ADMIN", config.getAdminUsername(), config.getAdminUsername()));
-                    return;
-                }
 
                 // Check database for registered users
                 com.example.mysoftpos.data.local.AppDatabase db = com.example.mysoftpos.data.local.AppDatabase
