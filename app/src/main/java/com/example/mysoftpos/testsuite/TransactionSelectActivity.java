@@ -64,6 +64,20 @@ public class TransactionSelectActivity extends AppCompatActivity {
         channel = getIntent().getStringExtra(IntentKeys.CHANNEL);
 
         btnRunSelected = findViewById(R.id.btnRunSelected);
+        tvPurchaseSubtitle = findViewById(R.id.tvPurchaseSubtitle);
+        tvBalanceSubtitle = findViewById(R.id.tvBalanceSubtitle);
+
+        // Breadcrumbs
+        TextView tvBreadcrumbScheme = findViewById(R.id.tvBreadcrumbScheme);
+        TextView tvBreadcrumbChannel = findViewById(R.id.tvBreadcrumbChannel);
+        if (tvBreadcrumbScheme != null && scheme != null)
+            tvBreadcrumbScheme.setText(scheme);
+        if (tvBreadcrumbChannel != null && channel != null)
+            tvBreadcrumbChannel.setText(channel);
+
+        // Swipe back
+        com.example.mysoftpos.testsuite.util.SwipeBackHelper.attach(this);
+        com.example.mysoftpos.testsuite.util.StepDotsHelper.setActiveStep(this, 3);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
@@ -103,6 +117,39 @@ public class TransactionSelectActivity extends AppCompatActivity {
 
     private void updateUI() {
         int total = purchaseSelected.size() + balanceSelected.size();
+
+        // Update subtitles
+        if (tvPurchaseSubtitle != null) {
+            tvPurchaseSubtitle.setText(purchaseSelected.isEmpty()
+                    ? "Payment transaction test"
+                    : purchaseSelected.size() + " case(s) selected");
+        }
+        if (tvBalanceSubtitle != null) {
+            tvBalanceSubtitle.setText(balanceSelected.isEmpty()
+                    ? "Balance check test"
+                    : balanceSelected.size() + " case(s) selected");
+        }
+
+        // Update count badges
+        TextView tvPurchaseCount = findViewById(R.id.tvPurchaseCount);
+        TextView tvBalanceCount = findViewById(R.id.tvBalanceCount);
+        if (tvPurchaseCount != null) {
+            if (!purchaseSelected.isEmpty()) {
+                tvPurchaseCount.setVisibility(View.VISIBLE);
+                tvPurchaseCount.setText(purchaseSelected.size() + "");
+            } else {
+                tvPurchaseCount.setVisibility(View.GONE);
+            }
+        }
+        if (tvBalanceCount != null) {
+            if (!balanceSelected.isEmpty()) {
+                tvBalanceCount.setVisibility(View.VISIBLE);
+                tvBalanceCount.setText(balanceSelected.size() + "");
+            } else {
+                tvBalanceCount.setVisibility(View.GONE);
+            }
+        }
+
         if (total > 0) {
             btnRunSelected.setVisibility(View.VISIBLE);
             StringBuilder label = new StringBuilder("Run Selected (");

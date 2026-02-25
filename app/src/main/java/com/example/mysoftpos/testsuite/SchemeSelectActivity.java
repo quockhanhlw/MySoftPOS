@@ -45,6 +45,10 @@ public class SchemeSelectActivity extends AppCompatActivity implements SchemeAda
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
+        // Swipe back
+        com.example.mysoftpos.testsuite.util.SwipeBackHelper.attach(this);
+        com.example.mysoftpos.testsuite.util.StepDotsHelper.setActiveStep(this, 1);
+
         RecyclerView rv = findViewById(R.id.rvSchemes);
         rv.setLayoutManager(new LinearLayoutManager(this));
         adapter = new SchemeAdapter(schemes, this);

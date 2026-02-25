@@ -4,45 +4,54 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="4dp"
-    android:layout_marginBottom="12dp"
+    android:layout_marginBottom="8dp"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
-    app:cardBackgroundColor="@android:color/white"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="2dp"
+    app:cardBackgroundColor="#FFFFFF"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
     app:strokeColor="#E2E8F0"
     app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="16dp">
+        android:gravity="center_vertical">
+
+        <!-- Color accent strip -->
+        <View
+            android:id="@+id/viewAccent"
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:background="#3B82F6"/>
 
         <!-- Checkbox -->
         <FrameLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-            
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp">
+
             <CheckBox
                 android:id="@+id/cbSelect"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
                 android:visibility="gone"
-                android:clickable="false"
-                android:focusable="false"
-                android:buttonTint="#3B82F6" />
+                android:buttonTint="#0F172A"
+                android:scaleX="1.0"
+                android:scaleY="1.0"/>
         </FrameLayout>
 
+        <!-- Content -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="16dp"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingVertical="14dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="8dp">
 
             <TextView
                 android:id="@+id/tvTitle"
@@ -51,9 +60,9 @@
                 android:ellipsize="end"
                 android:fontFamily="sans-serif-medium"
                 android:maxLines="1"
-                android:textColor="#1E293B"
-                android:textSize="17sp"
-                tools:text="TC01 - Approved" />
+                android:textColor="#0F172A"
+                android:textSize="14sp"
+                tools:text="Magstripe (Swipe)" />
 
             <TextView
                 android:id="@+id/tvDetail"
@@ -61,38 +70,38 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:layout_marginTop="4dp"
-                android:textColor="#64748B"
-                android:textSize="14sp"
-                tools:text="Standard approval flow" />
+                android:layout_marginTop="2dp"
+                android:textColor="#94A3B8"
+                android:textSize="11sp"
+                tools:text="Tap to configure &amp; select" />
         </LinearLayout>
 
+        <!-- DE22 Badge pill -->
         <TextView
             android:id="@+id/chipBadge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_badge_default"
-            android:paddingHorizontal="8dp"
+            android:background="@drawable/bg_pill_neutral"
+            android:paddingHorizontal="10dp"
             android:paddingVertical="4dp"
+            android:layout_marginEnd="12dp"
             android:textColor="#475569"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:textStyle="bold"
+            android:fontFamily="monospace"
             tools:text="022" />
 
+        <!-- Edit button -->
         <ImageView
             android:id="@+id/ivEdit"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="8dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="10dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:padding="10dp"
+            android:padding="6dp"
             android:src="@drawable/ic_edit"
-            app:tint="#94A3B8"
-            android:visibility="gone"
-             />
-
-        <!-- Hidden elements needed for binding but not shown -->
-        <!-- Hidden elements needed for binding but not shown -->
+            app:tint="#CBD5E1"
+            android:visibility="gone" />
 
     </LinearLayout>
 

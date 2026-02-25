@@ -17,6 +17,15 @@ public class ChannelSelectActivity extends AppCompatActivity {
 
         String scheme = getIntent().getStringExtra(IntentKeys.SCHEME);
 
+        // Breadcrumb
+        android.widget.TextView tvBreadcrumbScheme = findViewById(R.id.tvBreadcrumbScheme);
+        if (tvBreadcrumbScheme != null && scheme != null)
+            tvBreadcrumbScheme.setText(scheme);
+
+        // Swipe back
+        com.example.mysoftpos.testsuite.util.SwipeBackHelper.attach(this);
+        com.example.mysoftpos.testsuite.util.StepDotsHelper.setActiveStep(this, 2);
+
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
         findViewById(R.id.btnPos).setOnClickListener(v -> {

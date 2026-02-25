@@ -332,14 +332,6 @@
             android:visibility="gone" />
 
         <!-- Info hint -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Leave empty to use global settings"
-            android:textColor="#94A3B8"
-            android:textSize="12sp"
-            android:gravity="center" />
 
         <!-- Action Buttons -->
         <LinearLayout

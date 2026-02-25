@@ -59,16 +59,19 @@ public class RegisterActivity extends BaseActivity {
 
         MaterialButton btnRegister = findViewById(R.id.btnRegister);
         TextView tvLogin = findViewById(R.id.tvLogin);
-        MaterialButton btnBack = findViewById(R.id.btnBack);
+        View btnBack = findViewById(R.id.btnBack);
 
         // Back button
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
         }
 
-        // Listeners
+        // Navigate to Login
         if (tvLogin != null)
-            tvLogin.setOnClickListener(v -> finish());
+            tvLogin.setOnClickListener(v -> {
+                startActivity(new android.content.Intent(this, LoginActivity.class));
+                finish();
+            });
 
         if (btnRegister != null)
             btnRegister.setOnClickListener(v -> handleRegister());

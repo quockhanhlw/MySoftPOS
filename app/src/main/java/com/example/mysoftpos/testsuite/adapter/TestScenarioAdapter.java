@@ -82,6 +82,7 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
         final TextView chipBadge;
         final CheckBox cbSelect;
         final ImageView ivEdit;
+        final View viewAccent;
 
         ViewHolder(View view) {
             super(view);
@@ -90,6 +91,7 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
             chipBadge = view.findViewById(R.id.chipBadge);
             cbSelect = view.findViewById(R.id.cbSelect);
             ivEdit = view.findViewById(R.id.ivEdit);
+            viewAccent = view.findViewById(R.id.viewAccent);
         }
 
         void bind(TestScenario item, OnItemClickListener listener, OnItemLongClickListener longListener,
@@ -103,10 +105,28 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
 
             if (item.isCustom()) {
                 chipBadge.setText("CUSTOM");
-                chipBadge.setBackgroundResource(R.drawable.bg_badge_custom); // Need to create this or use generic
             } else {
                 chipBadge.setText(code);
-                chipBadge.setBackgroundResource(R.drawable.bg_badge_default); // Assuming exists or default
+            }
+
+            // Color-code accent strip by DE22 entry mode
+            if (viewAccent != null) {
+                int accentColor;
+                if (code.startsWith("02")) {
+                    accentColor = 0xFF3B82F6; // Blue — Magstripe
+                } else if (code.startsWith("01")) {
+                    accentColor = 0xFF10B981; // Green — Manual Key-in
+                } else if (code.startsWith("05") || code.startsWith("07") || code.startsWith("91")) {
+                    accentColor = 0xFFF59E0B; // Amber — Chip/Contactless
+                } else {
+                    accentColor = 0xFF94A3B8; // Gray — Other
+                }
+                viewAccent.setBackgroundColor(accentColor);
+
+                // Selected state — accent becomes darker
+                if (item.isSelected()) {
+                    viewAccent.setBackgroundColor(0xFF0F172A);
+                }
             }
 
             if (multiMode && selectionMode) {

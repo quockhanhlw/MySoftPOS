@@ -184,33 +184,6 @@ public class ForgotPasswordActivity extends BaseActivity {
             try {
                 com.example.mysoftpos.data.local.AppDatabase db = com.example.mysoftpos.data.local.AppDatabase
                         .getInstance(this);
-                // We need to update user. Since we don't have update method in DAO yet
-                // (probably), checking DAO.
-                // Assuming DAO has insert (replace) or we need to delete/insert or add update.
-                // Looking at earlier DAO definition: @Insert(onConflict =
-                // OnConflictStrategy.ABORT).
-                // Wait, default insert strategy is ABORT. If we insert same ID/UsernameHash, it
-                // might fail.
-                // Let's check DAO.
-
-                // Oops, I didn't add @Update to UserDao.
-                // I'll assume for now I can delete and re-insert, OR I should add update method
-                // to DAO.
-                // BUT I can't easily change DAO interface now without triggering another
-                // rebuild cycle.
-                // Actually I just edited UserDao.java in previous turn. I can edit it again if
-                // needed.
-                // Or I can just execute SQL directly if Room allows, or simpler:
-                // Delete old user, Insert new user (since Primary Key is ID).
-                // But Primary Key ID is autoGenerate. If I delete and insert, ID changes.
-                // IF username_hash is unique, I can't insert a duplicate.
-
-                // I SHOULD ADD @Update to UserDao. It's safer.
-                // Let me do that in a separate tool call if safe.
-                // For now, I'll write the code assuming there is an update method OR I'll add
-                // the update method now.
-                // Actually, I missed checking if 'update' exists.
-                // Let's assume I will add `update(UserEntity user)` to UserDao next.
 
                 String newHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(newPass);
                 foundUser.passwordHash = newHash;
@@ -225,8 +198,5 @@ public class ForgotPasswordActivity extends BaseActivity {
                 runOnUiThread(() -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
             }
         }).start();
-
-        // Since I'm inside the tool, I can't call another tool.
-        // I will write the code to call `update` and then immediately fix the DAO.
     }
 }

@@ -163,7 +163,6 @@ public class BatchRunnerActivity extends AppCompatActivity {
             } else if (scenario.getUserPin() != null) {
                 pinBlock = scenario.getUserPin();
             }
-
             TransactionContext ctx = TransactionExecutor.buildContext(
                     getApplication(), txnType, amount, null, null);
             applySchemeConnection(ctx, scheme);

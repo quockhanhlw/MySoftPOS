@@ -7,211 +7,184 @@
     android:background="#F8FAFC"
     android:fitsSystemWindows="true">
 
-    <ImageView
-        android:id="@+id/btnBack"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:background="@drawable/bg_circle_soft"
-        android:padding="10dp"
-        android:src="@drawable/ic_back"
-        app:tint="#1E293B"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/tvTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:fontFamily="sans-serif-black"
-        android:text="Test Scenarios"
-        android:textColor="#1E293B"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@id/btnBack"
-        app:layout_constraintStart_toEndOf="@id/btnBack"
-        app:layout_constraintTop_toTopOf="@id/btnBack" />
-
-    <ImageView
-        android:id="@+id/btnDeleteMode"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="16dp"
-        android:background="@drawable/bg_circle_soft"
-        android:padding="10dp"
-        android:src="@drawable/ic_delete"
-        app:tint="#EF4444"
-        android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
+    <!-- ═══ Header ═══ -->
     <LinearLayout
+        android:id="@+id/headerBlock"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_marginTop="24dp"
-        android:paddingHorizontal="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnBack">
+        android:background="#FFFFFF"
+        android:paddingTop="14dp"
+        android:paddingBottom="14dp"
+        android:paddingHorizontal="20dp"
+        android:elevation="1dp"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <!-- Summary Card -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="@drawable/bg_summary_card"
-            android:paddingVertical="16dp"
-            android:paddingHorizontal="8dp"
-            android:layout_marginBottom="24dp"
-            android:gravity="center">
+            android:gravity="center_vertical">
 
-            <!-- Scheme -->
+            <ImageView
+                android:id="@+id/btnBack"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_circle_soft"
+                android:padding="9dp"
+                android:src="@drawable/ic_back"
+                app:tint="#0F172A" />
+
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:orientation="vertical"
-                android:gravity="center">
+                android:layout_marginStart="14dp">
+
                 <TextView
+                    android:id="@+id/tvTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Scheme"
-                    android:textSize="12sp"
-                    android:textColor="#64748B"/>
-                <TextView
-                    android:id="@+id/tvSummaryScheme"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Napas"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
+                    android:text="Test Scenarios"
                     android:textColor="#0F172A"
-                    android:layout_marginTop="4dp"/>
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"/>
+
+                <!-- Breadcrumb inline -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="3dp"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tvSummaryScheme"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Napas"
+                        android:textColor="#94A3B8"
+                        android:textSize="12sp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=" › "
+                        android:textColor="#CBD5E1"
+                        android:textSize="12sp"/>
+
+                    <TextView
+                        android:id="@+id/tvSummaryChannel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="POS"
+                        android:textColor="#94A3B8"
+                        android:textSize="12sp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=" › "
+                        android:textColor="#CBD5E1"
+                        android:textSize="12sp"/>
+
+                    <TextView
+                        android:id="@+id/tvSummaryType"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Purchase"
+                        android:textColor="#64748B"
+                        android:textSize="12sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
             </LinearLayout>
 
-            <!-- Channel -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Channel"
-                    android:textSize="12sp"
-                    android:textColor="#64748B"/>
-                <TextView
-                    android:id="@+id/tvSummaryChannel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="POS"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:textColor="#0F172A"
-                    android:layout_marginTop="4dp"/>
-            </LinearLayout>
-
-            <!-- Type -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Type"
-                    android:textSize="12sp"
-                    android:textColor="#64748B"/>
-                <TextView
-                    android:id="@+id/tvSummaryType"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Purchase"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:textColor="#0F172A"
-                    android:layout_marginTop="4dp"/>
-            </LinearLayout>
-
+            <ImageView
+                android:id="@+id/btnDeleteMode"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_circle_soft"
+                android:padding="9dp"
+                android:src="@drawable/ic_delete"
+                app:tint="#EF4444"
+                android:visibility="gone" />
         </LinearLayout>
 
-        <TextView
+        <!-- Step dots -->
+        <include layout="@layout/include_step_dots"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Basic"
-            android:textColor="#64748B"
-            android:textSize="14sp"
-            android:layout_marginBottom="8dp"/>
-
-        <!-- Select All (multi-thread only) -->
-        <LinearLayout
-            android:id="@+id/layoutSelectAll"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:padding="12dp"
-            android:layout_marginBottom="8dp"
-            android:background="@drawable/bg_summary_card"
-            android:visibility="gone">
-
-            <CheckBox
-                android:id="@+id/cbSelectAll"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Select All"
-                android:textColor="#0F172A"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:layout_marginStart="8dp" />
-        </LinearLayout>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerViewCases"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:clipToPadding="false"
-            tools:listitem="@layout/item_test_scenario" />
-
-        <!-- Run Transaction button (multi-thread only) -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnRunAll"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
             android:layout_marginTop="12dp"
-            android:layout_marginBottom="16dp"
-            android:text="Run Transaction"
-            android:textSize="16sp"
-            android:textAllCaps="false"
-            android:backgroundTint="#0F172A"
-            app:cornerRadius="12dp"
-            android:visibility="gone" />
-
+            android:layout_gravity="center_horizontal"/>
     </LinearLayout>
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabAdd"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:contentDescription="Add Custom Case"
-        android:src="@drawable/ic_add"
-        app:backgroundTint="#018786"
-        app:tint="@android:color/white"
+    <!-- ═══ Select All (hidden, Java compat) ═══ -->
+    <LinearLayout
+        android:id="@+id/layoutSelectAll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+        <CheckBox
+            android:id="@+id/cbSelectAll"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"/>
+    </LinearLayout>
+
+    <!-- ═══ RecyclerView ═══ -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewCases"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="8dp"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toBottomOf="@id/headerBlock"
+        app:layout_constraintBottom_toTopOf="@id/bottomBar"
+        tools:listitem="@layout/item_test_scenario" />
+
+    <!-- ═══ Bottom Bar ═══ -->
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="14dp"
+        android:background="#FFFFFF"
+        android:elevation="4dp"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRunAll"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:text="Confirm Selection"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:fontFamily="sans-serif-medium"
+            app:backgroundTint="#0F172A"
+            app:cornerRadius="14dp"
+            android:visibility="gone" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabAdd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:contentDescription="Add Custom Case"
+            android:src="@drawable/ic_add"
+            app:backgroundTint="#0F172A"
+            app:tint="#FFFFFF"
+            app:fabSize="normal"
+            android:visibility="gone" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

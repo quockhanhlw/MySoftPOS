@@ -61,8 +61,8 @@ public class LoginActivity extends BaseActivity {
         });
 
         TextView tvForgotPassword = findViewById(R.id.tvForgotPassword);
-        MaterialButton btnLogin = findViewById(R.id.btnLogin);
-        MaterialButton btnBack = findViewById(R.id.btnBack);
+        View btnLogin = findViewById(R.id.btnLogin);
+        View btnBack = findViewById(R.id.btnBack);
         TextView tvSignUp = findViewById(R.id.tvSignUp);
 
         // Back button

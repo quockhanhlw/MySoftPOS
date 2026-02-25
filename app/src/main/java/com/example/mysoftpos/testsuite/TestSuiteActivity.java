@@ -141,6 +141,10 @@ public class TestSuiteActivity extends AppCompatActivity {
 
         findViewById(R.id.btnBack).setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 
+        // Swipe back
+        com.example.mysoftpos.testsuite.util.SwipeBackHelper.attach(this);
+        com.example.mysoftpos.testsuite.util.StepDotsHelper.setActiveStep(this, 4);
+
         // Custom Cases Observer
         repository.getCustomCasesBySchemeAndType(scheme, txnType).observe(this, entities -> {
             customScenarios.clear();

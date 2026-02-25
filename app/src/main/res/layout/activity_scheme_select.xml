@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F1F5F9"
+    android:background="#F8FAFC"
     android:fitsSystemWindows="true">
 
     <LinearLayout
@@ -11,71 +11,69 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- ═══ Gradient Header ═══ -->
+        <!-- ═══ Header ═══ -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_wave_gradient"
             android:orientation="vertical"
-            android:paddingHorizontal="16dp"
-            android:paddingTop="16dp"
-            android:paddingBottom="24dp">
+            android:background="#FFFFFF"
+            android:paddingTop="14dp"
+            android:paddingBottom="14dp"
+            android:paddingHorizontal="20dp"
+            android:elevation="1dp">
 
-            <!-- Back + Title row -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical">
 
-                <com.google.android.material.button.MaterialButton
+                <ImageView
                     android:id="@+id/btnBack"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    android:insetLeft="0dp"
-                    android:insetRight="0dp"
-                    app:icon="@drawable/ic_back"
-                    app:iconGravity="textStart"
-                    app:iconPadding="0dp"
-                    app:iconSize="22dp"
-                    app:iconTint="#FFFFFF"
-                    app:rippleColor="#33FFFFFF" />
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_circle_soft"
+                    android:padding="9dp"
+                    android:src="@drawable/ic_back"
+                    app:tint="#0F172A" />
 
-                <TextView
+                <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:fontFamily="sans-serif-medium"
-                    android:text="Card Schemes"
-                    android:textColor="#FFFFFF"
-                    android:textSize="22sp" />
+                    android:orientation="vertical"
+                    android:layout_marginStart="14dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Test Schemes"
+                        android:textColor="#0F172A"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:fontFamily="sans-serif-medium"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tap to test · Hold to edit"
+                        android:textColor="#94A3B8"
+                        android:textSize="12sp"
+                        android:layout_marginTop="2dp"/>
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/tvSchemeCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_pill_white"
-                    android:paddingHorizontal="14dp"
-                    android:paddingVertical="5dp"
-                    android:textColor="#00897B"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone" />
             </LinearLayout>
 
-            <!-- Subtitle -->
-            <TextView
+            <!-- Step dots -->
+            <include layout="@layout/include_step_dots"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="48dp"
-                android:layout_marginTop="2dp"
-                android:alpha="0.85"
-                android:text="Tap to test · Hold to edit"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp" />
-
+                android:layout_marginTop="12dp"
+                android:layout_gravity="center_horizontal"/>
         </LinearLayout>
 
         <!-- ═══ Scheme List ═══ -->
@@ -83,11 +81,10 @@
             android:id="@+id/rvSchemes"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_marginTop="14dp"
             android:layout_weight="1"
+            android:paddingTop="12dp"
             android:clipToPadding="false"
             android:paddingBottom="80dp" />
-
     </LinearLayout>
 
     <!-- ═══ FAB ═══ -->
@@ -100,7 +97,7 @@
         android:layout_marginBottom="24dp"
         android:contentDescription="Add Scheme"
         android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="#00897B"
+        app:backgroundTint="#0F172A"
         app:tint="#FFFFFF" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
