@@ -44,6 +44,10 @@ public interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE user_id = :userId ORDER BY timestamp DESC")
     androidx.lifecycle.LiveData<List<TransactionEntity>> getTransactionsByUserIdLive(long userId);
 
+    /** Assign user_id to orphan transactions (user_id IS NULL). */
+    @Query("UPDATE transactions SET user_id = :userId WHERE user_id IS NULL")
+    void assignOrphanTransactions(long userId);
+
     @Transaction
     @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")
     androidx.lifecycle.LiveData<com.example.mysoftpos.data.local.entity.TransactionWithDetails> getTransactionWithDetailsById(

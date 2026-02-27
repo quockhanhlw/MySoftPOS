@@ -56,6 +56,42 @@
     <string name="forgot_password_confirm">Xác nhận mật khẩu mới</string>
     <string name="forgot_password_hint">········</string>
     <string name="forgot_password_button">Đặt lại mật khẩu</string>
+    <string name="forgot_password_subtitle">Nhập email hoặc số điện thoại đã đăng ký để nhận mã</string>
+
+    <!-- Missing Register Strings -->
+    <string name="register_subtitle">Vui lòng điền thông tin của bạn</string>
+    <string name="register_login_prompt">Đã có tài khoản?</string>
+    <string name="register_login_action">Đăng nhập</string>
+    <string name="register_hint_fullname">Họ và tên</string>
+    <string name="register_hint_dob">Ngày sinh</string>
+    <string name="register_hint_phone">Số điện thoại</string>
+    <string name="register_hint_address">Địa chỉ</string>
+    <string name="register_hint_username">Tên đăng nhập</string>
+    <string name="register_hint_password">Mật khẩu</string>
+    <string name="register_hint_confirm_password">Xác nhận mật khẩu</string>
+    <string name="register_step1_title">Thông tin cá nhân</string>
+    <string name="register_step2_title">Bảo mật tài khoản</string>
+    <string name="register_next_step">Bước tiếp</string>
+    <string name="register_back">Quay lại</string>
+
+    <!-- Login Extras -->
+    <string name="login_email_label">Email hoặc Số điện thoại</string>
+    <string name="login_no_account">Chưa có tài khoản?</string>
+    <string name="login_sign_up">Đăng ký</string>
+
+    <!-- Forgot Password Extras -->
+    <string name="forgot_email_label">Email hoặc Số điện thoại</string>
+    <string name="forgot_code_label">Mã xác thực</string>
+    <string name="forgot_send_code">Gửi mã xác thực</string>
+    <string name="forgot_verify">Xác thực mã</string>
+    <string name="forgot_resend_code">Gửi lại mã</string>
+    <string name="forgot_remember_password">Nhớ mật khẩu?</string>
+    <string name="forgot_back_to_login">Đăng nhập</string>
+
+    <!-- Welcome Features -->
+    <string name="feature_contactless">Không tiếp xúc</string>
+    <string name="feature_secure">An toàn</string>
+    <string name="feature_fast">Nhanh chóng</string>
 
     <!-- Common -->
     <string name="back">Quay lại</string>
@@ -123,7 +159,7 @@
     <string name="balance_inquiry_title">Vấn tin số dư</string>
     <string name="payment_title">Thanh toán</string>
     <string name="tab_manual_entry">Nhập tay</string>
-    <string name="tab_mock_track2">Giả lập Track 2</string>
+    <string name="tab_nfc">NFC</string>
     <string name="card_pan_label">Số thẻ (PAN)</string>
     <string name="card_expiry_label">Ngày hết hạn (TTNN)</string>
     <string name="pan_hint">1234 5678 9012 3456</string>
@@ -147,6 +183,13 @@
     <string name="err_invalid_pan">Số thẻ hoặc ngày hết hạn không hợp lệ</string>
     <string name="msg_using_mock_track2">Đang sử dụng Track 2 giả lập...</string>
     <string name="msg_card_detected">Đã phát hiện thẻ</string>
+    <string name="nfc_disabled_title">NFC đã tắt</string>
+    <string name="nfc_disabled_message">Vui lòng bật NFC để quét thẻ</string>
+    <string name="nfc_enable_button">Bật NFC</string>
+    <string name="nfc_not_supported">Thiết bị không hỗ trợ NFC</string>
+    <string name="nfc_reading_card">Chạm thẻ vào mặt sau điện thoại</string>
+    <string name="nfc_reading_error">Lỗi đọc thẻ: %s</string>
+    <string name="nfc_card_read_success">Đọc thẻ thành công</string>
     <string name="status_approved">THÀNH CÔNG</string>
     <string name="status_declined">TỪ CHỐI</string>
     <string name="status_pending">ĐANG XỬ LÝ</string>
@@ -161,6 +204,53 @@
 
     <!-- Terms Dialog -->
     <string name="terms_title">Điều khoản &amp; Điều kiện</string>
+
+    <!-- Error Messages (ResponseCodeHelper) -->
+    <string name="error_unknown">Lỗi không xác định</string>
+    <string name="error_00">Giao dịch thành công</string>
+    <string name="error_01">Liên hệ ngân hàng phát hành</string>
+    <string name="error_03">Đơn vị không hợp lệ</string>
+    <string name="error_04">Thu hồi thẻ</string>
+    <string name="error_05">Không chấp thuận</string>
+    <string name="error_12">Giao dịch không hợp lệ</string>
+    <string name="error_13">Số tiền không hợp lệ</string>
+    <string name="error_14">Số thẻ không hợp lệ</string>
+    <string name="error_15">Không tìm thấy ngân hàng phát hành</string>
+    <string name="error_21">Không có hành động</string>
+    <string name="error_25">Không tìm thấy bản ghi</string>
+    <string name="error_30">Lỗi định dạng</string>
+    <string name="error_34">Nghi ngờ gian lận</string>
+    <string name="error_39">Không có tài khoản tín dụng</string>
+    <string name="error_41">Thẻ bị mất</string>
+    <string name="error_43">Thẻ bị đánh cắp</string>
+    <string name="error_51">Không đủ số dư</string>
+    <string name="error_53">Không có tài khoản tiết kiệm</string>
+    <string name="error_54">Thẻ hết hạn</string>
+    <string name="error_55">Sai mã PIN</string>
+    <string name="error_57">Giao dịch không được phép</string>
+    <string name="error_58">Giao dịch không được phép trên thiết bị</string>
+    <string name="error_59">Nghi ngờ gian lận</string>
+    <string name="error_61">Vượt quá hạn mức rút tiền</string>
+    <string name="error_62">Thẻ bị hạn chế</string>
+    <string name="error_63">Vi phạm bảo mật</string>
+    <string name="error_64">Số tiền gốc không đúng</string>
+    <string name="error_65">Vượt quá tần suất rút tiền</string>
+    <string name="error_68">Phản hồi nhận quá muộn</string>
+    <string name="error_75">Vượt quá số lần nhập PIN</string>
+    <string name="error_76">Tài khoản không hợp lệ</string>
+    <string name="error_90">Đang xử lý cut-off</string>
+    <string name="error_91">Ngân hàng hoặc hệ thống không hoạt động</string>
+    <string name="error_92">Lỗi định tuyến</string>
+    <string name="error_94">Giao dịch trùng lặp</string>
+    <string name="error_96">Lỗi hệ thống</string>
+
+    <!-- ViewModel Errors -->
+    <string name="error_timeout">Giao dịch hết giờ</string>
+    <string name="error_timeout_reversal">Giao dịch hết giờ (Đã gửi đảo hủy)</string>
+
+    <!-- Purchase Amount -->
+    <string name="error_enter_amount">Vui lòng nhập số tiền</string>
+    <string name="error_amount_zero">Số tiền phải lớn hơn 0</string>
 
     <!-- Transaction Result -->
     <string name="txn_approved">Giao dịch được duyệt</string>

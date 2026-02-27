@@ -96,6 +96,16 @@ public class PurchaseViewModel extends BaseViewModel {
                 ctx.ip = configManager.getServerIp();
                 ctx.port = configManager.getServerPort();
 
+                // Populate card-related fields into ctx for reversal
+                ctx.posEntryMode22 = card.getPosEntryMode();
+                ctx.country19 = ctx.currency49; // VN uses same code for country and currency
+                if (card.getTrack2() != null && !card.getTrack2().isEmpty()) {
+                    ctx.track2_35 = card.getTrack2().replace('=', 'D');
+                }
+                if (card.getExpiryDate() != null) {
+                    ctx.expiry14 = card.getExpiryDate();
+                }
+
                 // Build & Pack
                 IsoMessage req = (txnType == TxnType.BALANCE_INQUIRY)
                         ? Iso8583Builder.buildBalanceMsg(ctx, card)

@@ -44,6 +44,10 @@ public interface UserDao {
     @Query("SELECT * FROM users WHERE phone = :phone LIMIT 1")
     UserEntity findByPhone(String phone);
 
+    /** Find user by any identifier: phone, email, or usernameHash (SHA256) */
+    @Query("SELECT * FROM users WHERE phone = :identifier OR email = :identifier OR username_hash = :identifierHash LIMIT 1")
+    UserEntity findByAnyIdentifier(String identifier, String identifierHash);
+
     @Query("SELECT EXISTS(SELECT 1 FROM users WHERE email = :email)")
     boolean existsByEmail(String email);
 

@@ -168,10 +168,21 @@ public class StandardIsoPacker {
                     baos.write(val.getBytes(StandardCharsets.US_ASCII));
 
                 } else if (def.type == FieldType.LLLVAR) {
-                    int len = val.length();
-                    String lenStr = String.format(Locale.ROOT, "%03d", len);
-                    baos.write(lenStr.getBytes(StandardCharsets.US_ASCII));
-                    baos.write(val.getBytes(StandardCharsets.US_ASCII));
+                    if (i == 55) {
+                        // DE 55 (ICC Data): binary LLLVAR
+                        // Value stored as hex string → convert to raw bytes
+                        // LLLVAR prefix = binary byte count (not hex char count)
+                        byte[] raw = hexToBytes(val);
+                        String lenStr = String.format(Locale.ROOT, "%03d", raw.length);
+                        baos.write(lenStr.getBytes(StandardCharsets.US_ASCII));
+                        baos.write(raw);
+                    } else {
+                        // Standard ASCII LLLVAR
+                        int len = val.length();
+                        String lenStr = String.format(Locale.ROOT, "%03d", len);
+                        baos.write(lenStr.getBytes(StandardCharsets.US_ASCII));
+                        baos.write(val.getBytes(StandardCharsets.US_ASCII));
+                    }
                 }
             }
         }
@@ -260,7 +271,14 @@ public class StandardIsoPacker {
                     consumed = 3;
                     if (offset + 3 + len > responseData.length)
                         break;
-                    extracted = new String(responseData, offset + 3, len, StandardCharsets.US_ASCII);
+                    if (i == 55) {
+                        // DE 55 (ICC Data): binary LLLVAR → read raw bytes, return as hex string
+                        byte[] raw = new byte[len];
+                        System.arraycopy(responseData, offset + 3, raw, 0, len);
+                        extracted = bytesToHex(raw);
+                    } else {
+                        extracted = new String(responseData, offset + 3, len, StandardCharsets.US_ASCII);
+                    }
                     consumed += len;
                 }
 

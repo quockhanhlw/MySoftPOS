@@ -127,7 +127,10 @@ public class MainDashboardActivity extends BaseActivity {
         if (btnUserManagement != null) {
             btnUserManagement.setOnClickListener(v -> {
                 Intent intent = new Intent(this, com.example.mysoftpos.ui.admin.UserManagementActivity.class);
-                intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, username);
+                // Pass email for admin features (adminId = SHA256(email) in existing DB)
+                String userEmail = getIntent().getStringExtra("USER_EMAIL");
+                intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME,
+                        userEmail != null ? userEmail : username);
                 startActivity(intent);
             });
         }
@@ -163,7 +166,7 @@ public class MainDashboardActivity extends BaseActivity {
         setupVideoBackground();
 
         // Load History
-        setupHistoryObserver();
+        setupHistoryObserver(isAdmin);
     }
 
     private void setupVideoBackground() {
@@ -207,21 +210,43 @@ public class MainDashboardActivity extends BaseActivity {
         }
     }
 
-    private void setupHistoryObserver() {
+    private void setupHistoryObserver(boolean isAdmin) {
         AppDatabase db = AppDatabase.getInstance(this);
-        // Get username from Intent (already retrieved in onCreate)
+
+        if (isAdmin) {
+            // Admin sees ALL transactions
+            db.transactionDao().getAllTransactionsLive().observe(this,
+                    transactions -> updateHistoryList(transactions));
+            return;
+        }
+
+        // USER: find own transactions
         String currentUsername = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME);
         if (currentUsername == null)
             currentUsername = "Guest";
 
-        String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(currentUsername);
-        db.transactionDao().getTransactionsByUsernameHashLive(usernameHash).observe(this,
-                new Observer<List<TransactionEntity>>() {
-                    @Override
-                    public void onChanged(List<TransactionEntity> transactions) {
-                        updateHistoryList(transactions);
-                    }
-                });
+        final String identifier = currentUsername;
+        new Thread(() -> {
+            String hash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(identifier);
+            com.example.mysoftpos.data.local.entity.UserEntity user =
+                    db.userDao().findByAnyIdentifier(identifier, hash);
+
+            if (user != null) {
+                // Repair orphan transactions (user_id=NULL) by assigning to current user
+                db.transactionDao().assignOrphanTransactions(user.id);
+            }
+
+            final long userId = (user != null) ? user.id : -1;
+            runOnUiThread(() -> {
+                if (userId > 0) {
+                    db.transactionDao().getTransactionsByUserIdLive(userId).observe(
+                            MainDashboardActivity.this, transactions -> updateHistoryList(transactions));
+                } else {
+                    db.transactionDao().getTransactionsByUsernameHashLive(hash).observe(
+                            MainDashboardActivity.this, transactions -> updateHistoryList(transactions));
+                }
+            });
+        }).start();
     }
 
     // --- History Logic Refactored for Expansion --- //

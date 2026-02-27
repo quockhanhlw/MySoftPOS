@@ -159,7 +159,7 @@
     <string name="balance_inquiry_title">Balance Inquiry</string>
     <string name="payment_title">Payment</string>
     <string name="tab_manual_entry">Manual Entry</string>
-    <string name="tab_mock_track2">Mock Track 2</string>
+    <string name="tab_nfc">NFC</string>
     <string name="card_pan_label">Card Number (PAN)</string>
     <string name="card_expiry_label">Expiry Date (YYMM)</string>
     <string name="pan_hint">1234 5678 9012 3456</string>
@@ -183,6 +183,13 @@
     <string name="err_invalid_pan">Invalid PAN or Expiry</string>
     <string name="msg_using_mock_track2">Using Mock Track 2...</string>
     <string name="msg_card_detected">Card Detected</string>
+    <string name="nfc_disabled_title">NFC is Disabled</string>
+    <string name="nfc_disabled_message">Please enable NFC to scan your card</string>
+    <string name="nfc_enable_button">Enable NFC</string>
+    <string name="nfc_not_supported">This device does not support NFC</string>
+    <string name="nfc_reading_card">Tap your card to the back of the phone</string>
+    <string name="nfc_reading_error">Failed to read card: %s</string>
+    <string name="nfc_card_read_success">Card read successfully</string>
     <string name="status_approved">APPROVED</string>
     <string name="status_declined">DECLINED</string>
     <string name="status_pending">PENDING</string>

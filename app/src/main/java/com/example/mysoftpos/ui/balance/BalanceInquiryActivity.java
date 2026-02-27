@@ -67,6 +67,11 @@ public class BalanceInquiryActivity extends BaseCardEntryActivity {
 
         // Masked PAN
         String panToMask = (lastUsedPan != null) ? lastUsedPan : "";
+        if (panToMask.isEmpty()) {
+            // Fallback: try NFC PAN from base class
+            String nfcPan = getLastNfcPan();
+            if (nfcPan != null) panToMask = nfcPan;
+        }
         String maskedPan = panToMask.length() > 4
                 ? "**** " + panToMask.substring(panToMask.length() - 4)
                 : "**** 0000";

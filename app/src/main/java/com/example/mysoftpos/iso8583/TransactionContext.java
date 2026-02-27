@@ -49,6 +49,14 @@ public class TransactionContext {
     public String field60;
     public String mac128;
 
+    // --- NFC CHIP (Domestic NAPAS) fields ---
+    /** Pre-built ICC data hex string for DE 55 (set externally if not using CardInputData.emvTags) */
+    public String reversalIccData55; // DE 55 for reversal (may contain DF31, 95, 9F10, 9F36)
+    /** Issuer Script Result from NapasEmvProcessor (for reversal DE 55 tag DF31) */
+    public byte[] issuerScriptResult;
+    /** Whether the NFC card is still connected (for post-response processing) */
+    public boolean nfcCardConnected;
+
     public TransactionContext() {
         // No-arg constructor
     }

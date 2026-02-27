@@ -72,13 +72,23 @@ public class TransactionRepositoryImpl implements TransactionRepository {
                 cardId = card.id;
             }
 
-            // 4. User
-            String userIdHash = (record.username != null)
-                    ? com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(record.username)
-                    : null;
-            com.example.mysoftpos.data.local.entity.UserEntity user = (userIdHash != null)
-                    ? db.userDao().getByUsernameHashSync(userIdHash)
-                    : null;
+            // 4. User — find by multiple methods (phone, email, usernameHash)
+            // Username can be phone, email, or raw username depending on login method
+            String username = record.username;
+            com.example.mysoftpos.data.local.entity.UserEntity user = null;
+            if (username != null && !username.isEmpty()) {
+                // Try by phone first (most common login method)
+                user = db.userDao().findByPhone(username);
+                // Then by email
+                if (user == null) {
+                    user = db.userDao().findByEmail(username);
+                }
+                // Then by usernameHash = SHA256(username)
+                if (user == null) {
+                    String hash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
+                    user = db.userDao().getByUsernameHashSync(hash);
+                }
+            }
             Long userId = (user != null) ? user.id : null;
 
             // 5. Transaction

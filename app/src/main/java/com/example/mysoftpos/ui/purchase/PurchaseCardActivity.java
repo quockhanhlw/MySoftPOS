@@ -4,13 +4,9 @@ import com.example.mysoftpos.ui.result.TransactionResultActivity;
 import com.example.mysoftpos.R;
 
 import android.content.Intent;
-import android.nfc.NfcAdapter;
-import android.nfc.Tag;
-import android.nfc.tech.IsoDep;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.Locale;
 
@@ -20,11 +16,11 @@ import com.example.mysoftpos.ui.base.BaseCardEntryActivity;
 
 /**
  * Purchase Card Activity — extends BaseCardEntryActivity.
- * Adds: NFC reader, amount display, Purchase-specific result screen.
+ * NFC reading is handled by BaseCardEntryActivity via onTagDiscovered → ReadCardDataUseCase.
+ * Adds: amount display, Purchase-specific result screen.
  */
-public class PurchaseCardActivity extends BaseCardEntryActivity implements NfcAdapter.ReaderCallback {
+public class PurchaseCardActivity extends BaseCardEntryActivity {
 
-    private NfcAdapter nfcAdapter;
     private String amount;
     private String currency;
     private String currencyCode;
@@ -43,8 +39,6 @@ public class PurchaseCardActivity extends BaseCardEntryActivity implements NfcAd
 
     @Override
     protected void onCreateExtra(Bundle savedInstanceState) {
-        nfcAdapter = NfcAdapter.getDefaultAdapter(this);
-
         // Intent Data
         String typeStr = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE);
         amount = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.AMOUNT);
@@ -76,49 +70,6 @@ public class PurchaseCardActivity extends BaseCardEntryActivity implements NfcAd
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        if (nfcAdapter != null && getCurrentMode() == 1) {
-            nfcAdapter.enableReaderMode(this, this,
-                    NfcAdapter.FLAG_READER_NFC_A | NfcAdapter.FLAG_READER_NFC_B
-                            | NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK,
-                    null);
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (nfcAdapter != null) {
-            nfcAdapter.disableReaderMode(this);
-        }
-    }
-
-    @Override
-    public void onTagDiscovered(Tag tag) {
-        IsoDep isoDep = IsoDep.get(tag);
-        if (isoDep == null)
-            return;
-
-        String trk2 = configManager.getTrack2("022");
-        String mockPan = configManager.getMockPan();
-        String mockExp = configManager.getMockExpiry();
-
-        if (trk2 != null && trk2.contains("=")) {
-            String[] parts = trk2.split("=");
-            mockPan = parts[0];
-            if (parts[1].length() >= 4)
-                mockExp = parts[1].substring(0, 4);
-        }
-
-        CardInputData mockData = new CardInputData(mockPan, mockExp, "022", trk2);
-        runOnUiThread(() -> {
-            Toast.makeText(this, getString(R.string.msg_card_detected), Toast.LENGTH_SHORT).show();
-            onCardDataReady(mockData);
-        });
-    }
-
-    @Override
     protected void onTransactionResult(boolean success, String msg, String isoResp, String isoReq) {
         Intent intent = new Intent(this, TransactionResultActivity.class);
         intent.putExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE, txnType.name());
@@ -133,17 +84,16 @@ public class PurchaseCardActivity extends BaseCardEntryActivity implements NfcAd
         // Masked PAN
         String maskedPan = "**** 0000";
         if (getCurrentMode() == 0) {
+            // Manual entry
             String rawPan = etPan.getText().toString();
             if (rawPan.length() > 4)
                 maskedPan = "**** " + rawPan.substring(rawPan.length() - 4);
         } else {
-            String rawPan = configManager.getMockPan();
-            String trk2 = configManager.getTrack2("022");
-            if (trk2 != null && trk2.contains("=")) {
-                rawPan = trk2.split("=")[0];
+            // NFC - use real PAN from card read
+            String nfcPan = getLastNfcPan();
+            if (nfcPan != null && nfcPan.length() > 4) {
+                maskedPan = "**** " + nfcPan.substring(nfcPan.length() - 4);
             }
-            if (rawPan != null && rawPan.length() > 4)
-                maskedPan = "**** " + rawPan.substring(rawPan.length() - 4);
         }
         intent.putExtra(com.example.mysoftpos.utils.IntentKeys.MASKED_PAN, maskedPan);
 

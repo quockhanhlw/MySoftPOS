@@ -148,8 +148,11 @@ public class LoginActivity extends BaseActivity {
                         }
 
                         final com.example.mysoftpos.data.local.entity.UserEntity finalUser = user;
-                        // Pass email (login identifier) as USERNAME for UserManagement admin lookup
-                        runOnUiThread(() -> navigateToDashboard(finalUser.role, displayName, finalUser.email));
+                        // Pass phone as USERNAME because usernameHash = SHA256(phone)
+                        // This is critical for transaction history: saveTransaction hashes USERNAME
+                        // to find user_id, and dashboard queries by usernameHash.
+                        // Also pass email for admin features that need it.
+                        runOnUiThread(() -> navigateToDashboard(finalUser.role, displayName, finalUser.phone, finalUser.email));
                         return;
                     }
                 }
@@ -169,12 +172,15 @@ public class LoginActivity extends BaseActivity {
         }).start();
     }
 
-    private void navigateToDashboard(String role, String displayName, String loginId) {
+    private void navigateToDashboard(String role, String displayName, String phone, String email) {
         Toast.makeText(this, "Login Successful!", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(LoginActivity.this, com.example.mysoftpos.ui.dashboard.MainDashboardActivity.class);
         intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USER_ROLE, role);
-        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, loginId != null ? loginId : displayName);
+        // USERNAME = phone because usernameHash in DB = SHA256(phone)
+        // This ensures transaction history can find the correct user_id
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, phone != null ? phone : email);
         intent.putExtra("DISPLAY_NAME", displayName);
+        intent.putExtra("USER_EMAIL", email);
         startActivity(intent);
         finish();
     }

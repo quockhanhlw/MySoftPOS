@@ -61,128 +61,122 @@ public class MultiThreadRunnerActivity extends AppCompatActivity {
         }
 
         int threadCount = scenarios.size();
-        tvStatus.setText("Running " + threadCount + " tests concurrently...");
+        tvStatus.setText("Preparing " + threadCount + " tests...");
         appendLog("=== Multi-thread Runner ===\n");
         appendLog("Total tests: " + threadCount + "\n");
         appendLog("Mode: Concurrent (Thread Pool)\n\n");
 
-        ExecutorService pool = Executors.newFixedThreadPool(threadCount);
+        ExecutorService pool = Executors.newCachedThreadPool();
         AtomicInteger completed = new AtomicInteger(0);
         AtomicInteger passed = new AtomicInteger(0);
         AtomicInteger failed = new AtomicInteger(0);
 
-        for (int i = 0; i < scenarios.size(); i++) {
-            TestScenario scenario = scenarios.get(i);
-            int idx = i + 1;
+        // Phase 1: Pre-build ALL contexts on a single background thread
+        // to avoid ConfigManager.getAndIncrementTrace() synchronized lock
+        new Thread(() -> {
+            TransactionContext[] contexts = new TransactionContext[threadCount];
+            CardInputData[] cards = new CardInputData[threadCount];
+            String[] types = new String[threadCount];
+            String[] tags = new String[threadCount];
 
-            pool.execute(() -> {
-                String typeToRun = scenario.getTxnType() != null ? scenario.getTxnType() : txnType;
-                String tag = "[T" + idx + " " + typeToRun + " " + scenario.getField(22) + "]";
-                appendLog(tag + " Starting...\n");
+            for (int i = 0; i < threadCount; i++) {
+                TestScenario scenario = scenarios.get(i);
+                types[i] = scenario.getTxnType() != null ? scenario.getTxnType() : txnType;
+                tags[i] = "[T" + (i + 1) + " " + types[i] + " " + scenario.getField(22) + "]";
 
                 try {
-                    TransactionResult result = runSingleTransaction(scenario, typeToRun, tag, schemeName);
+                    TransactionExecutor.LogCallback noop = msg -> {};
+                    String amount = scenario.getField(4);
+                    contexts[i] = TransactionExecutor.buildContext(getApplicationContext(), types[i], amount, null, null);
 
-                    appendLog(tag + " Packed Hex (" + result.reqHex.length() / 2 + " bytes):\n" + result.reqHex + "\n");
-                    appendLog(tag + " Response Hex:\n" + result.respHex + "\n");
+                    if (schemeName != null && !schemeName.isEmpty()) {
+                        try {
+                            SchemeRepository repo = new SchemeRepository(getApplicationContext());
+                            Scheme scheme = repo.getByName(schemeName);
+                            if (scheme != null && scheme.hasConnectionConfig()) {
+                                contexts[i].ip = scheme.getServerIp();
+                                contexts[i].port = scheme.getServerPort();
+                            }
+                        } catch (Exception ignored) {}
+                    }
 
-                    String reason = ResponseCodeHelper.getMessage(result.rc);
-                    if (result.approved) {
-                        passed.incrementAndGet();
-                        appendLog(tag + " *** STATUS: PASS ***\n");
-                        appendLog(tag + " RC: " + result.rc + " (" + reason + ")\n");
-                    } else {
+                    String de22 = scenario.getField(22);
+                    cards[i] = TransactionExecutor.prepareCard(
+                            getApplicationContext(), de22,
+                            scenario.getField(2), scenario.getField(14),
+                            scenario.getField(35), scenario.getUserPin(),
+                            contexts[i], noop);
+                } catch (Exception e) {
+                    appendLog(tags[i] + " Build error: " + e.getMessage() + "\n");
+                }
+            }
+
+            // Phase 2: Fire ALL network calls simultaneously
+            mainHandler.post(() -> tvStatus.setText("Sending " + threadCount + " transactions..."));
+
+            for (int i = 0; i < threadCount; i++) {
+                final int idx = i;
+                final String tag = tags[i];
+                final TransactionContext ctx = contexts[i];
+                final CardInputData card = cards[i];
+                final String typeToRun = types[i];
+
+                if (ctx == null || card == null) {
+                    failed.incrementAndGet();
+                    int done = completed.incrementAndGet();
+                    appendLog(tag + " *** SKIPPED (build error) ***\n");
+                    if (done == threadCount) {
+                        appendLog("\n=== ALL TESTS COMPLETE ===\n");
+                        appendLog("Pass: " + passed.get() + " / Fail: " + failed.get() + "\n");
+                        pool.shutdown();
+                    }
+                    mainHandler.post(() -> tvStatus.setText("Completed " + done + "/" + threadCount));
+                    continue;
+                }
+
+                pool.execute(() -> {
+                    appendLog(tag + " Starting...\n");
+                    try {
+                        TransactionExecutor.LogCallback logger = msg -> appendLog(tag + " " + msg + "\n");
+
+                        TransactionResult result = transactionExecutor.execute(
+                                getApplicationContext(), ctx, card, typeToRun, logger, tag);
+
+                        appendLog(tag + " Packed Hex (" + result.reqHex.length() / 2 + " bytes):\n" + result.reqHex + "\n");
+                        appendLog(tag + " Response Hex:\n" + result.respHex + "\n");
+
+                        String reason = ResponseCodeHelper.getMessage(result.rc);
+                        if (result.approved) {
+                            passed.incrementAndGet();
+                            appendLog(tag + " *** STATUS: PASS ***\n");
+                            appendLog(tag + " RC: " + result.rc + " (" + reason + ")\n");
+                        } else {
+                            failed.incrementAndGet();
+                            appendLog(tag + " *** STATUS: FAIL ***\n");
+                            appendLog(tag + " RC: " + result.rc + " - Reason: " + reason + "\n");
+                        }
+                    } catch (java.net.SocketTimeoutException e) {
                         failed.incrementAndGet();
                         appendLog(tag + " *** STATUS: FAIL ***\n");
-                        appendLog(tag + " RC: " + result.rc + " - Reason: " + reason + "\n");
+                        appendLog(tag + " Error: Timeout waiting for response.\n");
+                    } catch (Exception e) {
+                        failed.incrementAndGet();
+                        appendLog(tag + " *** STATUS: FAIL ***\n");
+                        appendLog(tag + " Error: " + e.getMessage() + "\n");
                     }
-                } catch (java.net.SocketTimeoutException e) {
-                    failed.incrementAndGet();
-                    appendLog(tag + " *** STATUS: FAIL ***\n");
-                    appendLog(tag + " Error: Timeout waiting for response.\n");
-                } catch (Exception e) {
-                    failed.incrementAndGet();
-                    appendLog(tag + " *** STATUS: FAIL ***\n");
-                    appendLog(tag + " Error: " + e.getMessage() + "\n");
-                }
 
-                int done = completed.incrementAndGet();
-                mainHandler.post(() -> tvStatus.setText("Completed " + done + "/" + threadCount
-                        + " (Pass: " + passed.get() + " / Fail: " + failed.get() + ")"));
+                    int done = completed.incrementAndGet();
+                    mainHandler.post(() -> tvStatus.setText("Completed " + done + "/" + threadCount
+                            + " (Pass: " + passed.get() + " / Fail: " + failed.get() + ")"));
 
-                if (done == threadCount) {
-                    appendLog("\n=== ALL TESTS COMPLETE ===\n");
-                    appendLog("Pass: " + passed.get() + " / Fail: " + failed.get() + "\n");
-                    pool.shutdown();
-                }
-            });
-        }
-    }
-
-    private TransactionResult runSingleTransaction(TestScenario scenario, String txnType, String tag, String schemeName)
-            throws Exception {
-        TransactionExecutor.LogCallback logger = msg -> appendLog(tag + " " + msg + "\n");
-
-        // 1. Build Context
-        String amount = scenario.getField(4);
-        String currency = scenario.getField(49);
-        String country = scenario.getField(19);
-        TransactionContext ctx = TransactionExecutor.buildContext(getApplicationContext(), txnType, amount, currency,
-                country);
-
-        // Override per-scheme IP/port if configured
-        if (schemeName != null && !schemeName.isEmpty()) {
-            try {
-                SchemeRepository repo = new SchemeRepository(getApplicationContext());
-                Scheme scheme = repo.getByName(schemeName);
-                if (scheme != null && scheme.hasConnectionConfig()) {
-                    ctx.ip = scheme.getServerIp();
-                    ctx.port = scheme.getServerPort();
-                }
-            } catch (Exception ignored) {
+                    if (done == threadCount) {
+                        appendLog("\n=== ALL TESTS COMPLETE ===\n");
+                        appendLog("Pass: " + passed.get() + " / Fail: " + failed.get() + "\n");
+                        pool.shutdown();
+                    }
+                });
             }
-        }
-
-        // 2. Prepare Card
-        String de22 = scenario.getField(22);
-        CardInputData card = TransactionExecutor.prepareCard(
-                getApplicationContext(), de22,
-                scenario.getField(2), scenario.getField(14),
-                scenario.getField(35), scenario.getUserPin(),
-                ctx, logger);
-
-        // 3. Execute
-        TransactionResult result = transactionExecutor.execute(
-                getApplicationContext(), ctx, card, txnType, logger, tag);
-
-        // 4. Save to DB
-        try {
-            String pan = card.getPan();
-            com.example.mysoftpos.domain.model.TransactionRecord record = new com.example.mysoftpos.domain.model.TransactionRecord.Builder()
-                    .setTraceNumber(ctx.stan11)
-                    .setAmount(ctx.amount4)
-                    .setStatus(result.status)
-                    .setRequestHex(result.reqHex)
-                    .setResponseHex(result.respHex)
-                    .setTimestamp(System.currentTimeMillis())
-                    .setMerchantCode(ctx.merchantId42)
-                    .setMerchantName(ctx.merchantNameLocation43)
-                    .setTerminalCode(ctx.terminalId41)
-                    .setPanMasked(PanUtils.mask(pan))
-                    .setBin(PanUtils.getBin(pan))
-                    .setLast4(PanUtils.getLast4(pan))
-                    .setScheme(PanUtils.detectScheme(pan))
-                    .setUsername("TEST_MULTI")
-                    .build();
-
-            com.example.mysoftpos.di.ServiceLocator.getInstance(getApplicationContext())
-                    .getTransactionRepository()
-                    .saveTransaction(record);
-        } catch (Exception e) {
-            appendLog(tag + " DB Error: " + e.getMessage() + "\n");
-        }
-
-        return result;
+        }).start();
     }
 
     private void appendLog(String text) {

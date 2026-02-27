@@ -1,38 +1,46 @@
 package com.example.mysoftpos.ui.base;
 
 import android.content.Intent;
+import android.nfc.NfcAdapter;
+import android.nfc.Tag;
 import android.os.Bundle;
+import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.cardview.widget.CardView;
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.di.ServiceLocator;
 import com.example.mysoftpos.domain.model.CardInputData;
+import com.example.mysoftpos.domain.usecase.ReadCardDataUseCase;
+import com.example.mysoftpos.nfc.IsoDepTransceiver;
+import com.example.mysoftpos.nfc.NfcStateManager;
 import com.example.mysoftpos.ui.BaseActivity;
 import com.example.mysoftpos.utils.config.ConfigManager;
 import com.example.mysoftpos.viewmodel.PurchaseViewModel;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.tabs.TabLayout;
 
 /**
  * Base class for card entry activities (Purchase, Balance Inquiry).
- * Encapsulates: tab UI, ripple animation, manual entry, mock Track2, ViewModel
- * setup.
+ * Encapsulates: tab UI, ripple animation, manual entry, NFC card reading, ViewModel setup.
  *
  * Subclasses override:
  * - {@link #getLayoutResId()} — layout resource
- * - {@link #getSubmitButtonId()} — submit button ID (btnSubmitManual or
- * btnSubmit)
+ * - {@link #getSubmitButtonId()} — submit button ID
  * - {@link #onCardDataReady(CardInputData)} — process the transaction
- * - {@link #onTransactionResult(boolean, String, String, String)} — handle
- * result
+ * - {@link #onTransactionResult(boolean, String, String, String)} — handle result
  * - {@link #onCreateExtra(Bundle)} — additional onCreate setup (optional)
  */
-public abstract class BaseCardEntryActivity extends BaseActivity {
+public abstract class BaseCardEntryActivity extends BaseActivity implements NfcAdapter.ReaderCallback {
+
+    private static final String TAG = "BaseCardEntry";
 
     protected PurchaseViewModel viewModel;
     protected ConfigManager configManager;
@@ -41,9 +49,17 @@ public abstract class BaseCardEntryActivity extends BaseActivity {
     protected FrameLayout layoutLoading;
 
     private CardView cardManualEntry;
-    private CardView cardMockTrack2;
+    private CardView cardNfcEntry;
+    private LinearLayout layoutNfcDisabled;
+    private LinearLayout layoutNfcReady;
     private ImageView ripple1, ripple2, ripple3, ripple4;
     private int currentMode = 0;
+
+    // NFC
+    private NfcAdapter nfcAdapter;
+    private NfcStateManager nfcStateManager;
+    private boolean nfcEnabled = false;
+    private boolean nfcCardProcessing = false;
 
     protected abstract int getLayoutResId();
 
@@ -61,6 +77,13 @@ public abstract class BaseCardEntryActivity extends BaseActivity {
         return currentMode;
     }
 
+    /** Last PAN read from NFC, for masked PAN display in result. */
+    private String lastNfcPan;
+
+    public String getLastNfcPan() {
+        return lastNfcPan;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,17 +96,22 @@ public abstract class BaseCardEntryActivity extends BaseActivity {
 
         configManager = ConfigManager.getInstance(this);
 
+        // NFC Adapter
+        nfcAdapter = NfcAdapter.getDefaultAdapter(this);
+
         // Bind common views
         ImageButton btnBack = findViewById(R.id.btnBack);
         layoutLoading = findViewById(R.id.layoutLoading);
         TabLayout tabLayout = findViewById(R.id.tabLayout);
         cardManualEntry = findViewById(R.id.cardManualEntry);
-        cardMockTrack2 = findViewById(R.id.cardMockTrack2);
+        cardNfcEntry = findViewById(R.id.cardMockTrack2); // keep ID for layout compat
+        layoutNfcDisabled = findViewById(R.id.layoutNfcDisabled);
+        layoutNfcReady = findViewById(R.id.layoutNfcReady);
         etPan = findViewById(R.id.etPan);
         etExpiry = findViewById(R.id.etExpiry);
         View btnSubmit = findViewById(getSubmitButtonId());
-        View cardNfcIcon = findViewById(R.id.cardNfcIcon);
-        TextView tvMockPreview = findViewById(R.id.tvMockTrack2Preview);
+
+        // tvMockTrack2Preview kept in layout for backward compat but not used in code
 
         ripple1 = findViewById(R.id.ripple1);
         ripple2 = findViewById(R.id.ripple2);
@@ -93,12 +121,10 @@ public abstract class BaseCardEntryActivity extends BaseActivity {
         // Back
         btnBack.setOnClickListener(v -> finish());
 
-        // Mock Track 2 Preview
-        String mockTrack2 = configManager.getTrack2("022");
-        if (mockTrack2 != null && mockTrack2.length() > 25) {
-            tvMockPreview.setText(mockTrack2.substring(0, 25) + "...");
-        } else {
-            tvMockPreview.setText(mockTrack2);
+        // Enable NFC button
+        MaterialButton btnEnableNfc = findViewById(R.id.btnEnableNfc);
+        if (btnEnableNfc != null) {
+            btnEnableNfc.setOnClickListener(v -> openNfcSettings());
         }
 
         // Tab Selection
@@ -132,22 +158,12 @@ public abstract class BaseCardEntryActivity extends BaseActivity {
             onCardDataReady(manualData);
         });
 
-        // Mock Track 2 Tap
-        cardNfcIcon.setOnClickListener(v -> {
-            String trk2 = configManager.getTrack2("022");
-            String mockPan = configManager.getMockPan();
-            String mockExp = configManager.getMockExpiry();
-
-            if (trk2 != null && trk2.contains("=")) {
-                String[] parts = trk2.split("=");
-                mockPan = parts[0];
-                if (parts[1].length() >= 4)
-                    mockExp = parts[1].substring(0, 4);
+        // NFC State Monitoring
+        nfcStateManager = new NfcStateManager(this, enabled -> {
+            nfcEnabled = enabled;
+            if (currentMode == 1) {
+                updateNfcSubViews();
             }
-
-            CardInputData mockData = new CardInputData(mockPan, mockExp, "022", trk2);
-            Toast.makeText(this, getString(R.string.msg_using_mock_track2), Toast.LENGTH_SHORT).show();
-            onCardDataReady(mockData);
         });
 
         // Observe state
@@ -164,17 +180,157 @@ public abstract class BaseCardEntryActivity extends BaseActivity {
         onCreateExtra(savedInstanceState);
     }
 
-    private void updateCardVisibility() {
-        if (currentMode == 0) {
-            cardManualEntry.setVisibility(View.VISIBLE);
-            cardMockTrack2.setVisibility(View.GONE);
-            stopRippleAnimation();
-        } else {
-            cardManualEntry.setVisibility(View.GONE);
-            cardMockTrack2.setVisibility(View.VISIBLE);
-            startRippleAnimation();
+    // ==================== NFC Settings ====================
+
+    private void openNfcSettings() {
+        if (nfcAdapter == null) {
+            Toast.makeText(this, getString(R.string.nfc_not_supported), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        try {
+            startActivity(new Intent(Settings.ACTION_NFC_SETTINGS));
+        } catch (Exception e) {
+            startActivity(new Intent(Settings.ACTION_WIRELESS_SETTINGS));
         }
     }
+
+    // ==================== NFC Reader Mode ====================
+
+    private void enableNfcReaderMode() {
+        if (nfcAdapter != null && nfcAdapter.isEnabled()) {
+            Bundle options = new Bundle();
+            // This delay only controls the background "is card still there?" ping AFTER
+            // the card is already discovered. Does NOT affect initial detection speed.
+            // Too low (250ms) → ping collides with our APDU commands → TagLostException
+            // 2500ms → safe window for our 4-5 APDU commands (~800ms total)
+            options.putInt(NfcAdapter.EXTRA_READER_PRESENCE_CHECK_DELAY, 2500);
+            nfcAdapter.enableReaderMode(this, this,
+                    NfcAdapter.FLAG_READER_NFC_A |
+                    NfcAdapter.FLAG_READER_NFC_B |
+                    NfcAdapter.FLAG_READER_NFC_F |
+                    NfcAdapter.FLAG_READER_NFC_V |
+                    NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK |
+                    NfcAdapter.FLAG_READER_NO_PLATFORM_SOUNDS,
+                    options);
+        }
+    }
+
+    private void disableNfcReaderMode() {
+        if (nfcAdapter != null) {
+            try {
+                nfcAdapter.disableReaderMode(this);
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    @Override
+    public void onTagDiscovered(Tag tag) {
+        if (nfcCardProcessing) return;
+        nfcCardProcessing = true;
+
+        IsoDepTransceiver transceiver = IsoDepTransceiver.from(tag);
+        if (transceiver == null) {
+            nfcCardProcessing = false;
+            runOnUiThread(() -> Toast.makeText(this,
+                    getString(R.string.nfc_reading_error, "Thẻ không hỗ trợ"),
+                    Toast.LENGTH_SHORT).show());
+            return;
+        }
+
+        new Thread(() -> {
+            CardInputData cardData = null;
+            try {
+                transceiver.connect();
+                ReadCardDataUseCase useCase = new ReadCardDataUseCase(transceiver);
+                cardData = useCase.execute();
+                lastNfcPan = cardData.getPan();
+            } catch (Throwable e) {
+                // Catch Throwable, not just Exception — prevents app crash
+                Log.e(TAG, "NFC read failed", e);
+                final String errMsg = e.getMessage() != null ? e.getMessage() : "Lỗi đọc thẻ";
+                runOnUiThread(() -> {
+                    Toast.makeText(this,
+                            getString(R.string.nfc_reading_error, errMsg),
+                            Toast.LENGTH_SHORT).show();
+                });
+            } finally {
+                // ALWAYS close transceiver and reset flag
+                try { transceiver.close(); } catch (Exception ignored) {}
+                nfcCardProcessing = false;
+            }
+
+            // Deliver result on UI thread AFTER transceiver is closed
+            if (cardData != null) {
+                final CardInputData result = cardData;
+                runOnUiThread(() -> {
+                    Toast.makeText(this, getString(R.string.nfc_card_read_success), Toast.LENGTH_SHORT).show();
+                    try {
+                        onCardDataReady(result);
+                    } catch (Exception e) {
+                        Log.e(TAG, "onCardDataReady failed", e);
+                        Toast.makeText(this,
+                                getString(R.string.nfc_reading_error, "Lỗi xử lý: " + e.getMessage()),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        }).start();
+    }
+
+    // ==================== View Visibility ====================
+
+    private void updateCardVisibility() {
+        if (currentMode == 0) {
+            // Manual Entry mode
+            cardManualEntry.setVisibility(View.VISIBLE);
+            cardNfcEntry.setVisibility(View.GONE);
+            stopRippleAnimation();
+            disableNfcReaderMode();
+        } else {
+            // NFC mode
+            cardManualEntry.setVisibility(View.GONE);
+            cardNfcEntry.setVisibility(View.VISIBLE);
+            updateNfcSubViews();
+        }
+    }
+
+    private void updateNfcSubViews() {
+        if (nfcAdapter == null) {
+            // Device has no NFC hardware
+            layoutNfcDisabled.setVisibility(View.VISIBLE);
+            layoutNfcReady.setVisibility(View.GONE);
+            stopRippleAnimation();
+            disableNfcReaderMode();
+
+            // Change button text to indicate not supported
+            MaterialButton btnEnableNfc = findViewById(R.id.btnEnableNfc);
+            if (btnEnableNfc != null) {
+                btnEnableNfc.setText(R.string.nfc_not_supported);
+                btnEnableNfc.setEnabled(false);
+            }
+        } else if (!nfcEnabled) {
+            // NFC hardware exists but is OFF
+            layoutNfcDisabled.setVisibility(View.VISIBLE);
+            layoutNfcReady.setVisibility(View.GONE);
+            stopRippleAnimation();
+            disableNfcReaderMode();
+
+            MaterialButton btnEnableNfc = findViewById(R.id.btnEnableNfc);
+            if (btnEnableNfc != null) {
+                btnEnableNfc.setText(R.string.nfc_enable_button);
+                btnEnableNfc.setEnabled(true);
+            }
+        } else {
+            // NFC is ON → show scan UI
+            layoutNfcDisabled.setVisibility(View.GONE);
+            layoutNfcReady.setVisibility(View.VISIBLE);
+            startRippleAnimation();
+            enableNfcReaderMode();
+        }
+    }
+
+    // ==================== Ripple Animation ====================
 
     protected void startRippleAnimation() {
         if (ripple1 == null || ripple2 == null || ripple3 == null || ripple4 == null)
@@ -215,17 +371,25 @@ public abstract class BaseCardEntryActivity extends BaseActivity {
         }
     }
 
+    // ==================== Lifecycle ====================
+
     @Override
     protected void onResume() {
         super.onResume();
-        if (currentMode == 1)
-            startRippleAnimation();
+        nfcStateManager.startMonitoring();
+        nfcCardProcessing = false; // Reset on resume
+
+        if (currentMode == 1) {
+            updateNfcSubViews();
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        nfcStateManager.stopMonitoring();
         stopRippleAnimation();
+        disableNfcReaderMode();
     }
 
     protected void showLoading(boolean loading) {

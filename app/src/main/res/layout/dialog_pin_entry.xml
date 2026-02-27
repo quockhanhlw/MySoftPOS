@@ -65,7 +65,7 @@
             android:id="@+id/btnBackspace"
             style="@style/KeypadButton"
             android:src="@drawable/ic_backspace"
-            android:tint="#475569"
+            app:tint="#475569"
             android:scaleType="centerInside"
             android:padding="20dp"/>
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Purchase Card Screen - Tab-based Entry: Manual Entry | Mock Track 2 -->
+<!-- Purchase Card Screen - Tab-based Entry: Manual Entry | NFC -->
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -64,7 +64,7 @@
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/tab_mock_track2" />
+            android:text="@string/tab_nfc" />
     </com.google.android.material.tabs.TabLayout>
 
     <!-- Manual Entry Card (Tab 0) - CENTERED & LARGER -->
@@ -137,7 +137,7 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- Mock Track 2 Card (Tab 1) - REDESIGNED -->
+    <!-- NFC Card (Tab 1) -->
     <androidx.cardview.widget.CardView
         android:id="@+id/cardMockTrack2"
         android:layout_width="match_parent"
@@ -151,12 +151,65 @@
         app:layout_constraintBottom_toTopOf="@id/amountContainer"
         app:layout_constraintVertical_bias="0.4">
 
+        <!-- NFC Disabled State -->
         <LinearLayout
+            android:id="@+id/layoutNfcDisabled"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="32dp"
-            android:gravity="center">
+            android:gravity="center"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:src="@drawable/ic_nfc_off"
+                android:layout_gravity="center"
+                android:layout_marginBottom="24dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/nfc_disabled_title"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="@color/neo_primary_dark"
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/nfc_disabled_message"
+                android:textSize="15sp"
+                android:textColor="@color/neo_text_secondary"
+                android:gravity="center"
+                android:layout_marginBottom="32dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEnableNfc"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:text="@string/nfc_enable_button"
+                android:textSize="16sp"
+                app:backgroundTint="@color/neo_primary_dark"
+                app:cornerRadius="24dp"
+                android:paddingHorizontal="32dp"
+                app:icon="@drawable/ic_nfc"
+                app:iconTint="@color/white"
+                app:iconGravity="textStart" />
+        </LinearLayout>
+
+        <!-- NFC Ready / Scan State -->
+        <LinearLayout
+            android:id="@+id/layoutNfcReady"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="32dp"
+            android:gravity="center"
+            android:visibility="gone">
 
             <!-- NFC Icon Container with Ripples -->
             <FrameLayout
@@ -190,7 +243,7 @@
                     android:layout_gravity="center"
                     android:src="@drawable/bg_ripple_ring"
                     android:visibility="gone" />
-                    
+
                 <!-- Ripple 4 -->
                 <ImageView
                     android:id="@+id/ripple4"
@@ -214,7 +267,7 @@
                         android:layout_width="80dp"
                         android:layout_height="80dp"
                         android:layout_gravity="center"
-                        android:src="@drawable/ic_credit_card_outline"
+                        android:src="@drawable/ic_nfc"
                         app:tint="@color/neo_primary_dark" />
                 </FrameLayout>
             </FrameLayout>
@@ -223,20 +276,21 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
-                android:text="@string/reading_card_text"
+                android:text="@string/nfc_reading_card"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:textColor="@color/neo_primary_dark"
                 android:fontFamily="sans-serif-medium" />
-                
-            <!-- Hidden Debug Preview (Keep for logic but hide visually or make very subtle) -->
-            <TextView
-                android:id="@+id/tvMockTrack2Preview"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:visibility="gone" />
 
         </LinearLayout>
+
+        <!-- Hidden Debug Preview (kept for backward compat) -->
+        <TextView
+            android:id="@+id/tvMockTrack2Preview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
     </androidx.cardview.widget.CardView>
 
     <!-- Amount Display -->

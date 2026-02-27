@@ -6,13 +6,17 @@ import android.nfc.tech.IsoDep;
 import android.util.Log;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 public class IsoDepTransceiver implements CardTransceiver {
 
     private static final String TAG = "IsoDepTransceiver";
-    private static final boolean DEBUG = true; // Temporary replacement for BuildConfig.DEBUG
-    private static final int EXTENDED_TIMEOUT_MS = 5000;
+    // TODO: Set back to false after fixing NAPAS card issue
+    private static final boolean DEBUG = true;
+    /**
+     * Timeout for IsoDep. Only need 3s since we send 4-5 APDUs (~200ms each).
+     * Too long = user waits forever on card error.
+     */
+    private static final int EXTENDED_TIMEOUT_MS = 3000;
     private final IsoDep isoDep;
 
     public IsoDepTransceiver(IsoDep isoDep) {
@@ -24,14 +28,16 @@ public class IsoDepTransceiver implements CardTransceiver {
         if (iso != null) {
             return new IsoDepTransceiver(iso);
         }
-        return null; // Or throw exception based on preference, returning null for now
+        return null;
     }
 
     public void connect() throws IOException {
         if (isoDep != null) {
             isoDep.connect();
             isoDep.setTimeout(EXTENDED_TIMEOUT_MS);
-            Log.d(TAG, "IsoDep connected with timeout: " + EXTENDED_TIMEOUT_MS + "ms");
+            Log.d(TAG, "IsoDep connected. timeout=" + EXTENDED_TIMEOUT_MS
+                    + "ms, maxTransceiveLen=" + isoDep.getMaxTransceiveLength()
+                    + ", isExtLenSupported=" + isoDep.isExtendedLengthApduSupported());
         } else {
             throw new IOException("IsoDep is null");
         }

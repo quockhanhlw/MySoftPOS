@@ -45,7 +45,7 @@ public final class NfcStateManager {
             enabled = adapter.isEnabled();
         }
         if (listener != null) listener.onNfcState(enabled);
-        handler.postDelayed(this::poll, 800);
+        handler.postDelayed(this::poll, 2000);
     }
 
     public static void updateViewVisibility(View readyView, View disabledView, boolean enabled) {

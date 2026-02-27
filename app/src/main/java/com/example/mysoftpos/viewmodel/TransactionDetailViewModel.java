@@ -75,22 +75,40 @@ public class TransactionDetailViewModel extends BaseViewModel {
                 ctx.transmissionDt7 = origMsg.getField(7);
                 ctx.localTime12 = origMsg.getField(12);
                 ctx.localDate13 = origMsg.getField(13);
+                ctx.expiry14 = origMsg.getField(14);
                 ctx.mcc18 = origMsg.getField(18);
+                ctx.country19 = origMsg.getField(19);
+                ctx.posEntryMode22 = origMsg.getField(22);
+                ctx.posCondition25 = origMsg.getField(25);
+                ctx.acquirerId32 = origMsg.getField(32);
+                ctx.track2_35 = origMsg.getField(35);
                 ctx.rrn37 = origMsg.getField(37);
                 ctx.terminalId41 = origMsg.getField(41);
                 ctx.merchantId42 = origMsg.getField(42);
                 ctx.merchantNameLocation43 = origMsg.getField(43);
                 ctx.currency49 = origMsg.getField(49);
-                ctx.acquirerId32 = origMsg.getField(32);
 
-                // IP/Port from Config
-                ctx.ip = configManager.getServerIp();
-                ctx.port = configManager.getServerPort();
+                // IP/Port: use original transaction's user server config, fallback to current config
+                String serverIp = configManager.getServerIp();
+                int serverPort = configManager.getServerPort();
+                if (txnDetails.user != null
+                        && txnDetails.user.serverIp != null && !txnDetails.user.serverIp.isEmpty()
+                        && txnDetails.user.serverPort > 0) {
+                    serverIp = txnDetails.user.serverIp;
+                    serverPort = txnDetails.user.serverPort;
+                }
+                ctx.ip = serverIp;
+                ctx.port = serverPort;
 
                 // Reconstruct Card Data
                 String pan = origMsg.getField(2);
                 String track2 = origMsg.getField(35);
                 CardInputData card = new CardInputData(pan, null, null, track2);
+
+                // DE 55: ICC data for chip reversal
+                if (origMsg.hasField(55)) {
+                    ctx.reversalIccData55 = origMsg.getField(55);
+                }
 
                 // 3. Generate NEW Trace for Reversal
                 String newTrace = configManager.getAndIncrementTrace();
@@ -102,19 +120,25 @@ public class TransactionDetailViewModel extends BaseViewModel {
                 byte[] packed = StandardIsoPacker.pack(revMsg);
                 String revWithNewTrace = StandardIsoPacker.bytesToHex(packed);
 
-                // Log
+                // Log SEND 0420
                 com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "SEND 0420 (VOID)", packed);
+                com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "SEND 0420 DETAIL",
+                        StandardIsoPacker.logIsoMessage(revMsg));
+                com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "VOID TARGET",
+                        "Server: " + ctx.ip + ":" + ctx.port + " | Original Trace: " + ctx.stan11);
 
                 // 6. Send
-                // Use injected client
                 byte[] responseBytes = isoNetworkClient.sendAndReceive(ctx.ip, ctx.port, packed);
 
-                // 7. Handle Response
+                // Log RECV 0430
                 com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "RECV 0430 (VOID)",
                         responseBytes);
                 IsoMessage respMsg = new StandardIsoPacker().unpack(responseBytes);
+                com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "RECV 0430 DETAIL",
+                        StandardIsoPacker.logIsoMessage(respMsg));
 
-                String rc = respMsg.getField(39);
+                // 7. Handle Response
+                String rc = respMsg.getField(IsoField.RESPONSE_CODE_39);
 
                 if ("00".equals(rc)) {
                     // Update DB
@@ -123,11 +147,20 @@ public class TransactionDetailViewModel extends BaseViewModel {
                     launchUi(() -> state.setValue(TransactionState.success("Transaction Voided Successfully",
                             StandardIsoPacker.bytesToHex(responseBytes), revWithNewTrace)));
                 } else {
+                    com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "VOID DECLINED",
+                            "RC: " + rc);
                     postError("Void Failed: RC " + rc);
                 }
 
+            } catch (java.net.SocketTimeoutException e) {
+                android.util.Log.e("TxnDetailVM", "Void timeout", e);
+                com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "VOID TIMEOUT",
+                        "No response from server");
+                postError("Void Timeout: No response from server");
             } catch (Exception e) {
                 android.util.Log.e("TxnDetailVM", "Void error", e);
+                com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "VOID ERROR",
+                        e.getMessage());
                 postError("Void Error: " + e.getMessage());
             }
         });

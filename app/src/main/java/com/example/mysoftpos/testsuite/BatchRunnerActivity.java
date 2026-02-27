@@ -36,6 +36,7 @@ import java.util.concurrent.Executors;
 
 public class BatchRunnerActivity extends AppCompatActivity {
 
+    // CachedThreadPool: creates new threads as needed, ideal for parallel I/O
     private final ExecutorService executor = Executors.newCachedThreadPool();
     private TransactionExecutor transactionExecutor;
 
@@ -102,12 +103,12 @@ public class BatchRunnerActivity extends AppCompatActivity {
             return;
         isRunning = true;
         btnRunAll.setEnabled(false);
-        btnRunAll.setText("Running...");
+        btnRunAll.setText("Preparing...");
         completedCount.set(0);
 
-        // Reset all to running
+        // Reset all to PENDING
         for (CaseResult r : results) {
-            r.status = CaseStatus.RUNNING;
+            r.status = CaseStatus.PENDING;
             r.rc = null;
             r.detail = null;
         }
@@ -115,84 +116,127 @@ public class BatchRunnerActivity extends AppCompatActivity {
 
         int total = results.size();
 
-        // Launch ALL cases in parallel
-        for (int i = 0; i < total; i++) {
-            final int index = i;
-            final CaseResult cr = results.get(index);
+        // Phase 1: Pre-build ALL contexts & cards on a single thread
+        // This avoids SharedPreferences lock contention from ConfigManager.getAndIncrementTrace()
+        executor.execute(() -> {
+            // Pre-build arrays
+            TransactionContext[] contexts = new TransactionContext[total];
+            CardInputData[] cards = new CardInputData[total];
+            String[] txnTypes = new String[total];
 
-            executor.execute(() -> {
-                executeCase(cr);
-
-                int done = completedCount.incrementAndGet();
-
-                runOnUiThread(() -> {
-                    adapter.notifyItemChanged(index);
-                    progressBar.setProgress(done);
-                    tvProgress.setText(done + "/" + total);
-
-                    // All done?
-                    if (done == total) {
-                        isRunning = false;
-                        btnRunAll.setEnabled(true);
-
-                        long passed = results.stream().filter(r -> r.status == CaseStatus.PASS).count();
-                        long failed = results.stream().filter(r -> r.status == CaseStatus.FAIL).count();
-
-                        btnRunAll.setText("Done: " + passed + " Pass, " + failed + " Fail — Run Again?");
+            for (int i = 0; i < total; i++) {
+                CaseResult cr = results.get(i);
+                TestScenario scenario = cr.scenario;
+                try {
+                    txnTypes[i] = scenario.getTxnType() != null ? scenario.getTxnType() : "PURCHASE";
+                    String de22 = scenario.getField(22);
+                    String pan = scenario.getField(2);
+                    String expiry = scenario.getField(14);
+                    String track2 = scenario.getField(35);
+                    String amount = scenario.getField(4);
+                    String pinBlock = null;
+                    if ("PIN_BLOCK_PRESENT".equals(scenario.getField(52))) {
+                        pinBlock = scenario.getUserPin() != null ? scenario.getUserPin() : "123456";
+                    } else if (scenario.getUserPin() != null) {
+                        pinBlock = scenario.getUserPin();
                     }
-                });
+
+                    contexts[i] = TransactionExecutor.buildContext(
+                            getApplication(), txnTypes[i], amount, null, null);
+                    applySchemeConnection(contexts[i], scheme);
+
+                    cards[i] = TransactionExecutor.prepareCard(
+                            getApplication(), de22, pan, expiry, track2, pinBlock,
+                            contexts[i], msg -> {});
+                } catch (Exception e) {
+                    cr.status = CaseStatus.FAIL;
+                    cr.rc = "BUILD_ERR";
+                    cr.detail = "Build error: " + e.getMessage();
+                }
+            }
+
+            // Phase 2: Fire ALL network calls simultaneously
+            runOnUiThread(() -> {
+                btnRunAll.setText("Sending " + total + " transactions...");
+                for (CaseResult r : results) {
+                    if (r.status != CaseStatus.FAIL) {
+                        r.status = CaseStatus.RUNNING;
+                    }
+                }
+                adapter.notifyDataSetChanged();
+                progressBar.setProgress(0);
             });
-        }
+
+            // Use a CountDownLatch so we know when all finish
+            java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(total);
+
+            for (int i = 0; i < total; i++) {
+                final int index = i;
+                final CaseResult cr = results.get(index);
+
+                if (cr.status == CaseStatus.FAIL) {
+                    // Already failed during build
+                    int done = completedCount.incrementAndGet();
+                    runOnUiThread(() -> {
+                        adapter.notifyItemChanged(index);
+                        progressBar.setProgress(done);
+                        tvProgress.setText(done + "/" + total);
+                    });
+                    latch.countDown();
+                    continue;
+                }
+
+                final TransactionContext ctx = contexts[index];
+                final CardInputData card = cards[index];
+                final String txnType = txnTypes[index];
+
+                executor.execute(() -> {
+                    try {
+                        StringBuilder sb = new StringBuilder();
+                        TransactionExecutor.LogCallback logger = msg -> sb.append(msg).append("\n");
+
+                        TransactionResult result = transactionExecutor.execute(
+                                getApplication(), ctx, card, txnType, logger, "");
+
+                        cr.rc = result.rc;
+                        String reason = ResponseCodeHelper.getMessage(result.rc);
+                        if (result.approved) {
+                            cr.status = CaseStatus.PASS;
+                            cr.detail = "RC: " + result.rc + " (" + reason + ")\n" + sb;
+                        } else {
+                            cr.status = CaseStatus.FAIL;
+                            cr.detail = "RC: " + result.rc + " - " + reason + "\n" + sb;
+                        }
+                    } catch (java.net.SocketTimeoutException e) {
+                        cr.status = CaseStatus.FAIL;
+                        cr.rc = "TIMEOUT";
+                        cr.detail = "Error: Timeout waiting for response.";
+                    } catch (Exception e) {
+                        cr.status = CaseStatus.FAIL;
+                        cr.rc = "ERROR";
+                        cr.detail = "Error: " + e.getMessage();
+                    }
+
+                    int done = completedCount.incrementAndGet();
+                    runOnUiThread(() -> {
+                        adapter.notifyItemChanged(index);
+                        progressBar.setProgress(done);
+                        tvProgress.setText(done + "/" + total);
+
+                        if (done == total) {
+                            isRunning = false;
+                            btnRunAll.setEnabled(true);
+                            long passed = results.stream().filter(r -> r.status == CaseStatus.PASS).count();
+                            long failed = results.stream().filter(r -> r.status == CaseStatus.FAIL).count();
+                            btnRunAll.setText("Done: " + passed + " Pass, " + failed + " Fail — Run Again?");
+                        }
+                    });
+                    latch.countDown();
+                });
+            }
+        });
     }
 
-    private void executeCase(CaseResult cr) {
-        TestScenario scenario = cr.scenario;
-        try {
-            StringBuilder sb = new StringBuilder();
-            TransactionExecutor.LogCallback logger = msg -> sb.append(msg).append("\n");
-
-            String txnType = scenario.getTxnType() != null ? scenario.getTxnType() : "PURCHASE";
-            String de22 = scenario.getField(22);
-            String pan = scenario.getField(2);
-            String expiry = scenario.getField(14);
-            String track2 = scenario.getField(35);
-            String amount = scenario.getField(4);
-            String pinBlock = null;
-            if ("PIN_BLOCK_PRESENT".equals(scenario.getField(52))) {
-                pinBlock = scenario.getUserPin() != null ? scenario.getUserPin() : "123456";
-            } else if (scenario.getUserPin() != null) {
-                pinBlock = scenario.getUserPin();
-            }
-            TransactionContext ctx = TransactionExecutor.buildContext(
-                    getApplication(), txnType, amount, null, null);
-            applySchemeConnection(ctx, scheme);
-
-            CardInputData card = TransactionExecutor.prepareCard(
-                    getApplication(), de22, pan, expiry, track2, pinBlock, ctx, logger);
-
-            TransactionResult result = transactionExecutor.execute(
-                    getApplication(), ctx, card, txnType, logger, "");
-
-            cr.rc = result.rc;
-            String reason = ResponseCodeHelper.getMessage(result.rc);
-            if (result.approved) {
-                cr.status = CaseStatus.PASS;
-                cr.detail = "RC: " + result.rc + " (" + reason + ")\n" + sb;
-            } else {
-                cr.status = CaseStatus.FAIL;
-                cr.detail = "RC: " + result.rc + " - " + reason + "\n" + sb;
-            }
-
-        } catch (java.net.SocketTimeoutException e) {
-            cr.status = CaseStatus.FAIL;
-            cr.rc = "TIMEOUT";
-            cr.detail = "Error: Timeout waiting for response.";
-        } catch (Exception e) {
-            cr.status = CaseStatus.FAIL;
-            cr.rc = "ERROR";
-            cr.detail = "Error: " + e.getMessage();
-        }
-    }
 
     private void applySchemeConnection(TransactionContext ctx, String schemeName) {
         if (schemeName == null)
