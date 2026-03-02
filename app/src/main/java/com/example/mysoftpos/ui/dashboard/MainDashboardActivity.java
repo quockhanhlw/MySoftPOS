@@ -102,9 +102,11 @@ public class MainDashboardActivity extends BaseActivity {
         }
 
         // Purchase Action
+        final long currentUserId = getIntent().getLongExtra(com.example.mysoftpos.utils.IntentKeys.USER_ID, -1);
         btnPurchase.setOnClickListener(v -> {
             Intent intent = new Intent(this, PurchaseAmountActivity.class);
             intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, username);
+            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USER_ID, currentUserId);
             startActivity(intent);
         });
 
@@ -112,6 +114,7 @@ public class MainDashboardActivity extends BaseActivity {
         btnBalance.setOnClickListener(v -> {
             Intent intent = new Intent(this, BalanceInquiryActivity.class);
             intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, username);
+            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USER_ID, currentUserId);
             startActivity(intent);
         });
 
@@ -165,8 +168,13 @@ public class MainDashboardActivity extends BaseActivity {
         // Background Video
         setupVideoBackground();
 
-        // Load History
-        setupHistoryObserver(isAdmin);
+        // Load History (User only — Admin sees history inside each Scheme)
+        if (isAdmin) {
+            View cardHistory = findViewById(R.id.cardHistory);
+            if (cardHistory != null) cardHistory.setVisibility(View.GONE);
+        } else {
+            setupHistoryObserver(false);
+        }
     }
 
     private void setupVideoBackground() {
@@ -213,40 +221,12 @@ public class MainDashboardActivity extends BaseActivity {
     private void setupHistoryObserver(boolean isAdmin) {
         AppDatabase db = AppDatabase.getInstance(this);
 
-        if (isAdmin) {
-            // Admin sees ALL transactions
-            db.transactionDao().getAllTransactionsLive().observe(this,
-                    transactions -> updateHistoryList(transactions));
-            return;
-        }
+        // Use the unique user_id (DB primary key) — guarantees no cross-user leakage
+        long userId = getIntent().getLongExtra(com.example.mysoftpos.utils.IntentKeys.USER_ID, -1);
+        if (userId <= 0) return;
 
-        // USER: find own transactions
-        String currentUsername = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME);
-        if (currentUsername == null)
-            currentUsername = "Guest";
-
-        final String identifier = currentUsername;
-        new Thread(() -> {
-            String hash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(identifier);
-            com.example.mysoftpos.data.local.entity.UserEntity user =
-                    db.userDao().findByAnyIdentifier(identifier, hash);
-
-            if (user != null) {
-                // Repair orphan transactions (user_id=NULL) by assigning to current user
-                db.transactionDao().assignOrphanTransactions(user.id);
-            }
-
-            final long userId = (user != null) ? user.id : -1;
-            runOnUiThread(() -> {
-                if (userId > 0) {
-                    db.transactionDao().getTransactionsByUserIdLive(userId).observe(
-                            MainDashboardActivity.this, transactions -> updateHistoryList(transactions));
-                } else {
-                    db.transactionDao().getTransactionsByUsernameHashLive(hash).observe(
-                            MainDashboardActivity.this, transactions -> updateHistoryList(transactions));
-                }
-            });
-        }).start();
+        db.transactionDao().getTransactionsByUserIdLive(userId).observe(
+                this, this::updateHistoryList);
     }
 
     // --- History Logic Refactored for Expansion --- //
@@ -260,14 +240,29 @@ public class MainDashboardActivity extends BaseActivity {
         java.util.List<TransactionEntity> filtered = new java.util.ArrayList<>();
         if (transactions != null) {
             for (TransactionEntity t : transactions) {
-                // Filter logic: Amount != "0" and != null
-                if (t.amount != null && !t.amount.equals("0")) {
+                // Only show Purchase transactions with non-zero amount
+                if (t.amount != null && !t.amount.equals("0") && isPurchaseTransaction(t)) {
                     filtered.add(t);
                 }
             }
         }
         currentTransactions = filtered;
         renderHistoryList();
+    }
+
+    /** Check if transaction is a Purchase (DE 3 starts with 00) */
+    private boolean isPurchaseTransaction(TransactionEntity txn) {
+        try {
+            if (txn.requestHex == null) return false;
+            com.example.mysoftpos.iso8583.message.IsoMessage req =
+                    new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                            .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
+                                    .hexToBytes(txn.requestHex));
+            if (req.hasField(3)) {
+                return req.getField(3).startsWith("00");
+            }
+        } catch (Exception ignored) {}
+        return false;
     }
 
     private void renderHistoryList() {

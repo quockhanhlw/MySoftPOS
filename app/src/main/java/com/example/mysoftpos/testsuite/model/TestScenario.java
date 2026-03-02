@@ -24,6 +24,10 @@ public class TestScenario implements Serializable {
         return fields.get(bit);
     }
 
+    public Map<Integer, String> getAllFields() {
+        return fields;
+    }
+
     public String getDescription() {
         return description;
     }

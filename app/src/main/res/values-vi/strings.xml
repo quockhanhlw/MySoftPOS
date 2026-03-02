@@ -46,7 +46,7 @@
     <string name="register_confirm_password">Xác nhận mật khẩu</string>
     <string name="register_confirm_password_hint">Nhập lại mật khẩu của bạn</string>
     
-    <string name="register_terms_text">Bằng cách đăng ký, bạn đồng ý với Điều khoản &amp; Điều kiện và Chính sách quyền riêng tư của chúng tôi</string>
+    <string name="register_terms_text">Bằng cách đăng ký, bạn đồng ý với Điều khoản &amp; Điều kiện và Chính sách bảo mật của chúng tôi</string>
     <string name="register_button">Tạo tài khoản</string>
 
     <!-- Forgot Password Screen -->
@@ -204,6 +204,7 @@
 
     <!-- Terms Dialog -->
     <string name="terms_title">Điều khoản &amp; Điều kiện</string>
+    <string name="privacy_title">Chính sách bảo mật</string>
 
     <!-- Error Messages (ResponseCodeHelper) -->
     <string name="error_unknown">Lỗi không xác định</string>
@@ -274,5 +275,16 @@
     <string name="settings_service_group">Cài đặt dịch vụ</string>
     <string name="settings_change_password">Đổi mật khẩu</string>
     <string name="settings_logout">Đăng xuất</string>
+
+    <!-- UI Improvements -->
+    <string name="txn_detail_title">Chi tiết giao dịch</string>
+    <string name="amount_label">Số tiền</string>
+    <string name="cancel_transaction">Huỷ giao dịch</string>
+    <string name="processing">Đang xử lý…</string>
+    <string name="void_confirm_title">Huỷ giao dịch</string>
+    <string name="void_confirm_message">Bạn có chắc muốn huỷ giao dịch này? Thao tác này không thể hoàn tác.</string>
+    <string name="void_confirm_yes">Đồng ý, Huỷ</string>
+    <string name="void_confirm_no">Không</string>
+    <string name="terms_close">Đóng</string>
 
 </resources>

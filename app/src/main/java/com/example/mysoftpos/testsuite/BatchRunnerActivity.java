@@ -39,6 +39,7 @@ public class BatchRunnerActivity extends AppCompatActivity {
     // CachedThreadPool: creates new threads as needed, ideal for parallel I/O
     private final ExecutorService executor = Executors.newCachedThreadPool();
     private TransactionExecutor transactionExecutor;
+    private com.example.mysoftpos.data.repository.TransactionRepository transactionRepository;
 
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
@@ -58,6 +59,7 @@ public class BatchRunnerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_batch_runner);
 
         transactionExecutor = ServiceLocator.getInstance(getApplication()).getTransactionExecutor();
+        transactionRepository = ServiceLocator.getInstance(getApplication()).getTransactionRepository();
 
         recyclerView = findViewById(R.id.recyclerViewResults);
         progressBar = findViewById(R.id.progressBar);
@@ -207,6 +209,9 @@ public class BatchRunnerActivity extends AppCompatActivity {
                             cr.status = CaseStatus.FAIL;
                             cr.detail = "RC: " + result.rc + " - " + reason + "\n" + sb;
                         }
+
+                        // Save to DB for history
+                        saveTransactionToDb(ctx, card, result);
                     } catch (java.net.SocketTimeoutException e) {
                         cr.status = CaseStatus.FAIL;
                         cr.rc = "TIMEOUT";
@@ -243,9 +248,54 @@ public class BatchRunnerActivity extends AppCompatActivity {
             return;
         SchemeRepository repo = new SchemeRepository(this);
         com.example.mysoftpos.testsuite.model.Scheme s = repo.getByName(schemeName);
-        if (s != null && s.getServerIp() != null && !s.getServerIp().isEmpty()) {
+        if (s == null) return;
+        if (s.getServerIp() != null && !s.getServerIp().isEmpty()) {
             ctx.ip = s.getServerIp();
             ctx.port = s.getServerPort();
+        }
+        // Terminal / Merchant overrides
+        String tid = s.getTerminalId();
+        if (tid != null && !tid.isEmpty()) ctx.terminalId41 = tid;
+        String mid = s.getMerchantId();
+        if (mid != null && !mid.isEmpty()) ctx.merchantId42 = mid;
+        String mcc = s.getMcc();
+        if (mcc != null && !mcc.isEmpty()) ctx.mcc18 = mcc;
+        String acq = s.getAcquirerId();
+        if (acq != null && !acq.isEmpty()) ctx.acquirerId32 = acq;
+        String currency = s.getCurrencyCode();
+        if (currency != null && !currency.isEmpty()) ctx.currency49 = currency;
+        String country = s.getCountryCode();
+        if (country != null && !country.isEmpty()) ctx.country19 = country;
+        String posCond = s.getPosConditionCode();
+        if (posCond != null && !posCond.isEmpty()) ctx.posCondition25 = posCond;
+        String de43 = s.buildMerchantNameLocation();
+        if (!de43.isEmpty()) ctx.merchantNameLocation43 = de43;
+    }
+
+    private void saveTransactionToDb(TransactionContext ctx, CardInputData card,
+                                      TransactionResult result) {
+        try {
+            String pan = card.getPan();
+            com.example.mysoftpos.domain.model.TransactionRecord record =
+                    new com.example.mysoftpos.domain.model.TransactionRecord.Builder()
+                            .setTraceNumber(ctx.stan11)
+                            .setAmount(ctx.amount4)
+                            .setStatus(result.status)
+                            .setRequestHex(result.reqHex)
+                            .setResponseHex(result.respHex)
+                            .setTimestamp(System.currentTimeMillis())
+                            .setMerchantCode(ctx.merchantId42)
+                            .setMerchantName(ctx.merchantNameLocation43)
+                            .setTerminalCode(ctx.terminalId41)
+                            .setPanMasked(com.example.mysoftpos.utils.PanUtils.mask(pan))
+                            .setBin(com.example.mysoftpos.utils.PanUtils.getBin(pan))
+                            .setLast4(com.example.mysoftpos.utils.PanUtils.getLast4(pan))
+                            .setScheme(com.example.mysoftpos.utils.PanUtils.detectScheme(pan))
+                            .setUsername("TEST_SUITE_BATCH")
+                            .build();
+            transactionRepository.saveTransaction(record);
+        } catch (Exception e) {
+            android.util.Log.e("BatchRunner", "Save to DB failed", e);
         }
     }
 

@@ -66,7 +66,8 @@ public class PurchaseCardActivity extends BaseCardEntryActivity {
         String username = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME);
         if (username == null)
             username = getString(R.string.guest_user);
-        viewModel.processTransaction(card, amount, currencyCode, txnType, username);
+        long userId = getIntent().getLongExtra(com.example.mysoftpos.utils.IntentKeys.USER_ID, -1);
+        viewModel.processTransaction(card, amount, currencyCode, txnType, username, userId);
     }
 
     @Override

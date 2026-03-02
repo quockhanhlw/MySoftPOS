@@ -33,6 +33,8 @@ public class MultiThreadRunnerActivity extends AppCompatActivity {
     private ScrollView scrollLog;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private TransactionExecutor transactionExecutor;
+    private com.example.mysoftpos.data.repository.TransactionRepository transactionRepository;
+    private String schemeName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +47,8 @@ public class MultiThreadRunnerActivity extends AppCompatActivity {
 
         transactionExecutor = com.example.mysoftpos.di.ServiceLocator.getInstance(getApplicationContext())
                 .getTransactionExecutor();
+        transactionRepository = com.example.mysoftpos.di.ServiceLocator.getInstance(getApplicationContext())
+                .getTransactionRepository();
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
@@ -52,7 +56,7 @@ public class MultiThreadRunnerActivity extends AppCompatActivity {
         ArrayList<TestScenario> scenarios = (ArrayList<TestScenario>) getIntent()
                 .getSerializableExtra(com.example.mysoftpos.utils.IntentKeys.SCENARIOS);
         String txnType = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE);
-        String schemeName = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME);
+        schemeName = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME);
 
         if (scenarios == null || scenarios.isEmpty()) {
             appendLog("No scenarios selected.");
@@ -93,9 +97,12 @@ public class MultiThreadRunnerActivity extends AppCompatActivity {
                         try {
                             SchemeRepository repo = new SchemeRepository(getApplicationContext());
                             Scheme scheme = repo.getByName(schemeName);
-                            if (scheme != null && scheme.hasConnectionConfig()) {
-                                contexts[i].ip = scheme.getServerIp();
-                                contexts[i].port = scheme.getServerPort();
+                            if (scheme != null) {
+                                if (scheme.hasConnectionConfig()) {
+                                    contexts[i].ip = scheme.getServerIp();
+                                    contexts[i].port = scheme.getServerPort();
+                                }
+                                applySchemeToContext(contexts[i], scheme);
                             }
                         } catch (Exception ignored) {}
                     }
@@ -155,6 +162,9 @@ public class MultiThreadRunnerActivity extends AppCompatActivity {
                             appendLog(tag + " *** STATUS: FAIL ***\n");
                             appendLog(tag + " RC: " + result.rc + " - Reason: " + reason + "\n");
                         }
+
+                        // Save to DB for history
+                        saveTransactionToDb(ctx, card, result);
                     } catch (java.net.SocketTimeoutException e) {
                         failed.incrementAndGet();
                         appendLog(tag + " *** STATUS: FAIL ***\n");
@@ -184,5 +194,51 @@ public class MultiThreadRunnerActivity extends AppCompatActivity {
             tvLog.append(text);
             scrollLog.post(() -> scrollLog.fullScroll(ScrollView.FOCUS_DOWN));
         });
+    }
+
+    private void saveTransactionToDb(TransactionContext ctx, CardInputData card,
+                                      TransactionResult result) {
+        try {
+            String pan = card.getPan();
+            com.example.mysoftpos.domain.model.TransactionRecord record =
+                    new com.example.mysoftpos.domain.model.TransactionRecord.Builder()
+                            .setTraceNumber(ctx.stan11)
+                            .setAmount(ctx.amount4)
+                            .setStatus(result.status)
+                            .setRequestHex(result.reqHex)
+                            .setResponseHex(result.respHex)
+                            .setTimestamp(System.currentTimeMillis())
+                            .setMerchantCode(ctx.merchantId42)
+                            .setMerchantName(ctx.merchantNameLocation43)
+                            .setTerminalCode(ctx.terminalId41)
+                            .setPanMasked(PanUtils.mask(pan))
+                            .setBin(PanUtils.getBin(pan))
+                            .setLast4(PanUtils.getLast4(pan))
+                            .setScheme(PanUtils.detectScheme(pan))
+                            .setUsername("TEST_SUITE_MULTI")
+                            .build();
+            transactionRepository.saveTransaction(record);
+        } catch (Exception e) {
+            android.util.Log.e("MultiThreadRunner", "Save to DB failed", e);
+        }
+    }
+
+    private void applySchemeToContext(com.example.mysoftpos.iso8583.TransactionContext ctx, Scheme scheme) {
+        String tid = scheme.getTerminalId();
+        if (tid != null && !tid.isEmpty()) ctx.terminalId41 = tid;
+        String mid = scheme.getMerchantId();
+        if (mid != null && !mid.isEmpty()) ctx.merchantId42 = mid;
+        String mcc = scheme.getMcc();
+        if (mcc != null && !mcc.isEmpty()) ctx.mcc18 = mcc;
+        String acq = scheme.getAcquirerId();
+        if (acq != null && !acq.isEmpty()) ctx.acquirerId32 = acq;
+        String currency = scheme.getCurrencyCode();
+        if (currency != null && !currency.isEmpty()) ctx.currency49 = currency;
+        String country = scheme.getCountryCode();
+        if (country != null && !country.isEmpty()) ctx.country19 = country;
+        String posCond = scheme.getPosConditionCode();
+        if (posCond != null && !posCond.isEmpty()) ctx.posCondition25 = posCond;
+        String de43 = scheme.buildMerchantNameLocation();
+        if (!de43.isEmpty()) ctx.merchantNameLocation43 = de43;
     }
 }

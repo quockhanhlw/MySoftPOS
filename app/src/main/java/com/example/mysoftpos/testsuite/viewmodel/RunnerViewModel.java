@@ -47,12 +47,9 @@ public class RunnerViewModel extends AndroidViewModel {
     /**
      * Build ISO message and show field breakdown without sending.
      */
-    /**
-     * Build ISO message and show field breakdown without sending.
-     */
     public void previewTransaction(String de22, String track2Data, String panData, String expiryData,
             String pinBlockData, String txnType, String amount, String currencyCode, String countryCode,
-            String schemeName) {
+            String schemeName, String fieldConfigJson) {
         executor.execute(() -> {
             try {
                 StringBuilder sb = new StringBuilder();
@@ -71,6 +68,9 @@ public class RunnerViewModel extends AndroidViewModel {
                 } else {
                     msg = Iso8583Builder.buildPurchaseMsg(ctx, card);
                 }
+
+                // Apply custom field overrides
+                applyCustomFieldOverrides(msg, fieldConfigJson);
 
                 sb.append("=== ISO MESSAGE PREVIEW ===").append("\n");
                 sb.append("Server: ").append(ctx.ip).append(":").append(ctx.port).append("\n");
@@ -91,7 +91,7 @@ public class RunnerViewModel extends AndroidViewModel {
 
     public void runTransaction(String de22, String track2Data, String panData, String expiryData,
             String pinBlockData, String txnType, String amount, String currencyCode, String countryCode,
-            String schemeName) {
+            String schemeName, String fieldConfigJson) {
         executor.execute(() -> {
             try {
                 StringBuilder sb = new StringBuilder();
@@ -110,7 +110,7 @@ public class RunnerViewModel extends AndroidViewModel {
                         .append("...\n");
 
                 TransactionResult result = transactionExecutor.execute(
-                        getApplication(), ctx, card, txnType, logger, "");
+                        getApplication(), ctx, card, txnType, logger, "", fieldConfigJson);
 
                 sb.append("\nPacked Hex (").append(result.reqHex.length() / 2).append(" bytes):\n")
                         .append(result.reqHex).append("\n");
@@ -138,23 +138,71 @@ public class RunnerViewModel extends AndroidViewModel {
         });
     }
 
-    /** Override ctx.ip/port from per-scheme config if available */
+    /** Apply custom field overrides from JSON to an IsoMessage (for preview) */
+    private void applyCustomFieldOverrides(IsoMessage msg, String fieldConfigJson) {
+        if (fieldConfigJson == null || fieldConfigJson.isEmpty()) return;
+        try {
+            org.json.JSONObject json = new org.json.JSONObject(fieldConfigJson);
+            java.util.Iterator<String> keys = json.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                int fieldNum = Integer.parseInt(key);
+                msg.setField(fieldNum, json.getString(key));
+            }
+        } catch (Exception e) {
+            Log.w("RunnerVM", "Failed to apply custom fields: " + e.getMessage());
+        }
+    }
+
+    /** Override ctx fields from per-scheme config if available */
     private void applySchemeConnection(TransactionContext ctx, String schemeName) {
         if (schemeName == null || schemeName.isEmpty())
             return;
         try {
             SchemeRepository repo = new SchemeRepository(getApplication());
             Scheme scheme = repo.getByName(schemeName);
-            if (scheme != null && scheme.hasConnectionConfig()) {
+            if (scheme == null) return;
+
+            // Connection
+            if (scheme.hasConnectionConfig()) {
                 ctx.ip = scheme.getServerIp();
                 ctx.port = scheme.getServerPort();
             }
+
+            // Terminal / Merchant — override only if configured in scheme
+            String tid = scheme.getTerminalId();
+            if (tid != null && !tid.isEmpty()) ctx.terminalId41 = tid;
+
+            String mid = scheme.getMerchantId();
+            if (mid != null && !mid.isEmpty()) ctx.merchantId42 = mid;
+
+            String mcc = scheme.getMcc();
+            if (mcc != null && !mcc.isEmpty()) ctx.mcc18 = mcc;
+
+            String acq = scheme.getAcquirerId();
+            if (acq != null && !acq.isEmpty()) ctx.acquirerId32 = acq;
+
+
+            String currency = scheme.getCurrencyCode();
+            if (currency != null && !currency.isEmpty()) ctx.currency49 = currency;
+
+            String country = scheme.getCountryCode();
+            if (country != null && !country.isEmpty()) ctx.country19 = country;
+
+            String posCond = scheme.getPosConditionCode();
+            if (posCond != null && !posCond.isEmpty()) ctx.posCondition25 = posCond;
+
+            // Merchant Name/Location (DE 43)
+            String de43 = scheme.buildMerchantNameLocation();
+            if (!de43.isEmpty()) ctx.merchantNameLocation43 = de43;
+
         } catch (Exception e) {
             Log.w("RunnerVM", "Failed to load scheme config: " + e.getMessage());
         }
     }
 
-    private void saveTransactionToDb(TransactionContext ctx, CardInputData card, TransactionResult result) {
+    private void saveTransactionToDb(TransactionContext ctx, CardInputData card,
+                                      TransactionResult result) {
         try {
             String pan = card.getPan();
             com.example.mysoftpos.domain.model.TransactionRecord record = new com.example.mysoftpos.domain.model.TransactionRecord.Builder()

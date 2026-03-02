@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-
+    android:fitsSystemWindows="true"
     android:fillViewport="true">
 
     <LinearLayout
@@ -91,7 +91,7 @@
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:src="@drawable/ic_settings"
+                        android:src="@drawable/ic_wallpaper"
                         app:tint="@color/primary" />
 
                     <TextView
@@ -128,7 +128,7 @@
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:src="@drawable/ic_settings"
+                        android:src="@drawable/ic_language"
                         app:tint="@color/primary" />
 
                     <TextView
@@ -202,7 +202,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_key"
-                        app:tint="#64748B" />
+                        app:tint="@color/primary" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -304,7 +304,7 @@
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:src="@drawable/ic_warning"
+                        android:src="@drawable/ic_shield"
                         app:tint="@color/primary" />
 
                     <TextView

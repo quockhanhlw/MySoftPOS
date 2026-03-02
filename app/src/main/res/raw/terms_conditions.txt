@@ -1,22 +1,153 @@
-﻿ĐIỀU KHOẢN & ĐIỀU KIỆN SỬ DỤNG DỊCH VỤ
-1. GIỚI THIỆU
-Điều khoản và Điều kiện này quy định việc sử dụng dịch vụ MySoftPOS do softbank cung cấp.
-2. CHẤP NHẬN ĐIỀU KHOẢN
-Bằng việc đăng ký và sử dụng dịch vụ, bạn đồng ý tuân thủ các điều khoản và điều kiện này.
-3. QUYỀN VÀ TRÁCH NHIỆM
-- Người dùng có trách nhiệm bảo mật thông tin tài khoản
-- Người dùng phải cung cấp thông tin chính xác khi đăng ký
-- Không được sử dụng dịch vụ cho mục đích bất hợp pháp
-4. THANH TOÁN VÀ PHÍ DỊCH VỤ
-- Phí dịch vụ sẽ được công bố rõ ràng trước khi giao dịch
-- Mọi giao dịch đều tuân thủ quy định của Ngân hàng Nhà nước
-5. BẢO MẬT THÔNG TIN
-- softbank cam kết bảo mật thông tin khách hàng
-- Thông tin chỉ được sử dụng cho mục đích cung cấp dịch vụ
-6. GIỚI HẠN TRÁCH NHIỆM
-- softbank không chịu trách nhiệm cho thiệt hại gián tiếp
-- Người dùng tự chịu trách nhiệm về việc sử dụng dịch vụ
-7. THAY ĐỔI ĐIỀU KHOẢN
-softbank có quyền thay đổi điều khoản và sẽ thông báo trước cho người dùng.
-8. LIÊN HỆ
-Mọi thắc mắc vui lòng liên hệ: support@softbank.com.vn hoặc hotline: 1800-588-822
+﻿MySoftPOS - Terms of Service
+Effective Date: March 2, 2026
+Last Updated: March 2, 2026
+1. Introduction
+Welcome to MySoftPOS ("we," "our," or "us"). These Terms of Service ("Terms") govern your access to and use of the MySoftPOS mobile application ("App"), which provides software point-of-sale (SoftPOS) payment processing services using Near Field Communication (NFC) technology.
+By downloading, installing, or using MySoftPOS, you agree to be bound by these Terms. If you do not agree to these Terms, do not use the App.
+2. Definitions
+•	Merchant: An individual or business entity that uses MySoftPOS to accept payment card transactions.
+•	Cardholder: An individual who presents a payment card for a transaction processed through MySoftPOS.
+•	Transaction: A payment card operation processed through the App using NFC technology.
+•	Services: All features, functionalities, and services provided through the MySoftPOS App.
+3. Eligibility and Account Registration
+3.1 Eligibility Requirements
+To use MySoftPOS, you must:
+•	Be at least 18 years old or the age of majority in your jurisdiction
+•	Have legal authority to enter into binding contracts
+•	Operate a legitimate business or be authorized to accept payments on behalf of a business
+•	Comply with all applicable laws and regulations in your jurisdiction
+•	Possess a compatible Android device with NFC capability
+3.2 Account Information
+You agree to provide accurate, current, and complete information during registration and to update such information to maintain its accuracy. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account.
+3.3 Account Security
+You must immediately notify us of any unauthorized use of your account or any other breach of security. We are not liable for any loss or damage arising from your failure to comply with these security obligations.
+4. Permitted Use of Services
+4.1 License Grant
+Subject to these Terms, we grant you a limited, non-exclusive, non-transferable, revocable license to use MySoftPOS solely for legitimate payment processing purposes in accordance with these Terms and applicable laws.
+4.2 Acceptable Use
+You agree to use MySoftPOS only for lawful purposes and in accordance with these Terms. You may not:
+•	Process transactions for illegal goods, services, or activities
+•	Engage in fraudulent or deceptive practices
+•	Process transactions without cardholder authorization
+•	Attempt to circumvent or disable security features
+•	Reverse engineer, decompile, or disassemble the App
+•	Use the App to infringe upon intellectual property rights
+•	Transmit malware, viruses, or harmful code
+•	Interfere with or disrupt the App or servers
+•	Access or use the App through automated means without permission
+•	Violate Payment Card Industry Data Security Standards (PCI DSS)
+4.3 Prohibited Transactions
+You may not use MySoftPOS to process payments for:
+•	Illegal drugs or controlled substances
+•	Counterfeit or stolen goods
+•	Weapons or explosives (where prohibited)
+•	Adult content or services (where prohibited)
+•	Gambling services (where prohibited)
+•	Money laundering or terrorist financing
+•	Any activity that violates applicable laws or regulations
+5. Payment Processing and Fees
+5.1 Transaction Processing
+MySoftPOS facilitates contactless payment card transactions using NFC technology and ISO 8583 messaging standards. Transaction authorization, settlement, and funding are subject to the terms of your agreement with your payment processor or acquiring bank.
+5.2 Fees and Charges
+Fees for using MySoftPOS and processing transactions are determined by your agreement with your payment processor or acquiring bank, not by MySoftPOS. You are responsible for all applicable transaction fees, interchange fees, and other charges imposed by third-party service providers.
+5.3 Transaction Disputes and Chargebacks
+You are responsible for handling customer disputes, refunds, and chargebacks in accordance with payment card network rules. MySoftPOS is not responsible for disputes between you and cardholders or for chargeback liability.
+6. Data Security and Compliance
+6.1 PCI DSS Compliance
+You acknowledge that payment card data processing is subject to Payment Card Industry Data Security Standards (PCI DSS). You agree to comply with all applicable PCI DSS requirements and maintain appropriate security measures for cardholder data.
+6.2 Data Protection
+MySoftPOS implements security measures to protect transaction data stored locally on your device. However, you are responsible for:
+•	Maintaining physical security of your device
+•	Using secure network connections when processing transactions
+•	Implementing device-level security (screen lock, encryption)
+•	Protecting your account credentials
+•	Reporting lost or stolen devices immediately
+6.3 Sensitive Authentication Data
+MySoftPOS does not store sensitive authentication data (full magnetic stripe data, CAV2/CVC2/CVV2 codes, or PIN data) after transaction authorization, in compliance with PCI DSS requirements.
+7. Intellectual Property Rights
+7.1 Ownership
+MySoftPOS and all related intellectual property rights, including but not limited to software, trademarks, logos, and content, are owned by us or our licensors. These Terms do not grant you any ownership rights in MySoftPOS.
+7.2 Trademarks
+"MySoftPOS" and related logos are our trademarks. You may not use our trademarks without prior written permission.
+7.3 Feedback
+If you provide feedback, suggestions, or ideas about MySoftPOS, you grant us a worldwide, royalty-free, perpetual license to use such feedback without compensation or attribution.
+8. Third-Party Services
+MySoftPOS may integrate with third-party payment processors, acquiring banks, and other service providers. Your use of such third-party services is subject to their respective terms and conditions. We are not responsible for third-party services or their actions.
+9. Disclaimer of Warranties
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, MYSOFTPOS IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO:
+•	Implied warranties of merchantability, fitness for a particular purpose, and non-infringement
+•	Warranties regarding accuracy, reliability, or availability of the App
+•	Warranties that the App will be uninterrupted, secure, or error-free
+•	Warranties regarding transaction authorization or settlement
+We do not guarantee that MySoftPOS will meet your requirements or that all transactions will be successfully processed.
+10. Limitation of Liability
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW:
+10.1 Exclusion of Damages
+WE SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO:
+•	Loss of profits, revenue, or business opportunities
+•	Loss of data or transaction records
+•	Loss of goodwill or reputation
+•	Cost of substitute services
+•	Transaction failures or declined payments
+10.2 Cap on Liability
+OUR TOTAL LIABILITY ARISING OUT OF OR RELATED TO THESE TERMS OR YOUR USE OF MYSOFTPOS SHALL NOT EXCEED THE AMOUNT YOU PAID TO US IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM, OR ONE HUNDRED US DOLLARS (USD $100), WHICHEVER IS GREATER.
+10.3 Exceptions
+Some jurisdictions do not allow the exclusion or limitation of certain warranties or liabilities. In such jurisdictions, our liability will be limited to the maximum extent permitted by law.
+11. Indemnification
+You agree to indemnify, defend, and hold harmless MySoftPOS, its affiliates, officers, directors, employees, and agents from and against any claims, liabilities, damages, losses, costs, or expenses (including reasonable attorneys' fees) arising out of or related to:
+•	Your use of MySoftPOS
+•	Your violation of these Terms
+•	Your violation of any applicable laws or regulations
+•	Your processing of transactions
+•	Disputes with cardholders or customers
+•	Your violation of any third-party rights
+•	Unauthorized access to your account due to your negligence
+12. Term and Termination
+12.1 Term
+These Terms commence when you first access or use MySoftPOS and continue until terminated as provided herein.
+12.2 Termination by You
+You may terminate these Terms at any time by uninstalling the App and ceasing all use of MySoftPOS.
+12.3 Termination by Us
+We may suspend or terminate your access to MySoftPOS immediately, without prior notice, if:
+•	You violate these Terms
+•	We suspect fraudulent, illegal, or unauthorized activity
+•	We are required to do so by law or regulatory authority
+•	We cease providing MySoftPOS services
+12.4 Effect of Termination
+Upon termination:
+•	Your license to use MySoftPOS immediately terminates
+•	You must cease all use of the App and uninstall it from your device
+•	We may delete your account and data in accordance with our Privacy Policy
+•	Provisions that by their nature should survive termination shall survive
+13. Modifications to Terms
+We reserve the right to modify these Terms at any time. We will notify you of material changes by:
+•	Posting the updated Terms within the App
+•	Sending notification through the App or email
+•	Updating the "Last Updated" date at the top of these Terms
+Your continued use of MySoftPOS after such modifications constitutes your acceptance of the updated Terms. If you do not agree to the modified Terms, you must stop using MySoftPOS.
+14. Governing Law and Dispute Resolution
+14.1 Governing Law
+These Terms shall be governed by and construed in accordance with the laws of Vietnam, without regard to its conflict of law provisions.
+14.2 Dispute Resolution
+Any dispute arising out of or relating to these Terms or MySoftPOS shall be resolved through good faith negotiation. If negotiation fails, disputes shall be submitted to the competent courts of Hanoi, Vietnam.
+14.3 Class Action Waiver
+To the extent permitted by applicable law, you agree that any dispute resolution proceedings will be conducted only on an individual basis and not in a class, consolidated, or representative action.
+15. General Provisions
+15.1 Entire Agreement
+These Terms, together with our Privacy Policy, constitute the entire agreement between you and MySoftPOS regarding your use of the App.
+15.2 Severability
+If any provision of these Terms is found to be unenforceable or invalid, that provision shall be limited or eliminated to the minimum extent necessary, and the remaining provisions shall remain in full force and effect.
+15.3 Waiver
+Our failure to enforce any right or provision of these Terms shall not constitute a waiver of such right or provision.
+15.4 Assignment
+You may not assign or transfer these Terms or your rights hereunder without our prior written consent. We may assign these Terms without restriction.
+15.5 No Agency
+No agency, partnership, joint venture, or employment relationship is created between you and MySoftPOS as a result of these Terms or your use of the App.
+15.6 Force Majeure
+We shall not be liable for any failure or delay in performing our obligations due to circumstances beyond our reasonable control, including but not limited to acts of God, natural disasters, war, terrorism, civil unrest, labor disputes, or telecommunications failures.
+15.7 Contact Information
+If you have questions about these Terms, please contact us at:
+Email: support@mysoftpos.com
+Address: Hanoi, Vietnam
+16. Acknowledgment
+BY USING MYSOFTPOS, YOU ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREE TO BE BOUND BY THESE TERMS OF SERVICE.

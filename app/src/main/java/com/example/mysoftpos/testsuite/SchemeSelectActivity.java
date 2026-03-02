@@ -101,6 +101,17 @@ public class SchemeSelectActivity extends AppCompatActivity implements SchemeAda
         LinearLayout colorPicker = dialogView.findViewById(R.id.colorPicker);
         MaterialButton btnDelete = dialogView.findViewById(R.id.btnDelete);
         MaterialButton btnTestConn = dialogView.findViewById(R.id.btnTestConnection);
+        // New fields
+        EditText etTerminalId = dialogView.findViewById(R.id.etTerminalId);
+        EditText etMerchantId = dialogView.findViewById(R.id.etMerchantId);
+        EditText etMcc = dialogView.findViewById(R.id.etMcc);
+        EditText etPosCondition = dialogView.findViewById(R.id.etPosCondition);
+        EditText etAcquirerId = dialogView.findViewById(R.id.etAcquirerId);
+        EditText etCurrencyCode = dialogView.findViewById(R.id.etCurrencyCode);
+        EditText etCountryCode = dialogView.findViewById(R.id.etCountryCode);
+        EditText etMerchantName = dialogView.findViewById(R.id.etMerchantName);
+        EditText etMerchantLocation = dialogView.findViewById(R.id.etMerchantLocation);
+        EditText etMerchantCountry = dialogView.findViewById(R.id.etMerchantCountry);
         // Live preview
         FrameLayout previewContainer = dialogView.findViewById(R.id.previewIconContainer);
         TextView tvPreviewLetter = dialogView.findViewById(R.id.tvPreviewLetter);
@@ -161,6 +172,27 @@ public class SchemeSelectActivity extends AppCompatActivity implements SchemeAda
             if (existing.getTimeout() > 0) {
                 etTimeout.setText(String.valueOf(existing.getTimeout()));
             }
+            // Terminal / Merchant
+            if (existing.getTerminalId() != null && !existing.getTerminalId().isEmpty())
+                etTerminalId.setText(existing.getTerminalId());
+            if (existing.getMerchantId() != null && !existing.getMerchantId().isEmpty())
+                etMerchantId.setText(existing.getMerchantId());
+            if (existing.getMcc() != null && !existing.getMcc().isEmpty())
+                etMcc.setText(existing.getMcc());
+            if (existing.getPosConditionCode() != null && !existing.getPosConditionCode().isEmpty())
+                etPosCondition.setText(existing.getPosConditionCode());
+            if (existing.getAcquirerId() != null && !existing.getAcquirerId().isEmpty())
+                etAcquirerId.setText(existing.getAcquirerId());
+            if (existing.getCurrencyCode() != null && !existing.getCurrencyCode().isEmpty())
+                etCurrencyCode.setText(existing.getCurrencyCode());
+            if (existing.getCountryCode() != null && !existing.getCountryCode().isEmpty())
+                etCountryCode.setText(existing.getCountryCode());
+            if (existing.getMerchantName() != null && !existing.getMerchantName().isEmpty())
+                etMerchantName.setText(existing.getMerchantName());
+            if (existing.getMerchantLocation() != null && !existing.getMerchantLocation().isEmpty())
+                etMerchantLocation.setText(existing.getMerchantLocation());
+            if (existing.getMerchantCountry() != null && !existing.getMerchantCountry().isEmpty())
+                etMerchantCountry.setText(existing.getMerchantCountry());
             // Trigger color selection
             for (int i = 0; i < colorPicker.getChildCount(); i++) {
                 View c = colorPicker.getChildAt(i);
@@ -221,31 +253,24 @@ public class SchemeSelectActivity extends AppCompatActivity implements SchemeAda
                 existing.setPrefix(prefix);
                 existing.setIconLetter(icon);
                 existing.setColor(selectedColor[0]);
-                // Connection
-                existing.setServerIp(etServerIp.getText().toString().trim());
-                try {
-                    existing.setServerPort(Integer.parseInt(etServerPort.getText().toString().trim()));
-                } catch (NumberFormatException e) {
-                    existing.setServerPort(0);
-                }
-                try {
-                    existing.setTimeout(Integer.parseInt(etTimeout.getText().toString().trim()));
-                } catch (NumberFormatException e) {
-                    existing.setTimeout(30000);
+                String error = validateAndApply(existing, etServerIp, etServerPort, etTimeout,
+                        etTerminalId, etMerchantId, etMcc, etPosCondition,
+                        etAcquirerId, etCurrencyCode, etCountryCode,
+                        etMerchantName, etMerchantLocation, etMerchantCountry);
+                if (error != null) {
+                    Toast.makeText(this, error, Toast.LENGTH_SHORT).show();
+                    return;
                 }
                 repository.update(existing);
             } else {
                 Scheme newScheme = new Scheme(name, prefix, icon, selectedColor[0], false);
-                newScheme.setServerIp(etServerIp.getText().toString().trim());
-                try {
-                    newScheme.setServerPort(Integer.parseInt(etServerPort.getText().toString().trim()));
-                } catch (NumberFormatException e) {
-                    newScheme.setServerPort(0);
-                }
-                try {
-                    newScheme.setTimeout(Integer.parseInt(etTimeout.getText().toString().trim()));
-                } catch (NumberFormatException e) {
-                    newScheme.setTimeout(30000);
+                String error = validateAndApply(newScheme, etServerIp, etServerPort, etTimeout,
+                        etTerminalId, etMerchantId, etMcc, etPosCondition,
+                        etAcquirerId, etCurrencyCode, etCountryCode,
+                        etMerchantName, etMerchantLocation, etMerchantCountry);
+                if (error != null) {
+                    Toast.makeText(this, error, Toast.LENGTH_SHORT).show();
+                    return;
                 }
                 repository.add(newScheme);
             }
@@ -256,6 +281,187 @@ public class SchemeSelectActivity extends AppCompatActivity implements SchemeAda
         });
 
         dialog.show();
+    }
+
+    /**
+     * Validate all fields and return error message, or null if OK.
+     * Auto-formats values to ISO 8583 spec before saving.
+     */
+    private String validateAndApply(Scheme scheme,
+            EditText etIp, EditText etPort, EditText etTimeout,
+            EditText etTid, EditText etMid, EditText etMcc, EditText etPosCond,
+            EditText etAcq, EditText etCurrency, EditText etCountry,
+            EditText etMName, EditText etMLoc, EditText etMCountry) {
+
+        // ═══ Connection ═══
+        String ip = etIp.getText().toString().trim();
+        String portStr = etPort.getText().toString().trim();
+        String timeoutStr = etTimeout.getText().toString().trim();
+
+        // IP: validate format if not empty
+        if (!ip.isEmpty() && !ip.matches("^\\d{1,3}(\\.\\d{1,3}){3}$") && !ip.matches("^[a-zA-Z0-9.-]+$")) {
+            etIp.setError("IP không hợp lệ");
+            etIp.requestFocus();
+            return "IP không hợp lệ";
+        }
+        scheme.setServerIp(ip);
+
+        // Port: 1–65535
+        if (!portStr.isEmpty()) {
+            try {
+                int port = Integer.parseInt(portStr);
+                if (port < 1 || port > 65535) {
+                    etPort.setError("1 – 65535");
+                    etPort.requestFocus();
+                    return "Port phải từ 1 đến 65535";
+                }
+                scheme.setServerPort(port);
+            } catch (NumberFormatException e) {
+                etPort.setError("Số không hợp lệ");
+                etPort.requestFocus();
+                return "Port không hợp lệ";
+            }
+        } else {
+            scheme.setServerPort(0);
+        }
+
+        // Timeout: 1000–120000 ms
+        if (!timeoutStr.isEmpty()) {
+            try {
+                int timeout = Integer.parseInt(timeoutStr);
+                if (timeout < 1000) timeout = 1000;
+                if (timeout > 120000) timeout = 120000;
+                scheme.setTimeout(timeout);
+            } catch (NumberFormatException e) {
+                scheme.setTimeout(30000);
+            }
+        } else {
+            scheme.setTimeout(30000);
+        }
+
+        // If IP is set, port is required
+        if (!ip.isEmpty() && scheme.getServerPort() == 0) {
+            etPort.setError("Bắt buộc khi có IP");
+            etPort.requestFocus();
+            return "Cần nhập Port khi đã nhập IP";
+        }
+
+        // ═══ Terminal / Merchant — auto-format to ISO 8583 ═══
+        String tid = etTid.getText().toString().trim().toUpperCase();
+        String mid = etMid.getText().toString().trim().toUpperCase();
+        String mcc = etMcc.getText().toString().trim();
+        String posCond = etPosCond.getText().toString().trim();
+        String acq = etAcq.getText().toString().trim();
+        String currency = etCurrency.getText().toString().trim();
+        String country = etCountry.getText().toString().trim();
+        String mName = etMName.getText().toString().trim().toUpperCase();
+        String mLoc = etMLoc.getText().toString().trim().toUpperCase();
+        String mCountry = etMCountry.getText().toString().trim().toUpperCase();
+
+        // Terminal ID: max 8, only alphanumeric
+        if (!tid.isEmpty()) {
+            if (!tid.matches("[A-Z0-9]+")) {
+                etTid.setError("Chỉ chữ và số");
+                etTid.requestFocus();
+                return "Terminal ID chỉ được chứa chữ cái và số";
+            }
+            if (tid.length() > 8) tid = tid.substring(0, 8);
+        }
+        scheme.setTerminalId(tid);
+
+        // Merchant ID: max 15, only alphanumeric
+        if (!mid.isEmpty()) {
+            if (!mid.matches("[A-Z0-9]+")) {
+                etMid.setError("Chỉ chữ và số");
+                etMid.requestFocus();
+                return "Merchant ID chỉ được chứa chữ cái và số";
+            }
+            if (mid.length() > 15) mid = mid.substring(0, 15);
+        }
+        scheme.setMerchantId(mid);
+
+        // MCC: 4 digits
+        if (!mcc.isEmpty()) {
+            if (!mcc.matches("\\d+")) {
+                etMcc.setError("Chỉ nhập số");
+                etMcc.requestFocus();
+                return "MCC chỉ được chứa số";
+            }
+            if (mcc.length() > 4) mcc = mcc.substring(0, 4);
+            mcc = padLeft(mcc, 4);  // "12" → "0012"
+        }
+        scheme.setMcc(mcc);
+
+        // POS Condition: 2 digits
+        if (!posCond.isEmpty()) {
+            if (!posCond.matches("\\d+")) {
+                etPosCond.setError("Chỉ nhập số");
+                etPosCond.requestFocus();
+                return "POS Condition chỉ được chứa số";
+            }
+            if (posCond.length() > 2) posCond = posCond.substring(0, 2);
+            posCond = padLeft(posCond, 2);  // "0" → "00"
+        }
+        scheme.setPosConditionCode(posCond);
+
+        // Acquirer ID: only digits
+        if (!acq.isEmpty() && !acq.matches("\\d+")) {
+            etAcq.setError("Chỉ nhập số");
+            etAcq.requestFocus();
+            return "Acquirer ID chỉ được chứa số";
+        }
+        scheme.setAcquirerId(acq);
+
+
+        // Currency Code: 3 digits
+        if (!currency.isEmpty()) {
+            if (!currency.matches("\\d+")) {
+                etCurrency.setError("Chỉ nhập số");
+                etCurrency.requestFocus();
+                return "Currency Code chỉ được chứa số";
+            }
+            currency = padLeft(currency, 3);  // "4" → "004"
+        }
+        scheme.setCurrencyCode(currency);
+
+        // Country Code: 3 digits
+        if (!country.isEmpty()) {
+            if (!country.matches("\\d+")) {
+                etCountry.setError("Chỉ nhập số");
+                etCountry.requestFocus();
+                return "Country Code chỉ được chứa số";
+            }
+            country = padLeft(country, 3);
+        }
+        scheme.setCountryCode(country);
+
+        // Merchant Name: max 22 chars
+        if (mName.length() > 22) mName = mName.substring(0, 22);
+        scheme.setMerchantName(mName);
+
+        // Location: max 13 chars
+        if (mLoc.length() > 13) mLoc = mLoc.substring(0, 13);
+        scheme.setMerchantLocation(mLoc);
+
+        // Merchant Country: 3 alpha chars (e.g. VNM, USA)
+        if (!mCountry.isEmpty()) {
+            if (!mCountry.matches("[A-Z]+")) {
+                etMCountry.setError("Chỉ nhập chữ cái");
+                etMCountry.requestFocus();
+                return "Country chỉ được chứa chữ cái (VNM, USA...)";
+            }
+            if (mCountry.length() > 3) mCountry = mCountry.substring(0, 3);
+        }
+        scheme.setMerchantCountry(mCountry);
+
+        return null; // OK
+    }
+
+    /** Pad string with leading zeros */
+    private static String padLeft(String s, int length) {
+        if (s == null) s = "";
+        while (s.length() < length) s = "0" + s;
+        return s;
     }
 
     private void confirmDelete(Scheme scheme) {

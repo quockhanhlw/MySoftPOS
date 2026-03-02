@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     tools:context=".ui.auth.WelcomeActivity">
 
     <!-- Full-screen gradient background (darker) -->
@@ -21,7 +22,8 @@
         android:layout_marginTop="-50dp"
         android:layout_marginEnd="-70dp"
         android:alpha="0.10"
-        android:background="@drawable/bg_circle_white_shadow" />
+        android:background="@drawable/bg_circle_white_shadow"
+        android:importantForAccessibility="no" />
 
     <View
         android:id="@+id/circleDecor2"
@@ -31,7 +33,8 @@
         android:layout_marginStart="-50dp"
         android:layout_marginBottom="140dp"
         android:alpha="0.08"
-        android:background="@drawable/bg_circle_white_shadow" />
+        android:background="@drawable/bg_circle_white_shadow"
+        android:importantForAccessibility="no" />
 
     <View
         android:id="@+id/circleDecor3"
@@ -40,7 +43,8 @@
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="320dp"
         android:alpha="0.05"
-        android:background="@drawable/bg_circle_white_shadow" />
+        android:background="@drawable/bg_circle_white_shadow"
+        android:importantForAccessibility="no" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"

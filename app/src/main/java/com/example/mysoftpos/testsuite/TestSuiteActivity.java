@@ -145,7 +145,7 @@ public class TestSuiteActivity extends AppCompatActivity {
         com.example.mysoftpos.testsuite.util.SwipeBackHelper.attach(this);
         com.example.mysoftpos.testsuite.util.StepDotsHelper.setActiveStep(this, 4);
 
-        // Custom Cases Observer
+        // Custom Cases Observer (TestCaseEntity)
         repository.getCustomCasesBySchemeAndType(scheme, txnType).observe(this, entities -> {
             customScenarios.clear();
             if (entities != null) {
@@ -156,16 +156,24 @@ public class TestSuiteActivity extends AppCompatActivity {
                     s.setId(entity.id);
                     s.setCustom(true);
 
-                    if (entity.de22 != null)
-                        s.setField(22, entity.de22);
-                    if (entity.amount != null)
-                        s.setField(4, entity.amount);
-                    if (entity.pan != null)
-                        s.setField(2, entity.pan);
-                    if (entity.expiry != null)
-                        s.setField(14, entity.expiry);
-                    if (entity.track2 != null)
-                        s.setField(35, entity.track2);
+                    if (entity.de22 != null)   s.setField(22, entity.de22);
+                    if (entity.amount != null) s.setField(4,  entity.amount);
+                    if (entity.pan != null)    s.setField(2,  entity.pan);
+                    if (entity.expiry != null) s.setField(14, entity.expiry);
+                    if (entity.track2 != null) s.setField(35, entity.track2);
+
+                    // Load custom field overrides from JSON
+                    if (entity.fieldConfigJson != null && !entity.fieldConfigJson.isEmpty()) {
+                        try {
+                            org.json.JSONObject json = new org.json.JSONObject(entity.fieldConfigJson);
+                            java.util.Iterator<String> keys = json.keys();
+                            while (keys.hasNext()) {
+                                String key = keys.next();
+                                int fieldNum = Integer.parseInt(key);
+                                s.setField(fieldNum, json.getString(key));
+                            }
+                        } catch (Exception ignored) {}
+                    }
 
                     customScenarios.add(s);
                 }
@@ -494,7 +502,6 @@ public class TestSuiteActivity extends AppCompatActivity {
 
     private void onScenarioClicked(TestScenario scenario) {
         if (deleteMode) {
-            // ... existing delete logic ...
             if (scenario.isCustom()) {
                 scenario.setSelected(!scenario.isSelected());
                 adapter.notifyDataSetChanged();
@@ -504,21 +511,11 @@ public class TestSuiteActivity extends AppCompatActivity {
             return;
         }
 
-        if ("MULTI".equals(perfMode)) {
-            if (selectionMode) {
-                configureScenario(scenario);
-            } else {
-                Toast.makeText(this, "Long press to select test cases.", Toast.LENGTH_SHORT).show();
-            }
-            return;
-        }
-
-        // Single mode — tap to configure & select, or deselect
-        if (scenario.isSelected()) {
-            scenario.setSelected(false);
-            adapter.notifyDataSetChanged();
-            updateRunAllButton();
-        } else if (!configuringInProgress) {
+        if (scenario.isCustom()) {
+            // Custom test case → open edit dialog
+            showAddEditDialog(scenario);
+        } else {
+            // Built-in test case → configure & run
             configureScenario(scenario);
         }
     }
@@ -573,6 +570,7 @@ public class TestSuiteActivity extends AppCompatActivity {
 
     private void showAddEditDialog(TestScenario existing) {
         boolean isEdit = existing != null;
+        boolean isBuiltIn = isEdit && !existing.isCustom();
 
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
         View view = getLayoutInflater().inflate(R.layout.dialog_add_edit_test_case, null);
@@ -582,15 +580,21 @@ public class TestSuiteActivity extends AppCompatActivity {
             dialog.getWindow().setBackgroundDrawable(
                     new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         }
-        // styling
 
-        // Bind Views
+        // ─── Header ───
         TextView tvTitle = view.findViewById(R.id.tvDialogTitle);
-        tvTitle.setText(isEdit ? "Edit Test Case" : "New Test Case");
+        TextView tvSubtitle = view.findViewById(R.id.tvDialogSubtitle);
+        tvTitle.setText(isBuiltIn ? "Configure Scenario"
+                : isEdit ? "Edit Test Case" : "New Test Case");
+        tvSubtitle.setText(isBuiltIn ? existing.getDescription()
+                : isEdit ? "Modify transaction parameters" : "Configure transaction parameters");
 
+        // Close button
+        view.findViewById(R.id.btnClose).setOnClickListener(v -> dialog.dismiss());
+
+        // ─── Basic Fields ───
         com.google.android.material.textfield.TextInputLayout tilName = view.findViewById(R.id.tilName);
         android.widget.EditText etName = view.findViewById(R.id.etName);
-
         android.widget.EditText etDe22 = view.findViewById(R.id.etDe22);
         android.widget.EditText etAmount = view.findViewById(R.id.etAmount);
 
@@ -607,184 +611,320 @@ public class TestSuiteActivity extends AppCompatActivity {
         MaterialButton btnCancel = view.findViewById(R.id.btnCancel);
         MaterialButton btnSave = view.findViewById(R.id.btnSave);
 
-        // Pre-fill data
+        // ─── Entry Mode (DE 22 free input) ───
+        View layoutDe22Display = view.findViewById(R.id.layoutDe22Display);
+        TextView tvEntryModeName = view.findViewById(R.id.tvEntryModeName);
+
+        // Update field visibility and label based on DE22 value
+        Runnable updateEntryModeUI = () -> {
+            String code = etDe22.getText().toString().trim();
+            boolean isManual = code.startsWith("01");
+            boolean hasTrack2 = code.startsWith("02") || code.startsWith("05")
+                    || code.startsWith("07") || code.startsWith("91");
+
+            layoutManual.setVisibility(isManual ? View.VISIBLE : View.GONE);
+            layoutTrack2.setVisibility(hasTrack2 ? View.VISIBLE : View.GONE);
+
+            // Resolve label
+            String label;
+            switch (code) {
+                case "011": label = "Manual Key-in + PIN"; break;
+                case "012": label = "Manual Key-in"; break;
+                case "021": label = "Magstripe (Swipe) + PIN"; break;
+                case "022": label = "Magstripe (Swipe)"; break;
+                case "051": label = "NFC / Chip + PIN"; break;
+                case "052": label = "NFC / Chip"; break;
+                case "071": label = "Contactless + PIN"; break;
+                case "072": label = "Contactless"; break;
+                case "911": label = "Fallback + PIN"; break;
+                case "912": label = "Fallback"; break;
+                default:    label = code.length() == 3 ? "Custom (" + code + ")" : ""; break;
+            }
+
+            if (!label.isEmpty()) {
+                layoutDe22Display.setVisibility(View.VISIBLE);
+                tvEntryModeName.setText(label);
+            } else {
+                layoutDe22Display.setVisibility(View.GONE);
+            }
+        };
+
+        // Listen for text changes on DE22 field
+        etDe22.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void afterTextChanged(android.text.Editable s) {
+                updateEntryModeUI.run();
+            }
+        });
+
+        // ─── Advanced Field Configuration ───
+        View layoutAdvancedHeader = view.findViewById(R.id.layoutAdvancedHeader);
+        android.widget.ImageView ivExpandArrow = view.findViewById(R.id.ivExpandArrow);
+        TextView tvFieldCount = view.findViewById(R.id.tvFieldCount);
+        android.widget.LinearLayout layoutAdvancedFields = view.findViewById(R.id.layoutAdvancedFields);
+        android.widget.LinearLayout containerCustomFields = view.findViewById(R.id.containerCustomFields);
+        MaterialButton btnAddField = view.findViewById(R.id.btnAddField);
+
+        final java.util.Set<Integer> reservedFields = new java.util.HashSet<>(java.util.Arrays.asList(2, 4, 14, 22, 35));
+
+        Runnable updateFieldCount = () -> {
+            int count = containerCustomFields.getChildCount();
+            tvFieldCount.setText(String.valueOf(count));
+        };
+
+        // Toggle expand/collapse with animation
+        layoutAdvancedHeader.setOnClickListener(hdr -> {
+            boolean isExpanded = layoutAdvancedFields.getVisibility() == View.VISIBLE;
+            layoutAdvancedFields.setVisibility(isExpanded ? View.GONE : View.VISIBLE);
+            ivExpandArrow.animate().rotation(isExpanded ? 0f : 180f).setDuration(200).start();
+        });
+
+        // Styled field row builder
+        float dp = getResources().getDisplayMetrics().density;
+        java.util.function.BiConsumer<String, String> addFieldRowWithData = (fieldNum, fieldVal) -> {
+            android.widget.LinearLayout row = new android.widget.LinearLayout(this);
+            row.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+            row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+            row.setBackgroundResource(R.drawable.bg_field_row);
+            row.setPadding((int)(10*dp), (int)(8*dp), (int)(6*dp), (int)(8*dp));
+            android.widget.LinearLayout.LayoutParams rowLp = new android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
+            rowLp.bottomMargin = (int)(8*dp);
+            row.setLayoutParams(rowLp);
+
+            // "DE" label
+            TextView tvDe = new TextView(this);
+            tvDe.setText("DE");
+            tvDe.setTextColor(0xFF92400E);
+            tvDe.setTextSize(11);
+            tvDe.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD);
+            android.widget.LinearLayout.LayoutParams deLp = new android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
+            deLp.setMarginEnd((int)(4*dp));
+            tvDe.setLayoutParams(deLp);
+
+            // Field number input
+            android.widget.EditText etFieldNum = new android.widget.EditText(this);
+            etFieldNum.setHint("#");
+            etFieldNum.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+            etFieldNum.setTextSize(14);
+            etFieldNum.setTypeface(android.graphics.Typeface.MONOSPACE);
+            etFieldNum.setTextColor(0xFF0F172A);
+            etFieldNum.setHintTextColor(0xFFCBD5E1);
+            etFieldNum.setBackground(null);
+            etFieldNum.setPadding((int)(4*dp), (int)(6*dp), (int)(4*dp), (int)(6*dp));
+            etFieldNum.setMinEms(2);
+            etFieldNum.setMaxEms(3);
+            android.widget.LinearLayout.LayoutParams numLp = new android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
+            numLp.setMarginEnd((int)(8*dp));
+            etFieldNum.setLayoutParams(numLp);
+            if (fieldNum != null) etFieldNum.setText(fieldNum);
+
+            // Separator
+            View sep = new View(this);
+            sep.setBackgroundColor(0xFFE2E8F0);
+            android.widget.LinearLayout.LayoutParams sepLp = new android.widget.LinearLayout.LayoutParams(
+                    (int)(1*dp), (int)(24*dp));
+            sepLp.setMarginEnd((int)(8*dp));
+            sep.setLayoutParams(sepLp);
+
+            // Field value input
+            android.widget.EditText etFieldValue = new android.widget.EditText(this);
+            etFieldValue.setHint("Value");
+            etFieldValue.setInputType(android.text.InputType.TYPE_CLASS_TEXT);
+            etFieldValue.setTextSize(14);
+            etFieldValue.setTypeface(android.graphics.Typeface.MONOSPACE);
+            etFieldValue.setTextColor(0xFF0F172A);
+            etFieldValue.setHintTextColor(0xFFCBD5E1);
+            etFieldValue.setBackground(null);
+            etFieldValue.setPadding((int)(4*dp), (int)(6*dp), (int)(4*dp), (int)(6*dp));
+            android.widget.LinearLayout.LayoutParams valLp = new android.widget.LinearLayout.LayoutParams(
+                    0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+            etFieldValue.setLayoutParams(valLp);
+            if (fieldVal != null) etFieldValue.setText(fieldVal);
+
+            // Remove button (styled)
+            android.widget.ImageButton btnRemove = new android.widget.ImageButton(this);
+            btnRemove.setImageResource(R.drawable.ic_close);
+            btnRemove.setColorFilter(0xFFEF4444);
+            btnRemove.setBackgroundResource(R.drawable.bg_btn_remove_field);
+            android.widget.LinearLayout.LayoutParams remLp = new android.widget.LinearLayout.LayoutParams(
+                    (int)(32*dp), (int)(32*dp));
+            remLp.setMarginStart((int)(4*dp));
+            btnRemove.setLayoutParams(remLp);
+            btnRemove.setScaleType(android.widget.ImageView.ScaleType.CENTER_INSIDE);
+            btnRemove.setPadding((int)(6*dp),(int)(6*dp),(int)(6*dp),(int)(6*dp));
+            btnRemove.setOnClickListener(rv -> {
+                containerCustomFields.removeView(row);
+                updateFieldCount.run();
+            });
+
+            row.addView(tvDe);
+            row.addView(etFieldNum);
+            row.addView(sep);
+            row.addView(etFieldValue);
+            row.addView(btnRemove);
+            containerCustomFields.addView(row);
+            updateFieldCount.run();
+        };
+
+        btnAddField.setOnClickListener(af -> addFieldRowWithData.accept(null, null));
+
+        // ─── Pre-fill: Custom Fields ───
         if (isEdit) {
+            for (java.util.Map.Entry<Integer, String> entry : existing.getAllFields().entrySet()) {
+                if (!reservedFields.contains(entry.getKey())) {
+                    addFieldRowWithData.accept(String.valueOf(entry.getKey()), entry.getValue());
+                }
+            }
+        }
+
+        // ─── Pre-fill: Basic Fields ───
+        if (isBuiltIn) {
             etName.setText(existing.getDescription());
-            etDe22.setText(existing.getField(22));
+            etName.setEnabled(false);
+            etName.setAlpha(0.6f);
+            btnSave.setText("Apply Config");
+            btnSave.setIconResource(R.drawable.ic_check);
+        }
+
+        if (isEdit) {
+            if (!isBuiltIn) {
+                etName.setText(existing.getDescription());
+            }
+            String existDe22 = existing.getField(22);
+            if (existDe22 != null) {
+                etDe22.setText(existDe22);
+            }
             etAmount.setText(existing.getField(4));
             etPan.setText(existing.getField(2));
             etExpiry.setText(existing.getField(14));
             etTrack2.setText(existing.getField(35));
         } else {
-            etDe22.setText("051"); // Default to Chip/Mag
+            etDe22.setText("051");
             etAmount.setText("100000");
         }
+        updateEntryModeUI.run();
 
-        // DE22 Watcher for Visibility
-        Runnable updateVis = () -> {
-            String code = etDe22.getText().toString();
-            boolean isManual = code.startsWith("01");
-            boolean isMag = code.startsWith("02") || code.startsWith("05") || code.startsWith("07")
-                    || code.startsWith("91");
-
-            layoutManual.setVisibility(isManual ? View.VISIBLE : View.GONE);
-            layoutTrack2.setVisibility(isMag ? View.VISIBLE : View.GONE);
-        };
-        etDe22.addTextChangedListener(new android.text.TextWatcher() {
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                updateVis.run();
-            }
-
-            public void afterTextChanged(android.text.Editable s) {
-            }
-        });
-        updateVis.run(); // Init
-
-        // Save Action
+        // ─── Save Action ───
         btnSave.setOnClickListener(v -> {
             boolean valid = true;
 
-            // --- Name (Required) ---
+            // Name
             String name = etName.getText().toString().trim();
-            if (name.isEmpty()) {
-                tilName.setError("Required");
-                valid = false;
-            } else {
-                tilName.setError(null);
-            }
+            if (name.isEmpty()) { tilName.setError("Required"); valid = false; }
+            else { tilName.setError(null); }
 
-            // --- DE 22 (NapasFieldSpecConfig: 3 numeric digits) ---
+            // DE 22
             String de22 = etDe22.getText().toString().trim();
             NapasFieldSpecConfig.FieldSpec de22Spec = NapasFieldSpecConfig.get(22);
             if (de22Spec != null && de22Spec.pattern != null && !de22Spec.pattern.matcher(de22).matches()) {
-                etDe22.setError(de22Spec.description);
+                Toast.makeText(this, "Invalid entry mode: " + de22, Toast.LENGTH_SHORT).show();
                 valid = false;
-            } else {
-                etDe22.setError(null);
             }
 
-            // --- Amount (10,000 → 500,000,000 VND) ---
+            // Amount
             String amount = etAmount.getText().toString().trim();
             if (!amount.isEmpty()) {
                 try {
                     long amountVal = Long.parseLong(amount);
                     if (amountVal < 10000 || amountVal > 500000000) {
-                        etAmount.setError("Amount: 10,000 → 500,000,000 VND");
-                        valid = false;
-                    } else {
-                        etAmount.setError(null);
-                    }
+                        etAmount.setError("10,000 → 500,000,000"); valid = false;
+                    } else { etAmount.setError(null); }
                 } catch (NumberFormatException e) {
-                    etAmount.setError("Must be numeric");
-                    valid = false;
+                    etAmount.setError("Must be numeric"); valid = false;
                 }
             }
 
-            // --- PAN (Luhn + NapasFieldSpecConfig DE 2) ---
+            // PAN + Expiry (manual mode)
             if (layoutManual.getVisibility() == View.VISIBLE) {
                 String pan = etPan.getText().toString().trim();
-                NapasFieldSpecConfig.FieldSpec panSpec = NapasFieldSpecConfig.get(2);
-                if (pan.isEmpty()) {
-                    tilPan.setError("Required");
-                    valid = false;
-                } else if (pan.length() < 13 || pan.length() > 19) {
-                    tilPan.setError("PAN length: 13-19 digits");
-                    valid = false;
-                } else if (panSpec != null && panSpec.pattern != null && !panSpec.pattern.matcher(pan).matches()) {
-                    tilPan.setError(panSpec.description);
-                    valid = false;
-                } else if (!checkLuhn(pan)) {
-                    tilPan.setError("Luhn checksum failed");
-                    valid = false;
-                } else {
-                    tilPan.setError(null);
-                }
+                if (pan.isEmpty()) { tilPan.setError("Required"); valid = false; }
+                else if (pan.length() < 13 || pan.length() > 19) { tilPan.setError("13-19 digits"); valid = false; }
+                else if (!checkLuhn(pan)) { tilPan.setError("Luhn failed"); valid = false; }
+                else { tilPan.setError(null); }
 
-                // --- Expiry (YYMM, must not be expired) ---
                 String exp = etExpiry.getText().toString().trim();
-                NapasFieldSpecConfig.FieldSpec expirySpec = NapasFieldSpecConfig.get(14);
-                if (exp.isEmpty()) {
-                    tilExpiry.setError("Required");
-                    valid = false;
-                } else if (expirySpec != null && expirySpec.pattern != null
-                        && !expirySpec.pattern.matcher(exp).matches()) {
-                    tilExpiry.setError(expirySpec.description);
-                    valid = false;
-                } else {
-                    // Check expiry against current date (YYMM format)
+                if (exp.isEmpty()) { tilExpiry.setError("Required"); valid = false; }
+                else if (exp.length() != 4) { tilExpiry.setError("YYMM"); valid = false; }
+                else {
                     try {
                         int yy = Integer.parseInt(exp.substring(0, 2));
                         int mm = Integer.parseInt(exp.substring(2, 4));
-                        if (mm < 1 || mm > 12) {
-                            tilExpiry.setError("Invalid month (01-12)");
-                            valid = false;
-                        } else {
-                            java.util.Calendar now = java.util.Calendar.getInstance();
-                            int currentYear = now.get(java.util.Calendar.YEAR) % 100; // 2-digit
-                            int currentMonth = now.get(java.util.Calendar.MONTH) + 1; // 1-based
-                            if (yy < currentYear || (yy == currentYear && mm < currentMonth)) {
-                                tilExpiry.setError("Card expired");
-                                valid = false;
-                            } else {
-                                tilExpiry.setError(null);
-                            }
-                        }
-                    } catch (NumberFormatException e) {
-                        tilExpiry.setError("Invalid format (YYMM)");
-                        valid = false;
-                    }
+                        java.util.Calendar now = java.util.Calendar.getInstance();
+                        int curY = now.get(java.util.Calendar.YEAR) % 100;
+                        int curM = now.get(java.util.Calendar.MONTH) + 1;
+                        if (mm < 1 || mm > 12) { tilExpiry.setError("Invalid month"); valid = false; }
+                        else if (yy < curY || (yy == curY && mm < curM)) { tilExpiry.setError("Expired"); valid = false; }
+                        else { tilExpiry.setError(null); }
+                    } catch (NumberFormatException e) { tilExpiry.setError("YYMM"); valid = false; }
                 }
             }
 
-            // --- Track 2 (NapasFieldSpecConfig DE 35) ---
+            // Track 2
             if (layoutTrack2.getVisibility() == View.VISIBLE) {
                 String t2 = etTrack2.getText().toString().trim();
-                NapasFieldSpecConfig.FieldSpec t2Spec = NapasFieldSpecConfig.get(35);
-                if (t2.isEmpty()) {
-                    tilTrack2.setError("Required");
-                    valid = false;
-                } else if (t2Spec != null && t2Spec.pattern != null && !t2Spec.pattern.matcher(t2).matches()) {
-                    tilTrack2.setError(t2Spec.description);
-                    valid = false;
-                } else {
-                    tilTrack2.setError(null);
-                }
+                if (t2.isEmpty()) { tilTrack2.setError("Required"); valid = false; }
+                else { tilTrack2.setError(null); }
             }
 
-            if (!valid)
-                return;
+            if (!valid) return;
 
-            // Save
+            String panFinal = etPan.getText().toString().trim();
+            String expiryFinal = etExpiry.getText().toString().trim();
+            String track2Final = etTrack2.getText().toString().trim();
+
+            if (isBuiltIn) {
+                existing.setField(22, de22);
+                existing.setField(4, amount);
+                if (layoutManual.getVisibility() == View.VISIBLE) {
+                    existing.setField(2, panFinal);
+                    existing.setField(14, expiryFinal);
+                    existing.setField(35, null);
+                }
+                if (layoutTrack2.getVisibility() == View.VISIBLE) {
+                    existing.setField(35, track2Final);
+                    if (track2Final.contains("=")) {
+                        String[] parts = track2Final.split("=");
+                        existing.setField(2, parts[0]);
+                        if (parts.length > 1 && parts[1].length() >= 4)
+                            existing.setField(14, parts[1].substring(0, 4));
+                    }
+                }
+                applyCustomFieldsToScenario(existing, containerCustomFields, reservedFields);
+                adapter.notifyDataSetChanged();
+                dialog.dismiss();
+                Toast.makeText(this, "✓ Configuration applied", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Custom: save to DB
             executor.execute(() -> {
                 com.example.mysoftpos.data.local.entity.TestCaseEntity entity = new com.example.mysoftpos.data.local.entity.TestCaseEntity();
-                if (isEdit)
-                    entity.id = existing.getId();
+                if (isEdit) entity.id = existing.getId();
                 entity.suiteId = -1;
                 entity.name = name;
                 entity.transactionType = txnType;
                 entity.scheme = scheme;
                 entity.timestamp = System.currentTimeMillis();
                 entity.status = "NEW";
-
                 entity.de22 = de22;
                 entity.amount = amount;
-
                 if (layoutManual.getVisibility() == View.VISIBLE) {
-                    entity.pan = etPan.getText().toString();
-                    entity.expiry = etExpiry.getText().toString();
+                    entity.pan = panFinal;
+                    entity.expiry = expiryFinal;
                 }
                 if (layoutTrack2.getVisibility() == View.VISIBLE) {
-                    entity.track2 = etTrack2.getText().toString();
+                    entity.track2 = track2Final;
                 }
-
-                if (isEdit)
-                    repository.update(entity);
-                else
-                    repository.insert(entity);
-
+                entity.fieldConfigJson = collectCustomFieldsJson(containerCustomFields, reservedFields);
+                if (isEdit) repository.update(entity);
+                else repository.insert(entity);
                 runOnUiThread(dialog::dismiss);
             });
         });
@@ -806,6 +946,76 @@ public class TestSuiteActivity extends AppCompatActivity {
             isSecond = !isSecond;
         }
         return (nSum % 10 == 0);
+    }
+
+    /**
+     * Collects custom field rows from the container and builds a JSON string.
+     * Format: {"3":"000000","18":"5999",...}
+     */
+    private String collectCustomFieldsJson(android.widget.LinearLayout container, java.util.Set<Integer> reserved) {
+        org.json.JSONObject json = new org.json.JSONObject();
+        for (int i = 0; i < container.getChildCount(); i++) {
+            View row = container.getChildAt(i);
+            if (row instanceof android.widget.LinearLayout) {
+                android.widget.LinearLayout rowLayout = (android.widget.LinearLayout) row;
+                // Row: [0]=tvDe, [1]=etFieldNum, [2]=sep, [3]=etFieldValue, [4]=btnRemove
+                if (rowLayout.getChildCount() >= 4) {
+                    android.widget.EditText etNum = (android.widget.EditText) rowLayout.getChildAt(1);
+                    android.widget.EditText etVal = (android.widget.EditText) rowLayout.getChildAt(3);
+                    String numStr = etNum.getText().toString().trim();
+                    String valStr = etVal.getText().toString().trim();
+                    if (!numStr.isEmpty() && !valStr.isEmpty()) {
+                        try {
+                            int fieldNum = Integer.parseInt(numStr);
+                            if (!reserved.contains(fieldNum)) {
+                                json.put(String.valueOf(fieldNum), valStr);
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+        }
+        return json.length() > 0 ? json.toString() : null;
+    }
+
+    /**
+     * Applies custom field overrides from the advanced section to a TestScenario.
+     */
+    private void applyCustomFieldsToScenario(TestScenario scenario,
+            android.widget.LinearLayout container, java.util.Set<Integer> reserved) {
+        // First, remove any existing non-reserved custom fields
+        java.util.Set<Integer> toRemove = new java.util.HashSet<>();
+        for (Integer key : scenario.getAllFields().keySet()) {
+            if (!reserved.contains(key)) {
+                toRemove.add(key);
+            }
+        }
+        for (Integer key : toRemove) {
+            scenario.getAllFields().remove(key);
+        }
+
+        // Then add from the UI rows
+        for (int i = 0; i < container.getChildCount(); i++) {
+            View row = container.getChildAt(i);
+            if (row instanceof android.widget.LinearLayout) {
+                android.widget.LinearLayout rowLayout = (android.widget.LinearLayout) row;
+                // Row: [0]=tvDe, [1]=etFieldNum, [2]=sep, [3]=etFieldValue, [4]=btnRemove
+                if (rowLayout.getChildCount() >= 4) {
+                    android.widget.EditText etNum = (android.widget.EditText) rowLayout.getChildAt(1);
+                    android.widget.EditText etVal = (android.widget.EditText) rowLayout.getChildAt(3);
+                    String numStr = etNum.getText().toString().trim();
+                    String valStr = etVal.getText().toString().trim();
+                    if (!numStr.isEmpty() && !valStr.isEmpty()) {
+                        try {
+                            int fieldNum = Integer.parseInt(numStr);
+                            if (!reserved.contains(fieldNum)) {
+                                scenario.setField(fieldNum, valStr);
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+        }
     }
 
     // ========================
@@ -1143,6 +1353,20 @@ public class TestSuiteActivity extends AppCompatActivity {
 
         // Pass scheme for per-scheme connection config
         i.putExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME, scheme);
+
+        // Pass custom field overrides as JSON
+        java.util.Set<Integer> reserved = new java.util.HashSet<>(java.util.Arrays.asList(2, 4, 14, 22, 35, 52));
+        org.json.JSONObject fieldJson = new org.json.JSONObject();
+        try {
+            for (java.util.Map.Entry<Integer, String> entry : scenario.getAllFields().entrySet()) {
+                if (!reserved.contains(entry.getKey()) && entry.getValue() != null) {
+                    fieldJson.put(String.valueOf(entry.getKey()), entry.getValue());
+                }
+            }
+        } catch (Exception ignored) {}
+        if (fieldJson.length() > 0) {
+            i.putExtra(com.example.mysoftpos.utils.IntentKeys.FIELD_CONFIG_JSON, fieldJson.toString());
+        }
 
         startActivity(i);
     }

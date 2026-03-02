@@ -33,6 +33,18 @@
         <ImageView android:id="@+id/dot6" style="@style/PinDot"/>
     </LinearLayout>
 
+    <!-- Error Message (hidden by default) -->
+    <TextView
+        android:id="@+id/tvPinError"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:textColor="@color/status_error"
+        android:textSize="13sp"
+        android:fontFamily="sans-serif-medium"
+        android:visibility="gone" />
+
     <!-- Keypad -->
     <GridLayout
         android:layout_width="wrap_content"

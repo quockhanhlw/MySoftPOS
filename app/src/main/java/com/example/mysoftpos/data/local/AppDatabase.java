@@ -11,19 +11,17 @@ import com.example.mysoftpos.data.local.dao.*;
 
 @Database(entities = {
         TransactionEntity.class,
-        TransactionTemplateEntity.class,
         TestSuiteEntity.class,
         TestCaseEntity.class,
         UserEntity.class,
         MerchantEntity.class,
         TerminalEntity.class,
         CardEntity.class
-}, version = 11, exportSchema = false) // Bumped: removed email unique constraint, phone is primary login
+}, version = 14, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract TransactionDao transactionDao();
 
-    public abstract TransactionTemplateDao transactionTemplateDao();
 
     public abstract TestSuiteDao testSuiteDao();
 

@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     android:background="#F8FAFC">
 
     <!-- Green Header Background -->
@@ -14,15 +15,16 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <!-- Receipt Card -->
-    <androidx.cardview.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardReceipt"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="24dp"
         android:layout_marginTop="80dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="8dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="4dp"
         app:cardBackgroundColor="#FFFFFF"
+        app:strokeWidth="0dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -246,7 +248,7 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-    </androidx.cardview.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- Bottom Actions -->
     <LinearLayout
@@ -258,41 +260,50 @@
         android:paddingHorizontal="24dp"
         app:layout_constraintTop_toBottomOf="@id/cardReceipt">
 
-        <android.widget.Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnPrint"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_weight="1"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:text="@string/txn_print"
             android:textAllCaps="false"
             android:textColor="#1E293B"
-            android:background="@drawable/bg_outline_button"
-            android:layout_marginEnd="8dp"
-            style="?android:attr/borderlessButtonStyle"/>
+            android:textSize="14sp"
+            android:fontFamily="sans-serif-medium"
+            app:cornerRadius="12dp"
+            app:strokeColor="#E2E8F0"
+            app:strokeWidth="1dp"
+            android:layout_marginEnd="6dp" />
 
-        <android.widget.Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnShare"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_weight="1"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:text="@string/txn_share"
             android:textAllCaps="false"
             android:textColor="#1E293B"
-            android:background="@drawable/bg_outline_button"
-            android:layout_marginStart="8dp"
-            style="?android:attr/borderlessButtonStyle"/>
+            android:textSize="14sp"
+            android:fontFamily="sans-serif-medium"
+            app:cornerRadius="12dp"
+            app:strokeColor="#E2E8F0"
+            app:strokeWidth="1dp"
+            android:layout_marginStart="6dp" />
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnClose"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
         android:text="@string/txn_back_dashboard"
         android:textAllCaps="false"
-        android:paddingVertical="12dp"
+        android:textSize="16sp"
+        android:fontFamily="sans-serif-medium"
         android:layout_marginHorizontal="24dp"
         android:layout_marginBottom="24dp"
-        app:cornerRadius="8dp"
+        app:cornerRadius="16dp"
         app:layout_constraintBottom_toBottomOf="parent" />
 
     <!-- Details/ISO (Hidden) logic handled by code if needed, or remove for clean design -->

@@ -35,7 +35,6 @@ public class TransactionContext {
     public String posEntryMode22;
     public String posCondition25;
     public String acquirerId32;
-    public String fwdInst33;
     public String rrn37;
     public String currency49;
 

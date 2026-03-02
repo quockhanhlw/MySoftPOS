@@ -46,7 +46,7 @@ public class PurchaseViewModel extends BaseViewModel {
     }
 
     public void processTransaction(CardInputData card, String amount, String currencyCode, TxnType txnType,
-            String username) {
+            String username, long userId) {
         state.setValue(TransactionState.loading());
 
         launchIo(() -> {
@@ -76,7 +76,6 @@ public class PurchaseViewModel extends BaseViewModel {
                 ctx.mcc18 = configManager.getMcc18();
                 ctx.posCondition25 = configManager.getPosConditionCode();
                 ctx.acquirerId32 = configManager.getAcquirerId32();
-                ctx.fwdInst33 = configManager.getForwardingInst33();
                 ctx.currency49 = currencyCode != null ? currencyCode : configManager.getCurrencyCode49();
                 ctx.terminalId41 = configManager.getTerminalId();
                 ctx.merchantId42 = configManager.getMerchantId();
@@ -134,6 +133,7 @@ public class PurchaseViewModel extends BaseViewModel {
                         .setLast4(PanUtils.getLast4(pan))
                         .setScheme(PanUtils.detectScheme(pan))
                         .setUsername(username)
+                        .setUserId(userId)
                         .build();
                 repository.saveTransaction(record);
 

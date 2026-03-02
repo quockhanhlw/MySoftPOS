@@ -41,5 +41,12 @@ public class ChannelSelectActivity extends AppCompatActivity {
             i.putExtra(IntentKeys.CHANNEL, "ATM");
             startActivity(i);
         });
+
+        // Transaction History for this scheme
+        findViewById(R.id.btnHistory).setOnClickListener(v -> {
+            Intent i = new Intent(this, SchemeHistoryActivity.class);
+            i.putExtra(IntentKeys.SCHEME, scheme);
+            startActivity(i);
+        });
     }
 }

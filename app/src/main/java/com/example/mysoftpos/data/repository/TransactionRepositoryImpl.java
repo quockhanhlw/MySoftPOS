@@ -72,24 +72,26 @@ public class TransactionRepositoryImpl implements TransactionRepository {
                 cardId = card.id;
             }
 
-            // 4. User — find by multiple methods (phone, email, usernameHash)
-            // Username can be phone, email, or raw username depending on login method
-            String username = record.username;
-            com.example.mysoftpos.data.local.entity.UserEntity user = null;
-            if (username != null && !username.isEmpty()) {
-                // Try by phone first (most common login method)
-                user = db.userDao().findByPhone(username);
-                // Then by email
-                if (user == null) {
-                    user = db.userDao().findByEmail(username);
+            // 4. User — use the userId passed directly from login chain if available,
+            //    otherwise fall back to username lookup (for admin test suite compatibility)
+            Long userId;
+            if (record.userId > 0) {
+                userId = record.userId;
+            } else {
+                String username = record.username;
+                com.example.mysoftpos.data.local.entity.UserEntity user = null;
+                if (username != null && !username.isEmpty()) {
+                    user = db.userDao().findByPhone(username);
+                    if (user == null) {
+                        user = db.userDao().findByEmail(username);
+                    }
+                    if (user == null) {
+                        String hash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
+                        user = db.userDao().getByUsernameHashSync(hash);
+                    }
                 }
-                // Then by usernameHash = SHA256(username)
-                if (user == null) {
-                    String hash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
-                    user = db.userDao().getByUsernameHashSync(hash);
-                }
+                userId = (user != null) ? user.id : null;
             }
-            Long userId = (user != null) ? user.id : null;
 
             // 5. Transaction
             TransactionEntity txn = new TransactionEntity();
@@ -102,6 +104,7 @@ public class TransactionRepositoryImpl implements TransactionRepository {
             txn.terminalId = terminalId;
             txn.cardId = cardId;
             txn.userId = userId;
+            txn.ownerUsername = record.username;
 
             db.transactionDao().insert(txn);
         });

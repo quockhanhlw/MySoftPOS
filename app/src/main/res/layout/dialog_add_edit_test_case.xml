@@ -3,170 +3,490 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_dialog_rounded"
-    android:padding="24dp">
+    android:background="@drawable/bg_dialog_testcase"
+    android:clipToPadding="false"
+    android:overScrollMode="never"
+    android:scrollbars="none">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/tvDialogTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:fontFamily="sans-serif-medium"
-            android:text="New Test Case"
-            android:textColor="#0F172A"
-            android:textSize="20sp" />
-
-        <!-- Name -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilName"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:hint="Scenario Name">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textCapSentences" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <!-- DE22 & Amount Row -->
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!--  HEADER with gradient background                    -->
+        <!-- ═══════════════════════════════════════════════════ -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:baselineAligned="false"
-            android:orientation="horizontal">
+            android:background="@drawable/bg_testcase_header"
+            android:orientation="vertical"
+            android:paddingHorizontal="24dp"
+            android:paddingTop="28dp"
+            android:paddingBottom="24dp">
 
+            <!-- Close button row -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp">
+
+                <ImageView
+                    android:id="@+id/ivHeaderIcon"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_icon_circle_dark"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_edit_note"
+                    app:tint="#60A5FA"
+                    android:contentDescription="Test Case Icon" />
+
+                <ImageButton
+                    android:id="@+id/btnClose"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_close"
+                    app:tint="#94A3B8"
+                    android:contentDescription="Close" />
+            </RelativeLayout>
+
+            <TextView
+                android:id="@+id/tvDialogTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-bold"
+                android:text="New Test Case"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp" />
+
+            <TextView
+                android:id="@+id/tvDialogSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Configure transaction parameters"
+                android:textColor="#94A3B8"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!--  BODY content                                       -->
+        <!-- ═══════════════════════════════════════════════════ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="24dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="8dp">
+
+            <!-- ─── Section: Basic Info ─── -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:drawablePadding="6dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Basic Information"
+                android:textColor="#0F172A"
+                android:textSize="14sp" />
+
+            <!-- Scenario Name -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilName"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:hint="Scenario Name"
+                app:startIconDrawable="@drawable/ic_edit_note"
+                app:startIconTint="#64748B"
+                app:boxStrokeColor="#6366F1"
+                app:hintTextColor="#6366F1">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textCapSentences"
+                    android:textSize="15sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- ─── Section: Entry Mode (DE 22) ─── -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="10dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Entry Mode (DE 22)"
+                android:textColor="#0F172A"
+                android:textSize="14sp" />
+
+            <!-- DE 22 input field -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilDe22"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:hint="DE 22 (Mode)">
+                android:layout_marginBottom="4dp"
+                android:hint="POS Entry Mode (3 digits)"
+                app:startIconDrawable="@drawable/ic_sim_card"
+                app:startIconTint="#64748B"
+                app:boxStrokeColor="#6366F1"
+                app:hintTextColor="#6366F1"
+                app:helperTextEnabled="true"
+                app:helperText="e.g. 011, 012, 021, 022, 051, 052, 071, 072">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etDe22"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="number"
-                    android:maxLength="3" />
+                    android:maxLength="3"
+                    android:textSize="15sp"
+                    android:fontFamily="monospace" />
             </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- DE22 display (auto-resolved label) -->
+            <LinearLayout
+                android:id="@+id/layoutDe22Display"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp"
+                android:background="@drawable/bg_section_card"
+                android:gravity="center_vertical"
+                android:padding="12dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mode:"
+                    android:textColor="#64748B"
+                    android:textSize="12sp"
+                    android:fontFamily="monospace" />
+
+                <TextView
+                    android:id="@+id/tvEntryModeName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text=""
+                    android:textColor="#6366F1"
+                    android:textSize="13sp"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
+
+
+            <!-- ─── Section: Amount ─── -->
+            <TextView
+                android:id="@+id/labelAmount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="10dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Transaction Amount"
+                android:textColor="#0F172A"
+                android:textSize="14sp" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilAmount"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:layout_weight="1"
-                android:hint="Amount">
+                android:layout_marginBottom="16dp"
+                android:hint="Amount (VND)"
+                app:suffixText="VND"
+                app:startIconDrawable="@drawable/ic_money"
+                app:startIconTint="#64748B"
+                app:boxStrokeColor="#6366F1"
+                app:hintTextColor="#6366F1">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etAmount"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="number" />
-            </com.google.android.material.textfield.TextInputLayout>
-        </LinearLayout>
-
-        <!-- Manual Entry Section (PAN + Expiry) -->
-        <LinearLayout
-            android:id="@+id/layoutManual"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilPan"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:hint="Card Number (PAN)">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etPan"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
                     android:inputType="number"
-                    android:maxLength="19" />
+                    android:textSize="15sp" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilExpiry"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            <!-- ─── Section: Card Data (Manual) ─── -->
+            <LinearLayout
+                android:id="@+id/layoutManual"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:hint="Expiry (YYMM)">
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:background="@drawable/bg_section_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etExpiry"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="number"
-                    android:maxLength="4" />
-            </com.google.android.material.textfield.TextInputLayout>
-        </LinearLayout>
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp">
 
-        <!-- Mag/Chip Entry Section (Track2) -->
-        <LinearLayout
-            android:id="@+id/layoutTrack2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_marginEnd="8dp"
+                        android:src="@drawable/ic_credit_card"
+                        app:tint="#475569"
+                        android:contentDescription="Card" />
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilTrack2"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Card Details"
+                        android:textColor="#334155"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif-medium" />
+                </LinearLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilPan"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:hint="Card Number (PAN)"
+                    app:boxStrokeColor="#6366F1"
+                    app:hintTextColor="#6366F1"
+                    app:boxBackgroundColor="#FFFFFF">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etPan"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number"
+                        android:maxLength="19"
+                        android:textSize="15sp"
+                        android:fontFamily="monospace" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilExpiry"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Expiry (YYMM)"
+                    app:boxStrokeColor="#6366F1"
+                    app:hintTextColor="#6366F1"
+                    app:boxBackgroundColor="#FFFFFF">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etExpiry"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number"
+                        android:maxLength="4"
+                        android:textSize="15sp"
+                        android:fontFamily="monospace" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+
+            <!-- ─── Section: Track 2 ─── -->
+            <LinearLayout
+                android:id="@+id/layoutTrack2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:hint="Track 2 Data">
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:background="@drawable/bg_section_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etTrack2"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textNoSuggestions" />
-            </com.google.android.material.textfield.TextInputLayout>
-        </LinearLayout>
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp">
 
-        <!-- Action Buttons -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="end"
-            android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_marginEnd="8dp"
+                        android:src="@drawable/ic_sim_card"
+                        app:tint="#475569"
+                        android:contentDescription="Track" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCancel"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="wrap_content"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Track 2 Data"
+                        android:textColor="#334155"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif-medium" />
+                </LinearLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilTrack2"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="e.g. 9704xxxx=3101xxxx"
+                    app:boxStrokeColor="#6366F1"
+                    app:hintTextColor="#6366F1"
+                    app:boxBackgroundColor="#FFFFFF">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etTrack2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textNoSuggestions"
+                        android:textSize="14sp"
+                        android:fontFamily="monospace" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+
+            <!-- ═══════════════════════════════════════════════ -->
+            <!--  Advanced Field Configuration                   -->
+            <!-- ═══════════════════════════════════════════════ -->
+            <LinearLayout
+                android:id="@+id/layoutAdvancedHeader"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:text="Cancel"
-                android:textColor="#64748B" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="12dp"
+                android:paddingHorizontal="14dp"
+                android:layout_marginBottom="4dp"
+                android:background="@drawable/bg_section_card">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSave"
-                android:layout_width="wrap_content"
+                <ImageView
+                    android:id="@+id/ivExpandArrow"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginEnd="10dp"
+                    android:src="@android:drawable/arrow_down_float"
+                    app:tint="#F59E0B"
+                    android:contentDescription="Toggle" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Advanced Fields"
+                        android:textColor="#0F172A"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif-medium" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Custom ISO8583 field overrides"
+                        android:textColor="#94A3B8"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvFieldCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="24dp"
+                    android:gravity="center"
+                    android:paddingHorizontal="10dp"
+                    android:background="@drawable/bg_badge_default"
+                    android:textColor="#64748B"
+                    android:textSize="11sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="0" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutAdvancedFields"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Save"
-                app:backgroundTint="#0F172A" />
-        </LinearLayout>
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:background="@drawable/bg_section_advanced"
+                android:padding="14dp"
+                android:layout_marginBottom="8dp">
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Override ISO8583 fields: DE 3, DE 18, DE 25, DE 49, etc."
+                    android:textColor="#92400E"
+                    android:textSize="11sp"
+                    android:layout_marginBottom="10dp"
+                    android:drawablePadding="6dp" />
+
+                <LinearLayout
+                    android:id="@+id/containerCustomFields"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAddField"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="6dp"
+                    android:text="+ Add Field"
+                    android:textSize="12sp"
+                    android:textAllCaps="false"
+                    app:strokeColor="#FDBA74"
+                    android:textColor="#92400E"
+                    app:cornerRadius="8dp"
+                    app:rippleColor="#22F59E0B" />
+            </LinearLayout>
+
+            <!-- ═══════════════════════════════════════════════ -->
+            <!--  Action Buttons                                 -->
+            <!-- ═══════════════════════════════════════════════ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="16dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCancel"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="52dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="Cancel"
+                    android:textColor="#64748B"
+                    android:textSize="15sp"
+                    android:textAllCaps="false"
+                    app:strokeColor="#CBD5E1"
+                    app:cornerRadius="14dp"
+                    app:rippleColor="#22000000" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSave"
+                    android:layout_width="0dp"
+                    android:layout_height="52dp"
+                    android:layout_weight="1.5"
+                    android:text="Save Test Case"
+                    android:textSize="15sp"
+                    android:textAllCaps="false"
+                    app:backgroundTint="#6366F1"
+                    app:cornerRadius="14dp"
+                    app:icon="@drawable/ic_check"
+                    app:iconGravity="textStart"
+                    app:iconTint="#FFFFFF" />
+            </LinearLayout>
+
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>
+

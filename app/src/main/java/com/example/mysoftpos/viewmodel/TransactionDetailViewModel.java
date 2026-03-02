@@ -42,7 +42,8 @@ public class TransactionDetailViewModel extends BaseViewModel {
         return repository.getTransactionWithDetailsById(id);
     }
 
-    public void voidTransaction(long transactionId) {
+    /** Void with scheme's server config (admin from scheme history) */
+    public void voidTransaction(long transactionId, String schemeName) {
         state.setValue(TransactionState.loading());
 
         launchIo(() -> {
@@ -65,13 +66,13 @@ public class TransactionDetailViewModel extends BaseViewModel {
                         .unpack(StandardIsoPacker.hexToBytes(txnDetails.transaction.requestHex));
 
                 TransactionContext ctx = new TransactionContext();
-                ctx.txnType = TxnType.PURCHASE; // Assumption: History filters for Purchase
+                ctx.txnType = TxnType.PURCHASE;
                 if ("300000".equals(origMsg.getField(3))) {
                     ctx.txnType = TxnType.BALANCE_INQUIRY;
                 }
 
                 ctx.amount4 = origMsg.getField(4);
-                ctx.stan11 = origMsg.getField(11); // Original Trace
+                ctx.stan11 = origMsg.getField(11);
                 ctx.transmissionDt7 = origMsg.getField(7);
                 ctx.localTime12 = origMsg.getField(12);
                 ctx.localDate13 = origMsg.getField(13);
@@ -88,12 +89,26 @@ public class TransactionDetailViewModel extends BaseViewModel {
                 ctx.merchantNameLocation43 = origMsg.getField(43);
                 ctx.currency49 = origMsg.getField(49);
 
-                // IP/Port: use original transaction's user server config, fallback to current config
+                // IP/Port resolution:
+                // 1) If schemeName provided (admin void from scheme history) → use scheme's IP/port
+                // 2) Else if user has server config (user void) → use user's IP/port
+                // 3) Fallback to current configManager
                 String serverIp = configManager.getServerIp();
                 int serverPort = configManager.getServerPort();
-                if (txnDetails.user != null
+
+                if (schemeName != null && !schemeName.isEmpty()) {
+                    // Admin void: use scheme's server config
+                    com.example.mysoftpos.testsuite.storage.SchemeRepository schemeRepo =
+                            new com.example.mysoftpos.testsuite.storage.SchemeRepository(getApplication());
+                    com.example.mysoftpos.testsuite.model.Scheme scheme = schemeRepo.getByName(schemeName);
+                    if (scheme != null && scheme.hasConnectionConfig()) {
+                        serverIp = scheme.getServerIp();
+                        serverPort = scheme.getServerPort();
+                    }
+                } else if (txnDetails.user != null
                         && txnDetails.user.serverIp != null && !txnDetails.user.serverIp.isEmpty()
                         && txnDetails.user.serverPort > 0) {
+                    // User void: use user's server config from admin management
                     serverIp = txnDetails.user.serverIp;
                     serverPort = txnDetails.user.serverPort;
                 }
@@ -125,45 +140,74 @@ public class TransactionDetailViewModel extends BaseViewModel {
                 com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "SEND 0420 DETAIL",
                         StandardIsoPacker.logIsoMessage(revMsg));
                 com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "VOID TARGET",
-                        "Server: " + ctx.ip + ":" + ctx.port + " | Original Trace: " + ctx.stan11);
+                        "Server: " + ctx.ip + ":" + ctx.port + " | Scheme: " + (schemeName != null ? schemeName : "N/A")
+                        + " | Original Trace: " + ctx.stan11);
+
+                // Also log to test_suite_log when void is from admin (scheme history)
+                if (schemeName != null) {
+                    com.example.mysoftpos.utils.logging.FileLogger.logTestSuitePacket(getApplication(), "SEND 0420 (VOID)", packed);
+                    com.example.mysoftpos.utils.logging.FileLogger.logTestSuiteString(getApplication(), "SEND 0420 DETAIL",
+                            StandardIsoPacker.logIsoMessage(revMsg));
+                    com.example.mysoftpos.utils.logging.FileLogger.logTestSuiteString(getApplication(), "VOID TARGET",
+                            "Server: " + ctx.ip + ":" + ctx.port + " | Scheme: " + schemeName
+                            + " | Original Trace: " + ctx.stan11);
+                }
 
                 // 6. Send
                 byte[] responseBytes = isoNetworkClient.sendAndReceive(ctx.ip, ctx.port, packed);
 
                 // Log RECV 0430
-                com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "RECV 0430 (VOID)",
-                        responseBytes);
+                com.example.mysoftpos.utils.logging.FileLogger.logPacket(getApplication(), "RECV 0430 (VOID)", responseBytes);
                 IsoMessage respMsg = new StandardIsoPacker().unpack(responseBytes);
                 com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "RECV 0430 DETAIL",
                         StandardIsoPacker.logIsoMessage(respMsg));
+
+                // Also log response to test_suite_log when from admin
+                if (schemeName != null) {
+                    com.example.mysoftpos.utils.logging.FileLogger.logTestSuitePacket(getApplication(), "RECV 0430 (VOID)", responseBytes);
+                    com.example.mysoftpos.utils.logging.FileLogger.logTestSuiteString(getApplication(), "RECV 0430 DETAIL",
+                            StandardIsoPacker.logIsoMessage(respMsg));
+                }
 
                 // 7. Handle Response
                 String rc = respMsg.getField(IsoField.RESPONSE_CODE_39);
 
                 if ("00".equals(rc)) {
-                    // Update DB
                     repository.updateTransactionStatus(txnDetails.transaction.traceNumber, "REVERSED");
-
+                     if (schemeName != null) {
+                        com.example.mysoftpos.utils.logging.FileLogger.logTestSuiteString(getApplication(), "VOID APPROVED", "RC: 00 | Trace: " + txnDetails.transaction.traceNumber);
+                    }
                     launchUi(() -> state.setValue(TransactionState.success("Transaction Voided Successfully",
                             StandardIsoPacker.bytesToHex(responseBytes), revWithNewTrace)));
                 } else {
-                    com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "VOID DECLINED",
-                            "RC: " + rc);
+                    com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "VOID DECLINED", "RC: " + rc);
+                    if (schemeName != null) {
+                        com.example.mysoftpos.utils.logging.FileLogger.logTestSuiteString(getApplication(), "VOID DECLINED", "RC: " + rc);
+                    }
                     postError("Void Failed: RC " + rc);
                 }
 
             } catch (java.net.SocketTimeoutException e) {
                 android.util.Log.e("TxnDetailVM", "Void timeout", e);
-                com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "VOID TIMEOUT",
-                        "No response from server");
+                com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "VOID TIMEOUT", "No response from server");
+                if (schemeName != null) {
+                    com.example.mysoftpos.utils.logging.FileLogger.logTestSuiteString(getApplication(), "VOID TIMEOUT", "No response from server");
+                }
                 postError("Void Timeout: No response from server");
             } catch (Exception e) {
                 android.util.Log.e("TxnDetailVM", "Void error", e);
-                com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "VOID ERROR",
-                        e.getMessage());
+                com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "VOID ERROR", e.getMessage());
+                if (schemeName != null) {
+                    com.example.mysoftpos.utils.logging.FileLogger.logTestSuiteString(getApplication(), "VOID ERROR", e.getMessage());
+                }
                 postError("Void Error: " + e.getMessage());
             }
         });
+    }
+
+    /** Convenience: void without scheme (user side — uses user's server config) */
+    public void voidTransaction(long transactionId) {
+        voidTransaction(transactionId, null);
     }
 
     private void postError(String message) {

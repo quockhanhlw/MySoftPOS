@@ -41,8 +41,11 @@ public class RegisterActivity extends BaseActivity {
     private EditText etPhone;
     private EditText etEmail;
     private EditText etPassword;
+    private EditText etConfirmPassword;
     private CheckBox cbTerms;
     private TextView tvTermsText;
+    private boolean passwordVisible = false;
+    private boolean confirmPasswordVisible = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +57,7 @@ public class RegisterActivity extends BaseActivity {
         etPhone = findViewById(R.id.etPhone);
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
+        etConfirmPassword = findViewById(R.id.etConfirmPassword);
         cbTerms = findViewById(R.id.cbTerms);
         tvTermsText = findViewById(R.id.tvTermsText);
 
@@ -76,7 +80,41 @@ public class RegisterActivity extends BaseActivity {
         if (btnRegister != null)
             btnRegister.setOnClickListener(v -> handleRegister());
 
+        setupPasswordToggle(etPassword, true);
+        setupPasswordToggle(etConfirmPassword, false);
         setupTermsText();
+    }
+
+    private void setupPasswordToggle(EditText editText, boolean isMainPassword) {
+        editText.setOnTouchListener((v, event) -> {
+            if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
+                android.graphics.drawable.Drawable end = editText.getCompoundDrawablesRelative()[2];
+                if (end != null && event.getRawX() >= (editText.getRight() - end.getBounds().width() - editText.getPaddingEnd())) {
+                    boolean visible;
+                    if (isMainPassword) {
+                        passwordVisible = !passwordVisible;
+                        visible = passwordVisible;
+                    } else {
+                        confirmPasswordVisible = !confirmPasswordVisible;
+                        visible = confirmPasswordVisible;
+                    }
+                    if (visible) {
+                        editText.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                        editText.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                                editText.getCompoundDrawablesRelative()[0], null,
+                                getDrawable(R.drawable.ic_baseline_visibility_24), null);
+                    } else {
+                        editText.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                        editText.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                                editText.getCompoundDrawablesRelative()[0], null,
+                                getDrawable(R.drawable.ic_baseline_visibility_off_24), null);
+                    }
+                    editText.setSelection(editText.getText().length());
+                    return true;
+                }
+            }
+            return false;
+        });
     }
 
     private void handleRegister() {
@@ -84,6 +122,7 @@ public class RegisterActivity extends BaseActivity {
         String phone = etPhone.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
+        String confirmPassword = etConfirmPassword.getText().toString().trim();
 
         if (fullName.isEmpty()) {
             etFullName.setError("Required");
@@ -99,6 +138,15 @@ public class RegisterActivity extends BaseActivity {
         }
         if (password.isEmpty()) {
             etPassword.setError("Required");
+            return;
+        }
+        if (confirmPassword.isEmpty()) {
+            etConfirmPassword.setError("Required");
+            return;
+        }
+        if (!password.equals(confirmPassword)) {
+            etConfirmPassword.setError("Passwords do not match");
+            etConfirmPassword.requestFocus();
             return;
         }
 
@@ -173,10 +221,11 @@ public class RegisterActivity extends BaseActivity {
         String fullText = getString(R.string.register_terms_text);
         SpannableString spannableString = new SpannableString(fullText);
 
+        // "Terms & Conditions" clickable
         ClickableSpan termsSpan = new ClickableSpan() {
             @Override
             public void onClick(@NonNull View widget) {
-                showTermsDialog();
+                showDocumentDialog(getString(R.string.terms_title), R.raw.terms_conditions);
             }
 
             @Override
@@ -187,10 +236,33 @@ public class RegisterActivity extends BaseActivity {
             }
         };
 
-        String termsTarget = "Terms & Conditions";
+        // Find clickable targets using string resources (works for all languages)
+        String termsTarget = getString(R.string.terms_title);
         int termsStart = fullText.indexOf(termsTarget);
         if (termsStart >= 0) {
             spannableString.setSpan(termsSpan, termsStart, termsStart + termsTarget.length(),
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+
+        // "Privacy Policy" clickable
+        ClickableSpan privacySpan = new ClickableSpan() {
+            @Override
+            public void onClick(@NonNull View widget) {
+                showDocumentDialog(getString(R.string.privacy_title), R.raw.privacy_policy);
+            }
+
+            @Override
+            public void updateDrawState(@NonNull TextPaint ds) {
+                super.updateDrawState(ds);
+                ds.setColor(Color.parseColor("#4A9EFF"));
+                ds.setUnderlineText(false);
+            }
+        };
+
+        String privacyTarget = getString(R.string.privacy_title);
+        int privacyStart = fullText.indexOf(privacyTarget);
+        if (privacyStart >= 0) {
+            spannableString.setSpan(privacySpan, privacyStart, privacyStart + privacyTarget.length(),
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
 
@@ -198,12 +270,37 @@ public class RegisterActivity extends BaseActivity {
         tvTermsText.setMovementMethod(LinkMovementMethod.getInstance());
     }
 
-    private void showTermsDialog() {
+    private void showDocumentDialog(String title, int rawResId) {
         Dialog dialog = new Dialog(this, android.R.style.Theme_Light_NoTitleBar_Fullscreen);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.dialog_terms);
         dialog.setCanceledOnTouchOutside(true);
-        // ... dialog logic (existing)
+
+        TextView tvTitle = dialog.findViewById(R.id.tvDialogTitle);
+        TextView tvContent = dialog.findViewById(R.id.tvDialogContent);
+        View btnClose = dialog.findViewById(R.id.btnCloseTerms);
+
+        if (tvTitle != null) tvTitle.setText(title);
+        if (tvContent != null) tvContent.setText(readRawTextFile(rawResId));
+        if (btnClose != null) btnClose.setOnClickListener(v -> dialog.dismiss());
+
         dialog.show();
+    }
+
+    private String readRawTextFile(int rawResId) {
+        try {
+            InputStream is = getResources().openRawResource(rawResId);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append("\n");
+            }
+            reader.close();
+            return sb.toString().trim();
+        } catch (Exception e) {
+            Log.e("RegisterActivity", "Error reading raw file", e);
+            return "";
+        }
     }
 }

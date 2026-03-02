@@ -41,6 +41,11 @@ public class TransactionEntity {
     @ColumnInfo(name = "user_id")
     public Long userId;
 
+    /** Raw username (phone/email) of the user who initiated this transaction.
+     *  Admin test-suite uses "TEST_SUITE_USER", "TEST_SUITE_BATCH", etc. */
+    @ColumnInfo(name = "owner_username")
+    public String ownerUsername;
+
     @ColumnInfo(name = "terminal_id")
     public Long terminalId;
 

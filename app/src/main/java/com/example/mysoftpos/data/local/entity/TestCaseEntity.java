@@ -48,6 +48,13 @@ public class TestCaseEntity {
     @ColumnInfo(name = "timestamp")
     public long timestamp;
 
+    /**
+     * JSON map of additional ISO8583 field overrides: {"3":"000000","18":"5999",...}
+     * Allows each test case to have its own custom field configuration.
+     */
+    @ColumnInfo(name = "field_config_json")
+    public String fieldConfigJson;
+
     public TestCaseEntity() {
     }
 }

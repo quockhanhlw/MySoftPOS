@@ -12,6 +12,7 @@ public final class IntentKeys {
     // User / Auth
     public static final String USERNAME = "USERNAME";
     public static final String USER_ROLE = "USER_ROLE";
+    public static final String USER_ID = "USER_ID";
 
     // Transaction
     public static final String TXN_TYPE = "TXN_TYPE";
@@ -42,4 +43,5 @@ public final class IntentKeys {
     public static final String SCENARIOS = "SCENARIOS";
     public static final String SELECTED_SCENARIOS = "SELECTED_SCENARIOS";
     public static final String SUITE_NAME = "SUITE_NAME";
+    public static final String FIELD_CONFIG_JSON = "FIELD_CONFIG_JSON";
 }

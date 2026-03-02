@@ -6,6 +6,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     android:background="@drawable/bg_gradient_light">
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
@@ -146,7 +147,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:visibility="gone"
+        android:visibility="visible"
         android:paddingHorizontal="24dp"
         android:paddingBottom="16dp"
         app:layout_constraintBottom_toTopOf="@id/btnCharge"

@@ -155,7 +155,31 @@ public class TransactionDetailActivity extends BaseActivity {
 
         // Pass transaction data if available
         if (cachedTxnDetails != null && cachedTxnDetails.transaction != null) {
-            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.AMOUNT, cachedTxnDetails.transaction.amount);
+            // Parse currency from requestHex DE 49
+            String currencyCode = "704";
+            String currencyLabel = "VND";
+            String realAmount = cachedTxnDetails.transaction.amount;
+            try {
+                if (cachedTxnDetails.transaction.requestHex != null) {
+                    com.example.mysoftpos.iso8583.message.IsoMessage req = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                            .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
+                                    .hexToBytes(cachedTxnDetails.transaction.requestHex));
+                    if (req.hasField(49)) {
+                        currencyCode = req.getField(49).trim();
+                        if ("840".equals(currencyCode)) currencyLabel = "USD";
+                    }
+                    // Use DE 4 for accurate amount, convert to real value
+                    if (req.hasField(4)) {
+                        long rawDe4 = Long.parseLong(req.getField(4).trim());
+                        if ("704".equals(currencyCode)) {
+                            rawDe4 = rawDe4 / 100; // VND: remove 2 trailing zeros
+                        }
+                        realAmount = String.valueOf(rawDe4);
+                    }
+                }
+            } catch (Exception e) { /* ignore */ }
+
+            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.AMOUNT, realAmount);
             intent.putExtra(com.example.mysoftpos.utils.IntentKeys.TXN_ID, cachedTxnDetails.transaction.traceNumber);
 
             // Date
@@ -170,22 +194,7 @@ public class TransactionDetailActivity extends BaseActivity {
                 intent.putExtra(com.example.mysoftpos.utils.IntentKeys.MASKED_PAN, cachedTxnDetails.card.panMasked);
             }
 
-            // Currency from requestHex DE 49
-            String currency = "VND";
-            try {
-                if (cachedTxnDetails.transaction.requestHex != null) {
-                    com.example.mysoftpos.iso8583.message.IsoMessage req = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
-                            .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
-                                    .hexToBytes(cachedTxnDetails.transaction.requestHex));
-                    if (req.hasField(49)) {
-                        String code = req.getField(49).trim();
-                        if ("840".equals(code))
-                            currency = "USD";
-                    }
-                }
-            } catch (Exception e) {
-                /* ignore */ }
-            intent.putExtra("CURRENCY", currency);
+            intent.putExtra("CURRENCY", currencyLabel);
         }
 
         startActivity(intent);
@@ -208,10 +217,31 @@ public class TransactionDetailActivity extends BaseActivity {
 
         // Status
         tvStatus.setText(txn.status);
-        if ("APPROVED".equals(txn.status) || "SUCCESS".equals(txn.status)) {
+
+        // Determine if this is a Purchase transaction (only purchases can be voided)
+        boolean isPurchase = false;
+        try {
+            if (txn.requestHex != null) {
+                com.example.mysoftpos.iso8583.message.IsoMessage reqMsg =
+                        new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                                .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
+                                        .hexToBytes(txn.requestHex));
+                String processingCode = reqMsg.hasField(3) ? reqMsg.getField(3) : "";
+                // Purchase = 000000, Cash = 010000; Balance = 300000
+                isPurchase = processingCode.startsWith("00");
+            }
+        } catch (Exception e) {
+            Log.e("TxnDetail", "Parse DE3 for void check", e);
+        }
+
+        if (("APPROVED".equals(txn.status) || "SUCCESS".equals(txn.status)) && isPurchase) {
             tvStatus.setBackgroundResource(R.drawable.bg_status_pill_success);
             tvStatus.setTextColor(0xFF4CAF50);
             btnVoid.setVisibility(View.VISIBLE);
+        } else if ("APPROVED".equals(txn.status) || "SUCCESS".equals(txn.status)) {
+            tvStatus.setBackgroundResource(R.drawable.bg_status_pill_success);
+            tvStatus.setTextColor(0xFF4CAF50);
+            btnVoid.setVisibility(View.GONE);
         } else if ("REVERSED".equals(txn.status) || "VOIDED".equals(txn.status)) {
             tvStatus.setBackgroundResource(R.drawable.bg_status_pill_neutral); // Gray
             tvStatus.setTextColor(0xFF757575);
@@ -278,12 +308,13 @@ public class TransactionDetailActivity extends BaseActivity {
 
     private void showVoidConfirmation() {
         new AlertDialog.Builder(this)
-                .setTitle("Cancel Transaction")
-                .setMessage("Are you sure you want to cancel this transaction? This action cannot be undone.")
-                .setPositiveButton("Yes, Cancel", (dialog, which) -> {
-                    viewModel.voidTransaction(transactionId);
+                .setTitle(R.string.void_confirm_title)
+                .setMessage(R.string.void_confirm_message)
+                .setPositiveButton(R.string.void_confirm_yes, (dialog, which) -> {
+                    String schemeName = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME);
+                    viewModel.voidTransaction(transactionId, schemeName);
                 })
-                .setNegativeButton("No", null)
+                .setNegativeButton(R.string.void_confirm_no, null)
                 .show();
     }
 }

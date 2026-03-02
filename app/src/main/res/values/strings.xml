@@ -204,6 +204,7 @@
 
     <!-- Terms Dialog -->
     <string name="terms_title">Terms &amp; Conditions</string>
+    <string name="privacy_title">Privacy Policy</string>
 
     <!-- Error Messages (ResponseCodeHelper) -->
     <string name="error_unknown">Unknown Error</string>
@@ -274,5 +275,16 @@
     <string name="settings_service_group">Service Settings</string>
     <string name="settings_change_password">Change Password</string>
     <string name="settings_logout">Log Out</string>
+
+    <!-- UI Improvements -->
+    <string name="txn_detail_title">Transaction Details</string>
+    <string name="amount_label">Amount</string>
+    <string name="cancel_transaction">Cancel Transaction</string>
+    <string name="processing">Processing…</string>
+    <string name="void_confirm_title">Cancel Transaction</string>
+    <string name="void_confirm_message">Are you sure you want to cancel this transaction? This action cannot be undone.</string>
+    <string name="void_confirm_yes">Yes, Cancel</string>
+    <string name="void_confirm_no">No</string>
+    <string name="terms_close">Close</string>
 
 </resources>

@@ -157,6 +157,17 @@ public class TransactionExecutor {
     public TransactionResult execute(Context appContext, TransactionContext ctx,
             CardInputData card, String txnType,
             LogCallback logger, String logTag) throws Exception {
+        return execute(appContext, ctx, card, txnType, logger, logTag, null);
+    }
+
+    /**
+     * Execute transaction with optional custom field overrides.
+     *
+     * @param fieldConfigJson JSON map of additional field overrides: {"3":"000000","18":"5999",...}
+     */
+    public TransactionResult execute(Context appContext, TransactionContext ctx,
+            CardInputData card, String txnType,
+            LogCallback logger, String logTag, String fieldConfigJson) throws Exception {
         if (logger == null)
             logger = NOOP;
         if (logTag == null)
@@ -168,6 +179,26 @@ public class TransactionExecutor {
             msg = Iso8583Builder.buildBalanceMsg(ctx, card);
         } else {
             msg = Iso8583Builder.buildPurchaseMsg(ctx, card);
+        }
+
+        // 1.5 Apply custom field overrides
+        if (fieldConfigJson != null && !fieldConfigJson.isEmpty()) {
+            try {
+                org.json.JSONObject json = new org.json.JSONObject(fieldConfigJson);
+                java.util.Iterator<String> keys = json.keys();
+                while (keys.hasNext()) {
+                    String key = keys.next();
+                    int fieldNum = Integer.parseInt(key);
+                    msg.setField(fieldNum, json.getString(key));
+                }
+                if (logger != null) {
+                    logger.log("Applied " + json.length() + " custom field override(s)");
+                }
+            } catch (Exception e) {
+                if (logger != null) {
+                    logger.log("Warning: Failed to apply custom fields: " + e.getMessage());
+                }
+            }
         }
 
         if (logger != null) {

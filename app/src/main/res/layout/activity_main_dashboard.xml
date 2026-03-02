@@ -6,6 +6,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     android:background="@drawable/bg_gradient_light">
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
@@ -99,6 +100,7 @@
                     android:src="@drawable/ic_home"
                     android:layout_gravity="start"
                     android:layout_marginStart="0dp"
+                    android:contentDescription="@string/app_name"
                     app:tint="@android:color/white" />
 
                 <!-- Logout Removed as per request -->
@@ -111,6 +113,7 @@
                     android:src="@drawable/ic_settings"
                     android:layout_gravity="end"
                     android:layout_marginEnd="8dp"
+                    android:contentDescription="@string/settings_personal_group"
                     app:tint="@android:color/white" />
             </androidx.appcompat.widget.Toolbar>
 
@@ -352,8 +355,6 @@
                         app:tint="#999" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
-            
-            <View android:layout_height="200dp" android:layout_width="match_parent" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

@@ -79,10 +79,15 @@ public class TransactionResultActivity extends BaseActivity {
         if (amount != null && !"OVERFLOW".equals(amount)) {
             try {
                 long val = Long.parseLong(amount);
-                java.text.NumberFormat nf = java.text.NumberFormat
-                        .getCurrencyInstance(new java.util.Locale.Builder().setLanguage("vi").setRegion("VN").build());
+                java.text.NumberFormat nf;
                 if ("USD".equals(currency)) {
                     nf = java.text.NumberFormat.getCurrencyInstance(java.util.Locale.US);
+                } else {
+                    // VND: no decimal places
+                    nf = java.text.NumberFormat.getCurrencyInstance(
+                            new java.util.Locale.Builder().setLanguage("vi").setRegion("VN").build());
+                    nf.setMaximumFractionDigits(0);
+                    nf.setMinimumFractionDigits(0);
                 }
                 tvAmount.setText(nf.format(val));
             } catch (Exception e) {

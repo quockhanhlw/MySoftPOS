@@ -33,9 +33,10 @@ public class BalanceInquiryActivity extends BaseCardEntryActivity {
         String username = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME);
         if (username == null)
             username = getString(R.string.guest_user);
+        long userId = getIntent().getLongExtra(com.example.mysoftpos.utils.IntentKeys.USER_ID, -1);
 
         this.lastUsedPan = card.getPan();
-        viewModel.processTransaction(card, "0", "704", TxnType.BALANCE_INQUIRY, username);
+        viewModel.processTransaction(card, "0", "704", TxnType.BALANCE_INQUIRY, username, userId);
     }
 
     @Override

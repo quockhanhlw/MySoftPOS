@@ -44,9 +44,9 @@ public interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE user_id = :userId ORDER BY timestamp DESC")
     androidx.lifecycle.LiveData<List<TransactionEntity>> getTransactionsByUserIdLive(long userId);
 
-    /** Assign user_id to orphan transactions (user_id IS NULL). */
-    @Query("UPDATE transactions SET user_id = :userId WHERE user_id IS NULL")
-    void assignOrphanTransactions(long userId);
+    /** Get transactions by owner_username — the definitive way to find a user's own transactions. */
+    @Query("SELECT * FROM transactions WHERE owner_username = :username ORDER BY timestamp DESC")
+    androidx.lifecycle.LiveData<List<TransactionEntity>> getTransactionsByOwnerLive(String username);
 
     @Transaction
     @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")

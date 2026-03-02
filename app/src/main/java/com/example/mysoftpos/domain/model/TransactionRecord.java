@@ -20,6 +20,10 @@ public class TransactionRecord {
     public final String last4;
     public final String scheme;
     public final String username;
+    public final long userId;
+    public final String serverIp;
+    public final int serverPort;
+    public final String schemeName;
 
     private TransactionRecord(Builder builder) {
         this.traceNumber = builder.traceNumber;
@@ -36,6 +40,10 @@ public class TransactionRecord {
         this.last4 = builder.last4;
         this.scheme = builder.scheme;
         this.username = builder.username;
+        this.userId = builder.userId;
+        this.serverIp = builder.serverIp;
+        this.serverPort = builder.serverPort;
+        this.schemeName = builder.schemeName;
     }
 
     public static class Builder {
@@ -53,6 +61,10 @@ public class TransactionRecord {
         private String last4;
         private String scheme;
         private String username;
+        private long userId = -1;
+        private String serverIp;
+        private int serverPort;
+        private String schemeName;
 
         public Builder() {
         }
@@ -124,6 +136,26 @@ public class TransactionRecord {
 
         public Builder setUsername(String username) {
             this.username = username;
+            return this;
+        }
+
+        public Builder setUserId(long userId) {
+            this.userId = userId;
+            return this;
+        }
+
+        public Builder setServerIp(String serverIp) {
+            this.serverIp = serverIp;
+            return this;
+        }
+
+        public Builder setServerPort(int serverPort) {
+            this.serverPort = serverPort;
+            return this;
+        }
+
+        public Builder setSchemeName(String schemeName) {
+            this.schemeName = schemeName;
             return this;
         }
 

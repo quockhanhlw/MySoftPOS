@@ -3,7 +3,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:paddingVertical="12dp">
+    android:gravity="center_vertical"
+    android:paddingVertical="14dp"
+    android:paddingHorizontal="4dp">
 
     <TextView
         android:id="@+id/tvLabel"
@@ -11,17 +13,19 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:text="Label"
-        android:textColor="#757575"
-        android:textSize="14sp"/>
+        android:textColor="#64748B"
+        android:textSize="14sp"
+        android:fontFamily="sans-serif" />
 
     <TextView
         android:id="@+id/tvValue"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Value"
-        android:textColor="#212121"
+        android:textColor="@color/neo_primary_dark"
         android:textSize="14sp"
         android:textStyle="bold"
+        android:fontFamily="sans-serif-medium"
         android:gravity="end"
-        android:maxWidth="200dp"/>
+        android:maxWidth="220dp" />
 </LinearLayout>

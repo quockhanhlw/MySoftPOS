@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     android:background="@drawable/bg_welcome_full_gradient"
     tools:context=".ui.auth.RegisterActivity">
 
@@ -15,7 +16,8 @@
         android:layout_marginTop="-50dp"
         android:layout_marginEnd="-60dp"
         android:alpha="0.08"
-        android:background="@drawable/bg_circle_white_shadow" />
+        android:background="@drawable/bg_circle_white_shadow"
+        android:importantForAccessibility="no" />
 
     <View
         android:layout_width="140dp"
@@ -24,7 +26,8 @@
         android:layout_marginStart="-40dp"
         android:layout_marginBottom="80dp"
         android:alpha="0.05"
-        android:background="@drawable/bg_circle_white_shadow" />
+        android:background="@drawable/bg_circle_white_shadow"
+        android:importantForAccessibility="no" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -47,7 +50,7 @@
                 android:layout_height="36dp"
                 android:layout_gravity="start"
                 android:layout_marginStart="16dp"
-                android:layout_marginTop="44dp"
+                android:layout_marginTop="12dp"
                 android:background="@drawable/bg_icon_btn_light"
                 android:padding="9dp"
                 android:src="@drawable/ic_back"
@@ -172,9 +175,28 @@
                         android:layout_marginTop="10dp"
                         android:background="@drawable/bg_input_rounded"
                         android:drawableStart="@drawable/ic_baseline_lock_24"
+                        android:drawableEnd="@drawable/ic_baseline_visibility_off_24"
                         android:drawablePadding="12dp"
                         android:drawableTint="#94A3B8"
                         android:hint="Create a password"
+                        android:inputType="textPassword"
+                        android:paddingHorizontal="18dp"
+                        android:textColor="#0F172A"
+                        android:textColorHint="#94A3B8"
+                        android:textSize="15sp" />
+
+                    <!-- Confirm Password -->
+                    <EditText
+                        android:id="@+id/etConfirmPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/bg_input_rounded"
+                        android:drawableStart="@drawable/ic_baseline_lock_24"
+                        android:drawableEnd="@drawable/ic_baseline_visibility_off_24"
+                        android:drawablePadding="12dp"
+                        android:drawableTint="#94A3B8"
+                        android:hint="Confirm password"
                         android:inputType="textPassword"
                         android:paddingHorizontal="18dp"
                         android:textColor="#0F172A"

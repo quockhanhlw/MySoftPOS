@@ -32,7 +32,7 @@ public class PurchaseAmountActivity extends BaseActivity {
     private LinearLayout numpadContainer;
     private StringBuilder amountBuilder = new StringBuilder();
     private ObjectAnimator cursorAnimator;
-    private boolean numpadVisible = false;
+    private boolean numpadVisible = true;
     private static final int MAX_DIGITS = 12;
 
     // Currency state
@@ -272,6 +272,8 @@ public class PurchaseAmountActivity extends BaseActivity {
         intent.putExtra(com.example.mysoftpos.utils.IntentKeys.CURRENCY, getCurrentCurrency()); // VND or USD
         intent.putExtra(com.example.mysoftpos.utils.IntentKeys.CURRENCY_CODE, getCurrentCurrencyCode()); // 704 or 840
         intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, getUsername());
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USER_ID,
+                getIntent().getLongExtra(com.example.mysoftpos.utils.IntentKeys.USER_ID, -1));
         startActivity(intent);
     }
 
