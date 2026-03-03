@@ -4,30 +4,53 @@ import java.util.Map;
 
 /**
  * Standardized Data Model for Card Input.
- * Represents data captured from NFC CHIP (071/072), Manual Entry (012), or Magstripe (021/022).
+ * Represents data captured from NFC CHIP (071/072), Manual Entry (012), or
+ * Magstripe (021/022).
  *
  * For NFC CHIP (Domestic NAPAS):
- *   - posEntryMode = "071" (Online PIN) or "072" (No CVM)
- *   - emvTags populated from chip via ReadCardDataUseCase
- *   - track2 populated from tag 57 (Track 2 Equivalent Data)
- *   - cardSequenceNumber from tag 5F34
+ * - posEntryMode = "071" (Online PIN) or "072" (No CVM)
+ * - emvTags populated from chip via ReadCardDataUseCase
+ * - track2 populated from tag 57 (Track 2 Equivalent Data)
+ * - cardSequenceNumber from tag 5F34
  */
 public class CardInputData {
-    private final String pan;
-    private final String expiryDate; // YYMM
-    private final String posEntryMode; // "071"/"072" NFC CHIP, "012" Manual, "021"/"022" Magstripe
-    private final String track2; // From tag 57 for NFC, from magstripe for swipe
+    // PA-DSS 1.x: Fields are mutable to allow secure wiping after use
+    private String pan;
+    private String expiryDate; // YYMM
+    private String posEntryMode; // "071"/"072" NFC CHIP, "012" Manual, "021"/"022" Magstripe
+    private String track2; // From tag 57 for NFC, from magstripe for swipe
     private String pinBlock; // Optional PIN Block (DE 52)
 
     // --- NFC CHIP fields ---
     private Map<Integer, byte[]> emvTags; // EMV tags read from chip (for DE 55)
-    private String cardSequenceNumber;     // From tag 5F34, for DE 23 (e.g., "001")
+    private String cardSequenceNumber; // From tag 5F34, for DE 23 (e.g., "001")
 
     public CardInputData(String pan, String expiryDate, String posEntryMode, String track2) {
         this.pan = pan;
         this.expiryDate = expiryDate;
         this.posEntryMode = posEntryMode;
         this.track2 = track2;
+    }
+
+    /**
+     * PA-DSS 1.x / 5.x: Securely wipe all sensitive cardholder data from memory.
+     * MUST be called after transaction processing completes.
+     */
+    public void wipe() {
+        this.pan = null;
+        this.expiryDate = null;
+        this.track2 = null;
+        this.pinBlock = null;
+        this.cardSequenceNumber = null;
+        // PA-DSS 1.1.1: Clear EMV tag data
+        if (this.emvTags != null) {
+            for (byte[] value : this.emvTags.values()) {
+                if (value != null)
+                    java.util.Arrays.fill(value, (byte) 0);
+            }
+            this.emvTags.clear();
+            this.emvTags = null;
+        }
     }
 
     public void setPinBlock(String pinBlock) {
@@ -112,4 +135,3 @@ public class CardInputData {
         return "****" + pan.substring(pan.length() - 4);
     }
 }
-

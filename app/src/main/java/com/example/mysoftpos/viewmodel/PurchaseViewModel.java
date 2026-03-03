@@ -137,6 +137,11 @@ public class PurchaseViewModel extends BaseViewModel {
                         .build();
                 repository.saveTransaction(record);
 
+                // Mark entity state before network call — ensures handleAutoReversal
+                // never operates on an entity with null status (fixes C-1).
+                entity.traceNumber = ctx.stan11;
+                entity.status = "PENDING";
+
                 // Network Send
                 byte[] resp;
                 try {

@@ -52,6 +52,13 @@ public class UserEntity {
     @ColumnInfo(name = "server_port")
     public int serverPort;
 
+    // PA-DSS 3.x: Account lockout after failed login attempts
+    @ColumnInfo(name = "failed_login_attempts", defaultValue = "0")
+    public int failedLoginAttempts;
+
+    @ColumnInfo(name = "locked_until", defaultValue = "0")
+    public long lockedUntil; // epoch ms — locked until this time
+
     public UserEntity() {
     }
 
@@ -68,5 +75,7 @@ public class UserEntity {
         this.createdAt = System.currentTimeMillis();
         this.serverIp = "";
         this.serverPort = 0;
+        this.failedLoginAttempts = 0;
+        this.lockedUntil = 0;
     }
 }

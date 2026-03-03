@@ -359,6 +359,11 @@ public class StandardIsoPacker {
         }
     }
 
+    /**
+     * Tạo chuỗi log của bản tin ISO8583.
+     * Các trường nhạy cảm (DE 2 PAN, DE 35 Track2, DE 52 PIN Block)
+     * được che giấu theo tiêu chuẩn PCI-DSS trước khi ghi log.
+     */
     public static String logIsoMessage(IsoMessage msg) {
         StringBuilder sb = new StringBuilder();
         sb.append("MTI: ").append(msg.getMti()).append("\n");
@@ -380,8 +385,10 @@ public class StandardIsoPacker {
         sb.append("DE 001: ").append(String.format(Locale.ROOT, "%016X", primaryBitmap)).append("\n");
 
         for (int field : new java.util.TreeSet<>(msg.getFieldNumbers())) {
-            sb.append("DE ").append(String.format(Locale.ROOT, "%03d", field)).append(": ").append(msg.getField(field))
-                    .append("\n");
+            // Mask sensitive fields before logging (PCI-DSS compliance)
+            String value = IsoMessage.maskSensitiveField(field, msg.getField(field));
+            sb.append("DE ").append(String.format(Locale.ROOT, "%03d", field))
+              .append(": ").append(value).append("\n");
         }
         return sb.toString();
     }

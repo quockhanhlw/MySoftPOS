@@ -19,19 +19,25 @@ import com.example.mysoftpos.domain.model.CardInputData;
 import com.example.mysoftpos.iso8583.TxnType;
 import com.example.mysoftpos.iso8583.spec.IsoField;
 
+import com.example.mysoftpos.testsuite.storage.SchemeRepository;
+import com.example.mysoftpos.testsuite.model.Scheme;
+
 public class TransactionDetailViewModel extends BaseViewModel {
 
     private final TransactionRepository repository;
     private final ConfigManager configManager;
     private final IsoNetworkClient isoNetworkClient;
+    private final SchemeRepository schemeRepository;
     private final MutableLiveData<TransactionState> state = new MutableLiveData<>();
 
     public TransactionDetailViewModel(Application application, TransactionRepository repository,
-            ConfigManager configManager, DispatcherProvider dispatchers, IsoNetworkClient isoNetworkClient) {
+            ConfigManager configManager, DispatcherProvider dispatchers,
+            IsoNetworkClient isoNetworkClient, SchemeRepository schemeRepository) {
         super(application, dispatchers);
         this.repository = repository;
         this.configManager = configManager;
         this.isoNetworkClient = isoNetworkClient;
+        this.schemeRepository = schemeRepository;
     }
 
     public LiveData<TransactionState> getState() {
@@ -97,10 +103,8 @@ public class TransactionDetailViewModel extends BaseViewModel {
                 int serverPort = configManager.getServerPort();
 
                 if (schemeName != null && !schemeName.isEmpty()) {
-                    // Admin void: use scheme's server config
-                    com.example.mysoftpos.testsuite.storage.SchemeRepository schemeRepo =
-                            new com.example.mysoftpos.testsuite.storage.SchemeRepository(getApplication());
-                    com.example.mysoftpos.testsuite.model.Scheme scheme = schemeRepo.getByName(schemeName);
+                    // Admin void: use scheme's server config (injected repository — M-4)
+                    Scheme scheme = schemeRepository.getByName(schemeName);
                     if (scheme != null && scheme.hasConnectionConfig()) {
                         serverIp = scheme.getServerIp();
                         serverPort = scheme.getServerPort();

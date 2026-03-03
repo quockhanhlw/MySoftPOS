@@ -2,14 +2,26 @@ package com.example.mysoftpos.iso8583;
 import com.example.mysoftpos.iso8583.TxnType;
 import com.example.mysoftpos.iso8583.TransactionContext;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 /**
  * Mutable Transaction Context POJO.
  */
 public class TransactionContext {
+
+    // ── Thread-safe formatters (DateTimeFormatter là immutable/thread-safe) ──
+    private static final DateTimeFormatter FMT_DE7  =
+            DateTimeFormatter.ofPattern("MMddHHmmss", Locale.US); // DE 7
+    private static final DateTimeFormatter FMT_DE12 =
+            DateTimeFormatter.ofPattern("HHmmss",     Locale.US); // DE 12
+    private static final DateTimeFormatter FMT_DE13 =
+            DateTimeFormatter.ofPattern("MMdd",       Locale.US); // DE 13
+    private static final DateTimeFormatter FMT_YEAR =
+            DateTimeFormatter.ofPattern("y",          Locale.US);
+    private static final DateTimeFormatter FMT_DAY  =
+            DateTimeFormatter.ofPattern("D",          Locale.US); // Julian day
 
     // Core Fields
     public TxnType txnType;
@@ -61,18 +73,10 @@ public class TransactionContext {
     }
 
     public void generateDateTime() {
-        Date now = new Date();
-        // DE 7: MMDDhhmmss
-        SimpleDateFormat f7 = new SimpleDateFormat("MMddHHmmss", Locale.US);
-        this.transmissionDt7 = f7.format(now);
-
-        // DE 12: HHmmss
-        SimpleDateFormat f12 = new SimpleDateFormat("HHmmss", Locale.US);
-        this.localTime12 = f12.format(now);
-
-        // DE 13: MMDD
-        SimpleDateFormat f13 = new SimpleDateFormat("MMdd", Locale.US);
-        this.localDate13 = f13.format(now);
+        LocalDateTime now = LocalDateTime.now();
+        this.transmissionDt7  = FMT_DE7.format(now);   // DE 7:  MMddHHmmss
+        this.localTime12      = FMT_DE12.format(now);  // DE 12: HHmmss
+        this.localDate13      = FMT_DE13.format(now);  // DE 13: MMdd
         this.settlementDate15 = this.localDate13;
     }
 
@@ -89,15 +93,14 @@ public class TransactionContext {
         while (serverId.length() < 2)
             serverId = "0" + serverId;
 
-        Date now = new Date();
-        // Last Digit Year
-        SimpleDateFormat yearFmt = new SimpleDateFormat("y", Locale.US);
-        String yearStr = yearFmt.format(now);
+        LocalDateTime now = LocalDateTime.now();
+
+        // Last digit of year
+        String yearStr = FMT_YEAR.format(now);
         String lastDigitYear = yearStr.substring(yearStr.length() - 1);
 
-        // Julian Date
-        SimpleDateFormat dayFmt = new SimpleDateFormat("D", Locale.US);
-        int dayOfYear = Integer.parseInt(dayFmt.format(now));
+        // Julian Date (day-of-year, 1–366)
+        int dayOfYear = Integer.parseInt(FMT_DAY.format(now));
         String julianDate = String.format(Locale.US, "%03d", dayOfYear);
 
         return lastDigitYear + julianDate + serverId + stan;
@@ -155,7 +158,7 @@ public class TransactionContext {
     }
 
     public static String buildLocalDate13Now() {
-        return new SimpleDateFormat("MMdd", Locale.US).format(new Date());
+        return FMT_DE13.format(LocalDateTime.now());
     }
 
     public static String defaultCurrencyVND() {

@@ -160,6 +160,11 @@
     <string name="payment_title">Thanh toán</string>
     <string name="tab_manual_entry">Nhập tay</string>
     <string name="tab_nfc">NFC</string>
+    <string name="tab_magstripe">Quẹt thẻ</string>
+    <string name="magstripe_select_card">Chọn thẻ để giao dịch</string>
+    <string name="magstripe_card_1_label">Thẻ thử nghiệm 1</string>
+    <string name="magstripe_card_2_label">Thẻ thử nghiệm 2</string>
+    <string name="magstripe_card_3_label">Thẻ thử nghiệm 3</string>
     <string name="card_pan_label">Số thẻ (PAN)</string>
     <string name="card_expiry_label">Ngày hết hạn (TTNN)</string>
     <string name="pan_hint">1234 5678 9012 3456</string>

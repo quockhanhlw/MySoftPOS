@@ -5,13 +5,15 @@ import android.nfc.TagLostException;
 import android.nfc.tech.IsoDep;
 import android.util.Log;
 
+import com.example.mysoftpos.BuildConfig;
+
 import java.io.IOException;
 
 public class IsoDepTransceiver implements CardTransceiver {
 
     private static final String TAG = "IsoDepTransceiver";
-    // TODO: Set back to false after fixing NAPAS card issue
-    private static final boolean DEBUG = true;
+    /** Only log raw APDU bytes in debug builds — release builds must NOT log card data. */
+    private static final boolean DEBUG = BuildConfig.DEBUG;
     /**
      * Timeout for IsoDep. Only need 3s since we send 4-5 APDUs (~200ms each).
      * Too long = user waits forever on card error.

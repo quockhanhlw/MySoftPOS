@@ -29,13 +29,15 @@ import com.google.android.material.tabs.TabLayout;
 
 /**
  * Base class for card entry activities (Purchase, Balance Inquiry).
- * Encapsulates: tab UI, ripple animation, manual entry, NFC card reading, ViewModel setup.
+ * Encapsulates: tab UI, ripple animation, manual entry, NFC card reading,
+ * ViewModel setup.
  *
  * Subclasses override:
  * - {@link #getLayoutResId()} — layout resource
  * - {@link #getSubmitButtonId()} — submit button ID
  * - {@link #onCardDataReady(CardInputData)} — process the transaction
- * - {@link #onTransactionResult(boolean, String, String, String)} — handle result
+ * - {@link #onTransactionResult(boolean, String, String, String)} — handle
+ * result
  * - {@link #onCreateExtra(Bundle)} — additional onCreate setup (optional)
  */
 public abstract class BaseCardEntryActivity extends BaseActivity implements NfcAdapter.ReaderCallback {
@@ -50,6 +52,7 @@ public abstract class BaseCardEntryActivity extends BaseActivity implements NfcA
 
     private CardView cardManualEntry;
     private CardView cardNfcEntry;
+    private View cardMagstripe;
     private LinearLayout layoutNfcDisabled;
     private LinearLayout layoutNfcReady;
     private ImageView ripple1, ripple2, ripple3, ripple4;
@@ -60,6 +63,19 @@ public abstract class BaseCardEntryActivity extends BaseActivity implements NfcA
     private NfcStateManager nfcStateManager;
     private boolean nfcEnabled = false;
     private boolean nfcCardProcessing = false;
+
+    // Magstripe test card data — real BINs: VietinBank, PGBank, BIDV
+    private static final String MAG_PAN_1 = "9704166606226219923";
+    private static final String MAG_EXP_1 = "3101";
+    private static final String MAG_TRACK2_1 = "9704166606226219923=31016010000000123";
+
+    private static final String MAG_PAN_2 = "9704306669144645257";
+    private static final String MAG_EXP_2 = "3101";
+    private static final String MAG_TRACK2_2 = "9704306669144645257=31016010000000123";
+
+    private static final String MAG_PAN_3 = "9704189991010867647";
+    private static final String MAG_EXP_3 = "3101";
+    private static final String MAG_TRACK2_3 = "9704189991010867647=31016010000000123";
 
     protected abstract int getLayoutResId();
 
@@ -79,9 +95,15 @@ public abstract class BaseCardEntryActivity extends BaseActivity implements NfcA
 
     /** Last PAN read from NFC, for masked PAN display in result. */
     private String lastNfcPan;
+    /** Last PAN selected from Magstripe, for masked PAN display in result. */
+    private String lastMagPan;
 
     public String getLastNfcPan() {
         return lastNfcPan;
+    }
+
+    public String getLastMagPan() {
+        return lastMagPan;
     }
 
     @Override
@@ -105,6 +127,7 @@ public abstract class BaseCardEntryActivity extends BaseActivity implements NfcA
         TabLayout tabLayout = findViewById(R.id.tabLayout);
         cardManualEntry = findViewById(R.id.cardManualEntry);
         cardNfcEntry = findViewById(R.id.cardMockTrack2); // keep ID for layout compat
+        cardMagstripe = findViewById(R.id.cardMagstripe);
         layoutNfcDisabled = findViewById(R.id.layoutNfcDisabled);
         layoutNfcReady = findViewById(R.id.layoutNfcReady);
         etPan = findViewById(R.id.etPan);
@@ -126,6 +149,9 @@ public abstract class BaseCardEntryActivity extends BaseActivity implements NfcA
         if (btnEnableNfc != null) {
             btnEnableNfc.setOnClickListener(v -> openNfcSettings());
         }
+
+        // ==================== Magstripe Card Selection ====================
+        setupMagstripeCards();
 
         // Tab Selection
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
@@ -206,11 +232,11 @@ public abstract class BaseCardEntryActivity extends BaseActivity implements NfcA
             options.putInt(NfcAdapter.EXTRA_READER_PRESENCE_CHECK_DELAY, 2500);
             nfcAdapter.enableReaderMode(this, this,
                     NfcAdapter.FLAG_READER_NFC_A |
-                    NfcAdapter.FLAG_READER_NFC_B |
-                    NfcAdapter.FLAG_READER_NFC_F |
-                    NfcAdapter.FLAG_READER_NFC_V |
-                    NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK |
-                    NfcAdapter.FLAG_READER_NO_PLATFORM_SOUNDS,
+                            NfcAdapter.FLAG_READER_NFC_B |
+                            NfcAdapter.FLAG_READER_NFC_F |
+                            NfcAdapter.FLAG_READER_NFC_V |
+                            NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK |
+                            NfcAdapter.FLAG_READER_NO_PLATFORM_SOUNDS,
                     options);
         }
     }
@@ -226,7 +252,8 @@ public abstract class BaseCardEntryActivity extends BaseActivity implements NfcA
 
     @Override
     public void onTagDiscovered(Tag tag) {
-        if (nfcCardProcessing) return;
+        if (nfcCardProcessing)
+            return;
         nfcCardProcessing = true;
 
         IsoDepTransceiver transceiver = IsoDepTransceiver.from(tag);
@@ -238,44 +265,53 @@ public abstract class BaseCardEntryActivity extends BaseActivity implements NfcA
             return;
         }
 
-        new Thread(() -> {
-            CardInputData cardData = null;
-            try {
-                transceiver.connect();
-                ReadCardDataUseCase useCase = new ReadCardDataUseCase(transceiver);
-                cardData = useCase.execute();
-                lastNfcPan = cardData.getPan();
-            } catch (Throwable e) {
-                // Catch Throwable, not just Exception — prevents app crash
-                Log.e(TAG, "NFC read failed", e);
-                final String errMsg = e.getMessage() != null ? e.getMessage() : "Lỗi đọc thẻ";
-                runOnUiThread(() -> {
-                    Toast.makeText(this,
-                            getString(R.string.nfc_reading_error, errMsg),
-                            Toast.LENGTH_SHORT).show();
-                });
-            } finally {
-                // ALWAYS close transceiver and reset flag
-                try { transceiver.close(); } catch (Exception ignored) {}
-                nfcCardProcessing = false;
-            }
-
-            // Deliver result on UI thread AFTER transceiver is closed
-            if (cardData != null) {
-                final CardInputData result = cardData;
-                runOnUiThread(() -> {
-                    Toast.makeText(this, getString(R.string.nfc_card_read_success), Toast.LENGTH_SHORT).show();
+        // Use managed IO thread pool instead of raw new Thread() (M-3)
+        com.example.mysoftpos.di.ServiceLocator.getInstance(this)
+                .getDispatcherProvider().io().execute(() -> {
+                    CardInputData cardData = null;
                     try {
-                        onCardDataReady(result);
-                    } catch (Exception e) {
-                        Log.e(TAG, "onCardDataReady failed", e);
-                        Toast.makeText(this,
-                                getString(R.string.nfc_reading_error, "Lỗi xử lý: " + e.getMessage()),
-                                Toast.LENGTH_SHORT).show();
+                        transceiver.connect();
+                        ReadCardDataUseCase useCase = new ReadCardDataUseCase(transceiver);
+                        cardData = useCase.execute();
+                        lastNfcPan = cardData.getPan();
+                    } catch (Throwable e) {
+                        // Catch Throwable, not just Exception — prevents app crash
+                        Log.e(TAG, "NFC read failed", e);
+                        final String errMsg = e.getMessage() != null ? e.getMessage() : "Lỗi đọc thẻ";
+                        runOnUiThread(() -> {
+                            if (isDestroyed() || isFinishing())
+                                return;
+                            Toast.makeText(this,
+                                    getString(R.string.nfc_reading_error, errMsg),
+                                    Toast.LENGTH_SHORT).show();
+                        });
+                    } finally {
+                        // ALWAYS close transceiver and reset flag
+                        try {
+                            transceiver.close();
+                        } catch (Exception ignored) {
+                        }
+                        nfcCardProcessing = false;
+                    }
+
+                    // Deliver result on UI thread AFTER transceiver is closed
+                    if (cardData != null) {
+                        final CardInputData result = cardData;
+                        runOnUiThread(() -> {
+                            if (isDestroyed() || isFinishing())
+                                return;
+                            Toast.makeText(this, getString(R.string.nfc_card_read_success), Toast.LENGTH_SHORT).show();
+                            try {
+                                onCardDataReady(result);
+                            } catch (Exception e) {
+                                Log.e(TAG, "onCardDataReady failed", e);
+                                Toast.makeText(this,
+                                        getString(R.string.nfc_reading_error, "Lỗi xử lý: " + e.getMessage()),
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        });
                     }
                 });
-            }
-        }).start();
     }
 
     // ==================== View Visibility ====================
@@ -285,14 +321,101 @@ public abstract class BaseCardEntryActivity extends BaseActivity implements NfcA
             // Manual Entry mode
             cardManualEntry.setVisibility(View.VISIBLE);
             cardNfcEntry.setVisibility(View.GONE);
+            if (cardMagstripe != null)
+                cardMagstripe.setVisibility(View.GONE);
             stopRippleAnimation();
             disableNfcReaderMode();
-        } else {
+        } else if (currentMode == 1) {
             // NFC mode
             cardManualEntry.setVisibility(View.GONE);
             cardNfcEntry.setVisibility(View.VISIBLE);
+            if (cardMagstripe != null)
+                cardMagstripe.setVisibility(View.GONE);
             updateNfcSubViews();
+        } else if (currentMode == 2) {
+            // Magstripe mode
+            cardManualEntry.setVisibility(View.GONE);
+            cardNfcEntry.setVisibility(View.GONE);
+            if (cardMagstripe != null)
+                cardMagstripe.setVisibility(View.VISIBLE);
+            stopRippleAnimation();
+            disableNfcReaderMode();
         }
+    }
+
+    // ==================== Magstripe Card Setup ====================
+
+    private void setupMagstripeCards() {
+        if (cardMagstripe == null)
+            return;
+
+        // Populate card PAN labels (monospace, bank-card style)
+        TextView tvPan1 = findViewById(R.id.tvMagCard1Pan);
+        TextView tvPan2 = findViewById(R.id.tvMagCard2Pan);
+        TextView tvPan3 = findViewById(R.id.tvMagCard3Pan);
+        if (tvPan1 != null)
+            tvPan1.setText(maskPanForDisplay(MAG_PAN_1));
+        if (tvPan2 != null)
+            tvPan2.setText(maskPanForDisplay(MAG_PAN_2));
+        if (tvPan3 != null)
+            tvPan3.setText(maskPanForDisplay(MAG_PAN_3));
+
+        // Populate expiry dates (format: MM/YY)
+        TextView tvExp1 = findViewById(R.id.tvMagCard1Exp);
+        TextView tvExp2 = findViewById(R.id.tvMagCard2Exp);
+        TextView tvExp3 = findViewById(R.id.tvMagCard3Exp);
+        if (tvExp1 != null)
+            tvExp1.setText(formatExpiry(MAG_EXP_1));
+        if (tvExp2 != null)
+            tvExp2.setText(formatExpiry(MAG_EXP_2));
+        if (tvExp3 != null)
+            tvExp3.setText(formatExpiry(MAG_EXP_3));
+
+        // Click handlers — create CardInputData with magstripe DE22=022, track2, and
+        // call onCardDataReady
+        View card1 = findViewById(R.id.cardMagstripe1);
+        View card2 = findViewById(R.id.cardMagstripe2);
+        View card3 = findViewById(R.id.cardMagstripe3);
+
+        if (card1 != null)
+            card1.setOnClickListener(v -> onMagstripeCardSelected(MAG_PAN_1, MAG_EXP_1, MAG_TRACK2_1));
+        if (card2 != null)
+            card2.setOnClickListener(v -> onMagstripeCardSelected(MAG_PAN_2, MAG_EXP_2, MAG_TRACK2_2));
+        if (card3 != null)
+            card3.setOnClickListener(v -> onMagstripeCardSelected(MAG_PAN_3, MAG_EXP_3, MAG_TRACK2_3));
+    }
+
+    private void onMagstripeCardSelected(String pan, String expiry, String track2) {
+        lastMagPan = pan;
+        CardInputData magData = new CardInputData(pan, expiry, "022", track2);
+        onCardDataReady(magData);
+    }
+
+    /** Mask PAN for card display: 9704 18•• •••• 7647 */
+    private static String maskPanForDisplay(String pan) {
+        if (pan == null || pan.length() < 10)
+            return pan;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < pan.length(); i++) {
+            if (i < 4 || i >= pan.length() - 4) {
+                sb.append(pan.charAt(i));
+            } else {
+                sb.append('•');
+            }
+            if ((i + 1) % 4 == 0 && i + 1 < pan.length()) {
+                sb.append(' ');
+            }
+        }
+        return sb.toString();
+    }
+
+    /** Format YYMM expiry to "VALID THRU MM/YY" for bank card display. */
+    private static String formatExpiry(String yymm) {
+        if (yymm == null || yymm.length() != 4)
+            return "";
+        String yy = yymm.substring(0, 2);
+        String mm = yymm.substring(2, 4);
+        return "VALID THRU  " + mm + "/" + yy;
     }
 
     private void updateNfcSubViews() {

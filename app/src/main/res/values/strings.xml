@@ -160,6 +160,11 @@
     <string name="payment_title">Payment</string>
     <string name="tab_manual_entry">Manual Entry</string>
     <string name="tab_nfc">NFC</string>
+    <string name="tab_magstripe">Magstripe</string>
+    <string name="magstripe_select_card">Select a card to proceed</string>
+    <string name="magstripe_card_1_label">Test Card 1</string>
+    <string name="magstripe_card_2_label">Test Card 2</string>
+    <string name="magstripe_card_3_label">Test Card 3</string>
     <string name="card_pan_label">Card Number (PAN)</string>
     <string name="card_expiry_label">Expiry Date (YYMM)</string>
     <string name="pan_hint">1234 5678 9012 3456</string>

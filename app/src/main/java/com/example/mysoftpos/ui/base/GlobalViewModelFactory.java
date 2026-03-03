@@ -36,7 +36,8 @@ public class GlobalViewModelFactory implements ViewModelProvider.Factory {
                     serviceLocator.getTransactionRepository(),
                     com.example.mysoftpos.utils.config.ConfigManager.getInstance(serviceLocator.getApplication()),
                     serviceLocator.getDispatcherProvider(),
-                    serviceLocator.getIsoNetworkClient());
+                    serviceLocator.getIsoNetworkClient(),
+                    serviceLocator.getSchemeRepository());
         }
 
         throw new IllegalArgumentException("Unknown ViewModel class: " + modelClass.getName());

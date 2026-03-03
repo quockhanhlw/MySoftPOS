@@ -1,10 +1,11 @@
 package com.example.mysoftpos.utils.threading;
-import com.example.mysoftpos.utils.threading.DispatcherProvider;
-import com.example.mysoftpos.utils.threading.DefaultDispatcherProvider;
 
 import android.os.Handler;
 import android.os.Looper;
 import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Executors;
 
 public class DefaultDispatcherProvider implements DispatcherProvider {
@@ -13,7 +14,13 @@ public class DefaultDispatcherProvider implements DispatcherProvider {
     private final Executor computationExecutor;
 
     public DefaultDispatcherProvider() {
-        this.ioExecutor = Executors.newCachedThreadPool();
+        // Bounded IO pool — prevents resource exhaustion under concurrent NFC+network load (H-4).
+        // Core=4, max=8, queue capacity=64, CallerRunsPolicy for back-pressure.
+        this.ioExecutor = new ThreadPoolExecutor(
+                4, 8,
+                60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(64),
+                new ThreadPoolExecutor.CallerRunsPolicy());
         this.computationExecutor = Executors.newFixedThreadPool(4);
         this.uiExecutor = new MainThreadExecutor();
     }
@@ -42,9 +49,3 @@ public class DefaultDispatcherProvider implements DispatcherProvider {
         }
     }
 }
-
-
-
-
-
-

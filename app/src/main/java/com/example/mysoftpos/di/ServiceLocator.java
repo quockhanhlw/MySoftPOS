@@ -46,6 +46,7 @@ public class ServiceLocator {
 
     private com.example.mysoftpos.data.remote.IsoNetworkClient isoNetworkClient;
     private com.example.mysoftpos.domain.service.TransactionExecutor transactionExecutor;
+    private com.example.mysoftpos.testsuite.storage.SchemeRepository schemeRepository;
 
     public com.example.mysoftpos.data.remote.IsoNetworkClient getIsoNetworkClient() {
         if (isoNetworkClient == null) {
@@ -59,6 +60,14 @@ public class ServiceLocator {
             transactionExecutor = new com.example.mysoftpos.domain.service.TransactionExecutor(getIsoNetworkClient());
         }
         return transactionExecutor;
+    }
+
+    /** Singleton SchemeRepository — avoids repeated file I/O on each call (M-4). */
+    public com.example.mysoftpos.testsuite.storage.SchemeRepository getSchemeRepository() {
+        if (schemeRepository == null) {
+            schemeRepository = new com.example.mysoftpos.testsuite.storage.SchemeRepository(application);
+        }
+        return schemeRepository;
     }
 
     public TransactionRepository getTransactionRepository() {

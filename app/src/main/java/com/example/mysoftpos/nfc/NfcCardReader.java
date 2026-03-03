@@ -3,10 +3,11 @@ package com.example.mysoftpos.nfc;
 import android.nfc.Tag;
 
 /**
- * Placeholder wrapper for NFC card read flow.
- * The current implementation uses IsoDepTransceiver + ReadCardDataUseCase.
- * This class is kept for backward compatibility with earlier iterations.
+ * @deprecated Dead code — no longer used. NFC card reading flows through
+ * {@link IsoDepTransceiver} + {@link com.example.mysoftpos.domain.usecase.ReadCardDataUseCase}.
+ * This class will be removed in a future cleanup.
  */
+@Deprecated
 public final class NfcCardReader {
 
     public interface Callback {
@@ -16,7 +17,8 @@ public final class NfcCardReader {
 
     public void read(Tag tag, Callback callback) {
         if (callback != null) {
-            callback.onError(new UnsupportedOperationException("NfcCardReader is not used in this version. Use ReadCardDataUseCase."));
+            callback.onError(new UnsupportedOperationException(
+                    "NfcCardReader is deprecated. Use ReadCardDataUseCase instead."));
         }
     }
 }

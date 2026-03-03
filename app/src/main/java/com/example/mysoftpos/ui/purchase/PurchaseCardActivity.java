@@ -89,11 +89,17 @@ public class PurchaseCardActivity extends BaseCardEntryActivity {
             String rawPan = etPan.getText().toString();
             if (rawPan.length() > 4)
                 maskedPan = "**** " + rawPan.substring(rawPan.length() - 4);
-        } else {
+        } else if (getCurrentMode() == 1) {
             // NFC - use real PAN from card read
             String nfcPan = getLastNfcPan();
             if (nfcPan != null && nfcPan.length() > 4) {
                 maskedPan = "**** " + nfcPan.substring(nfcPan.length() - 4);
+            }
+        } else if (getCurrentMode() == 2) {
+            // Magstripe - use selected card PAN
+            String magPan = getLastMagPan();
+            if (magPan != null && magPan.length() > 4) {
+                maskedPan = "**** " + magPan.substring(magPan.length() - 4);
             }
         }
         intent.putExtra(com.example.mysoftpos.utils.IntentKeys.MASKED_PAN, maskedPan);

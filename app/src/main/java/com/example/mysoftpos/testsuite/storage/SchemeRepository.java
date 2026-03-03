@@ -15,9 +15,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -50,6 +50,10 @@ public class SchemeRepository {
 
     /** Current file format version */
     private static final int FILE_VERSION = 1;
+
+    /** Thread-safe formatter for lastModified timestamp (DateTimeFormatter is immutable). */
+    private static final DateTimeFormatter FMT_MODIFIED =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.US);
 
     /** Legacy SharedPreferences name (for migration) */
     private static final String LEGACY_PREFS_NAME = "scheme_prefs";
@@ -202,7 +206,7 @@ public class SchemeRepository {
         try {
             JSONObject root = new JSONObject();
             root.put("version", FILE_VERSION);
-            root.put("lastModified", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date()));
+            root.put("lastModified", FMT_MODIFIED.format(LocalDateTime.now()));
 
             JSONArray arr = new JSONArray();
             for (Scheme s : list) {

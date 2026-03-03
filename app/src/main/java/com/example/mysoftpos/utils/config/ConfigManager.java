@@ -308,21 +308,13 @@ public class ConfigManager {
         return amountMax;
     }
 
-    // ==================== DEFAULTS (Hardcoded for backward compatibility)
-    // ====================
+    // ==================== DEFAULTS ====================
     public String getDefaultAmount() {
         return "100000";
     }
 
-    public String getMockPan() {
-        return "9704189991010867647";
-    }
-
-    public String getMockExpiry() {
-        return "3101";
-    }
-
-    public String getTrack2(String de22) {
-        return "9704189991010867647=31016010000000123";
-    }
+    // NOTE: getMockPan(), getMockExpiry(), getTrack2() were removed.
+    // They returned hardcoded card data which is a PCI-DSS security risk
+    // (could be silently submitted to a real server as a fallback).
+    // Callers should explicitly handle the null/empty PAN case instead.
 }

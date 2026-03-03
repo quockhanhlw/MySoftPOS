@@ -73,7 +73,6 @@ public class TransactionExecutor {
         ctx.acquirerId32 = config.getAcquirerId32();
         ctx.terminalId41 = config.getTerminalId();
         ctx.merchantId42 = config.getMerchantId();
-        ctx.merchantId42 = config.getMerchantId();
 
         // DE 43: Dynamic Country Code
         String baseName = config.getMerchantName();
@@ -117,9 +116,10 @@ public class TransactionExecutor {
             }
         }
 
-        // Fallback
-        if (pan == null) {
-            pan = ConfigManager.getInstance(appContext).getMockPan();
+        // PAN must be present — do not fall back to mock data (PCI-DSS H-1)
+        if (pan == null || pan.isEmpty()) {
+            logger.log("ERROR: PAN is null/empty — cannot build card data");
+            return new CardInputData(null, expiry, de22, track2);
         }
 
         CardInputData card = new CardInputData(pan, expiry, de22, track2);

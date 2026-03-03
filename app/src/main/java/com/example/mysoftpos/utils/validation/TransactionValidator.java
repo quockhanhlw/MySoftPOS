@@ -32,8 +32,19 @@ public class TransactionValidator {
             return ValidationResult.INVALID_CARD_DATA;
 
         // 2. Card Validation
+        String posMode = card.getPosEntryMode();
+        boolean isNfc = "071".equals(posMode) || "072".equals(posMode);
+
+        if (isNfc) {
+            // NFC chip: PAN and ICC data come from card — just verify PAN is present
+            if (card.getPan() == null || card.getPan().isEmpty())
+                return ValidationResult.INVALID_CARD_NUMBER;
+            // Expiry lives inside DE 55 tag 57 for chip cards — skip separate expiry check
+            return ValidationResult.VALID;
+        }
+
         // Manual (012): Check Luhn
-        if ("012".equals(card.getPosEntryMode())) {
+        if ("012".equals(posMode)) {
             if (!luhnCheck(card.getPan())) {
                 return ValidationResult.INVALID_CARD_NUMBER;
             }
@@ -43,7 +54,7 @@ public class TransactionValidator {
         if (card.getPan() == null || card.getPan().isEmpty())
             return ValidationResult.INVALID_CARD_NUMBER;
 
-        // Check Expiry (Basic)
+        // Check Expiry (Basic) — only for non-NFC modes
         if (card.getExpiryDate() == null || card.getExpiryDate().length() != 4) {
             return ValidationResult.INVALID_EXPIRY;
         }
