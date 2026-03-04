@@ -1,5 +1,4 @@
 package com.example.mysoftpos.data.local.entity;
-import com.example.mysoftpos.data.local.entity.TestSuiteEntity;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
@@ -9,6 +8,14 @@ import androidx.room.PrimaryKey;
 public class TestSuiteEntity {
     @PrimaryKey(autoGenerate = true)
     public long id;
+
+    /** Backend TestSuite.id for API sync */
+    @ColumnInfo(name = "backend_id")
+    public long backendId;
+
+    /** Backend admin owner ID */
+    @ColumnInfo(name = "admin_backend_id")
+    public long adminBackendId;
 
     @ColumnInfo(name = "name")
     public String name; // e.g. "Full Regression", "Purchase Sanity"

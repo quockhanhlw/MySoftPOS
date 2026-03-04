@@ -10,17 +10,16 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.data.local.AppDatabase;
 import com.example.mysoftpos.data.local.entity.TransactionEntity;
-import com.example.mysoftpos.data.local.entity.TransactionWithDetails;
 import com.example.mysoftpos.testsuite.model.Scheme;
 import com.example.mysoftpos.testsuite.storage.SchemeRepository;
 import com.example.mysoftpos.ui.dashboard.TransactionDetailActivity;
+import com.example.mysoftpos.ui.BaseActivity;
 import com.example.mysoftpos.utils.IntentKeys;
 
 import java.text.DecimalFormat;
@@ -36,7 +35,7 @@ import java.util.Locale;
  * Transactions are matched by card BIN prefix (from cards table) against scheme.prefix.
  * Void uses the scheme's own server IP/port.
  */
-public class SchemeHistoryActivity extends AppCompatActivity {
+public class SchemeHistoryActivity extends BaseActivity {
 
     private String schemeName;
     private String schemePrefix;
@@ -80,21 +79,25 @@ public class SchemeHistoryActivity extends AppCompatActivity {
                 .getAllTransactionsLive()
                 .observe(this, allTxns -> {
                     transactions.clear();
-                    if (allTxns != null && !schemePrefix.isEmpty()) {
-                        for (TransactionEntity t : allTxns) {
-                            // Skip zero-amount (balance inquiry)
-                            if (t.amount == null || "0".equals(t.amount) || "000000000000".equals(t.amount)) {
-                                continue;
-                            }
-                            // Only show Purchase transactions (DE 3 starts with 00)
-                            if (!isPurchaseTransaction(t)) {
-                                continue;
-                            }
-                            // Match by extracting PAN from requestHex DE 2
-                            if (matchesScheme(t)) {
-                                transactions.add(t);
+                    try {
+                        if (allTxns != null && !schemePrefix.isEmpty()) {
+                            for (TransactionEntity t : allTxns) {
+                                // Skip zero-amount (balance inquiry)
+                                if (t.amount == null || "0".equals(t.amount) || "000000000000".equals(t.amount)) {
+                                    continue;
+                                }
+                                // Only show Purchase transactions (DE 3 starts with 00)
+                                if (!isPurchaseTransaction(t)) {
+                                    continue;
+                                }
+                                // Match by extracting PAN from requestHex DE 2
+                                if (matchesScheme(t)) {
+                                    transactions.add(t);
+                                }
                             }
                         }
+                    } catch (Exception e) {
+                        android.util.Log.e("SchemeHistory", "Error filtering transactions", e);
                     }
                     adapter.notifyDataSetChanged();
                     tvEmpty.setVisibility(transactions.isEmpty() ? View.VISIBLE : View.GONE);

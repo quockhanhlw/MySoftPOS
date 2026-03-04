@@ -1,6 +1,5 @@
 package com.example.mysoftpos.ui.admin;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
@@ -13,38 +12,34 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.mysoftpos.R;
-import com.example.mysoftpos.data.local.AppDatabase;
-import com.example.mysoftpos.data.local.dao.UserDao;
-import com.example.mysoftpos.data.local.entity.UserEntity;
-import com.example.mysoftpos.utils.security.PasswordUtils;
-import com.google.android.material.button.MaterialButton;
+import com.example.mysoftpos.data.remote.api.ApiClient;
+import com.example.mysoftpos.data.remote.api.ApiService;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+/**
+ * Admin: User Management — CRUD via Backend API.
+ * Each user has a unique TID (Terminal ID).
+ */
 public class UserManagementActivity extends AppCompatActivity implements UserAdapter.OnUserListener {
 
-    private UserDao userDao;
     private UserAdapter adapter;
-    private String adminId;
     private TextView tvUserCount;
     private View layoutEmpty;
     private EditText etSearch;
-    private java.util.List<UserEntity> allUsers = new java.util.ArrayList<>();
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private List<ApiService.UserDto> allUsers = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_management);
-
-        adminId = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME);
-        if (adminId != null) {
-            adminId = PasswordUtils.hashSHA256(adminId);
-        }
-
-        userDao = AppDatabase.getInstance(this).userDao();
 
         tvUserCount = findViewById(R.id.tvUserCount);
         layoutEmpty = findViewById(R.id.layoutEmpty);
@@ -60,7 +55,7 @@ public class UserManagementActivity extends AppCompatActivity implements UserAda
         FloatingActionButton fab = findViewById(R.id.fabAdd);
         fab.setOnClickListener(v -> showAddEditDialog(null));
 
-        // Search filter
+        // Search
         etSearch.addTextChangedListener(new android.text.TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -76,263 +71,335 @@ public class UserManagementActivity extends AppCompatActivity implements UserAda
             }
         });
 
-        // Observe users
-        if (adminId != null) {
-            userDao.getAllByAdminId(adminId).observe(this, users -> {
-                allUsers = users != null ? users : new java.util.ArrayList<>();
-                filterUsers(etSearch.getText().toString().trim());
-            });
+        loadUsers();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadUsers();
+    }
+
+    // ====== Load from API ======
+    private void loadUsers() {
+        String token = ApiClient.bearerToken(this);
+        // If no token (offline login), show clear message
+        if (token.isEmpty() || "Bearer ".equals(token) || !ApiClient.isLoggedIn(this)) {
+            Toast.makeText(this,
+                    "Not authenticated with backend server. Please log out and log in again with backend connected.",
+                    Toast.LENGTH_LONG).show();
+            allUsers.clear();
+            filterUsers("");
+            return;
         }
+        ApiClient.getService(this).getUsers(token).enqueue(new Callback<List<ApiService.UserDto>>() {
+            @Override
+            public void onResponse(Call<List<ApiService.UserDto>> call, Response<List<ApiService.UserDto>> resp) {
+                if (resp.isSuccessful() && resp.body() != null) {
+                    allUsers = resp.body();
+                    filterUsers(etSearch.getText().toString().trim());
+                } else {
+                    Toast.makeText(UserManagementActivity.this, "Failed to load users", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<ApiService.UserDto>> call, Throwable t) {
+                Toast.makeText(UserManagementActivity.this,
+                        "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void filterUsers(String query) {
-        java.util.List<UserEntity> filtered;
         if (query.isEmpty()) {
-            filtered = allUsers;
+            adapter.setUsers(allUsers);
         } else {
+            List<ApiService.UserDto> filtered = new ArrayList<>();
             String q = query.toLowerCase();
-            filtered = new java.util.ArrayList<>();
-            for (UserEntity u : allUsers) {
-                boolean nameMatch = u.displayName != null && u.displayName.toLowerCase().contains(q);
-                boolean phoneMatch = u.phone != null && u.phone.contains(q);
-                boolean emailMatch = u.email != null && u.email.toLowerCase().contains(q);
-                if (nameMatch || phoneMatch || emailMatch) {
+            for (ApiService.UserDto u : allUsers) {
+                if ((u.fullName != null && u.fullName.toLowerCase().contains(q)) ||
+                        (u.phone != null && u.phone.toLowerCase().contains(q)) ||
+                        (u.username != null && u.username.toLowerCase().contains(q)) ||
+                        (u.terminalId != null && u.terminalId.toLowerCase().contains(q))) {
                     filtered.add(u);
                 }
             }
+            adapter.setUsers(filtered);
         }
-        adapter.setUsers(filtered);
-        tvUserCount.setText(filtered.size() + " users");
-        layoutEmpty.setVisibility(filtered.isEmpty() && allUsers.isEmpty() ? View.VISIBLE : View.GONE);
+        int count = adapter.getItemCount();
+        tvUserCount.setText(count + " user(s)");
+        layoutEmpty.setVisibility(count == 0 ? View.VISIBLE : View.GONE);
     }
 
     @Override
-    public void onUserClick(UserEntity user) {
+    public void onUserClick(ApiService.UserDto user) {
         showAddEditDialog(user);
     }
 
     @Override
-    public void onUserLongClick(UserEntity user) {
-        showAddEditDialog(user);
+    public void onUserLongClick(ApiService.UserDto user) {
+        confirmDelete(user);
     }
 
-    private void showAddEditDialog(UserEntity existing) {
+    // ====== Add / Edit Dialog ======
+    private void showAddEditDialog(ApiService.UserDto existing) {
         boolean isEdit = existing != null;
-
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_edit_user, null);
+
+        EditText etName = dialogView.findViewById(R.id.etName);
+        EditText etPhone = dialogView.findViewById(R.id.etPhone);
+        EditText etEmail = dialogView.findViewById(R.id.etEmail);
+        EditText etPassword = dialogView.findViewById(R.id.etPassword);
+        EditText etUsername = dialogView.findViewById(R.id.etUsername);
+        EditText etTerminalId = dialogView.findViewById(R.id.etTerminalId);
+        EditText etServerIp = dialogView.findViewById(R.id.etServerIp);
+        EditText etServerPort = dialogView.findViewById(R.id.etServerPort);
 
         TextView tvTitle = dialogView.findViewById(R.id.tvDialogTitle);
         TextView tvSubtitle = dialogView.findViewById(R.id.tvDialogSubtitle);
-        tvTitle.setText(isEdit ? "Edit User" : "Add User");
-        tvSubtitle.setText(isEdit ? "Modify user account settings" : "Create a new user account");
 
-        com.google.android.material.textfield.TextInputLayout tilName = dialogView.findViewById(R.id.tilName);
-        EditText etName = dialogView.findViewById(R.id.etName);
-        com.google.android.material.textfield.TextInputLayout tilEmail = dialogView.findViewById(R.id.tilEmail);
-        EditText etEmail = dialogView.findViewById(R.id.etEmail);
-        com.google.android.material.textfield.TextInputLayout tilPhone = dialogView.findViewById(R.id.tilPhone);
-        EditText etPhone = dialogView.findViewById(R.id.etPhone);
-        com.google.android.material.textfield.TextInputLayout tilPassword = dialogView.findViewById(R.id.tilPassword);
-        EditText etPassword = dialogView.findViewById(R.id.etPassword);
-        EditText etServerIp = dialogView.findViewById(R.id.etServerIp);
-        EditText etServerPort = dialogView.findViewById(R.id.etServerPort);
-        MaterialButton btnTestConn = dialogView.findViewById(R.id.btnTestConnection);
-        TextView tvConnStatus = dialogView.findViewById(R.id.tvConnectionStatus);
-        MaterialButton btnDelete = dialogView.findViewById(R.id.btnDelete);
-
-        // Pre-fill for edit
         if (isEdit) {
-            etName.setText(existing.displayName);
-            etEmail.setText(existing.email);
+            if (tvTitle != null)
+                tvTitle.setText("Edit User");
+            if (tvSubtitle != null)
+                tvSubtitle.setText("Update user details");
+            etName.setText(existing.fullName);
             etPhone.setText(existing.phone);
-            tilPassword.setHint("Password (leave blank to keep)");
-            if (existing.serverIp != null && !existing.serverIp.isEmpty()) {
-                etServerIp.setText(existing.serverIp);
+            etEmail.setText(existing.email);
+            if (etUsername != null) {
+                etUsername.setText(existing.username);
+                etUsername.setEnabled(false); // Username cannot be changed
+                etUsername.setAlpha(0.6f);
             }
-            if (existing.serverPort > 0) {
-                etServerPort.setText(String.valueOf(existing.serverPort));
-            }
+            if (etTerminalId != null)
+                etTerminalId.setText(existing.terminalId);
+            etPassword.setHint("New password (leave blank to keep)");
         }
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
+                .setCancelable(true)
                 .create();
 
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        }
-
-        // Test Connection
-        btnTestConn.setOnClickListener(v -> {
-            String ip = etServerIp.getText().toString().trim();
-            String portStr = etServerPort.getText().toString().trim();
-            performPingTest(ip, portStr, tvConnStatus);
-        });
-
-        // Delete
-        if (isEdit) {
-            btnDelete.setVisibility(View.VISIBLE);
-            btnDelete.setOnClickListener(v -> {
-                dialog.dismiss();
-                confirmDelete(existing);
-            });
-        }
-
-        // Cancel
-        dialogView.findViewById(R.id.btnDialogCancel).setOnClickListener(v -> dialog.dismiss());
-
-        // Save
-        dialogView.findViewById(R.id.btnDialogSave).setOnClickListener(v -> {
-            String name = etName.getText().toString().trim();
-            String email = etEmail.getText().toString().trim();
-            String phone = etPhone.getText().toString().trim();
-            String password = etPassword.getText().toString().trim();
-            String serverIp = etServerIp.getText().toString().trim();
-            String portStr = etServerPort.getText().toString().trim();
-
-            // Validation
-            boolean valid = true;
-            if (name.isEmpty()) {
-                tilName.setError("Required");
-                valid = false;
-            } else
-                tilName.setError(null);
-
-            // Email is optional
-            tilEmail.setError(null);
-
-            if (phone.isEmpty()) {
-                tilPhone.setError("Required");
-                valid = false;
-            } else
-                tilPhone.setError(null);
-
-            if (!isEdit && password.isEmpty()) {
-                tilPassword.setError("Required");
-                valid = false;
-            } else
-                tilPassword.setError(null);
-
-            if (!valid)
-                return;
-
-            int serverPort = 0;
-            try {
-                serverPort = Integer.parseInt(portStr);
-            } catch (Exception ignored) {
-            }
-
-            final int finalPort = serverPort;
-            executor.execute(() -> {
-                try {
-                    if (isEdit) {
-                        // Check phone uniqueness (exclude self)
-                        if (!phone.equals(existing.phone) && userDao.existsByPhone(phone)) {
-                            runOnUiThread(() -> tilPhone.setError("Phone already exists"));
-                            return;
-                        }
-
-                        existing.displayName = name;
-                        // Update usernameHash if phone changed (login uses hash(phone))
-                        if (!phone.equals(existing.phone)) {
-                            existing.usernameHash = PasswordUtils.hashSHA256(phone);
-                        }
-                        existing.email = email;
-                        existing.phone = phone;
-                        existing.serverIp = serverIp;
-                        existing.serverPort = finalPort;
-                        if (!password.isEmpty()) {
-                            existing.passwordHash = PasswordUtils.hashSHA256(password);
-                        }
-                        userDao.update(existing);
-                        runOnUiThread(() -> {
-                            Toast.makeText(this, "User updated", Toast.LENGTH_SHORT).show();
-                            dialog.dismiss();
-                        });
-                    } else {
-                        // Check phone duplicate
-                        if (userDao.existsByPhone(phone)) {
-                            runOnUiThread(() -> tilPhone.setError("Phone already exists"));
-                            return;
-                        }
-
-                        String usernameHash = PasswordUtils.hashSHA256(phone);
-                        if (userDao.existsByUsernameHash(usernameHash)) {
-                            runOnUiThread(() -> tilPhone.setError("Phone already registered"));
-                            return;
-                        }
-
-                        String passwordHash = PasswordUtils.hashSHA256(password);
-
-                        UserEntity user = new UserEntity(usernameHash, passwordHash, name, "USER", email, phone, null);
-                        user.adminId = adminId;
-                        user.serverIp = serverIp;
-                        user.serverPort = finalPort;
-                        userDao.insert(user);
-
-                        runOnUiThread(() -> {
-                            Toast.makeText(this, "User created", Toast.LENGTH_SHORT).show();
-                            dialog.dismiss();
-                        });
+        // Test Connection button
+        View btnTestConnection = dialogView.findViewById(R.id.btnTestConnection);
+        TextView tvStatus = dialogView.findViewById(R.id.tvConnectionStatus);
+        if (btnTestConnection != null) {
+            btnTestConnection.setVisibility(View.VISIBLE);
+            btnTestConnection.setOnClickListener(v -> {
+                String ip = etServerIp != null ? etServerIp.getText().toString().trim() : "";
+                String portStr = etServerPort != null ? etServerPort.getText().toString().trim() : "";
+                if (ip.isEmpty() || portStr.isEmpty()) {
+                    if (tvStatus != null) {
+                        tvStatus.setVisibility(View.VISIBLE);
+                        tvStatus.setText("Enter IP and Port first");
+                        tvStatus.setTextColor(0xFFEF4444);
                     }
-                } catch (Exception e) {
-                    runOnUiThread(() -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                    return;
                 }
+                int port;
+                try { port = Integer.parseInt(portStr); } catch (NumberFormatException e) {
+                    if (tvStatus != null) {
+                        tvStatus.setVisibility(View.VISIBLE);
+                        tvStatus.setText("Invalid port number");
+                        tvStatus.setTextColor(0xFFEF4444);
+                    }
+                    return;
+                }
+                if (tvStatus != null) {
+                    tvStatus.setVisibility(View.VISIBLE);
+                    tvStatus.setText("Testing...");
+                    tvStatus.setTextColor(0xFF64748B);
+                }
+                final int finalPort = port;
+                new Thread(() -> {
+                    boolean ok = false;
+                    try {
+                        java.net.Socket socket = new java.net.Socket();
+                        socket.connect(new java.net.InetSocketAddress(ip, finalPort), 5000);
+                        socket.close();
+                        ok = true;
+                    } catch (Exception ignored) {}
+                    final boolean result = ok;
+                    runOnUiThread(() -> {
+                        if (tvStatus != null) {
+                            tvStatus.setVisibility(View.VISIBLE);
+                            if (result) {
+                                tvStatus.setText("✓ Connected");
+                                tvStatus.setTextColor(0xFF16A34A);
+                            } else {
+                                tvStatus.setText("✗ Connection failed");
+                                tvStatus.setTextColor(0xFFEF4444);
+                            }
+                        }
+                    });
+                }).start();
             });
-        });
+        }
+
+        // Save button
+        View btnSave = dialogView.findViewById(R.id.btnDialogSave);
+        if (btnSave != null) {
+            btnSave.setOnClickListener(v -> {
+                String fullName = etName.getText().toString().trim();
+                String phone = etPhone.getText().toString().trim();
+                String email = etEmail.getText().toString().trim();
+                String password = etPassword.getText().toString().trim();
+                String username = etUsername != null ? etUsername.getText().toString().trim() : "";
+                String terminalId = etTerminalId != null ? etTerminalId.getText().toString().trim() : "";
+                String serverIp = etServerIp != null ? etServerIp.getText().toString().trim() : "";
+                String serverPortStr = etServerPort != null ? etServerPort.getText().toString().trim() : "";
+                int serverPort = 0;
+                try { serverPort = Integer.parseInt(serverPortStr); } catch (NumberFormatException ignored) {}
+
+                if (!isEdit && username.isEmpty()) {
+                    Toast.makeText(this, "Username is required", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (!isEdit && password.isEmpty()) {
+                    Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                String token = ApiClient.bearerToken(this);
+                final String fServerIp = serverIp;
+                final int fServerPort = serverPort;
+
+                if (isEdit) {
+                    ApiService.CreateUserRequest req = new ApiService.CreateUserRequest(
+                            existing.username, password.isEmpty() ? null : password,
+                            fullName, phone, email, terminalId);
+                    ApiClient.getService(this).updateUser(token, existing.id, req)
+                            .enqueue(new SimpleCallbackWithLocalSync("User updated", existing.id, fServerIp, fServerPort));
+                } else {
+                    ApiService.CreateUserRequest req = new ApiService.CreateUserRequest(
+                            username, password, fullName, phone, email, terminalId);
+                    ApiClient.getService(this).createUser(token, req)
+                            .enqueue(new SimpleCallbackWithLocalSync("User created", -1, fServerIp, fServerPort));
+                }
+                dialog.dismiss();
+            });
+        }
+
+        // Cancel button
+        View btnCancel = dialogView.findViewById(R.id.btnDialogCancel);
+        if (btnCancel != null) {
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        // Delete button (edit mode only)
+        View btnDelete = dialogView.findViewById(R.id.btnDelete);
+        if (btnDelete != null) {
+            if (isEdit) {
+                btnDelete.setVisibility(View.VISIBLE);
+                btnDelete.setOnClickListener(v -> {
+                    dialog.dismiss();
+                    confirmDelete(existing);
+                });
+            } else {
+                btnDelete.setVisibility(View.GONE);
+            }
+        }
+
 
         dialog.show();
     }
 
-    private void confirmDelete(UserEntity user) {
+    // ====== Delete ======
+    private void confirmDelete(ApiService.UserDto user) {
         new AlertDialog.Builder(this)
-                .setTitle("Delete " + user.displayName + "?")
-                .setMessage("This will permanently remove this user account.")
+                .setTitle("Delete User")
+                .setMessage("Delete " + (user.fullName != null ? user.fullName : user.username) + "?")
                 .setPositiveButton("Delete", (d, w) -> {
-                    executor.execute(() -> {
-                        userDao.delete(user);
-                        runOnUiThread(() -> Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show());
-                    });
+                    String token = ApiClient.bearerToken(this);
+                    ApiClient.getService(this).deleteUser(token, user.id)
+                            .enqueue(new Callback<Map<String, String>>() {
+                                @Override
+                                public void onResponse(Call<Map<String, String>> c, Response<Map<String, String>> r) {
+                                    Toast.makeText(UserManagementActivity.this, "User deleted", Toast.LENGTH_SHORT)
+                                            .show();
+                                    loadUsers();
+                                }
+
+                                @Override
+                                public void onFailure(Call<Map<String, String>> c, Throwable t) {
+                                    Toast.makeText(UserManagementActivity.this, "Error: " + t.getMessage(),
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            });
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
-    private void performPingTest(String serverIp, String portStr, TextView tvStatus) {
-        if (serverIp.isEmpty() || portStr.isEmpty()) {
-            tvStatus.setVisibility(View.VISIBLE);
-            tvStatus.setTextColor(Color.parseColor("#EF4444"));
-            tvStatus.setText("⚠️ Please enter IP and Port first");
-            return;
+    // Helper callback that shows a toast, reloads, and saves server config locally
+    private class SimpleCallbackWithLocalSync implements Callback<ApiService.UserDto> {
+        private final String successMsg;
+        private final long existingBackendId;
+        private final String serverIp;
+        private final int serverPort;
+
+        SimpleCallbackWithLocalSync(String msg, long existingBackendId, String serverIp, int serverPort) {
+            this.successMsg = msg;
+            this.existingBackendId = existingBackendId;
+            this.serverIp = serverIp;
+            this.serverPort = serverPort;
         }
 
-        int port;
-        try {
-            port = Integer.parseInt(portStr);
-        } catch (NumberFormatException e) {
-            tvStatus.setVisibility(View.VISIBLE);
-            tvStatus.setTextColor(Color.parseColor("#EF4444"));
-            tvStatus.setText("⚠️ Invalid Port");
-            return;
-        }
+        @Override
+        public void onResponse(Call<ApiService.UserDto> call, Response<ApiService.UserDto> resp) {
+            if (resp.isSuccessful() && resp.body() != null) {
+                Toast.makeText(UserManagementActivity.this, successMsg, Toast.LENGTH_SHORT).show();
 
-        tvStatus.setVisibility(View.VISIBLE);
-        tvStatus.setTextColor(Color.parseColor("#94A3B8"));
-        tvStatus.setText("⏳ Connecting to " + serverIp + ":" + port + "...");
+                // Save serverIp/serverPort to local Room DB
+                ApiService.UserDto savedUser = resp.body();
+                new Thread(() -> {
+                    try {
+                        com.example.mysoftpos.data.local.AppDatabase db =
+                                com.example.mysoftpos.data.local.AppDatabase.getInstance(UserManagementActivity.this);
+                        com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
 
-        new Thread(() -> {
-            try (java.net.Socket socket = new java.net.Socket()) {
-                socket.connect(new java.net.InetSocketAddress(serverIp, port), 5000);
-                runOnUiThread(() -> {
-                    tvStatus.setTextColor(Color.parseColor("#10B981"));
-                    tvStatus.setText("✅ Connection Successful!");
-                });
-            } catch (java.io.IOException e) {
-                runOnUiThread(() -> {
-                    tvStatus.setTextColor(Color.parseColor("#EF4444"));
-                    tvStatus.setText("❌ Failed: " + e.getMessage());
-                });
+                        String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils
+                                .hashSHA256(savedUser.username);
+                        com.example.mysoftpos.data.local.entity.UserEntity localUser =
+                                userDao.findByUsernameHash(usernameHash);
+
+                        if (localUser != null) {
+                            localUser.serverIp = serverIp;
+                            localUser.serverPort = serverPort;
+                            localUser.backendId = savedUser.id;
+                            userDao.update(localUser);
+                        } else {
+                            // Create local entry
+                            localUser = new com.example.mysoftpos.data.local.entity.UserEntity();
+                            localUser.usernameHash = usernameHash;
+                            localUser.passwordHash = "";
+                            localUser.displayName = savedUser.fullName;
+                            localUser.role = savedUser.role;
+                            localUser.email = savedUser.email;
+                            localUser.phone = savedUser.phone;
+                            localUser.backendId = savedUser.id;
+                            localUser.serverIp = serverIp;
+                            localUser.serverPort = serverPort;
+                            localUser.createdAt = System.currentTimeMillis();
+                            userDao.insert(localUser);
+                        }
+                    } catch (Exception e) {
+                        android.util.Log.w("UserMgmt", "Failed to sync local: " + e.getMessage());
+                    }
+                }).start();
+
+                loadUsers();
+            } else {
+                Toast.makeText(UserManagementActivity.this, "Error: " + resp.code(), Toast.LENGTH_SHORT).show();
             }
-        }).start();
+        }
+
+        @Override
+        public void onFailure(Call<ApiService.UserDto> call, Throwable t) {
+            Toast.makeText(UserManagementActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
+
 }

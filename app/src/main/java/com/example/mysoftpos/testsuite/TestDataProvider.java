@@ -85,12 +85,15 @@ public class TestDataProvider {
                 break;
             case "021": // Magstripe with PIN
                 s.setField(35, TRACK2_1);
+                s.setField(14, EXP_1);
                 break;
             case "022": // Magstripe without PIN
                 s.setField(35, TRACK2_1);
+                s.setField(14, EXP_1);
                 break;
             default:
                 s.setField(35, TRACK2_1);
+                s.setField(14, EXP_1);
                 break;
         }
 

@@ -55,6 +55,7 @@
                 android:contentDescription="@string/back"
                 app:tint="#FFFFFF" />
 
+
             <!-- Lock icon -->
             <FrameLayout
                 android:layout_width="80dp"

@@ -10,11 +10,8 @@ import android.text.method.PasswordTransformationMethod;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.google.android.material.button.MaterialButton;
 
 import com.example.mysoftpos.ui.BaseActivity;
 
@@ -65,19 +62,16 @@ public class LoginActivity extends BaseActivity {
         View btnBack = findViewById(R.id.btnBack);
         TextView tvSignUp = findViewById(R.id.tvSignUp);
 
-        // Back button
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
         }
 
-        // Password visibility is handled by TextInputLayout endIcon
 
         tvForgotPassword.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, ForgotPasswordActivity.class);
             startActivity(intent);
         });
 
-        // Sign up link
         if (tvSignUp != null) {
             tvSignUp.setOnClickListener(v -> {
                 Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
@@ -97,68 +91,139 @@ public class LoginActivity extends BaseActivity {
             etUsername.requestFocus();
             return;
         }
-
         if (password.isEmpty()) {
             etPassword.setError("Please enter your password");
             etPassword.requestFocus();
             return;
         }
 
-        // PA-DSS 3.x: Check for session timeout notification
         if (getIntent().getBooleanExtra("SESSION_TIMEOUT", false)) {
             Toast.makeText(this, "Session expired. Please login again.", Toast.LENGTH_SHORT).show();
             getIntent().removeExtra("SESSION_TIMEOUT");
         }
 
-        final String finalUsername = username;
-        final String finalPassword = password;
+        // Try backend API first, fallback to local Room if network unavailable
+        loginViaApi(username, password);
+    }
 
+
+    // ====================================================================
+    // PRIMARY: Backend API login via Retrofit
+    // ====================================================================
+    private void loginViaApi(String username, String password) {
+        com.example.mysoftpos.data.remote.api.ApiService api = com.example.mysoftpos.data.remote.api.ApiClient
+                .getService(this);
+
+        api.login(new com.example.mysoftpos.data.remote.api.ApiService.LoginRequest(username, password))
+                .enqueue(new retrofit2.Callback<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse>() {
+                    @Override
+                    public void onResponse(
+                            retrofit2.Call<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> call,
+                            retrofit2.Response<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> response) {
+                        if (isDestroyed() || isFinishing())
+                            return;
+
+                        if (response.isSuccessful() && response.body() != null) {
+                            com.example.mysoftpos.data.remote.api.ApiService.LoginResponse resp = response.body();
+                            com.example.mysoftpos.data.remote.api.ApiClient.saveUserSession(LoginActivity.this, resp);
+                            com.example.mysoftpos.utils.security.SessionManager.startSession();
+                            com.example.mysoftpos.utils.security.AuditLogger.log(
+                                    LoginActivity.this, username, "LOGIN",
+                                    true, "LoginActivity", "API login: " + resp.user.role);
+
+                            // Cache user locally for offline login
+                            cacheUserLocally(username, password, resp.user);
+
+                            // Sync config & transactions from backend (non-blocking)
+                            if ("ADMIN".equals(resp.user.role)) {
+                                new com.example.mysoftpos.data.remote.ConfigSyncManager(LoginActivity.this).sync();
+                                new com.example.mysoftpos.data.remote.TestSuiteSyncManager(LoginActivity.this).pull();
+                            }
+                            new com.example.mysoftpos.data.remote.TransactionSyncManager(LoginActivity.this).syncUnsynced();
+
+                            navigateToDashboard(resp.user.id, resp.user.role,
+                                    resp.user.fullName != null ? resp.user.fullName : "User",
+                                    resp.user.phone, resp.user.email);
+                        } else {
+                            String errorMsg = "Invalid username or password!";
+                            try {
+                                if (response.errorBody() != null) {
+                                    String body = response.errorBody().string();
+                                    if (body.contains("locked"))
+                                        errorMsg = "Account locked. Try again later.";
+                                }
+                            } catch (Exception ignored) {
+                            }
+
+                            com.example.mysoftpos.utils.security.AuditLogger.log(
+                                    LoginActivity.this, username, "LOGIN_FAILED",
+                                    false, "LoginActivity", "API: " + response.code());
+
+                            String finalMsg = errorMsg;
+                            runOnUiThread(() -> {
+                                Toast.makeText(LoginActivity.this, finalMsg, Toast.LENGTH_SHORT).show();
+                                etPassword.setText("");
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(
+                            retrofit2.Call<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> call,
+                            Throwable t) {
+                        if (isDestroyed() || isFinishing())
+                            return;
+                        android.util.Log.w("LoginActivity",
+                                "API unreachable, falling back to offline login: " + t.getMessage());
+                        loginViaLocalRoom(username, password);
+                    }
+                });
+    }
+
+    // ====================================================================
+    // FALLBACK: Local Room DB login (offline mode)
+    // ====================================================================
+    private void loginViaLocalRoom(String username, String password) {
         com.example.mysoftpos.di.ServiceLocator.getInstance(this)
                 .getDispatcherProvider().io().execute(() -> {
                     try {
                         com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
                                 .getInstance(LoginActivity.this);
-
                         com.example.mysoftpos.data.local.AppDatabase db = com.example.mysoftpos.data.local.AppDatabase
                                 .getInstance(LoginActivity.this);
                         com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
 
-                        // Find user by phone → email → username hash
-                        com.example.mysoftpos.data.local.entity.UserEntity user = userDao.findByPhone(finalUsername);
+                        com.example.mysoftpos.data.local.entity.UserEntity user = userDao.findByPhone(username);
                         if (user == null)
-                            user = userDao.findByEmail(finalUsername);
+                            user = userDao.findByEmail(username);
                         if (user == null) {
-                            String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils
-                                    .hashSHA256(finalUsername);
-                            user = userDao.findByUsernameHash(usernameHash);
+                            String hash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
+                            user = userDao.findByUsernameHash(hash);
                         }
 
                         if (user != null) {
-                            // PA-DSS 3.1.6: Check account lockout (6 attempts → 30 min lock)
                             if (user.lockedUntil > System.currentTimeMillis()) {
-                                long remainingMs = user.lockedUntil - System.currentTimeMillis();
-                                int remainingMin = (int) (remainingMs / 60000) + 1;
-                                com.example.mysoftpos.utils.security.AuditLogger.log(
-                                        LoginActivity.this, finalUsername, "LOGIN_BLOCKED",
-                                        false, "LoginActivity", "Account locked, " + remainingMin + " min remaining");
+                                int min = (int) ((user.lockedUntil - System.currentTimeMillis()) / 60000) + 1;
                                 runOnUiThread(() -> {
-                                    if (isDestroyed() || isFinishing())
-                                        return;
-                                    Toast.makeText(LoginActivity.this,
-                                            "Account locked. Try again in " + remainingMin + " minutes.",
-                                            Toast.LENGTH_LONG).show();
+                                    if (!isDestroyed() && !isFinishing())
+                                        Toast.makeText(LoginActivity.this,
+                                                "Account locked. Try again in " + min + " minutes.",
+                                                Toast.LENGTH_LONG).show();
                                 });
                                 return;
                             }
 
-                            // PA-DSS 2.x: Verify password (PBKDF2 + SHA-256 legacy compat)
-                            boolean passwordMatch = com.example.mysoftpos.utils.security.PasswordUtils
-                                    .verifyPassword(finalPassword, user.passwordHash);
-
-                            if (passwordMatch) {
-                                // PA-DSS 3.x: Reset failed attempts on success
+                            if (com.example.mysoftpos.utils.security.PasswordUtils
+                                    .verifyPassword(password, user.passwordHash)) {
                                 user.failedLoginAttempts = 0;
                                 user.lockedUntil = 0;
+
+                                // Progressive migration: upgrade legacy SHA-256 hashes to PBKDF2
+                                if (!user.passwordHash.contains(":")) {
+                                    user.passwordHash = com.example.mysoftpos.utils.security.PasswordUtils
+                                            .hashPassword(password);
+                                }
+
                                 userDao.update(user);
 
                                 String displayName = user.displayName != null ? user.displayName : "User";
@@ -168,69 +233,44 @@ public class LoginActivity extends BaseActivity {
                                     config.setServerPort(user.serverPort);
                                 }
 
-                                // PA-DSS 3.x: Start session timer
                                 com.example.mysoftpos.utils.security.SessionManager.startSession();
-
-                                // PA-DSS 4.x: Log successful login
                                 com.example.mysoftpos.utils.security.AuditLogger.log(
-                                        LoginActivity.this, finalUsername, "LOGIN",
-                                        true, "LoginActivity", "User logged in: " + user.role);
+                                        LoginActivity.this, username, "LOGIN",
+                                        true, "LoginActivity", "Offline login: " + user.role);
 
                                 final com.example.mysoftpos.data.local.entity.UserEntity finalUser = user;
                                 runOnUiThread(() -> {
-                                    if (isDestroyed() || isFinishing())
-                                        return;
-                                    navigateToDashboard(finalUser.id, finalUser.role, displayName,
-                                            finalUser.phone, finalUser.email);
+                                    if (!isDestroyed() && !isFinishing()) {
+                                        Toast.makeText(LoginActivity.this,
+                                                "Login Successful (Offline)!", Toast.LENGTH_SHORT).show();
+                                        navigateToDashboard(finalUser.id, finalUser.role, displayName,
+                                                finalUser.phone, finalUser.email);
+                                    }
                                 });
                                 return;
                             } else {
-                                // PA-DSS 3.1.6: Increment failed attempts
                                 user.failedLoginAttempts++;
                                 if (user.failedLoginAttempts >= 6) {
                                     user.lockedUntil = System.currentTimeMillis() + (30 * 60 * 1000L);
                                     user.failedLoginAttempts = 0;
-                                    userDao.update(user);
-                                    com.example.mysoftpos.utils.security.AuditLogger.log(
-                                            LoginActivity.this, finalUsername, "ACCOUNT_LOCKED",
-                                            false, "LoginActivity", "Locked after 6 failed attempts");
-                                    runOnUiThread(() -> {
-                                        if (isDestroyed() || isFinishing())
-                                            return;
-                                        Toast.makeText(LoginActivity.this,
-                                                "Account locked for 30 minutes.",
-                                                Toast.LENGTH_LONG).show();
-                                        etPassword.setText("");
-                                    });
-                                    return;
                                 }
                                 userDao.update(user);
-                                com.example.mysoftpos.utils.security.AuditLogger.log(
-                                        LoginActivity.this, finalUsername, "LOGIN_FAILED",
-                                        false, "LoginActivity",
-                                        "Failed attempt " + user.failedLoginAttempts + "/6");
                             }
-                        } else {
-                            com.example.mysoftpos.utils.security.AuditLogger.log(
-                                    LoginActivity.this, finalUsername, "LOGIN_FAILED",
-                                    false, "LoginActivity", "User not found");
                         }
 
                         runOnUiThread(() -> {
-                            if (isDestroyed() || isFinishing())
-                                return;
-                            Toast.makeText(LoginActivity.this, "Invalid username or password!",
-                                    Toast.LENGTH_SHORT).show();
-                            etPassword.setText("");
-                            etPassword.requestFocus();
+                            if (!isDestroyed() && !isFinishing()) {
+                                Toast.makeText(LoginActivity.this,
+                                        "Server không khả dụng và không tìm thấy tài khoản offline.",
+                                        Toast.LENGTH_LONG).show();
+                                etPassword.setText("");
+                            }
                         });
-
                     } catch (Exception e) {
                         runOnUiThread(() -> {
-                            if (isDestroyed() || isFinishing())
-                                return;
-                            Toast.makeText(LoginActivity.this, "Login Error: " + e.getMessage(),
-                                    Toast.LENGTH_SHORT).show();
+                            if (!isDestroyed() && !isFinishing())
+                                Toast.makeText(LoginActivity.this,
+                                        "Login Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                         });
                     }
                 });
@@ -247,5 +287,58 @@ public class LoginActivity extends BaseActivity {
         intent.putExtra("USER_EMAIL", email);
         startActivity(intent);
         finish();
+    }
+
+    /**
+     * Cache user credentials locally after successful API login,
+     * so offline login works for this user next time.
+     */
+    private void cacheUserLocally(String username, String password,
+            com.example.mysoftpos.data.remote.api.ApiService.UserDto userDto) {
+        com.example.mysoftpos.di.ServiceLocator.getInstance(this)
+                .getDispatcherProvider().io().execute(() -> {
+                    try {
+                        com.example.mysoftpos.data.local.AppDatabase db =
+                                com.example.mysoftpos.data.local.AppDatabase.getInstance(LoginActivity.this);
+                        com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
+
+                        String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
+                        // PA-DSS 2.x: Use PBKDF2 for password hashing, not SHA-256
+                        String passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashPassword(password);
+
+                        com.example.mysoftpos.data.local.entity.UserEntity existing =
+                                userDao.findByUsernameHash(usernameHash);
+                        if (existing == null) {
+                            // Also check by phone/email
+                            if (userDto.phone != null) existing = userDao.findByPhone(userDto.phone);
+                            if (existing == null && userDto.email != null) existing = userDao.findByEmail(userDto.email);
+                        }
+
+                        if (existing != null) {
+                            // Update existing local cache
+                            existing.passwordHash = passwordHash;
+                            existing.displayName = userDto.fullName;
+                            existing.role = userDto.role;
+                            existing.phone = userDto.phone;
+                            existing.email = userDto.email;
+                            existing.backendId = userDto.id;
+                            existing.failedLoginAttempts = 0;
+                            existing.lockedUntil = 0;
+                            userDao.update(existing);
+                        } else {
+                            // Create new local cache entry
+                            com.example.mysoftpos.data.local.entity.UserEntity newUser =
+                                    new com.example.mysoftpos.data.local.entity.UserEntity(
+                                            usernameHash, passwordHash,
+                                            userDto.fullName, userDto.role,
+                                            userDto.email, userDto.phone, null);
+                            newUser.backendId = userDto.id;
+                            userDao.insert(newUser);
+                        }
+                    } catch (Exception e) {
+                        android.util.Log.w("LoginActivity",
+                                "Failed to cache user locally: " + e.getMessage());
+                    }
+                });
     }
 }

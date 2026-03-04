@@ -302,6 +302,46 @@
                     app:tint="@color/neo_primary_dark" />
             </LinearLayout>
 
+            <!-- Transaction Management Button (Admin Only) - Full Width -->
+            <LinearLayout
+                android:id="@+id/btnTransactionManagement"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone"
+                android:background="@drawable/bg_card_white"
+                android:padding="16dp"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginTop="12dp"
+                android:elevation="4dp">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_baseline_list_24"
+                    app:tint="@color/neo_primary_dark" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Transaction Management"
+                    android:textSize="18sp"
+                    android:textColor="@color/neo_primary_dark"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginStart="16dp" />
+
+                <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_arrow_right"
+                    app:tint="@color/neo_primary_dark" />
+            </LinearLayout>
+
             <!-- HISTORY SECTION -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardHistory"

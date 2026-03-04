@@ -37,39 +37,52 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     @Override
     public void saveTransaction(com.example.mysoftpos.domain.model.TransactionRecord record) {
         dispatchers.io().execute(() -> {
-            // 1. Merchant
+            // 1. Merchant — IGNORE returns -1 if already exists
             com.example.mysoftpos.data.local.entity.MerchantEntity merchant = db.merchantDao()
                     .getByCode(record.merchantCode);
             long merchantId;
-            if (merchant == null) {
+            if (merchant != null) {
+                merchantId = merchant.id;
+            } else {
                 merchantId = db.merchantDao()
                         .insert(new com.example.mysoftpos.data.local.entity.MerchantEntity(record.merchantCode,
                                 record.merchantName));
-            } else {
-                merchantId = merchant.id;
+                if (merchantId <= 0) {
+                    merchant = db.merchantDao().getByCode(record.merchantCode);
+                    merchantId = (merchant != null) ? merchant.id : 0;
+                }
             }
 
-            // 2. Terminal
+            // 2. Terminal — IGNORE returns -1 if already exists
             com.example.mysoftpos.data.local.entity.TerminalEntity terminal = db.terminalDao()
                     .getByCode(record.terminalCode);
             long terminalId;
-            if (terminal == null) {
+            if (terminal != null) {
+                terminalId = terminal.id;
+            } else {
                 terminalId = db.terminalDao()
                         .insert(new com.example.mysoftpos.data.local.entity.TerminalEntity(record.terminalCode,
                                 merchantId));
-            } else {
-                terminalId = terminal.id;
+                if (terminalId <= 0) {
+                    terminal = db.terminalDao().getByCode(record.terminalCode);
+                    terminalId = (terminal != null) ? terminal.id : 0;
+                }
             }
 
-            // 3. Card
+            // 3. Card — IGNORE returns -1 if already exists, so always lookup first
             com.example.mysoftpos.data.local.entity.CardEntity card = db.cardDao().getByPanMasked(record.panMasked);
             long cardId;
-            if (card == null) {
+            if (card != null) {
+                cardId = card.id;
+            } else {
                 cardId = db.cardDao()
                         .insert(new com.example.mysoftpos.data.local.entity.CardEntity(record.panMasked, record.bin,
                                 record.last4, record.scheme));
-            } else {
-                cardId = card.id;
+                // Double check: if insert returned -1 (race condition), lookup again
+                if (cardId <= 0) {
+                    card = db.cardDao().getByPanMasked(record.panMasked);
+                    cardId = (card != null) ? card.id : 0;
+                }
             }
 
             // 4. User — use the userId passed directly from login chain if available,
@@ -93,7 +106,7 @@ public class TransactionRepositoryImpl implements TransactionRepository {
                 userId = (user != null) ? user.id : null;
             }
 
-            // 5. Transaction
+            // 5. Transaction — IGNORE if trace_number already exists (no overwrite)
             TransactionEntity txn = new TransactionEntity();
             txn.traceNumber = record.traceNumber;
             txn.amount = record.amount;
@@ -101,12 +114,16 @@ public class TransactionRepositoryImpl implements TransactionRepository {
             txn.requestHex = record.reqHex;
             txn.responseHex = record.respHex;
             txn.timestamp = record.timestamp;
-            txn.terminalId = terminalId;
-            txn.cardId = cardId;
+            txn.terminalId = terminalId > 0 ? terminalId : null;
+            txn.cardId = cardId > 0 ? cardId : null;
             txn.userId = userId;
             txn.ownerUsername = record.username;
 
-            db.transactionDao().insert(txn);
+            long insertedId = db.transactionDao().insert(txn);
+            if (insertedId <= 0) {
+                android.util.Log.w("TxnRepo", "Transaction " + record.traceNumber
+                        + " already exists, skipping insert");
+            }
         });
     }
 

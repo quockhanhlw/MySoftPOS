@@ -46,6 +46,10 @@ public class UserEntity {
     @ColumnInfo(name = "admin_id")
     public String adminId; // username hash of admin who manages this user
 
+    /** Backend user.id — used for API calls and admin ownership mapping */
+    @ColumnInfo(name = "backend_id")
+    public long backendId;
+
     @ColumnInfo(name = "server_ip")
     public String serverIp;
 

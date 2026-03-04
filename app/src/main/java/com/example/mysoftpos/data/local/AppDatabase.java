@@ -20,7 +20,7 @@ import com.example.mysoftpos.data.local.dao.*;
         MerchantEntity.class,
         TerminalEntity.class,
         CardEntity.class
-}, version = 15, exportSchema = false)
+}, version = 16, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract TransactionDao transactionDao();
@@ -67,6 +67,31 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /**
+     * Migration 15 → 16:
+     * - users: add backend_id (Long) for API mapping
+     * - merchants: add backend_id, admin_backend_id for backend sync
+     * - terminals: add backend_id, server_ip, server_port for backend sync
+     * - test_suites: add backend_id, admin_backend_id for backend sync
+     */
+    static final Migration MIGRATION_15_16 = new Migration(15, 16) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            // users
+            db.execSQL("ALTER TABLE users ADD COLUMN backend_id INTEGER NOT NULL DEFAULT 0");
+            // merchants
+            db.execSQL("ALTER TABLE merchants ADD COLUMN backend_id INTEGER NOT NULL DEFAULT 0");
+            db.execSQL("ALTER TABLE merchants ADD COLUMN admin_backend_id INTEGER NOT NULL DEFAULT 0");
+            // terminals
+            db.execSQL("ALTER TABLE terminals ADD COLUMN backend_id INTEGER NOT NULL DEFAULT 0");
+            db.execSQL("ALTER TABLE terminals ADD COLUMN server_ip TEXT");
+            db.execSQL("ALTER TABLE terminals ADD COLUMN server_port INTEGER NOT NULL DEFAULT 0");
+            // test_suites
+            db.execSQL("ALTER TABLE test_suites ADD COLUMN backend_id INTEGER NOT NULL DEFAULT 0");
+            db.execSQL("ALTER TABLE test_suites ADD COLUMN admin_backend_id INTEGER NOT NULL DEFAULT 0");
+        }
+    };
+
     // ──────────────────────────────────────────────────────────────────────────
     // Singleton
     // ──────────────────────────────────────────────────────────────────────────
@@ -87,7 +112,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             "mysoftpos_db")
                             // Liệt kê toàn bộ migration để Room nâng cấp schema
                             // mà KHÔNG xoá dữ liệu cũ.
-                            .addMigrations(MIGRATION_13_14, MIGRATION_14_15)
+                            .addMigrations(MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16)
                             // WAL (Write-Ahead Logging): cải thiện hiệu năng đọc/ghi
                             // đồng thời, thay thế TRUNCATE.
                             .setJournalMode(RoomDatabase.JournalMode.AUTOMATIC)

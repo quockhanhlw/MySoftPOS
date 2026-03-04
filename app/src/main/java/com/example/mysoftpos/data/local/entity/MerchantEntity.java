@@ -11,6 +11,14 @@ public class MerchantEntity {
     @PrimaryKey(autoGenerate = true)
     public long id;
 
+    /** Backend Merchant.id for API sync */
+    @ColumnInfo(name = "backend_id")
+    public long backendId;
+
+    /** Backend admin owner ID */
+    @ColumnInfo(name = "admin_backend_id")
+    public long adminBackendId;
+
     @ColumnInfo(name = "merchant_code")
     public String merchantCode; // DE 42
 

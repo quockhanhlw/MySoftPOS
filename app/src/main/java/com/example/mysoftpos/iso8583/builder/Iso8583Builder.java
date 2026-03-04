@@ -14,18 +14,18 @@ import java.util.Map;
  *
  * Supports three card entry modes:
  *
- *  1. Manual Entry (DE 22 = 011/012):
- *     → DE 14 (Expiry), no DE 35, no DE 55
+ * 1. Manual Entry (DE 22 = 011/012):
+ * → DE 14 (Expiry), no DE 35, no DE 55
  *
- *  2. Magstripe (DE 22 = 021/022):
- *     → DE 35 (Track 2), DE 14 (Expiry), no DE 55
+ * 2. Magstripe (DE 22 = 021/022):
+ * → DE 35 (Track 2), DE 14 (Expiry), no DE 55
  *
- *  3. NFC Contactless CHIP (DE 22 = 071/072):
- *     → DE 55 (ICC Data — mandatory, EMV TLV tags including tag 57 for Track 2)
- *     → DE 23 (Card Sequence Number from tag 5F34)
- *     → NO DE 35 (Track 2 is inside tag 57 in DE 55, not in DE 35)
- *     → NO DE 14 (expiry is inside tag 57)
- *     → 071 = Online PIN, 072 = No CVM
+ * 3. NFC Contactless CHIP (DE 22 = 071/072):
+ * → DE 55 (ICC Data — mandatory, EMV TLV tags including tag 57 for Track 2)
+ * → DE 23 (Card Sequence Number from tag 5F34)
+ * → NO DE 35 (Track 2 is inside tag 57 in DE 55, not in DE 35)
+ * → NO DE 14 (expiry is inside tag 57)
+ * → 071 = Online PIN, 072 = No CVM
  */
 public class Iso8583Builder {
 
@@ -154,10 +154,11 @@ public class Iso8583Builder {
      * Apply NFC Contactless CHIP-specific fields.
      *
      * NAPAS Domestic CHIP rules:
-     *   DE 23 — Card Sequence Number (mandatory for CHIP, from tag 5F34, 3 digits).
-     *   DE 55 — ICC Data (mandatory, TLV-encoded EMV tags including tag 57 for Track 2).
-     *   DE 35 — ABSENT. Track 2 is inside tag 57 within DE 55, NOT in DE 35.
-     *   DE 14 — ABSENT. Expiry is inside tag 57 within DE 55.
+     * DE 23 — Card Sequence Number (mandatory for CHIP, from tag 5F34, 3 digits).
+     * DE 55 — ICC Data (mandatory, TLV-encoded EMV tags including tag 57 for Track
+     * 2).
+     * DE 35 — ABSENT. Track 2 is inside tag 57 within DE 55, NOT in DE 35.
+     * DE 14 — ABSENT. Expiry is inside tag 57 within DE 55.
      *
      * @param m       ISO message
      * @param ctx     Transaction context
@@ -165,7 +166,7 @@ public class Iso8583Builder {
      * @param txnType EMV transaction type: "00"=Purchase, "30"=Balance, "01"=Cash
      */
     private static void applyNfcChipFields(IsoMessage m, TransactionContext ctx,
-                                            CardInputData card, String txnType) {
+            CardInputData card, String txnType) {
 
         Map<Integer, byte[]> cardEmvTags = card.getEmvTags();
 
@@ -192,8 +193,7 @@ public class Iso8583Builder {
                     currencyCode,
                     countryCode,
                     txnType,
-                    pinVerified
-            );
+                    pinVerified);
 
             // Build DE 55 hex string
             String de55Hex;
@@ -214,7 +214,10 @@ public class Iso8583Builder {
             m.setField(IsoField.ICC_DATA_55, ctx.iccData55);
         }
 
-        // DE 14: NOT included for NFC CHIP
+        // DE 14: Expiry Date (Add for NFC CHIP as well)
+        if (card.getExpiryDate() != null && !card.getExpiryDate().isEmpty()) {
+            m.setField(IsoField.EXPIRATION_DATE_14, card.getExpiryDate());
+        }
     }
 
     // =====================================================================
@@ -222,7 +225,7 @@ public class Iso8583Builder {
     // =====================================================================
 
     public static IsoMessage buildReversalAdvice(TransactionContext originalCtx,
-                                                  CardInputData card, String newTrace) {
+            CardInputData card, String newTrace) {
         IsoMessage m = new IsoMessage("0420");
 
         m.setField(IsoField.PAN_2, card.getPan());
@@ -291,13 +294,14 @@ public class Iso8583Builder {
     // =====================================================================
 
     private static String buildDE90(String orgMti, String orgStan,
-                                     String orgDateTime, String orgAcquirerId) {
+            String orgDateTime, String orgAcquirerId) {
         StringBuilder de90 = new StringBuilder();
         de90.append(padLeft(orgMti, 4, '0'));
         de90.append(padLeft(orgStan, 6, '0'));
 
         String dt = orgDateTime != null ? orgDateTime : "0000000000";
-        if (dt.length() > 10) dt = dt.substring(0, 10);
+        if (dt.length() > 10)
+            dt = dt.substring(0, 10);
         de90.append(padLeft(dt, 10, '0'));
 
         de90.append(padLeft(orgAcquirerId, 11, '0'));
@@ -310,24 +314,30 @@ public class Iso8583Builder {
     // =====================================================================
 
     private static String padLeft(String s, int length, char padChar) {
-        if (s == null) s = "";
-        if (s.length() >= length) return s.substring(s.length() - length);
+        if (s == null)
+            s = "";
+        if (s.length() >= length)
+            return s.substring(s.length() - length);
         StringBuilder sb = new StringBuilder();
-        for (int i = s.length(); i < length; i++) sb.append(padChar);
+        for (int i = s.length(); i < length; i++)
+            sb.append(padChar);
         sb.append(s);
         return sb.toString();
     }
 
     private static String formatTerminalId(String tid) {
-        if (tid == null) tid = "";
-        if (tid.length() > 8) return tid.substring(0, 8);
+        if (tid == null)
+            tid = "";
+        if (tid.length() > 8)
+            return tid.substring(0, 8);
         return String.format("%-8s", tid);
     }
 
     private static String formatMerchantId(String mid) {
-        if (mid == null) mid = "";
-        if (mid.length() > 15) return mid.substring(0, 15);
+        if (mid == null)
+            mid = "";
+        if (mid.length() > 15)
+            return mid.substring(0, 15);
         return String.format("%-15s", mid);
     }
 }
-

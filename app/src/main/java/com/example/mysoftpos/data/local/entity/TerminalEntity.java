@@ -15,11 +15,21 @@ public class TerminalEntity {
     @PrimaryKey(autoGenerate = true)
     public long id;
 
+    /** Backend Terminal.id for API sync */
+    @ColumnInfo(name = "backend_id")
+    public long backendId;
+
     @ColumnInfo(name = "terminal_code")
     public String terminalCode; // DE 41
 
     @ColumnInfo(name = "merchant_id")
     public long merchantId;
+
+    @ColumnInfo(name = "server_ip")
+    public String serverIp;
+
+    @ColumnInfo(name = "server_port")
+    public int serverPort;
 
     public TerminalEntity() {
     }

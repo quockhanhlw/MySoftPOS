@@ -51,6 +51,17 @@ public class SettingsActivity extends AppCompatActivity {
         if (btnSecuritySettings != null)
             btnSecuritySettings.setOnClickListener(v -> showSecurityDialog());
 
+        // Backend URL Settings
+        LinearLayout btnBackendUrlSettings = findViewById(R.id.btnBackendUrlSettings);
+        TextView tvCurrentBackendUrl = findViewById(R.id.tvCurrentBackendUrl);
+        if (tvCurrentBackendUrl != null) {
+            tvCurrentBackendUrl.setText(
+                    com.example.mysoftpos.data.remote.api.ApiClient.getBaseUrl(this));
+        }
+        if (btnBackendUrlSettings != null) {
+            btnBackendUrlSettings.setOnClickListener(v -> showBackendUrlDialog());
+        }
+
         // Initialize Common User Settings (now present in Admin layout too)
         initCommonUI();
     }
@@ -134,6 +145,94 @@ public class SettingsActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
             android.widget.Toast.makeText(this, "Error: " + e.getMessage(), android.widget.Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void showBackendUrlDialog() {
+        try {
+            android.view.View view = getLayoutInflater().inflate(R.layout.dialog_backend_url, null);
+            androidx.appcompat.app.AlertDialog dialog =
+                    new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                            .setView(view).create();
+
+            TextInputEditText etUrl = view.findViewById(R.id.etBackendUrl);
+            android.widget.TextView tvCurrentUrl = view.findViewById(R.id.tvCurrentUrl);
+            android.widget.TextView tvStatus = view.findViewById(R.id.tvConnectionStatus);
+            android.view.View btnTest = view.findViewById(R.id.btnTestConnection);
+            android.view.View btnCancel = view.findViewById(R.id.btnCancel);
+            android.view.View btnSave = view.findViewById(R.id.btnSave);
+
+            String currentUrl = com.example.mysoftpos.data.remote.api.ApiClient.getBaseUrl(this);
+            tvCurrentUrl.setText("Current: " + currentUrl);
+            etUrl.setText(currentUrl);
+            etUrl.setSelection(etUrl.getText().length());
+
+            btnTest.setOnClickListener(v -> {
+                String url = etUrl.getText().toString().trim();
+                if (url.isEmpty()) { etUrl.setError("URL is required"); return; }
+                if (!url.endsWith("/")) url = url + "/";
+                tvStatus.setVisibility(android.view.View.VISIBLE);
+                tvStatus.setText("Testing connection...");
+                tvStatus.setTextColor(android.graphics.Color.parseColor("#64748B"));
+                tvStatus.setBackgroundColor(android.graphics.Color.parseColor("#F1F5F9"));
+
+                final String testUrl = url;
+                new Thread(() -> {
+                    boolean reachable = false;
+                    String detail = "";
+                    try {
+                        java.net.URL u = new java.net.URL(testUrl + "api-docs");
+                        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) u.openConnection();
+                        conn.setConnectTimeout(5000);
+                        conn.setReadTimeout(5000);
+                        conn.setRequestMethod("GET");
+                        int code = conn.getResponseCode();
+                        reachable = (code >= 200 && code < 500);
+                        detail = "HTTP " + code;
+                        conn.disconnect();
+                    } catch (Exception e) {
+                        detail = e.getClass().getSimpleName() + ": " + e.getMessage();
+                    }
+                    final boolean ok = reachable;
+                    final String msg = detail;
+                    runOnUiThread(() -> {
+                        if (ok) {
+                            tvStatus.setText("✓ Connected — " + msg);
+                            tvStatus.setTextColor(android.graphics.Color.parseColor("#16A34A"));
+                            tvStatus.setBackgroundColor(android.graphics.Color.parseColor("#F0FDF4"));
+                        } else {
+                            tvStatus.setText("✗ Failed — " + msg);
+                            tvStatus.setTextColor(android.graphics.Color.parseColor("#DC2626"));
+                            tvStatus.setBackgroundColor(android.graphics.Color.parseColor("#FEF2F2"));
+                        }
+                    });
+                }).start();
+            });
+
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+            btnSave.setOnClickListener(v -> {
+                String url = etUrl.getText().toString().trim();
+                if (url.isEmpty()) { etUrl.setError("URL is required"); return; }
+                if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                    etUrl.setError("URL must start with http:// or https://");
+                    return;
+                }
+                if (!url.endsWith("/")) url = url + "/";
+                com.example.mysoftpos.data.remote.api.ApiClient.setBaseUrl(this, url);
+
+                // Update the label on settings screen
+                android.widget.TextView tvLabel = findViewById(R.id.tvCurrentBackendUrl);
+                if (tvLabel != null) tvLabel.setText(url);
+
+                Toast.makeText(this, "Backend URL saved", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            });
+
+            dialog.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 

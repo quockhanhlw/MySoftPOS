@@ -1,25 +1,25 @@
 package com.example.mysoftpos.ui.admin;
 
-import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.mysoftpos.R;
-import com.example.mysoftpos.data.local.entity.UserEntity;
+import com.example.mysoftpos.data.remote.api.ApiService;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
-    private List<UserEntity> users = new ArrayList<>();
+    private List<ApiService.UserDto> users = new ArrayList<>();
     private final OnUserListener listener;
 
     private static final String[] COLORS = {
@@ -27,16 +27,16 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
     };
 
     public interface OnUserListener {
-        void onUserClick(UserEntity user);
+        void onUserClick(ApiService.UserDto user);
 
-        void onUserLongClick(UserEntity user);
+        void onUserLongClick(ApiService.UserDto user);
     }
 
     public UserAdapter(OnUserListener listener) {
         this.listener = listener;
     }
 
-    public void setUsers(List<UserEntity> users) {
+    public void setUsers(List<ApiService.UserDto> users) {
         this.users = users != null ? users : new ArrayList<>();
         notifyDataSetChanged();
     }
@@ -51,8 +51,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        UserEntity user = users.get(position);
-        holder.bind(user, position, listener);
+        holder.bind(users.get(position), position, listener);
     }
 
     @Override
@@ -76,25 +75,22 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
             tvServerInfo = view.findViewById(R.id.tvServerInfo);
         }
 
-        void bind(UserEntity user, int position, OnUserListener listener) {
-            String name = user.displayName != null ? user.displayName : "User";
+        void bind(ApiService.UserDto user, int position, OnUserListener listener) {
+            String name = user.fullName != null ? user.fullName : "User";
             tvName.setText(name);
-
-            // Phone (primary identifier)
             tvPhone.setText(user.phone != null ? user.phone : "—");
 
-            // Avatar circle
+            // Avatar
             String letter = name.substring(0, 1).toUpperCase();
             tvAvatarLetter.setText(letter);
-
             GradientDrawable circle = new GradientDrawable();
             circle.setShape(GradientDrawable.OVAL);
             circle.setColor(Color.parseColor(COLORS[position % COLORS.length]));
             avatarContainer.setBackground(circle);
 
-            // Server badge
-            if (user.serverIp != null && !user.serverIp.isEmpty() && user.serverPort > 0) {
-                tvServerInfo.setText(user.serverIp + ":" + user.serverPort);
+            // TID badge
+            if (user.terminalId != null && !user.terminalId.isEmpty()) {
+                tvServerInfo.setText("TID: " + user.terminalId);
                 tvServerInfo.setVisibility(View.VISIBLE);
             } else {
                 tvServerInfo.setVisibility(View.GONE);

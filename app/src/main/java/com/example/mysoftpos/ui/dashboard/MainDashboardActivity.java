@@ -72,6 +72,7 @@ public class MainDashboardActivity extends BaseActivity {
         View btnBalance = findViewById(R.id.btnBalance);
         View btnTestSuite = findViewById(R.id.btnTestSuite);
         View btnUserManagement = findViewById(R.id.btnUserManagement);
+        View btnTransactionManagement = findViewById(R.id.btnTransactionManagement);
         ImageView btnSettings = findViewById(R.id.btnSettings);
         // ImageView btnLogout = findViewById(R.id.btnLogout); // Removed
         ImageView btnHome = findViewById(R.id.btnHome);
@@ -90,6 +91,9 @@ public class MainDashboardActivity extends BaseActivity {
             if (btnUserManagement != null) {
                 btnUserManagement.setVisibility(View.VISIBLE);
             }
+            if (btnTransactionManagement != null) {
+                btnTransactionManagement.setVisibility(View.VISIBLE);
+            }
         } else {
             btnPurchase.setVisibility(View.VISIBLE);
             btnBalance.setVisibility(View.VISIBLE);
@@ -98,6 +102,9 @@ public class MainDashboardActivity extends BaseActivity {
             }
             if (btnUserManagement != null) {
                 btnUserManagement.setVisibility(View.GONE);
+            }
+            if (btnTransactionManagement != null) {
+                btnTransactionManagement.setVisibility(View.GONE);
             }
         }
 
@@ -138,6 +145,14 @@ public class MainDashboardActivity extends BaseActivity {
             });
         }
 
+        // Transaction Management Action (Admin Only)
+        if (btnTransactionManagement != null) {
+            btnTransactionManagement.setOnClickListener(v -> {
+                Intent intent = new Intent(this, com.example.mysoftpos.ui.admin.TransactionManagementActivity.class);
+                startActivity(intent);
+            });
+        }
+
         // Settings Action
         btnSettings.setOnClickListener(v -> {
             Intent intent = new Intent(this, SettingsActivity.class);
@@ -171,7 +186,8 @@ public class MainDashboardActivity extends BaseActivity {
         // Load History (User only — Admin sees history inside each Scheme)
         if (isAdmin) {
             View cardHistory = findViewById(R.id.cardHistory);
-            if (cardHistory != null) cardHistory.setVisibility(View.GONE);
+            if (cardHistory != null)
+                cardHistory.setVisibility(View.GONE);
         } else {
             setupHistoryObserver(false);
         }
@@ -223,7 +239,8 @@ public class MainDashboardActivity extends BaseActivity {
 
         // Use the unique user_id (DB primary key) — guarantees no cross-user leakage
         long userId = getIntent().getLongExtra(com.example.mysoftpos.utils.IntentKeys.USER_ID, -1);
-        if (userId <= 0) return;
+        if (userId <= 0)
+            return;
 
         db.transactionDao().getTransactionsByUserIdLive(userId).observe(
                 this, this::updateHistoryList);
@@ -253,15 +270,16 @@ public class MainDashboardActivity extends BaseActivity {
     /** Check if transaction is a Purchase (DE 3 starts with 00) */
     private boolean isPurchaseTransaction(TransactionEntity txn) {
         try {
-            if (txn.requestHex == null) return false;
-            com.example.mysoftpos.iso8583.message.IsoMessage req =
-                    new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
-                            .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
-                                    .hexToBytes(txn.requestHex));
+            if (txn.requestHex == null)
+                return false;
+            com.example.mysoftpos.iso8583.message.IsoMessage req = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                    .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
+                            .hexToBytes(txn.requestHex));
             if (req.hasField(3)) {
                 return req.getField(3).startsWith("00");
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return false;
     }
 

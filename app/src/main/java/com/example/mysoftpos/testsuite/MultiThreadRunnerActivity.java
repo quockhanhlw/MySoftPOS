@@ -218,6 +218,8 @@ public class MultiThreadRunnerActivity extends AppCompatActivity {
                             .setUsername("TEST_SUITE_MULTI")
                             .build();
             transactionRepository.saveTransaction(record);
+            // Sync to backend
+            new com.example.mysoftpos.data.remote.TransactionSyncManager(this).syncUnsynced();
         } catch (Exception e) {
             android.util.Log.e("MultiThreadRunner", "Save to DB failed", e);
         }

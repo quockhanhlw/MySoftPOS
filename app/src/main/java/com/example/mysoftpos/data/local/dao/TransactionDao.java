@@ -13,8 +13,8 @@ import java.util.List;
 @Dao
 public interface TransactionDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insert(TransactionEntity transaction);
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    long insert(TransactionEntity transaction);
 
     @Update
     void update(TransactionEntity transaction);

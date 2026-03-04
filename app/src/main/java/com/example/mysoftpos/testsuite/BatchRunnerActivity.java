@@ -294,6 +294,8 @@ public class BatchRunnerActivity extends AppCompatActivity {
                             .setUsername("TEST_SUITE_BATCH")
                             .build();
             transactionRepository.saveTransaction(record);
+            // Sync to backend
+            new com.example.mysoftpos.data.remote.TransactionSyncManager(this).syncUnsynced();
         } catch (Exception e) {
             android.util.Log.e("BatchRunner", "Save to DB failed", e);
         }

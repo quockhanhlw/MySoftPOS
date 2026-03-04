@@ -171,6 +171,10 @@ public class PurchaseViewModel extends BaseViewModel {
 
                 repository.updateTransactionStatus(ctx.stan11, entity.status);
 
+                // Sync to backend
+                new com.example.mysoftpos.data.remote.TransactionSyncManager(
+                        getApplication()).syncUnsynced();
+
                 launchUi(() -> {
                     String msg = ResponseCodeHelper.getMessage(rc);
                     if (isApproved) {
@@ -220,6 +224,8 @@ public class PurchaseViewModel extends BaseViewModel {
 
                 entity.status = "TIMEOUT_REVERSED";
                 repository.updateTransactionStatus(ctx.stan11, entity.status);
+                new com.example.mysoftpos.data.remote.TransactionSyncManager(
+                        getApplication()).syncUnsynced();
                 postError(getApplication().getString(R.string.err_timeout_reversed));
 
             } catch (SocketTimeoutException e) {

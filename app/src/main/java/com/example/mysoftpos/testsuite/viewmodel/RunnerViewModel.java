@@ -223,6 +223,10 @@ public class RunnerViewModel extends AndroidViewModel {
                     .build();
             repository.saveTransaction(record);
 
+            // Sync to backend
+            new com.example.mysoftpos.data.remote.TransactionSyncManager(
+                    getApplication()).syncUnsynced();
+
             logMessage.postValue("Transaction saved to History (Trace: " + ctx.stan11 + ")");
         } catch (Exception e) {
             logMessage.postValue("Error saving to DB: " + e.getMessage());

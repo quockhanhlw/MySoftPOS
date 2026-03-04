@@ -163,16 +163,87 @@ public class RegisterActivity extends BaseActivity {
 
     private void registerUser(String fullName, String phone, String email, String username,
             String password) {
+        // PRIMARY: Register via backend API
+        com.example.mysoftpos.data.remote.api.ApiService api =
+                com.example.mysoftpos.data.remote.api.ApiClient.getService(this);
+
+        api.register(new com.example.mysoftpos.data.remote.api.ApiService.RegisterRequest(
+                username, password, fullName, phone, email
+        )).enqueue(new retrofit2.Callback<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse>() {
+            @Override
+            public void onResponse(
+                    retrofit2.Call<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> call,
+                    retrofit2.Response<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    // Cache user locally for offline login
+                    cacheUserLocally(fullName, phone, email, username, password);
+                    runOnUiThread(() -> {
+                        Toast.makeText(RegisterActivity.this,
+                                "Registration Successful!", Toast.LENGTH_SHORT).show();
+                        finish();
+                    });
+                } else {
+                    String errorMsg = "Registration failed";
+                    try {
+                        if (response.errorBody() != null) {
+                            String body = response.errorBody().string();
+                            if (body.contains("already exists"))
+                                errorMsg = "Username already exists";
+                        }
+                    } catch (Exception ignored) {}
+                    String finalMsg = errorMsg;
+                    runOnUiThread(() -> {
+                        Toast.makeText(RegisterActivity.this, finalMsg, Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }
+
+            @Override
+            public void onFailure(
+                    retrofit2.Call<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> call,
+                    Throwable t) {
+                Log.w("RegisterActivity",
+                        "API unreachable, falling back to offline registration: " + t.getMessage());
+                // FALLBACK: Register locally only
+                registerUserLocally(fullName, phone, email, username, password);
+            }
+        });
+    }
+
+    /** Cache a backend-registered user into local Room for offline login */
+    private void cacheUserLocally(String fullName, String phone, String email,
+            String username, String password) {
         new Thread(() -> {
             try {
-                com.example.mysoftpos.data.local.AppDatabase db = com.example.mysoftpos.data.local.AppDatabase
-                        .getInstance(this);
+                com.example.mysoftpos.data.local.AppDatabase db =
+                        com.example.mysoftpos.data.local.AppDatabase.getInstance(this);
                 UserDao userDao = db.userDao();
-
-                // Check duplicates
                 String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
 
-                // Check if email/username exists
+                if (!userDao.existsByUsernameHash(usernameHash)) {
+                    // PA-DSS 2.x: Use PBKDF2 for password hashing, not SHA-256
+                    String passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashPassword(password);
+                    UserEntity user = new UserEntity(usernameHash, passwordHash, fullName,
+                            "ADMIN", email, phone, null);
+                    userDao.insert(user);
+                }
+            } catch (Exception e) {
+                Log.w("RegisterActivity", "Failed to cache user locally: " + e.getMessage());
+            }
+        }).start();
+    }
+
+    /** Fallback: Register user locally only (when backend is unreachable) */
+    private void registerUserLocally(String fullName, String phone, String email,
+            String username, String password) {
+        new Thread(() -> {
+            try {
+                com.example.mysoftpos.data.local.AppDatabase db =
+                        com.example.mysoftpos.data.local.AppDatabase.getInstance(this);
+                UserDao userDao = db.userDao();
+
+                String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
+
                 if (userDao.existsByUsernameHash(usernameHash) || userDao.existsByEmail(email)) {
                     runOnUiThread(() -> {
                         Toast.makeText(this, "Email already registered", Toast.LENGTH_SHORT).show();
@@ -180,7 +251,6 @@ public class RegisterActivity extends BaseActivity {
                     });
                     return;
                 }
-
                 if (userDao.existsByPhone(phone)) {
                     runOnUiThread(() -> {
                         Toast.makeText(this, "Phone already registered", Toast.LENGTH_SHORT).show();
@@ -189,27 +259,19 @@ public class RegisterActivity extends BaseActivity {
                     return;
                 }
 
-                String passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(password);
-
-                UserEntity user = new UserEntity(
-                        usernameHash,
-                        passwordHash,
-                        fullName,
-                        "ADMIN",
-                        email,
-                        phone,
-                        null);
-
+                String passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashPassword(password);
+                UserEntity user = new UserEntity(usernameHash, passwordHash, fullName,
+                        "ADMIN", email, phone, null);
                 userDao.insert(user);
 
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "Registration Successful!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Registration Successful (Offline)!", Toast.LENGTH_SHORT).show();
                     finish();
                 });
-
             } catch (Exception e) {
                 Log.e("RegisterActivity", "Registration failed", e);
-                runOnUiThread(() -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> Toast.makeText(this,
+                        "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
             }
         }).start();
     }

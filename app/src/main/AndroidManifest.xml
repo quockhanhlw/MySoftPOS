@@ -15,7 +15,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:usesCleartextTraffic="false"
+        android:usesCleartextTraffic="true"
         android:theme="@style/Theme.MySoftPOS">
 
         <!-- Auth Activities -->
@@ -76,6 +76,11 @@
             android:name=".ui.admin.UserManagementActivity"
             android:exported="false"
             android:label="User Management" />
+
+        <activity
+            android:name=".ui.admin.TransactionManagementActivity"
+            android:exported="false"
+            android:label="Transaction Management" />
 
         <!-- Purchase Activities -->
         <activity
