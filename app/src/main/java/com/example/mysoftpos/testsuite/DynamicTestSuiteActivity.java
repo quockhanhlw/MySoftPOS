@@ -7,7 +7,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -15,9 +14,10 @@ import com.example.mysoftpos.R;
 import com.example.mysoftpos.data.local.entity.TestSuiteEntity;
 import com.example.mysoftpos.testsuite.adapter.TestSuiteAdapter;
 import com.example.mysoftpos.testsuite.viewmodel.DynamicTestSuiteViewModel;
+import com.example.mysoftpos.ui.BaseActivity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-public class DynamicTestSuiteActivity extends AppCompatActivity {
+public class DynamicTestSuiteActivity extends BaseActivity {
 
     private DynamicTestSuiteViewModel viewModel;
     private TestSuiteAdapter adapter;

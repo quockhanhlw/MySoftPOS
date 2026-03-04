@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.data.remote.api.ApiClient;
 import com.example.mysoftpos.data.remote.api.ApiService;
+import com.example.mysoftpos.ui.BaseActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +28,7 @@ import retrofit2.Response;
 /**
  * Admin: View all transactions synced from all User devices.
  */
-public class TransactionManagementActivity extends AppCompatActivity {
+public class TransactionManagementActivity extends BaseActivity {
 
     private TxnAdapter adapter;
     private TextView tvTxnCount;

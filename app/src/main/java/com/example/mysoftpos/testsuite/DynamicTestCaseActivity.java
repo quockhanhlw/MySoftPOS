@@ -3,7 +3,6 @@ package com.example.mysoftpos.testsuite;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -11,9 +10,10 @@ import com.example.mysoftpos.R;
 import com.example.mysoftpos.data.local.entity.TestCaseEntity;
 import com.example.mysoftpos.testsuite.adapter.TestCaseAdapter;
 import com.example.mysoftpos.testsuite.viewmodel.DynamicTestCaseViewModel;
+import com.example.mysoftpos.ui.BaseActivity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-public class DynamicTestCaseActivity extends AppCompatActivity {
+public class DynamicTestCaseActivity extends BaseActivity {
 
     private DynamicTestCaseViewModel viewModel;
     private TestCaseAdapter adapter;

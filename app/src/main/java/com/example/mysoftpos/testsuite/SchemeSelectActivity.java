@@ -22,13 +22,14 @@ import com.example.mysoftpos.R;
 import com.example.mysoftpos.testsuite.adapter.SchemeAdapter;
 import com.example.mysoftpos.testsuite.model.Scheme;
 import com.example.mysoftpos.testsuite.storage.SchemeRepository;
+import com.example.mysoftpos.ui.BaseActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SchemeSelectActivity extends AppCompatActivity implements SchemeAdapter.OnSchemeListener {
+public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.OnSchemeListener {
 
     private SchemeRepository repository;
     private SchemeAdapter adapter;

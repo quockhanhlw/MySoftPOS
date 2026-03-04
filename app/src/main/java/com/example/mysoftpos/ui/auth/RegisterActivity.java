@@ -224,7 +224,7 @@ public class RegisterActivity extends BaseActivity {
                     // PA-DSS 2.x: Use PBKDF2 for password hashing, not SHA-256
                     String passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashPassword(password);
                     UserEntity user = new UserEntity(usernameHash, passwordHash, fullName,
-                            "ADMIN", email, phone, null);
+                            "USER", email, phone, null);
                     userDao.insert(user);
                 }
             } catch (Exception e) {
@@ -261,7 +261,7 @@ public class RegisterActivity extends BaseActivity {
 
                 String passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashPassword(password);
                 UserEntity user = new UserEntity(usernameHash, passwordHash, fullName,
-                        "ADMIN", email, phone, null);
+                        "USER", email, phone, null);
                 userDao.insert(user);
 
                 runOnUiThread(() -> {

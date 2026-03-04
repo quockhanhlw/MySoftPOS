@@ -8,14 +8,14 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.appcompat.app.AppCompatActivity;
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.testsuite.model.TestScenario;
+import com.example.mysoftpos.ui.BaseActivity;
 import com.google.android.material.button.MaterialButton;
 import java.util.List;
 import java.util.ArrayList;
 
-public class TestSuiteActivity extends AppCompatActivity {
+public class TestSuiteActivity extends BaseActivity {
 
     private String channel;
     private String txnType;

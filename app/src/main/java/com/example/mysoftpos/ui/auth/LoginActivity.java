@@ -131,19 +131,29 @@ public class LoginActivity extends BaseActivity {
                                     LoginActivity.this, username, "LOGIN",
                                     true, "LoginActivity", "API login: " + resp.user.role);
 
-                            // Cache user locally for offline login
-                            cacheUserLocally(username, password, resp.user);
+                            // Cache user locally for offline login, then resolve local ID and navigate
+                            com.example.mysoftpos.di.ServiceLocator.getInstance(LoginActivity.this)
+                                    .getDispatcherProvider().io().execute(() -> {
+                                        // Cache user to local Room DB
+                                        cacheUserLocallySync(username, password, resp.user);
 
-                            // Sync config & transactions from backend (non-blocking)
-                            if ("ADMIN".equals(resp.user.role)) {
-                                new com.example.mysoftpos.data.remote.ConfigSyncManager(LoginActivity.this).sync();
-                                new com.example.mysoftpos.data.remote.TestSuiteSyncManager(LoginActivity.this).pull();
-                            }
-                            new com.example.mysoftpos.data.remote.TransactionSyncManager(LoginActivity.this).syncUnsynced();
+                                        // Resolve local Room user ID (not backend ID)
+                                        long localUserId = resolveLocalUserId(username, resp.user.id);
 
-                            navigateToDashboard(resp.user.id, resp.user.role,
-                                    resp.user.fullName != null ? resp.user.fullName : "User",
-                                    resp.user.phone, resp.user.email);
+                                        // Sync config & transactions from backend (non-blocking)
+                                        if ("ADMIN".equals(resp.user.role)) {
+                                            new com.example.mysoftpos.data.remote.ConfigSyncManager(LoginActivity.this).sync();
+                                            new com.example.mysoftpos.data.remote.TestSuiteSyncManager(LoginActivity.this).pull();
+                                        }
+                                        new com.example.mysoftpos.data.remote.TransactionSyncManager(LoginActivity.this).syncUnsynced();
+
+                                        runOnUiThread(() -> {
+                                            if (isDestroyed() || isFinishing()) return;
+                                            navigateToDashboard(localUserId, resp.user.role,
+                                                    resp.user.fullName != null ? resp.user.fullName : "User",
+                                                    resp.user.phone, resp.user.email);
+                                        });
+                                    });
                         } else {
                             String errorMsg = "Invalid username or password!";
                             try {
@@ -289,56 +299,77 @@ public class LoginActivity extends BaseActivity {
         finish();
     }
 
+
     /**
-     * Cache user credentials locally after successful API login,
-     * so offline login works for this user next time.
+     * Synchronous version: cache user locally. Must be called from IO thread.
      */
-    private void cacheUserLocally(String username, String password,
+    private void cacheUserLocallySync(String username, String password,
             com.example.mysoftpos.data.remote.api.ApiService.UserDto userDto) {
-        com.example.mysoftpos.di.ServiceLocator.getInstance(this)
-                .getDispatcherProvider().io().execute(() -> {
-                    try {
-                        com.example.mysoftpos.data.local.AppDatabase db =
-                                com.example.mysoftpos.data.local.AppDatabase.getInstance(LoginActivity.this);
-                        com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
+        try {
+            com.example.mysoftpos.data.local.AppDatabase db =
+                    com.example.mysoftpos.data.local.AppDatabase.getInstance(LoginActivity.this);
+            com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
 
-                        String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
-                        // PA-DSS 2.x: Use PBKDF2 for password hashing, not SHA-256
-                        String passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashPassword(password);
+            String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
+            String passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashPassword(password);
 
-                        com.example.mysoftpos.data.local.entity.UserEntity existing =
-                                userDao.findByUsernameHash(usernameHash);
-                        if (existing == null) {
-                            // Also check by phone/email
-                            if (userDto.phone != null) existing = userDao.findByPhone(userDto.phone);
-                            if (existing == null && userDto.email != null) existing = userDao.findByEmail(userDto.email);
-                        }
+            com.example.mysoftpos.data.local.entity.UserEntity existing =
+                    userDao.findByUsernameHash(usernameHash);
+            if (existing == null) {
+                if (userDto.phone != null) existing = userDao.findByPhone(userDto.phone);
+                if (existing == null && userDto.email != null) existing = userDao.findByEmail(userDto.email);
+            }
 
-                        if (existing != null) {
-                            // Update existing local cache
-                            existing.passwordHash = passwordHash;
-                            existing.displayName = userDto.fullName;
-                            existing.role = userDto.role;
-                            existing.phone = userDto.phone;
-                            existing.email = userDto.email;
-                            existing.backendId = userDto.id;
-                            existing.failedLoginAttempts = 0;
-                            existing.lockedUntil = 0;
-                            userDao.update(existing);
-                        } else {
-                            // Create new local cache entry
-                            com.example.mysoftpos.data.local.entity.UserEntity newUser =
-                                    new com.example.mysoftpos.data.local.entity.UserEntity(
-                                            usernameHash, passwordHash,
-                                            userDto.fullName, userDto.role,
-                                            userDto.email, userDto.phone, null);
-                            newUser.backendId = userDto.id;
-                            userDao.insert(newUser);
-                        }
-                    } catch (Exception e) {
-                        android.util.Log.w("LoginActivity",
-                                "Failed to cache user locally: " + e.getMessage());
-                    }
-                });
+            if (existing != null) {
+                existing.passwordHash = passwordHash;
+                existing.displayName = userDto.fullName;
+                existing.role = userDto.role;
+                existing.phone = userDto.phone;
+                existing.email = userDto.email;
+                existing.backendId = userDto.id;
+                existing.failedLoginAttempts = 0;
+                existing.lockedUntil = 0;
+                userDao.update(existing);
+            } else {
+                com.example.mysoftpos.data.local.entity.UserEntity newUser =
+                        new com.example.mysoftpos.data.local.entity.UserEntity(
+                                usernameHash, passwordHash,
+                                userDto.fullName, userDto.role,
+                                userDto.email, userDto.phone, null);
+                newUser.backendId = userDto.id;
+                userDao.insert(newUser);
+            }
+        } catch (Exception e) {
+            android.util.Log.w("LoginActivity",
+                    "Failed to cache user locally: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Resolve the local Room user ID for a given username.
+     * Falls back to backend ID if local user not found.
+     * Must be called from IO thread.
+     */
+    private long resolveLocalUserId(String username, long backendId) {
+        try {
+            com.example.mysoftpos.data.local.AppDatabase db =
+                    com.example.mysoftpos.data.local.AppDatabase.getInstance(LoginActivity.this);
+            com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
+
+            // Try phone first
+            com.example.mysoftpos.data.local.entity.UserEntity user = userDao.findByPhone(username);
+            if (user == null) user = userDao.findByEmail(username);
+            if (user == null) {
+                String hash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
+                user = userDao.findByUsernameHash(hash);
+            }
+            // Last resort: find by backendId
+            if (user == null) user = userDao.findByBackendId(backendId);
+
+            if (user != null) return user.id;
+        } catch (Exception e) {
+            android.util.Log.w("LoginActivity", "Failed to resolve local user ID: " + e.getMessage());
+        }
+        return backendId; // fallback
     }
 }

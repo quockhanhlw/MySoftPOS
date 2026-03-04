@@ -3,13 +3,13 @@ package com.example.mysoftpos.testsuite;
 import android.os.Bundle;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.iso8583.TransactionContext;
 import com.example.mysoftpos.testsuite.viewmodel.RunnerViewModel;
+import com.example.mysoftpos.ui.BaseActivity;
 
-public class RunnerActivity extends AppCompatActivity {
+public class RunnerActivity extends BaseActivity {
 
     private RunnerViewModel viewModel;
     private TextView tvLog;

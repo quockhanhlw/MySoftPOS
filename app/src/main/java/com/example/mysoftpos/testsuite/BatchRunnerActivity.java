@@ -10,7 +10,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -24,6 +23,7 @@ import com.example.mysoftpos.iso8583.util.StandardIsoPacker;
 import com.example.mysoftpos.iso8583.TransactionContext;
 import com.example.mysoftpos.testsuite.model.TestScenario;
 import com.example.mysoftpos.testsuite.storage.SchemeRepository;
+import com.example.mysoftpos.ui.BaseActivity;
 import com.example.mysoftpos.utils.IntentKeys;
 import com.example.mysoftpos.utils.logging.ResponseCodeHelper;
 import com.example.mysoftpos.di.ServiceLocator;
@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class BatchRunnerActivity extends AppCompatActivity {
+public class BatchRunnerActivity extends BaseActivity {
 
     // CachedThreadPool: creates new threads as needed, ideal for parallel I/O
     private final ExecutorService executor = Executors.newCachedThreadPool();

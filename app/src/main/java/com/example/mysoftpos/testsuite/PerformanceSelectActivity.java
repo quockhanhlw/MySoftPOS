@@ -2,9 +2,9 @@ package com.example.mysoftpos.testsuite;
 
 import android.os.Bundle;
 
-import androidx.appcompat.app.AppCompatActivity;
+import com.example.mysoftpos.ui.BaseActivity;
 
-public class PerformanceSelectActivity extends AppCompatActivity {
+public class PerformanceSelectActivity extends BaseActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

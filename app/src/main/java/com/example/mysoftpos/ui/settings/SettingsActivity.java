@@ -11,11 +11,11 @@ import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
-import androidx.appcompat.app.AppCompatActivity;
+import com.example.mysoftpos.ui.BaseActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
-public class SettingsActivity extends AppCompatActivity {
+public class SettingsActivity extends BaseActivity {
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -301,6 +301,12 @@ public class SettingsActivity extends AppCompatActivity {
         // Logout Logic
         if (btnLogout != null) {
             btnLogout.setOnClickListener(v -> {
+                // Clear API session (tokens, user info)
+                com.example.mysoftpos.data.remote.api.ApiClient.clearSession(this);
+                com.example.mysoftpos.data.remote.api.ApiClient.reset();
+                // End PA-DSS session
+                com.example.mysoftpos.utils.security.SessionManager.endSession();
+
                 Intent intent = new Intent(this, com.example.mysoftpos.ui.auth.WelcomeActivity.class);
                 intent.addFlags(
                         Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK

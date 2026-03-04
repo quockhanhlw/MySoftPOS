@@ -59,4 +59,7 @@ public interface UserDao {
 
     @Query("SELECT * FROM users WHERE admin_id = :adminId ORDER BY created_at DESC")
     List<UserEntity> getAllByAdminIdSync(String adminId);
+
+    @Query("SELECT * FROM users WHERE backend_id = :backendId LIMIT 1")
+    UserEntity findByBackendId(long backendId);
 }

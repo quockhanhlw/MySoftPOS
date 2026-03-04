@@ -8,16 +8,16 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.testsuite.model.TestScenario;
+import com.example.mysoftpos.ui.BaseActivity;
 import com.example.mysoftpos.utils.IntentKeys;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 
-public class TransactionSelectActivity extends AppCompatActivity {
+public class TransactionSelectActivity extends BaseActivity {
 
     private String scheme;
     private String channel;

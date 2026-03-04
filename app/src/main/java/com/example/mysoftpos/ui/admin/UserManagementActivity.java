@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.data.remote.api.ApiClient;
 import com.example.mysoftpos.data.remote.api.ApiService;
+import com.example.mysoftpos.ui.BaseActivity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ import retrofit2.Response;
  * Admin: User Management — CRUD via Backend API.
  * Each user has a unique TID (Terminal ID).
  */
-public class UserManagementActivity extends AppCompatActivity implements UserAdapter.OnUserListener {
+public class UserManagementActivity extends BaseActivity implements UserAdapter.OnUserListener {
 
     private UserAdapter adapter;
     private TextView tvUserCount;

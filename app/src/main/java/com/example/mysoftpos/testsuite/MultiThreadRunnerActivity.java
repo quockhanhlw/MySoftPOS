@@ -5,13 +5,13 @@ import android.os.Handler;
 import android.os.Looper;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import androidx.appcompat.app.AppCompatActivity;
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.domain.service.TransactionExecutor;
 import com.example.mysoftpos.domain.service.TransactionResult;
 import com.example.mysoftpos.domain.model.CardInputData;
 import com.example.mysoftpos.iso8583.TransactionContext;
 import com.example.mysoftpos.testsuite.model.TestScenario;
+import com.example.mysoftpos.ui.BaseActivity;
 import com.example.mysoftpos.utils.PanUtils;
 import com.example.mysoftpos.utils.logging.ResponseCodeHelper;
 import com.example.mysoftpos.testsuite.model.Scheme;
@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Runs multiple test scenarios concurrently using a thread pool.
  * Each scenario runs in its own thread via TransactionExecutor.
  */
-public class MultiThreadRunnerActivity extends AppCompatActivity {
+public class MultiThreadRunnerActivity extends BaseActivity {
 
     private TextView tvLog;
     private TextView tvStatus;
