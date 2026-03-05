@@ -50,6 +50,10 @@ public class UserEntity {
     @ColumnInfo(name = "backend_id")
     public long backendId;
 
+    /** Terminal ID (TID / DE 41) assigned to this user */
+    @ColumnInfo(name = "terminal_id_assigned")
+    public String terminalId;
+
     @ColumnInfo(name = "server_ip")
     public String serverIp;
 
@@ -77,6 +81,7 @@ public class UserEntity {
         this.phone = phone;
         this.dob = dob;
         this.createdAt = System.currentTimeMillis();
+        this.terminalId = "";
         this.serverIp = "";
         this.serverPort = 0;
         this.failedLoginAttempts = 0;

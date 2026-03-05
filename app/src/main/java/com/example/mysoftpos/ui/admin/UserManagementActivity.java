@@ -121,7 +121,6 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
             for (ApiService.UserDto u : allUsers) {
                 if ((u.fullName != null && u.fullName.toLowerCase().contains(q)) ||
                         (u.phone != null && u.phone.toLowerCase().contains(q)) ||
-                        (u.username != null && u.username.toLowerCase().contains(q)) ||
                         (u.terminalId != null && u.terminalId.toLowerCase().contains(q))) {
                     filtered.add(u);
                 }
@@ -152,7 +151,6 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         EditText etPhone = dialogView.findViewById(R.id.etPhone);
         EditText etEmail = dialogView.findViewById(R.id.etEmail);
         EditText etPassword = dialogView.findViewById(R.id.etPassword);
-        EditText etUsername = dialogView.findViewById(R.id.etUsername);
         EditText etTerminalId = dialogView.findViewById(R.id.etTerminalId);
         EditText etServerIp = dialogView.findViewById(R.id.etServerIp);
         EditText etServerPort = dialogView.findViewById(R.id.etServerPort);
@@ -168,13 +166,12 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
             etName.setText(existing.fullName);
             etPhone.setText(existing.phone);
             etEmail.setText(existing.email);
-            if (etUsername != null) {
-                etUsername.setText(existing.username);
-                etUsername.setEnabled(false); // Username cannot be changed
-                etUsername.setAlpha(0.6f);
-            }
             if (etTerminalId != null)
                 etTerminalId.setText(existing.terminalId);
+            if (etServerIp != null && existing.serverIp != null)
+                etServerIp.setText(existing.serverIp);
+            if (etServerPort != null && existing.serverPort != null)
+                etServerPort.setText(String.valueOf(existing.serverPort));
             etPassword.setHint("New password (leave blank to keep)");
         }
 
@@ -200,7 +197,9 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                     return;
                 }
                 int port;
-                try { port = Integer.parseInt(portStr); } catch (NumberFormatException e) {
+                try {
+                    port = Integer.parseInt(portStr);
+                } catch (NumberFormatException e) {
                     if (tvStatus != null) {
                         tvStatus.setVisibility(View.VISIBLE);
                         tvStatus.setText("Invalid port number");
@@ -221,7 +220,8 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                         socket.connect(new java.net.InetSocketAddress(ip, finalPort), 5000);
                         socket.close();
                         ok = true;
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                     final boolean result = ok;
                     runOnUiThread(() -> {
                         if (tvStatus != null) {
@@ -247,15 +247,17 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                 String phone = etPhone.getText().toString().trim();
                 String email = etEmail.getText().toString().trim();
                 String password = etPassword.getText().toString().trim();
-                String username = etUsername != null ? etUsername.getText().toString().trim() : "";
                 String terminalId = etTerminalId != null ? etTerminalId.getText().toString().trim() : "";
                 String serverIp = etServerIp != null ? etServerIp.getText().toString().trim() : "";
                 String serverPortStr = etServerPort != null ? etServerPort.getText().toString().trim() : "";
                 int serverPort = 0;
-                try { serverPort = Integer.parseInt(serverPortStr); } catch (NumberFormatException ignored) {}
+                try {
+                    serverPort = Integer.parseInt(serverPortStr);
+                } catch (NumberFormatException ignored) {
+                }
 
-                if (!isEdit && username.isEmpty()) {
-                    Toast.makeText(this, "Username is required", Toast.LENGTH_SHORT).show();
+                if (!isEdit && phone.isEmpty()) {
+                    Toast.makeText(this, "Phone number is required", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 if (!isEdit && password.isEmpty()) {
@@ -266,18 +268,20 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                 String token = ApiClient.bearerToken(this);
                 final String fServerIp = serverIp;
                 final int fServerPort = serverPort;
+                final String fTerminalId = terminalId;
 
                 if (isEdit) {
                     ApiService.CreateUserRequest req = new ApiService.CreateUserRequest(
-                            existing.username, password.isEmpty() ? null : password,
-                            fullName, phone, email, terminalId);
+                            password.isEmpty() ? null : password,
+                            fullName, phone, email, terminalId, serverIp, serverPort > 0 ? serverPort : null);
                     ApiClient.getService(this).updateUser(token, existing.id, req)
-                            .enqueue(new SimpleCallbackWithLocalSync("User updated", existing.id, fServerIp, fServerPort));
+                            .enqueue(new SimpleCallbackWithLocalSync("User updated", existing.id, fServerIp,
+                                    fServerPort, fTerminalId));
                 } else {
                     ApiService.CreateUserRequest req = new ApiService.CreateUserRequest(
-                            username, password, fullName, phone, email, terminalId);
+                            password, fullName, phone, email, terminalId, serverIp, serverPort > 0 ? serverPort : null);
                     ApiClient.getService(this).createUser(token, req)
-                            .enqueue(new SimpleCallbackWithLocalSync("User created", -1, fServerIp, fServerPort));
+                            .enqueue(new SimpleCallbackWithLocalSync("User created", -1, fServerIp, fServerPort, fTerminalId));
                 }
                 dialog.dismiss();
             });
@@ -303,7 +307,6 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
             }
         }
 
-
         dialog.show();
     }
 
@@ -311,7 +314,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
     private void confirmDelete(ApiService.UserDto user) {
         new AlertDialog.Builder(this)
                 .setTitle("Delete User")
-                .setMessage("Delete " + (user.fullName != null ? user.fullName : user.username) + "?")
+                .setMessage("Delete " + (user.fullName != null ? user.fullName : user.phone) + "?")
                 .setPositiveButton("Delete", (d, w) -> {
                     String token = ApiClient.bearerToken(this);
                     ApiClient.getService(this).deleteUser(token, user.id)
@@ -340,12 +343,14 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         private final long existingBackendId;
         private final String serverIp;
         private final int serverPort;
+        private final String terminalId;
 
-        SimpleCallbackWithLocalSync(String msg, long existingBackendId, String serverIp, int serverPort) {
+        SimpleCallbackWithLocalSync(String msg, long existingBackendId, String serverIp, int serverPort, String terminalId) {
             this.successMsg = msg;
             this.existingBackendId = existingBackendId;
             this.serverIp = serverIp;
             this.serverPort = serverPort;
+            this.terminalId = terminalId;
         }
 
         @Override
@@ -353,34 +358,36 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
             if (resp.isSuccessful() && resp.body() != null) {
                 Toast.makeText(UserManagementActivity.this, successMsg, Toast.LENGTH_SHORT).show();
 
-                // Save serverIp/serverPort to local Room DB
+                // Save serverIp/serverPort/terminalId to local Room DB
                 ApiService.UserDto savedUser = resp.body();
                 new Thread(() -> {
                     try {
-                        com.example.mysoftpos.data.local.AppDatabase db =
-                                com.example.mysoftpos.data.local.AppDatabase.getInstance(UserManagementActivity.this);
+                        com.example.mysoftpos.data.local.AppDatabase db = com.example.mysoftpos.data.local.AppDatabase
+                                .getInstance(UserManagementActivity.this);
                         com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
 
-                        String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils
-                                .hashSHA256(savedUser.username);
-                        com.example.mysoftpos.data.local.entity.UserEntity localUser =
-                                userDao.findByUsernameHash(usernameHash);
+                        String phoneHash = com.example.mysoftpos.utils.security.PasswordUtils
+                                .hashSHA256(savedUser.phone);
+                        com.example.mysoftpos.data.local.entity.UserEntity localUser = userDao
+                                .findByUsernameHash(phoneHash);
 
                         if (localUser != null) {
                             localUser.serverIp = serverIp;
                             localUser.serverPort = serverPort;
+                            localUser.terminalId = terminalId;
                             localUser.backendId = savedUser.id;
                             userDao.update(localUser);
                         } else {
                             // Create local entry
                             localUser = new com.example.mysoftpos.data.local.entity.UserEntity();
-                            localUser.usernameHash = usernameHash;
+                            localUser.usernameHash = phoneHash;
                             localUser.passwordHash = "";
                             localUser.displayName = savedUser.fullName;
                             localUser.role = savedUser.role;
                             localUser.email = savedUser.email;
                             localUser.phone = savedUser.phone;
                             localUser.backendId = savedUser.id;
+                            localUser.terminalId = terminalId;
                             localUser.serverIp = serverIp;
                             localUser.serverPort = serverPort;
                             localUser.createdAt = System.currentTimeMillis();

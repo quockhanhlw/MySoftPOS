@@ -84,7 +84,7 @@ public class TransactionManagementActivity extends BaseActivity {
                         if (resp.isSuccessful() && resp.body() != null) {
                             userIdToName.clear();
                             for (ApiService.UserDto u : resp.body()) {
-                                userIdToName.put(u.id, u.username);
+                                userIdToName.put(u.id, u.phone);
                             }
                             loadTransactions();
                         } else {

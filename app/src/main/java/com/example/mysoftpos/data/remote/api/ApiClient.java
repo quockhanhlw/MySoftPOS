@@ -24,7 +24,7 @@ public final class ApiClient {
     private static final String KEY_USERNAME = "username";
 
     // Default backend URL (localhost for emulator, change for real device)
-    private static final String DEFAULT_BASE_URL = "http://10.0.2.2:8080";
+    private static final String DEFAULT_BASE_URL = "https://mysoftpos-backend.onrender.com/";
 
     private static volatile ApiService apiService;
     private static volatile Retrofit retrofit;
@@ -101,7 +101,7 @@ public final class ApiClient {
         if (resp.user != null) {
             editor.putLong(KEY_USER_ID, resp.user.id);
             editor.putString(KEY_ROLE, resp.user.role);
-            editor.putString(KEY_USERNAME, resp.user.username);
+            editor.putString(KEY_USERNAME, resp.user.phone);
         }
         editor.apply();
     }

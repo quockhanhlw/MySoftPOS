@@ -192,7 +192,7 @@ public class ConfigManager {
     }
 
     public void resetServerConfig() {
-        prefs.edit().remove(KEY_IP).remove(KEY_PORT).apply();
+        prefs.edit().remove(KEY_IP).remove(KEY_PORT).remove(KEY_TID).apply();
     }
 
     public int getTimeout() {

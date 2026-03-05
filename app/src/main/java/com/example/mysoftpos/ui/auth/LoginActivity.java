@@ -158,17 +158,32 @@ public class LoginActivity extends BaseActivity {
                                         true, "LoginActivity", "Local-first login: " + user.role);
 
                                 final com.example.mysoftpos.data.local.entity.UserEntity cachedUser = user;
-                                runOnUiThread(() -> {
-                                    if (!isDestroyed() && !isFinishing()) {
-                                        String displayName = cachedUser.displayName != null ? cachedUser.displayName
-                                                : "User";
-                                        navigateToDashboard(cachedUser.id, cachedUser.role, displayName,
-                                                cachedUser.phone, cachedUser.email);
-                                    }
-                                });
-
                                 // Background: sync with API to refresh token & update cache
-                                syncWithBackendInBackground(username, password);
+                                // Pass a callback so we only navigate after we get the fresh token
+                                syncWithBackendInBackground(username, password, () -> {
+                                    runOnUiThread(() -> {
+                                        if (!isDestroyed() && !isFinishing()) {
+                                            String displayName = cachedUser.displayName != null ? cachedUser.displayName
+                                                    : "User";
+
+                                            // Set User IP/Port/TID to ConfigManager
+                                            com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
+                                                    .getInstance(LoginActivity.this);
+                                            config.resetServerConfig();
+                                            if (cachedUser.serverIp != null && !cachedUser.serverIp.isEmpty()
+                                                    && cachedUser.serverPort > 0) {
+                                                config.setServerIp(cachedUser.serverIp);
+                                                config.setServerPort(cachedUser.serverPort);
+                                            }
+                                            if (cachedUser.terminalId != null && !cachedUser.terminalId.isEmpty()) {
+                                                config.setTerminalId(cachedUser.terminalId);
+                                            }
+
+                                            navigateToDashboard(cachedUser.id, cachedUser.role, displayName,
+                                                    cachedUser.phone, cachedUser.email);
+                                        }
+                                    });
+                                });
                                 return;
                             } else {
                                 // Wrong password — increment failed attempts
@@ -201,7 +216,7 @@ public class LoginActivity extends BaseActivity {
      * Background sync with backend API after successful local login.
      * Refreshes JWT token, updates local cache, syncs transactions.
      */
-    private void syncWithBackendInBackground(String username, String password) {
+    private void syncWithBackendInBackground(String username, String password, Runnable onComplete) {
         try {
             com.example.mysoftpos.data.remote.api.ApiService api = com.example.mysoftpos.data.remote.api.ApiClient
                     .getService(this);
@@ -232,7 +247,8 @@ public class LoginActivity extends BaseActivity {
                                                     LoginActivity.this).syncUnsynced();
                                         });
                             }
-                            // If API fails, no problem — user already logged in locally
+                            if (onComplete != null)
+                                onComplete.run();
                         }
 
                         @Override
@@ -241,10 +257,14 @@ public class LoginActivity extends BaseActivity {
                                 Throwable t) {
                             // Network unavailable — no problem, user already logged in
                             android.util.Log.d("LoginActivity", "Background sync skipped: " + t.getMessage());
+                            if (onComplete != null)
+                                onComplete.run();
                         }
                     });
         } catch (Exception e) {
             android.util.Log.w("LoginActivity", "Background sync error: " + e.getMessage());
+            if (onComplete != null)
+                onComplete.run();
         }
     }
 
@@ -271,6 +291,20 @@ public class LoginActivity extends BaseActivity {
                             com.example.mysoftpos.utils.security.AuditLogger.log(
                                     LoginActivity.this, username, "LOGIN",
                                     true, "LoginActivity", "API login: " + resp.user.role);
+
+                            // Set ConfigManager IP/Port/TID for NAPAS connection
+                            com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
+                                    .getInstance(LoginActivity.this);
+                            config.resetServerConfig();
+                            if (resp.user.serverIp != null && !resp.user.serverIp.isEmpty()
+                                    && resp.user.serverPort != null && resp.user.serverPort > 0) {
+                                config.setServerIp(resp.user.serverIp);
+                                config.setServerPort(resp.user.serverPort);
+                            }
+                            // Set user-specific Terminal ID
+                            if (resp.user.terminalId != null && !resp.user.terminalId.isEmpty()) {
+                                config.setTerminalId(resp.user.terminalId);
+                            }
 
                             // Cache user locally for offline login, then resolve local ID and navigate
                             com.example.mysoftpos.di.ServiceLocator.getInstance(LoginActivity.this)
@@ -387,20 +421,26 @@ public class LoginActivity extends BaseActivity {
                                     config.setServerIp(user.serverIp);
                                     config.setServerPort(user.serverPort);
                                 }
+                                if (user.terminalId != null && !user.terminalId.isEmpty()) {
+                                    config.setTerminalId(user.terminalId);
+                                }
 
                                 com.example.mysoftpos.utils.security.SessionManager.startSession();
                                 com.example.mysoftpos.utils.security.AuditLogger.log(
                                         LoginActivity.this, username, "LOGIN",
                                         true, "LoginActivity", "Offline login: " + user.role);
 
+                                // Background: sync with API to refresh JWT token for API-dependent screens
                                 final com.example.mysoftpos.data.local.entity.UserEntity finalUser = user;
-                                runOnUiThread(() -> {
-                                    if (!isDestroyed() && !isFinishing()) {
-                                        Toast.makeText(LoginActivity.this,
-                                                "Login Successful (Offline)!", Toast.LENGTH_SHORT).show();
-                                        navigateToDashboard(finalUser.id, finalUser.role, displayName,
-                                                finalUser.phone, finalUser.email);
-                                    }
+                                syncWithBackendInBackground(username, password, () -> {
+                                    runOnUiThread(() -> {
+                                        if (!isDestroyed() && !isFinishing()) {
+                                            Toast.makeText(LoginActivity.this,
+                                                    "Login Successful (Offline)!", Toast.LENGTH_SHORT).show();
+                                            navigateToDashboard(finalUser.id, finalUser.role, displayName,
+                                                    finalUser.phone, finalUser.email);
+                                        }
+                                    });
                                 });
                                 return;
                             } else {
@@ -474,6 +514,12 @@ public class LoginActivity extends BaseActivity {
                 existing.backendId = userDto.id;
                 existing.failedLoginAttempts = 0;
                 existing.lockedUntil = 0;
+                if (userDto.terminalId != null)
+                    existing.terminalId = userDto.terminalId;
+                if (userDto.serverIp != null)
+                    existing.serverIp = userDto.serverIp;
+                if (userDto.serverPort != null)
+                    existing.serverPort = userDto.serverPort;
                 userDao.update(existing);
             } else {
                 com.example.mysoftpos.data.local.entity.UserEntity newUser = new com.example.mysoftpos.data.local.entity.UserEntity(
@@ -481,6 +527,12 @@ public class LoginActivity extends BaseActivity {
                         userDto.fullName, userDto.role,
                         userDto.email, userDto.phone, null);
                 newUser.backendId = userDto.id;
+                if (userDto.terminalId != null)
+                    newUser.terminalId = userDto.terminalId;
+                if (userDto.serverIp != null)
+                    newUser.serverIp = userDto.serverIp;
+                if (userDto.serverPort != null)
+                    newUser.serverPort = userDto.serverPort;
                 userDao.insert(newUser);
             }
         } catch (Exception e) {

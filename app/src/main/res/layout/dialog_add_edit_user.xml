@@ -190,29 +190,6 @@
             android:layout_marginTop="8dp"
             android:background="#F1F5F9" />
 
-        <!-- Username (Login) -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilUsername"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            app:boxBackgroundMode="outline"
-            app:boxCornerRadiusBottomEnd="12dp"
-            app:boxCornerRadiusBottomStart="12dp"
-            app:boxCornerRadiusTopEnd="12dp"
-            app:boxCornerRadiusTopStart="12dp"
-            app:helperText="Used for login (cannot change after creation)"
-            app:helperTextTextColor="#0D9488"
-            app:startIconDrawable="@drawable/ic_baseline_person_24">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etUsername"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Username (Login) *"
-                android:inputType="text" />
-        </com.google.android.material.textfield.TextInputLayout>
-
         <!-- Terminal ID -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tilTerminalId"
