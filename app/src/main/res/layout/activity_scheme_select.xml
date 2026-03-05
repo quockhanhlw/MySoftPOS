@@ -19,7 +19,7 @@
             android:background="#FFFFFF"
             android:paddingTop="14dp"
             android:paddingBottom="14dp"
-            android:paddingHorizontal="20dp"
+            android:paddingHorizontal="@dimen/screen_padding_horizontal"
             android:elevation="1dp">
 
             <LinearLayout

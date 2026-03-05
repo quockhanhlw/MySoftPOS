@@ -70,7 +70,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:paddingHorizontal="24dp"
+                        android:paddingHorizontal="@dimen/screen_padding_horizontal"
                         android:paddingTop="28dp"
                         android:paddingBottom="24dp"
                         android:gravity="center">
@@ -125,7 +125,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:paddingHorizontal="20dp"
+                        android:paddingHorizontal="@dimen/screen_padding_horizontal"
                         android:paddingVertical="8dp">
 
                         <include layout="@layout/item_detail_row" android:id="@+id/rowDate" />
@@ -157,7 +157,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingHorizontal="20dp"
+            android:paddingHorizontal="@dimen/screen_padding_horizontal"
             android:paddingVertical="16dp"
             android:background="@color/white"
             android:elevation="8dp">

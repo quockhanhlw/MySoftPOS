@@ -4,66 +4,103 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="2dp">
+    android:layout_marginBottom="@dimen/card_margin_bottom"
+    app:cardCornerRadius="@dimen/card_corner_radius"
+    app:cardElevation="@dimen/card_elevation"
+    app:strokeColor="#F1F5F9"
+    app:strokeWidth="1dp"
+    app:cardBackgroundColor="@color/background_deep">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="14dp">
+        android:padding="@dimen/card_padding">
 
-        <!-- Row 1: Trace + Status -->
+        <!-- Row 1: Status Pill + Amount -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <TextView
-                android:id="@+id/tvTraceNumber"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Trace: 000001"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="#212121" />
-
+            <!-- Status Badge -->
             <TextView
                 android:id="@+id/tvStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="APPROVED"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:textSize="10sp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@android:color/white"
+                android:background="@drawable/bg_status_approved"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="3dp"
+                android:textAllCaps="true" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Amount -->
+            <TextView
+                android:id="@+id/tvAmount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="100,000 VND"
+                android:textSize="@dimen/text_subtitle"
+                android:fontFamily="sans-serif-bold"
+                android:textColor="@color/text_primary" />
         </LinearLayout>
 
-        <!-- Row 2: Amount + Card -->
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#F1F5F9"
+            android:layout_marginVertical="10dp" />
+
+        <!-- Row 2: Card Info + Trace -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="6dp">
+            android:gravity="center_vertical">
 
-            <TextView
-                android:id="@+id/tvAmount"
+            <!-- Card Scheme Icon Area + Masked PAN -->
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="100,000 VND"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#1B5E20" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_baseline_credit_card_24"
+                    app:tint="@color/text_muted"
+                    android:layout_marginEnd="6dp" />
+
+                <TextView
+                    android:id="@+id/tvCardInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="9704**7890 (Napas)"
+                    android:textSize="@dimen/text_caption"
+                    android:fontFamily="sans-serif"
+                    android:textColor="@color/text_secondary" />
+            </LinearLayout>
 
             <TextView
-                android:id="@+id/tvCardInfo"
+                android:id="@+id/tvTraceNumber"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="9704**7890 (Napas)"
+                android:text="#000001"
                 android:textSize="12sp"
-                android:textColor="#757575" />
+                android:fontFamily="monospace"
+                android:textColor="@color/text_muted" />
         </LinearLayout>
 
         <!-- Row 3: Terminal + Time -->
@@ -71,16 +108,30 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="4dp">
+            android:layout_marginTop="6dp">
 
-            <TextView
-                android:id="@+id/tvTerminal"
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="TID: TERM0001"
-                android:textSize="12sp"
-                android:textColor="#9E9E9E" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_baseline_phonelink_24"
+                    app:tint="@color/text_muted"
+                    android:layout_marginEnd="6dp" />
+
+                <TextView
+                    android:id="@+id/tvTerminal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="TERM0001"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_muted" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/tvTime"
@@ -88,21 +139,33 @@
                 android:layout_height="wrap_content"
                 android:text="2025-01-01 10:00"
                 android:textSize="12sp"
-                android:textColor="#9E9E9E" />
+                android:textColor="@color/text_muted" />
         </LinearLayout>
 
-        <!-- Row 4: User -->
-        <TextView
-            android:id="@+id/tvUsername"
+        <!-- Row 4: Username -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:drawableStart="@drawable/ic_baseline_person_24"
-            android:drawablePadding="4dp"
-            android:drawableTint="#9E9E9E"
-            android:text="User: admin"
-            android:textSize="12sp"
-            android:textColor="#607D8B" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="6dp">
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_baseline_person_24"
+                app:tint="@color/accent_cyan"
+                android:layout_marginEnd="6dp" />
+
+            <TextView
+                android:id="@+id/tvUsername"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="user01"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/accent_blue" />
+        </LinearLayout>
 
     </LinearLayout>
 

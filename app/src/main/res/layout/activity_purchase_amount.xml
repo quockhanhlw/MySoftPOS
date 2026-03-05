@@ -16,7 +16,7 @@
         android:id="@+id/headerContainer"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:paddingHorizontal="16dp"
+        android:paddingHorizontal="@dimen/screen_padding_horizontal"
         app:layout_constraintTop_toTopOf="parent">
 
         <!-- Back Button -->
@@ -56,7 +56,7 @@
         android:clickable="true"
         android:focusable="true"
         android:background="?attr/selectableItemBackground"
-        android:padding="16dp"
+        android:padding="@dimen/screen_padding_horizontal"
         app:layout_constraintTop_toBottomOf="@id/headerContainer"
         app:layout_constraintBottom_toTopOf="@id/numpadContainer"
         app:layout_constraintStart_toStartOf="parent"
@@ -148,7 +148,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:visibility="visible"
-        android:paddingHorizontal="24dp"
+        android:paddingHorizontal="@dimen/screen_padding_horizontal"
         android:paddingBottom="16dp"
         app:layout_constraintBottom_toTopOf="@id/btnCharge"
         app:layout_constraintStart_toStartOf="parent"

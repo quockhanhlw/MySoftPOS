@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!--          RESPONSIVE OVERRIDES — TABLET 10"+ (sw720dp)             -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+
+    <!-- Wider centred content on large tablets -->
+    <dimen name="content_max_width">680dp</dimen>
+
+    <!-- Even more breathing room -->
+    <dimen name="screen_padding_horizontal">48dp</dimen>
+    <dimen name="screen_padding_vertical">32dp</dimen>
+
+    <!-- Header -->
+    <dimen name="header_height">72dp</dimen>
+    <dimen name="header_padding_top">44dp</dimen>
+    <dimen name="header_title_size">28sp</dimen>
+
+    <!-- Text Sizes -->
+    <dimen name="text_title">32sp</dimen>
+    <dimen name="text_subtitle">22sp</dimen>
+    <dimen name="text_body">17sp</dimen>
+    <dimen name="text_caption">14sp</dimen>
+    <dimen name="text_label">13sp</dimen>
+    <dimen name="text_amount_large">48sp</dimen>
+
+    <!-- Card -->
+    <dimen name="card_corner_radius">18dp</dimen>
+    <dimen name="card_padding">24dp</dimen>
+    <dimen name="card_margin_bottom">14dp</dimen>
+    <dimen name="card_elevation">2dp</dimen>
+
+    <!-- Button -->
+    <dimen name="button_height">58dp</dimen>
+    <dimen name="button_corner_radius">16dp</dimen>
+    <dimen name="button_text_size">19sp</dimen>
+
+    <!-- Input Field -->
+    <dimen name="input_height">60dp</dimen>
+    <dimen name="input_corner_radius">16dp</dimen>
+    <dimen name="input_text_size">18sp</dimen>
+
+    <!-- Icon -->
+    <dimen name="icon_small">22dp</dimen>
+    <dimen name="icon_medium">32dp</dimen>
+    <dimen name="icon_large">52dp</dimen>
+    <dimen name="icon_xlarge">96dp</dimen>
+
+    <!-- Dashboard Grid -->
+    <dimen name="dashboard_card_min_height">120dp</dimen>
+    <dimen name="dashboard_icon_size">40dp</dimen>
+
+    <!-- Keypad -->
+    <dimen name="keypad_button_size">96dp</dimen>
+    <dimen name="keypad_text_size">32sp</dimen>
+    <dimen name="keypad_spacing">14dp</dimen>
+
+    <!-- Dialog -->
+    <dimen name="dialog_max_width">540dp</dimen>
+    <dimen name="dialog_padding">36dp</dimen>
+
+    <!-- Status Pill -->
+    <dimen name="status_pill_text_size">13sp</dimen>
+    <dimen name="status_pill_padding_h">16dp</dimen>
+    <dimen name="status_pill_padding_v">5dp</dimen>
+
+    <!-- RecyclerView -->
+    <dimen name="list_padding">24dp</dimen>
+    <dimen name="list_item_spacing">14dp</dimen>
+
+    <!-- Auth screens -->
+    <dimen name="auth_form_max_width">480dp</dimen>
+    <dimen name="auth_logo_size">120dp</dimen>
+    <dimen name="auth_title_size">36sp</dimen>
+
+    <!-- FAB -->
+    <dimen name="fab_margin">32dp</dimen>
+</resources>

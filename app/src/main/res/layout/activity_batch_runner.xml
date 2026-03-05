@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="16dp"
+        android:padding="@dimen/screen_padding_horizontal"
         android:background="#FFFFFFFF"
         android:elevation="4dp">
 
@@ -65,7 +65,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="16dp"
+        android:padding="@dimen/screen_padding_horizontal"
         android:clipToPadding="false"/>
 
     <!-- Bottom Action -->

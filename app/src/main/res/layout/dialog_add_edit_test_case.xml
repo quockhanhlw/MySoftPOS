@@ -21,7 +21,7 @@
             android:layout_height="wrap_content"
             android:background="@drawable/bg_testcase_header"
             android:orientation="vertical"
-            android:paddingHorizontal="24dp"
+            android:paddingHorizontal="@dimen/dialog_padding"
             android:paddingTop="28dp"
             android:paddingBottom="24dp">
 
@@ -82,7 +82,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="24dp"
+            android:paddingHorizontal="@dimen/dialog_padding"
             android:paddingTop="20dp"
             android:paddingBottom="8dp">
 

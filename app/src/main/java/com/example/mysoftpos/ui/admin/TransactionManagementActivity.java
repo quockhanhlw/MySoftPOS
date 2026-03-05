@@ -29,20 +29,17 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
- * Admin: View transactions from USER accounts only (not admin's own test
- * transactions).
- * Supports filtering by individual user via a Spinner dropdown.
+ * Admin: View transactions from USER accounts only.
+ * Features: Summary stats, user filter, status-colored pills.
  */
 public class TransactionManagementActivity extends BaseActivity {
 
     private TxnAdapter adapter;
-    private TextView tvTxnCount;
+    private TextView tvTxnCount, tvApprovedCount, tvDeclinedCount, tvOtherCount;
     private Spinner spinnerUserFilter;
+    private View layoutEmpty;
 
-    /** All transactions belonging to USER-role accounts only */
     private List<ApiService.TransactionSummaryDto> userTransactions = new ArrayList<>();
-
-    /** Map of userId → username for user-role accounts */
     private Map<Long, String> userIdToName = new LinkedHashMap<>();
 
     @Override
@@ -51,7 +48,11 @@ public class TransactionManagementActivity extends BaseActivity {
         setContentView(R.layout.activity_transaction_management);
 
         tvTxnCount = findViewById(R.id.tvTxnCount);
+        tvApprovedCount = findViewById(R.id.tvApprovedCount);
+        tvDeclinedCount = findViewById(R.id.tvDeclinedCount);
+        tvOtherCount = findViewById(R.id.tvOtherCount);
         spinnerUserFilter = findViewById(R.id.spinnerUserFilter);
+        layoutEmpty = findViewById(R.id.layoutEmpty);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
         RecyclerView rv = findViewById(R.id.rvTransactions);
@@ -61,8 +62,8 @@ public class TransactionManagementActivity extends BaseActivity {
 
         spinnerUserFilter.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                filterByUser((String) parent.getItemAtPosition(position));
+            public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+                filterByUser((String) parent.getItemAtPosition(pos));
             }
 
             @Override
@@ -70,18 +71,11 @@ public class TransactionManagementActivity extends BaseActivity {
             }
         });
 
-        // Step 1: Load user list → Step 2: Load their transactions
         loadUsersAndTransactions();
     }
 
-    /**
-     * Load admin's sub-users first, then load transactions and
-     * filter to only show transactions from those user accounts.
-     */
     private void loadUsersAndTransactions() {
         String token = ApiClient.bearerToken(this);
-
-        // Step 1: Get list of USER accounts created by this admin
         ApiClient.getService(this).getUsers(token).enqueue(
                 new Callback<List<ApiService.UserDto>>() {
                     @Override
@@ -92,7 +86,6 @@ public class TransactionManagementActivity extends BaseActivity {
                             for (ApiService.UserDto u : resp.body()) {
                                 userIdToName.put(u.id, u.username);
                             }
-                            // Step 2: Now load transactions
                             loadTransactions();
                         } else {
                             Toast.makeText(TransactionManagementActivity.this,
@@ -116,7 +109,6 @@ public class TransactionManagementActivity extends BaseActivity {
                     public void onResponse(Call<List<ApiService.TransactionSummaryDto>> call,
                             Response<List<ApiService.TransactionSummaryDto>> resp) {
                         if (resp.isSuccessful() && resp.body() != null) {
-                            // Filter: only keep transactions from USER accounts
                             userTransactions = new ArrayList<>();
                             for (ApiService.TransactionSummaryDto txn : resp.body()) {
                                 if (txn.userId != null && userIdToName.containsKey(txn.userId)) {
@@ -142,7 +134,6 @@ public class TransactionManagementActivity extends BaseActivity {
     private void populateUserFilter() {
         List<String> names = new ArrayList<>();
         names.add("All Users");
-        // Use unique usernames from the filtered transactions
         Map<String, Boolean> seen = new LinkedHashMap<>();
         for (ApiService.TransactionSummaryDto txn : userTransactions) {
             String name = txn.username != null ? txn.username : "Unknown";
@@ -150,10 +141,9 @@ public class TransactionManagementActivity extends BaseActivity {
         }
         names.addAll(seen.keySet());
 
-        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
-                this, android.R.layout.simple_spinner_item, names);
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerUserFilter.setAdapter(spinnerAdapter);
+        ArrayAdapter<String> a = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, names);
+        a.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerUserFilter.setAdapter(a);
     }
 
     private void filterByUser(String selectedUser) {
@@ -164,13 +154,29 @@ public class TransactionManagementActivity extends BaseActivity {
             filtered = new ArrayList<>();
             for (ApiService.TransactionSummaryDto txn : userTransactions) {
                 String name = txn.username != null ? txn.username : "Unknown";
-                if (name.equals(selectedUser)) {
+                if (name.equals(selectedUser))
                     filtered.add(txn);
-                }
             }
         }
         adapter.setData(filtered);
-        tvTxnCount.setText(filtered.size() + " transaction(s)");
+        updateStats(filtered);
+        tvTxnCount.setText(String.valueOf(filtered.size()));
+        layoutEmpty.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
+    }
+
+    private void updateStats(List<ApiService.TransactionSummaryDto> txns) {
+        int approved = 0, declined = 0, other = 0;
+        for (ApiService.TransactionSummaryDto t : txns) {
+            if ("APPROVED".equalsIgnoreCase(t.status))
+                approved++;
+            else if (t.status != null && t.status.toUpperCase().startsWith("DECLINED"))
+                declined++;
+            else
+                other++;
+        }
+        tvApprovedCount.setText(String.valueOf(approved));
+        tvDeclinedCount.setText(String.valueOf(declined));
+        tvOtherCount.setText(String.valueOf(other));
     }
 
     // ====== Adapter ======
@@ -215,26 +221,29 @@ public class TransactionManagementActivity extends BaseActivity {
             }
 
             void bind(ApiService.TransactionSummaryDto txn) {
-                tvTrace.setText("Trace: " + txn.traceNumber);
+                tvTrace.setText("#" + (txn.traceNumber != null ? txn.traceNumber : "—"));
                 tvAmount.setText(txn.amount != null ? txn.amount : "—");
-                tvStatus.setText(txn.status != null ? txn.status : "—");
                 tvCardInfo.setText((txn.maskedPan != null ? txn.maskedPan : "") +
                         (txn.cardScheme != null ? " (" + txn.cardScheme + ")" : ""));
-                tvTerminal.setText("TID: " + (txn.terminalCode != null ? txn.terminalCode : "—"));
+                tvTerminal.setText(txn.terminalCode != null ? txn.terminalCode : "—");
                 tvTime.setText(txn.txnTimestamp != null ? txn.txnTimestamp : "—");
 
-                // Username
                 if (tvUsername != null) {
-                    tvUsername.setText("User: " + (txn.username != null ? txn.username : "Unknown"));
+                    tvUsername.setText(txn.username != null ? txn.username : "Unknown");
                 }
 
-                // Status color
-                if ("APPROVED".equalsIgnoreCase(txn.status)) {
-                    tvStatus.setTextColor(0xFF4CAF50);
-                } else if ("DECLINED".equalsIgnoreCase(txn.status)) {
-                    tvStatus.setTextColor(0xFFF44336);
+                // Status pill with colored background
+                String status = txn.status != null ? txn.status : "UNKNOWN";
+                tvStatus.setText(status);
+                if ("APPROVED".equalsIgnoreCase(status)) {
+                    tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
+                    tvStatus.setTextColor(0xFFFFFFFF);
+                } else if (status.toUpperCase().startsWith("DECLINED")) {
+                    tvStatus.setBackgroundResource(R.drawable.bg_status_declined);
+                    tvStatus.setTextColor(0xFFFFFFFF);
                 } else {
-                    tvStatus.setTextColor(0xFFFF9800);
+                    tvStatus.setBackgroundResource(R.drawable.bg_status_other);
+                    tvStatus.setTextColor(0xFFFFFFFF);
                 }
             }
         }

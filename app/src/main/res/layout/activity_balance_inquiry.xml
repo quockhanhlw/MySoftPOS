@@ -16,7 +16,7 @@
         android:layout_height="56dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingHorizontal="16dp"
+        android:paddingHorizontal="@dimen/screen_padding_horizontal"
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageButton

@@ -29,7 +29,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingHorizontal="16dp"
+                android:paddingHorizontal="@dimen/screen_padding_horizontal"
                 android:paddingTop="14dp"
                 android:paddingBottom="12dp">
 
@@ -55,7 +55,7 @@
                         android:fontFamily="sans-serif-medium"
                         android:text="User Management"
                         android:textColor="#0F172A"
-                        android:textSize="18sp"
+                        android:textSize="@dimen/text_subtitle"
                         android:textStyle="bold" />
 
                     <TextView

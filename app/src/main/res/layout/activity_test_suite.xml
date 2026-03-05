@@ -16,7 +16,7 @@
         android:background="#FFFFFF"
         android:paddingTop="14dp"
         android:paddingBottom="14dp"
-        android:paddingHorizontal="20dp"
+        android:paddingHorizontal="@dimen/screen_padding_horizontal"
         android:elevation="1dp"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -139,7 +139,7 @@
         android:id="@+id/recyclerViewCases"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:paddingHorizontal="16dp"
+        android:paddingHorizontal="@dimen/screen_padding_horizontal"
         android:paddingTop="12dp"
         android:paddingBottom="8dp"
         android:clipToPadding="false"
@@ -154,7 +154,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingHorizontal="20dp"
+        android:paddingHorizontal="@dimen/screen_padding_horizontal"
         android:paddingVertical="14dp"
         android:background="#FFFFFF"
         android:elevation="4dp"

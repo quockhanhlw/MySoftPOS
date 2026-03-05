@@ -1,6 +1,8 @@
 package com.example.mysoftpos.data.remote;
 
 import android.util.Log;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,42 +15,82 @@ import java.util.Locale;
 public class IsoNetworkClient {
 
     private static final String TAG = "IsoNetworkClient";
-    private static final int DEFAULT_TIMEOUT_MS = 30000;
 
-    private int timeoutMs = DEFAULT_TIMEOUT_MS;
+    // Separate timeouts for better control on slow networks
+    private static final int DEFAULT_CONNECT_TIMEOUT_MS = 10000; // 10s to establish TCP
+    private static final int DEFAULT_READ_TIMEOUT_MS = 30000; // 30s to wait for Napas response
+
+    private int connectTimeoutMs = DEFAULT_CONNECT_TIMEOUT_MS;
+    private int readTimeoutMs = DEFAULT_READ_TIMEOUT_MS;
 
     public IsoNetworkClient() {
     }
 
+    /** Configure timeouts (e.g., shorter for reversal, longer for slow networks) */
+    public IsoNetworkClient setConnectTimeout(int ms) {
+        this.connectTimeoutMs = ms;
+        return this;
+    }
+
+    public IsoNetworkClient setReadTimeout(int ms) {
+        this.readTimeoutMs = ms;
+        return this;
+    }
+
     public byte[] sendAndReceive(String host, int port, byte[] requestData) throws IOException {
+        long startTime = System.currentTimeMillis();
         Log.d(TAG, "Connecting to " + host + ":" + port);
 
         try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(host, port), timeoutMs);
-            socket.setSoTimeout(timeoutMs); // CRITICAL: Read timeout
+            // === TCP Socket Optimizations ===
+            socket.setTcpNoDelay(true); // Disable Nagle's: send immediately, don't buffer small packets
+            socket.setKeepAlive(true); // Detect dead connections on slow networks
+            socket.setSendBufferSize(4096); // ISO msgs are small (~300 bytes), 4KB is enough
+            socket.setReceiveBufferSize(4096);
 
-            // --- SEND: 4-BYTE ASCII HEADER (User Spec) ---
+            // Separate connect vs read timeout
+            socket.connect(new InetSocketAddress(host, port), connectTimeoutMs);
+            socket.setSoTimeout(readTimeoutMs);
+
+            long connectTime = System.currentTimeMillis() - startTime;
+            Log.d(TAG, "Connected in " + connectTime + "ms");
+
+            // === SEND: Header + Body in single write (avoid 2 TCP packets) ===
             int bodyLen = requestData.length;
             String lengthStr = String.format(Locale.US, "%04d", bodyLen);
             byte[] header = lengthStr.getBytes(StandardCharsets.US_ASCII);
 
-            Log.d(TAG, String.format("TX Header: [%s] Body: %s", lengthStr, bytesToHex(requestData)));
+            // Combine header + body into one buffer → single TCP packet
+            byte[] combined = new byte[header.length + requestData.length];
+            System.arraycopy(header, 0, combined, 0, header.length);
+            System.arraycopy(requestData, 0, combined, header.length, requestData.length);
 
-            OutputStream out = socket.getOutputStream();
-            out.write(header); // 4 bytes ASCII
-            out.write(requestData); // Body
+            Log.d(TAG, String.format("TX Header: [%s] Body: %d bytes", lengthStr, bodyLen));
+
+            OutputStream out = new BufferedOutputStream(socket.getOutputStream(), 4096);
+            out.write(combined); // Single write = single TCP packet
             out.flush();
-            Log.d(TAG, "Data sent successfully");
 
-            // --- RECEIVE: ADAPTIVE HEADER HANDLING ---
-            InputStream in = socket.getInputStream();
-            return readAdaptiveResponse(in);
+            long sendTime = System.currentTimeMillis() - startTime;
+            Log.d(TAG, "Data sent in " + sendTime + "ms");
+
+            // === RECEIVE: Buffered stream for efficient reads ===
+            InputStream in = new BufferedInputStream(socket.getInputStream(), 4096);
+            byte[] response = readAdaptiveResponse(in);
+
+            long totalTime = System.currentTimeMillis() - startTime;
+            Log.d(TAG, "Total round-trip: " + totalTime + "ms (connect=" + connectTime
+                    + "ms, response=" + (totalTime - sendTime) + "ms)");
+
+            return response;
 
         } catch (SocketTimeoutException e) {
-            Log.e(TAG, "Timeout waiting for response", e);
+            long elapsed = System.currentTimeMillis() - startTime;
+            Log.e(TAG, "Timeout after " + elapsed + "ms", e);
             throw e;
         } catch (IOException e) {
-            Log.e(TAG, "Network Error", e);
+            long elapsed = System.currentTimeMillis() - startTime;
+            Log.e(TAG, "Network Error after " + elapsed + "ms", e);
             throw e;
         }
     }
@@ -56,49 +98,20 @@ public class IsoNetworkClient {
     private byte[] readAdaptiveResponse(InputStream in) throws IOException {
         // Read first 2 bytes to sniff header type
         byte[] pfx = new byte[2];
-        int read = 0;
-        while (read < 2) {
-            int c = in.read(pfx, read, 2 - read);
-            if (c == -1)
-                throw new IOException("Server closed during prefix read");
-            read += c;
-        }
+        readFully(in, pfx, 0, 2);
 
         int bodyLength;
-        byte[] body;
 
         // CHECK: BINARY HEADER? (Starts with 0x00 or high byte of length)
-        // ISO msgs > 0 bytes. 0x00 is definitely binary.
-        // 0x30 ('0') is ASCII.
         if (pfx[0] == 0x00 || (pfx[0] & 0xFF) < 0x30) {
-            // ---> 2-BYTE BINARY HEADER DETECTED <---
-            // Length = [pfx0][pfx1]
+            // 2-BYTE BINARY HEADER
             bodyLength = ((pfx[0] & 0xFF) << 8) | (pfx[1] & 0xFF);
             Log.d(TAG, String.format("RX Header (Binary): [%02X %02X] Len=%d", pfx[0], pfx[1], bodyLength));
-
-            // Read Body
-            body = new byte[bodyLength];
-            int totalRead = 0;
-            while (totalRead < bodyLength) {
-                int c = in.read(body, totalRead, bodyLength - totalRead);
-                if (c == -1)
-                    throw new IOException("Server closed during body read");
-                totalRead += c;
-            }
-
         } else {
-            // ---> ASSUME 4-BYTE ASCII HEADER <---
-            // We have pfx[0], pfx[1] (ASCII). Need next 2 bytes.
+            // 4-BYTE ASCII HEADER — read remaining 2 bytes
             byte[] suffix = new byte[2];
-            read = 0;
-            while (read < 2) {
-                int c = in.read(suffix, read, 2 - read);
-                if (c == -1)
-                    throw new IOException("Server closed during suffix read");
-                read += c;
-            }
+            readFully(in, suffix, 0, 2);
 
-            // Full Header: pfx + suffix
             String headerStr = new String(new byte[] { pfx[0], pfx[1], suffix[0], suffix[1] },
                     StandardCharsets.US_ASCII);
             try {
@@ -106,29 +119,38 @@ public class IsoNetworkClient {
             } catch (NumberFormatException e) {
                 throw new IOException("Unknown Header Format. Hex: " + bytesToHex(pfx) + bytesToHex(suffix));
             }
-
             Log.d(TAG, String.format("RX Header (ASCII): [%s] Len=%d", headerStr, bodyLength));
-
-            // Read Body
-            body = new byte[bodyLength];
-            int totalRead = 0;
-            while (totalRead < bodyLength) {
-                int c = in.read(body, totalRead, bodyLength - totalRead);
-                if (c == -1)
-                    throw new IOException("Server closed during body read");
-                totalRead += c;
-            }
         }
 
-        Log.d(TAG, "RX Body Clean: " + bytesToHex(body));
+        // Validate body length to prevent OOM on corrupted data
+        if (bodyLength <= 0 || bodyLength > 65535) {
+            throw new IOException("Invalid body length: " + bodyLength);
+        }
+
+        // Read body
+        byte[] body = new byte[bodyLength];
+        readFully(in, body, 0, bodyLength);
+
+        Log.d(TAG, "RX Body: " + bodyLength + " bytes");
         return body;
     }
 
-    // Helper for Hex Logging
+    /** Read exactly 'len' bytes or throw IOException */
+    private void readFully(InputStream in, byte[] buf, int off, int len) throws IOException {
+        int totalRead = 0;
+        while (totalRead < len) {
+            int c = in.read(buf, off + totalRead, len - totalRead);
+            if (c == -1) {
+                throw new IOException("Connection closed after reading " + totalRead + "/" + len + " bytes");
+            }
+            totalRead += c;
+        }
+    }
+
     private String bytesToHex(byte[] bytes) {
         if (bytes == null)
             return "";
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
         for (byte b : bytes) {
             sb.append(String.format("%02X", b));
         }

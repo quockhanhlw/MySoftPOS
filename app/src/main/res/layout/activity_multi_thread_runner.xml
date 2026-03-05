@@ -14,7 +14,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:background="@drawable/bg_circle_soft"
-        android:padding="10dp"
+        android:padding="@dimen/screen_padding_horizontal"
         android:src="@drawable/ic_back"
         app:tint="#1E293B"
         app:layout_constraintStart_toStartOf="parent"

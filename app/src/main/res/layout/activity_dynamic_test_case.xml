@@ -12,7 +12,7 @@
         android:layout_height="?attr/actionBarSize"
         android:background="#FFFFFFFF"
         android:elevation="4dp"
-        android:paddingHorizontal="16dp">
+        android:paddingHorizontal="@dimen/screen_padding_horizontal">
 
         <ImageButton
             android:id="@+id/btnBack"
