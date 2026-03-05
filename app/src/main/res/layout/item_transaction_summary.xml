@@ -91,6 +91,19 @@
                 android:textColor="#9E9E9E" />
         </LinearLayout>
 
+        <!-- Row 4: User -->
+        <TextView
+            android:id="@+id/tvUsername"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:drawableStart="@drawable/ic_baseline_person_24"
+            android:drawablePadding="4dp"
+            android:drawableTint="#9E9E9E"
+            android:text="User: admin"
+            android:textSize="12sp"
+            android:textColor="#607D8B" />
+
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

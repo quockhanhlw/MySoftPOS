@@ -66,7 +66,6 @@ public class LoginActivity extends BaseActivity {
             btnBack.setOnClickListener(v -> finish());
         }
 
-
         tvForgotPassword.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, ForgotPasswordActivity.class);
             startActivity(intent);
@@ -102,10 +101,152 @@ public class LoginActivity extends BaseActivity {
             getIntent().removeExtra("SESSION_TIMEOUT");
         }
 
-        // Try backend API first, fallback to local Room if network unavailable
-        loginViaApi(username, password);
+        // LOCAL-FIRST: If user is cached in SQLite → login instantly, sync API in
+        // background.
+        // FIRST-TIME: If user not found locally → must go online via API.
+        tryLocalFirstLogin(username, password);
     }
 
+    /**
+     * Local-first login strategy:
+     * 1. Check SQLite cache → if user exists and password matches → instant login +
+     * background API sync
+     * 2. If user not found locally → fall through to online API login (first-time
+     * login)
+     */
+    private void tryLocalFirstLogin(String username, String password) {
+        com.example.mysoftpos.di.ServiceLocator.getInstance(this)
+                .getDispatcherProvider().io().execute(() -> {
+                    try {
+                        com.example.mysoftpos.data.local.AppDatabase db = com.example.mysoftpos.data.local.AppDatabase
+                                .getInstance(LoginActivity.this);
+                        com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
+
+                        // Find user in local cache
+                        com.example.mysoftpos.data.local.entity.UserEntity user = userDao.findByPhone(username);
+                        if (user == null)
+                            user = userDao.findByEmail(username);
+                        if (user == null) {
+                            String hash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
+                            user = userDao.findByUsernameHash(hash);
+                        }
+
+                        if (user != null) {
+                            // Check account lockout
+                            if (user.lockedUntil > System.currentTimeMillis()) {
+                                int min = (int) ((user.lockedUntil - System.currentTimeMillis()) / 60000) + 1;
+                                runOnUiThread(() -> {
+                                    if (!isDestroyed() && !isFinishing())
+                                        Toast.makeText(LoginActivity.this,
+                                                "Account locked. Try again in " + min + " minutes.",
+                                                Toast.LENGTH_LONG).show();
+                                });
+                                return;
+                            }
+
+                            // Verify password against local cache
+                            if (com.example.mysoftpos.utils.security.PasswordUtils
+                                    .verifyPassword(password, user.passwordHash)) {
+                                // ✅ LOCAL LOGIN SUCCESS — instant!
+                                user.failedLoginAttempts = 0;
+                                user.lockedUntil = 0;
+                                userDao.update(user);
+
+                                com.example.mysoftpos.utils.security.SessionManager.startSession();
+                                com.example.mysoftpos.utils.security.AuditLogger.log(
+                                        LoginActivity.this, username, "LOGIN",
+                                        true, "LoginActivity", "Local-first login: " + user.role);
+
+                                final com.example.mysoftpos.data.local.entity.UserEntity cachedUser = user;
+                                runOnUiThread(() -> {
+                                    if (!isDestroyed() && !isFinishing()) {
+                                        String displayName = cachedUser.displayName != null ? cachedUser.displayName
+                                                : "User";
+                                        navigateToDashboard(cachedUser.id, cachedUser.role, displayName,
+                                                cachedUser.phone, cachedUser.email);
+                                    }
+                                });
+
+                                // Background: sync with API to refresh token & update cache
+                                syncWithBackendInBackground(username, password);
+                                return;
+                            } else {
+                                // Wrong password — increment failed attempts
+                                user.failedLoginAttempts++;
+                                if (user.failedLoginAttempts >= 6) {
+                                    user.lockedUntil = System.currentTimeMillis() + (30 * 60 * 1000L);
+                                    user.failedLoginAttempts = 0;
+                                }
+                                userDao.update(user);
+                            }
+                        }
+
+                        // User not found locally OR wrong password → try API login (first-time or
+                        // re-verify)
+                        runOnUiThread(() -> {
+                            if (!isDestroyed() && !isFinishing())
+                                loginViaApi(username, password);
+                        });
+                    } catch (Exception e) {
+                        // SQLite error → fallback to API
+                        runOnUiThread(() -> {
+                            if (!isDestroyed() && !isFinishing())
+                                loginViaApi(username, password);
+                        });
+                    }
+                });
+    }
+
+    /**
+     * Background sync with backend API after successful local login.
+     * Refreshes JWT token, updates local cache, syncs transactions.
+     */
+    private void syncWithBackendInBackground(String username, String password) {
+        try {
+            com.example.mysoftpos.data.remote.api.ApiService api = com.example.mysoftpos.data.remote.api.ApiClient
+                    .getService(this);
+
+            api.login(new com.example.mysoftpos.data.remote.api.ApiService.LoginRequest(username, password))
+                    .enqueue(new retrofit2.Callback<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse>() {
+                        @Override
+                        public void onResponse(
+                                retrofit2.Call<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> call,
+                                retrofit2.Response<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> response) {
+                            if (response.isSuccessful() && response.body() != null) {
+                                com.example.mysoftpos.data.remote.api.ApiService.LoginResponse resp = response.body();
+                                // Save fresh JWT token
+                                com.example.mysoftpos.data.remote.api.ApiClient.saveUserSession(LoginActivity.this,
+                                        resp);
+                                // Update local cache with latest data from backend
+                                com.example.mysoftpos.di.ServiceLocator.getInstance(LoginActivity.this)
+                                        .getDispatcherProvider().io().execute(() -> {
+                                            cacheUserLocallySync(username, password, resp.user);
+                                            // Sync config & transactions
+                                            if ("ADMIN".equals(resp.user.role)) {
+                                                new com.example.mysoftpos.data.remote.ConfigSyncManager(
+                                                        LoginActivity.this).sync();
+                                                new com.example.mysoftpos.data.remote.TestSuiteSyncManager(
+                                                        LoginActivity.this).pull();
+                                            }
+                                            new com.example.mysoftpos.data.remote.TransactionSyncManager(
+                                                    LoginActivity.this).syncUnsynced();
+                                        });
+                            }
+                            // If API fails, no problem — user already logged in locally
+                        }
+
+                        @Override
+                        public void onFailure(
+                                retrofit2.Call<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> call,
+                                Throwable t) {
+                            // Network unavailable — no problem, user already logged in
+                            android.util.Log.d("LoginActivity", "Background sync skipped: " + t.getMessage());
+                        }
+                    });
+        } catch (Exception e) {
+            android.util.Log.w("LoginActivity", "Background sync error: " + e.getMessage());
+        }
+    }
 
     // ====================================================================
     // PRIMARY: Backend API login via Retrofit
@@ -142,13 +283,17 @@ public class LoginActivity extends BaseActivity {
 
                                         // Sync config & transactions from backend (non-blocking)
                                         if ("ADMIN".equals(resp.user.role)) {
-                                            new com.example.mysoftpos.data.remote.ConfigSyncManager(LoginActivity.this).sync();
-                                            new com.example.mysoftpos.data.remote.TestSuiteSyncManager(LoginActivity.this).pull();
+                                            new com.example.mysoftpos.data.remote.ConfigSyncManager(LoginActivity.this)
+                                                    .sync();
+                                            new com.example.mysoftpos.data.remote.TestSuiteSyncManager(
+                                                    LoginActivity.this).pull();
                                         }
-                                        new com.example.mysoftpos.data.remote.TransactionSyncManager(LoginActivity.this).syncUnsynced();
+                                        new com.example.mysoftpos.data.remote.TransactionSyncManager(LoginActivity.this)
+                                                .syncUnsynced();
 
                                         runOnUiThread(() -> {
-                                            if (isDestroyed() || isFinishing()) return;
+                                            if (isDestroyed() || isFinishing())
+                                                return;
                                             navigateToDashboard(localUserId, resp.user.role,
                                                     resp.user.fullName != null ? resp.user.fullName : "User",
                                                     resp.user.phone, resp.user.email);
@@ -299,25 +444,25 @@ public class LoginActivity extends BaseActivity {
         finish();
     }
 
-
     /**
      * Synchronous version: cache user locally. Must be called from IO thread.
      */
     private void cacheUserLocallySync(String username, String password,
             com.example.mysoftpos.data.remote.api.ApiService.UserDto userDto) {
         try {
-            com.example.mysoftpos.data.local.AppDatabase db =
-                    com.example.mysoftpos.data.local.AppDatabase.getInstance(LoginActivity.this);
+            com.example.mysoftpos.data.local.AppDatabase db = com.example.mysoftpos.data.local.AppDatabase
+                    .getInstance(LoginActivity.this);
             com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
 
             String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
             String passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashPassword(password);
 
-            com.example.mysoftpos.data.local.entity.UserEntity existing =
-                    userDao.findByUsernameHash(usernameHash);
+            com.example.mysoftpos.data.local.entity.UserEntity existing = userDao.findByUsernameHash(usernameHash);
             if (existing == null) {
-                if (userDto.phone != null) existing = userDao.findByPhone(userDto.phone);
-                if (existing == null && userDto.email != null) existing = userDao.findByEmail(userDto.email);
+                if (userDto.phone != null)
+                    existing = userDao.findByPhone(userDto.phone);
+                if (existing == null && userDto.email != null)
+                    existing = userDao.findByEmail(userDto.email);
             }
 
             if (existing != null) {
@@ -331,11 +476,10 @@ public class LoginActivity extends BaseActivity {
                 existing.lockedUntil = 0;
                 userDao.update(existing);
             } else {
-                com.example.mysoftpos.data.local.entity.UserEntity newUser =
-                        new com.example.mysoftpos.data.local.entity.UserEntity(
-                                usernameHash, passwordHash,
-                                userDto.fullName, userDto.role,
-                                userDto.email, userDto.phone, null);
+                com.example.mysoftpos.data.local.entity.UserEntity newUser = new com.example.mysoftpos.data.local.entity.UserEntity(
+                        usernameHash, passwordHash,
+                        userDto.fullName, userDto.role,
+                        userDto.email, userDto.phone, null);
                 newUser.backendId = userDto.id;
                 userDao.insert(newUser);
             }
@@ -352,21 +496,24 @@ public class LoginActivity extends BaseActivity {
      */
     private long resolveLocalUserId(String username, long backendId) {
         try {
-            com.example.mysoftpos.data.local.AppDatabase db =
-                    com.example.mysoftpos.data.local.AppDatabase.getInstance(LoginActivity.this);
+            com.example.mysoftpos.data.local.AppDatabase db = com.example.mysoftpos.data.local.AppDatabase
+                    .getInstance(LoginActivity.this);
             com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
 
             // Try phone first
             com.example.mysoftpos.data.local.entity.UserEntity user = userDao.findByPhone(username);
-            if (user == null) user = userDao.findByEmail(username);
+            if (user == null)
+                user = userDao.findByEmail(username);
             if (user == null) {
                 String hash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
                 user = userDao.findByUsernameHash(hash);
             }
             // Last resort: find by backendId
-            if (user == null) user = userDao.findByBackendId(backendId);
+            if (user == null)
+                user = userDao.findByBackendId(backendId);
 
-            if (user != null) return user.id;
+            if (user != null)
+                return user.id;
         } catch (Exception e) {
             android.util.Log.w("LoginActivity", "Failed to resolve local user ID: " + e.getMessage());
         }
