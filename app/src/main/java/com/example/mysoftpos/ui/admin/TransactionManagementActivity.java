@@ -84,7 +84,8 @@ public class TransactionManagementActivity extends BaseActivity {
                         if (resp.isSuccessful() && resp.body() != null) {
                             userIdToName.clear();
                             for (ApiService.UserDto u : resp.body()) {
-                                userIdToName.put(u.id, u.phone);
+                                String displayName = u.fullName != null && !u.fullName.isEmpty() ? u.fullName : u.phone;
+                                userIdToName.put(u.id, displayName);
                             }
                             loadTransactions();
                         } else {
@@ -112,10 +113,14 @@ public class TransactionManagementActivity extends BaseActivity {
                             userTransactions = new ArrayList<>();
                             for (ApiService.TransactionSummaryDto txn : resp.body()) {
                                 if (txn.userId != null && userIdToName.containsKey(txn.userId)) {
+                                    // Inject the actual user name into the transaction context before adding
+                                    txn.username = userIdToName.get(txn.userId);
                                     userTransactions.add(txn);
                                 }
                             }
                             populateUserFilter();
+
+                            // Default to "All Users"
                             filterByUser("All Users");
                         } else {
                             Toast.makeText(TransactionManagementActivity.this,

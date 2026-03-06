@@ -24,4 +24,6 @@ public interface TransactionRepository {
     // void sendIsoMessage(IsoMessage message, Callback callback);
 
     void updateTransactionResponseHex(String traceNumber, String responseHex);
+
+    void updateTransactionRrn(String traceNumber, String rrn);
 }

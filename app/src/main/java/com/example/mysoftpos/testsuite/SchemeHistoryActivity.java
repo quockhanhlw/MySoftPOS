@@ -12,6 +12,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import android.widget.Toast;
 
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.data.local.AppDatabase;
@@ -32,7 +34,8 @@ import java.util.Locale;
 
 /**
  * Shows transaction history for a specific scheme.
- * Transactions are matched by card BIN prefix (from cards table) against scheme.prefix.
+ * Transactions are matched by card BIN prefix (from cards table) against
+ * scheme.prefix.
  * Void uses the scheme's own server IP/port.
  */
 public class SchemeHistoryActivity extends BaseActivity {
@@ -42,6 +45,7 @@ public class SchemeHistoryActivity extends BaseActivity {
     private final List<TransactionEntity> transactions = new ArrayList<>();
     private TxnAdapter adapter;
     private TextView tvEmpty, tvCount;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +77,22 @@ public class SchemeHistoryActivity extends BaseActivity {
         rv.setLayoutManager(new LinearLayoutManager(this));
         adapter = new TxnAdapter();
         rv.setAdapter(adapter);
+
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setColorSchemeColors(Color.parseColor("#0A2463")); // neoprimary dark
+            swipeRefreshLayout.setOnRefreshListener(() -> {
+                // In a real app, this might trigger a network fetch for a specific scheme
+                // Here, we just mimic a refresh delay and let the LiveData update it naturally
+                swipeRefreshLayout.postDelayed(() -> {
+                    if (swipeRefreshLayout.isRefreshing()) {
+                        swipeRefreshLayout.setRefreshing(false);
+                        Toast.makeText(SchemeHistoryActivity.this, R.string.history_refreshed, Toast.LENGTH_SHORT)
+                                .show();
+                    }
+                }, 1000);
+            });
+        }
 
         // Observe ALL transactions, filter by BIN prefix in-memory
         AppDatabase.getInstance(this).transactionDao()
@@ -108,31 +128,33 @@ public class SchemeHistoryActivity extends BaseActivity {
     /** Check if transaction is a Purchase (DE 3 starts with 00) */
     private boolean isPurchaseTransaction(TransactionEntity txn) {
         try {
-            if (txn.requestHex == null) return false;
-            com.example.mysoftpos.iso8583.message.IsoMessage req =
-                    new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
-                            .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
-                                    .hexToBytes(txn.requestHex));
+            if (txn.requestHex == null)
+                return false;
+            com.example.mysoftpos.iso8583.message.IsoMessage req = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                    .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
+                            .hexToBytes(txn.requestHex));
             if (req.hasField(3)) {
                 return req.getField(3).startsWith("00");
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return false;
     }
 
     /** Check if transaction's PAN starts with scheme prefix */
     private boolean matchesScheme(TransactionEntity txn) {
         try {
-            if (txn.requestHex == null) return false;
-            com.example.mysoftpos.iso8583.message.IsoMessage req =
-                    new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
-                            .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
-                                    .hexToBytes(txn.requestHex));
+            if (txn.requestHex == null)
+                return false;
+            com.example.mysoftpos.iso8583.message.IsoMessage req = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                    .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
+                            .hexToBytes(txn.requestHex));
             if (req.hasField(2)) {
                 String pan = req.getField(2);
                 return pan.startsWith(schemePrefix);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return false;
     }
 
@@ -189,10 +211,9 @@ public class SchemeHistoryActivity extends BaseActivity {
             String amountDisplay = "---";
             try {
                 if (txn.requestHex != null) {
-                    com.example.mysoftpos.iso8583.message.IsoMessage reqMsg =
-                            new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
-                                    .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
-                                            .hexToBytes(txn.requestHex));
+                    com.example.mysoftpos.iso8583.message.IsoMessage reqMsg = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                            .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
+                                    .hexToBytes(txn.requestHex));
                     if (reqMsg.hasField(4)) {
                         long rawAmt = Long.parseLong(reqMsg.getField(4));
                         // DE 49 currency: 704=VND (minor=00, divide by 100), 840=USD (keep as cents)
@@ -208,7 +229,8 @@ public class SchemeHistoryActivity extends BaseActivity {
                 try {
                     long amt = Long.parseLong(txn.amount);
                     amountDisplay = amountFmt.format(amt) + " VND";
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
             h.tvAmount.setText(amountDisplay);
 
@@ -216,10 +238,9 @@ public class SchemeHistoryActivity extends BaseActivity {
             String cardText = "---";
             try {
                 if (txn.requestHex != null) {
-                    com.example.mysoftpos.iso8583.message.IsoMessage req =
-                            new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
-                                    .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
-                                            .hexToBytes(txn.requestHex));
+                    com.example.mysoftpos.iso8583.message.IsoMessage req = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                            .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
+                                    .hexToBytes(txn.requestHex));
                     if (req.hasField(2)) {
                         String pan = req.getField(2);
                         if (pan.length() > 8) {
@@ -229,7 +250,8 @@ public class SchemeHistoryActivity extends BaseActivity {
                         }
                     }
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             h.tvCard.setText(cardText);
 
             // Click → detail (pass scheme name so void uses scheme's server)
@@ -262,4 +284,3 @@ public class SchemeHistoryActivity extends BaseActivity {
         }
     }
 }
-

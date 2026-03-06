@@ -118,6 +118,9 @@ public class TransactionRepositoryImpl implements TransactionRepository {
             txn.cardId = cardId > 0 ? cardId : null;
             txn.userId = userId;
             txn.ownerUsername = record.username;
+            txn.processingCode = record.processingCode;
+            txn.currencyCode = record.currencyCode;
+            txn.rrn = record.rrn;
 
             long insertedId = db.transactionDao().insert(txn);
             if (insertedId <= 0) {
@@ -145,6 +148,13 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     public void updateTransactionResponseHex(String traceNumber, String responseHex) {
         dispatchers.io().execute(() -> {
             db.transactionDao().updateResponseHex(traceNumber, responseHex);
+        });
+    }
+
+    @Override
+    public void updateTransactionRrn(String traceNumber, String rrn) {
+        dispatchers.io().execute(() -> {
+            db.transactionDao().updateRrn(traceNumber, rrn);
         });
     }
 }

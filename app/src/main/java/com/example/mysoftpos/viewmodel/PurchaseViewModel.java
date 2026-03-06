@@ -134,6 +134,8 @@ public class PurchaseViewModel extends BaseViewModel {
                         .setScheme(PanUtils.detectScheme(pan))
                         .setUsername(username)
                         .setUserId(userId)
+                        .setProcessingCode(ctx.processingCode3)
+                        .setCurrencyCode(ctx.currency49)
                         .build();
                 repository.saveTransaction(record);
 
@@ -171,9 +173,13 @@ public class PurchaseViewModel extends BaseViewModel {
 
                 repository.updateTransactionStatus(ctx.stan11, entity.status);
 
-                // Sync to backend
-                new com.example.mysoftpos.data.remote.TransactionSyncManager(
-                        getApplication()).syncUnsynced();
+                // Save denormalized RRN from response (performance optimization)
+                if (respMsg.hasField(37)) {
+                    repository.updateTransactionRrn(ctx.stan11, respMsg.getField(37).trim());
+                }
+
+                // Sync to backend via WorkManager (reliable, survives process death)
+                com.example.mysoftpos.data.remote.SyncWorker.enqueueOneTime(getApplication());
 
                 launchUi(() -> {
                     String msg = ResponseCodeHelper.getMessage(rc);
@@ -224,8 +230,7 @@ public class PurchaseViewModel extends BaseViewModel {
 
                 entity.status = "TIMEOUT_REVERSED";
                 repository.updateTransactionStatus(ctx.stan11, entity.status);
-                new com.example.mysoftpos.data.remote.TransactionSyncManager(
-                        getApplication()).syncUnsynced();
+                com.example.mysoftpos.data.remote.SyncWorker.enqueueOneTime(getApplication());
                 postError(getApplication().getString(R.string.err_timeout_reversed));
 
             } catch (SocketTimeoutException e) {

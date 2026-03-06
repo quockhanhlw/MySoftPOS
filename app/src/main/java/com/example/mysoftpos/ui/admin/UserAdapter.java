@@ -96,6 +96,16 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
                 tvServerInfo.setVisibility(View.GONE);
             }
 
+            // Online status indicator
+            View vOnlineStatus = itemView.findViewById(R.id.vOnlineStatus);
+            if (vOnlineStatus != null) {
+                if (user.online) {
+                    vOnlineStatus.setBackgroundResource(R.drawable.bg_user_online);
+                } else {
+                    vOnlineStatus.setBackgroundResource(R.drawable.bg_user_offline);
+                }
+            }
+
             itemView.setOnClickListener(v -> listener.onUserClick(user));
             itemView.setOnLongClickListener(v -> {
                 listener.onUserLongClick(user);

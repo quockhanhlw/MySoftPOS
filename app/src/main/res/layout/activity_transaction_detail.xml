@@ -43,13 +43,18 @@
                 android:layout_marginStart="8dp" />
         </LinearLayout>
 
-        <ScrollView
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipeRefreshLayout"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"
-            android:clipToPadding="false"
-            android:padding="16dp"
-            android:overScrollMode="never">
+            android:layout_weight="1">
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:padding="16dp"
+                android:overScrollMode="never">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -151,7 +156,9 @@
                 </com.google.android.material.card.MaterialCardView>
 
             </LinearLayout>
-        </ScrollView>
+            </ScrollView>
+
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
         <!-- Footer Action -->
         <LinearLayout

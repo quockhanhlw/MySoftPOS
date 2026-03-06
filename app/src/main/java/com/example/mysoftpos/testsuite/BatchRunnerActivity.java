@@ -292,10 +292,12 @@ public class BatchRunnerActivity extends BaseActivity {
                             .setLast4(com.example.mysoftpos.utils.PanUtils.getLast4(pan))
                             .setScheme(com.example.mysoftpos.utils.PanUtils.detectScheme(pan))
                             .setUsername("TEST_SUITE_BATCH")
+                            .setProcessingCode(ctx.processingCode3)
+                            .setCurrencyCode(ctx.currency49)
                             .build();
             transactionRepository.saveTransaction(record);
-            // Sync to backend
-            new com.example.mysoftpos.data.remote.TransactionSyncManager(this).syncUnsynced();
+            // Sync to backend via WorkManager
+            com.example.mysoftpos.data.remote.SyncWorker.enqueueOneTime(this);
         } catch (Exception e) {
             android.util.Log.e("BatchRunner", "Save to DB failed", e);
         }

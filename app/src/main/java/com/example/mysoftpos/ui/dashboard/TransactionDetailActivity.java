@@ -9,10 +9,12 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.graphics.Color;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.data.local.entity.TransactionEntity;
@@ -40,6 +42,7 @@ public class TransactionDetailActivity extends BaseActivity {
 
     // Detail Rows
     private TextView valDate, valCard, valBank, valMid, valTid, valTrace, valRrn;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,6 +118,26 @@ public class TransactionDetailActivity extends BaseActivity {
             valRrn = rowRrn.findViewById(R.id.tvValue);
             ((TextView) rowRrn.findViewById(R.id.tvLabel)).setText("RRN");
         }
+
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setColorSchemeColors(Color.parseColor("#0A2463")); // neoprimary dark
+            swipeRefreshLayout.setOnRefreshListener(() -> {
+                // Since this uses a ViewModel that fetches from DB via LiveData,
+                // we'll trigger a background sync, and the observer will handle UI updates
+                new com.example.mysoftpos.data.remote.TransactionSyncManager(TransactionDetailActivity.this)
+                        .syncUnsynced();
+
+                // Artificial delay to show the spinner briefly while sync runs
+                swipeRefreshLayout.postDelayed(() -> {
+                    if (swipeRefreshLayout.isRefreshing()) {
+                        swipeRefreshLayout.setRefreshing(false);
+                        Toast.makeText(TransactionDetailActivity.this, R.string.history_refreshed, Toast.LENGTH_SHORT)
+                                .show();
+                    }
+                }, 1000);
+            });
+        }
     }
 
     // Cache current transaction data for result screen
@@ -166,7 +189,8 @@ public class TransactionDetailActivity extends BaseActivity {
                                     .hexToBytes(cachedTxnDetails.transaction.requestHex));
                     if (req.hasField(49)) {
                         currencyCode = req.getField(49).trim();
-                        if ("840".equals(currencyCode)) currencyLabel = "USD";
+                        if ("840".equals(currencyCode))
+                            currencyLabel = "USD";
                     }
                     // Use DE 4 for accurate amount, convert to real value
                     if (req.hasField(4)) {
@@ -177,7 +201,8 @@ public class TransactionDetailActivity extends BaseActivity {
                         realAmount = String.valueOf(rawDe4);
                     }
                 }
-            } catch (Exception e) { /* ignore */ }
+            } catch (Exception e) {
+                /* ignore */ }
 
             intent.putExtra(com.example.mysoftpos.utils.IntentKeys.AMOUNT, realAmount);
             intent.putExtra(com.example.mysoftpos.utils.IntentKeys.TXN_ID, cachedTxnDetails.transaction.traceNumber);
@@ -222,10 +247,9 @@ public class TransactionDetailActivity extends BaseActivity {
         boolean isPurchase = false;
         try {
             if (txn.requestHex != null) {
-                com.example.mysoftpos.iso8583.message.IsoMessage reqMsg =
-                        new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
-                                .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
-                                        .hexToBytes(txn.requestHex));
+                com.example.mysoftpos.iso8583.message.IsoMessage reqMsg = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                        .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
+                                .hexToBytes(txn.requestHex));
                 String processingCode = reqMsg.hasField(3) ? reqMsg.getField(3) : "";
                 // Purchase = 000000, Cash = 010000; Balance = 300000
                 isPurchase = processingCode.startsWith("00");

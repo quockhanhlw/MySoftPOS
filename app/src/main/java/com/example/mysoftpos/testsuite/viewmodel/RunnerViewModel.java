@@ -220,12 +220,13 @@ public class RunnerViewModel extends AndroidViewModel {
                     .setLast4(PanUtils.getLast4(pan))
                     .setScheme(PanUtils.detectScheme(pan))
                     .setUsername("TEST_SUITE_USER")
+                    .setProcessingCode(ctx.processingCode3)
+                    .setCurrencyCode(ctx.currency49)
                     .build();
             repository.saveTransaction(record);
 
-            // Sync to backend
-            new com.example.mysoftpos.data.remote.TransactionSyncManager(
-                    getApplication()).syncUnsynced();
+            // Sync to backend via WorkManager
+            com.example.mysoftpos.data.remote.SyncWorker.enqueueOneTime(getApplication());
 
             logMessage.postValue("Transaction saved to History (Trace: " + ctx.stan11 + ")");
         } catch (Exception e) {

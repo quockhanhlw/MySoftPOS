@@ -46,6 +46,21 @@ public class TransactionEntity {
     @ColumnInfo(name = "owner_username")
     public String ownerUsername;
 
+    /** DE 3 Processing Code (e.g. "000000" = Purchase, "300000" = Balance).
+     *  Stored at insert time so UI never needs to unpack requestHex. */
+    @ColumnInfo(name = "processing_code")
+    public String processingCode;
+
+    /** DE 49 Currency Code (e.g. "704" = VND, "840" = USD).
+     *  Stored at insert time so UI never needs to unpack requestHex. */
+    @ColumnInfo(name = "currency_code")
+    public String currencyCode;
+
+    /** DE 37 Retrieval Reference Number from response.
+     *  Stored at insert time so UI never needs to unpack responseHex. */
+    @ColumnInfo(name = "rrn")
+    public String rrn;
+
     @ColumnInfo(name = "terminal_id")
     public Long terminalId;
 

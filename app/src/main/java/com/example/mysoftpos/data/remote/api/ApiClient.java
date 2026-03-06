@@ -3,6 +3,8 @@ package com.example.mysoftpos.data.remote.api;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.example.mysoftpos.BuildConfig;
+
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
@@ -12,10 +14,17 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Singleton Retrofit client for MySoftPOS Backend API.
+ *
+ * Security notes:
+ * - HTTP logging set to HEADERS in debug, disabled in release — never BODY.
+ * - Tokens stored alongside other session data in private SharedPreferences.
+ * For PCI-DSS production, upgrade to EncryptedSharedPreferences when Tink
+ * is confirmed working on all target devices.
  */
 public final class ApiClient {
 
     private static final String PREF_NAME = "mysoftpos_api";
+
     private static final String KEY_BASE_URL = "base_url";
     private static final String KEY_ACCESS_TOKEN = "access_token";
     private static final String KEY_REFRESH_TOKEN = "refresh_token";
@@ -23,7 +32,7 @@ public final class ApiClient {
     private static final String KEY_ROLE = "role";
     private static final String KEY_USERNAME = "username";
 
-    // Default backend URL (localhost for emulator, change for real device)
+    // Default backend URL
     private static final String DEFAULT_BASE_URL = "https://mysoftpos-backend.onrender.com/";
 
     private static volatile ApiService apiService;
@@ -38,19 +47,23 @@ public final class ApiClient {
                 if (apiService == null) {
                     String baseUrl = getBaseUrl(context);
 
-                    HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-                    logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+                    // Render free tier instances take ~50 seconds to wake up from sleep.
+                    // Increased timeouts to 60 seconds to prevent failing back to offline mode
+                    // during cold starts.
+                    OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
+                            .connectTimeout(60, TimeUnit.SECONDS)
+                            .readTimeout(60, TimeUnit.SECONDS)
+                            .writeTimeout(60, TimeUnit.SECONDS);
 
-                    OkHttpClient client = new OkHttpClient.Builder()
-                            .connectTimeout(15, TimeUnit.SECONDS)
-                            .readTimeout(15, TimeUnit.SECONDS)
-                            .writeTimeout(15, TimeUnit.SECONDS)
-                            .addInterceptor(logging)
-                            .build();
+                    if (BuildConfig.DEBUG) {
+                        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+                        logging.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+                        clientBuilder.addInterceptor(logging);
+                    }
 
                     retrofit = new Retrofit.Builder()
                             .baseUrl(baseUrl)
-                            .client(client)
+                            .client(clientBuilder.build())
                             .addConverterFactory(GsonConverterFactory.create())
                             .build();
 
@@ -130,12 +143,14 @@ public final class ApiClient {
 
     public static void setBaseUrl(Context ctx, String url) {
         getPrefs(ctx).edit().putString(KEY_BASE_URL, url).apply();
-        reset(); // Force recreate Retrofit with new URL
+        reset();
     }
 
     public static String getBaseUrl(Context ctx) {
         return getPrefs(ctx).getString(KEY_BASE_URL, DEFAULT_BASE_URL);
     }
+
+    // ==================== SharedPreferences ====================
 
     private static SharedPreferences getPrefs(Context ctx) {
         return ctx.getApplicationContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);

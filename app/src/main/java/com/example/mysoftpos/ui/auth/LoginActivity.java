@@ -13,6 +13,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
 import com.example.mysoftpos.ui.BaseActivity;
 
 public class LoginActivity extends BaseActivity {
@@ -20,6 +22,7 @@ public class LoginActivity extends BaseActivity {
     private EditText etUsername;
     private EditText etPassword;
     private boolean passwordVisible = false;
+    private View loadingOverlay;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +31,7 @@ public class LoginActivity extends BaseActivity {
 
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
+        loadingOverlay = findViewById(R.id.loadingOverlay);
 
         // Password toggle
         etPassword.setCompoundDrawablesRelativeWithIntrinsicBounds(
@@ -81,6 +85,18 @@ public class LoginActivity extends BaseActivity {
         btnLogin.setOnClickListener(v -> handleLogin());
     }
 
+    private void showLoading() {
+        if (loadingOverlay != null) {
+            loadingOverlay.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void hideLoading() {
+        if (loadingOverlay != null) {
+            loadingOverlay.setVisibility(View.GONE);
+        }
+    }
+
     private void handleLogin() {
         String username = etUsername.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
@@ -101,115 +117,28 @@ public class LoginActivity extends BaseActivity {
             getIntent().removeExtra("SESSION_TIMEOUT");
         }
 
-        // LOCAL-FIRST: If user is cached in SQLite → login instantly, sync API in
-        // background.
-        // FIRST-TIME: If user not found locally → must go online via API.
-        tryLocalFirstLogin(username, password);
+        showLoading();
+        if (isNetworkAvailable()) {
+            // ONLINE-FIRST: Network available, try API login
+            loginViaApi(username, password);
+        } else {
+            // OFFLINE: Fallback to SQLite cache
+            Toast.makeText(this, "Network unavailable. Attempting offline login...", Toast.LENGTH_SHORT).show();
+            loginViaLocalRoom(username, password);
+        }
     }
 
-    /**
-     * Local-first login strategy:
-     * 1. Check SQLite cache → if user exists and password matches → instant login +
-     * background API sync
-     * 2. If user not found locally → fall through to online API login (first-time
-     * login)
-     */
-    private void tryLocalFirstLogin(String username, String password) {
-        com.example.mysoftpos.di.ServiceLocator.getInstance(this)
-                .getDispatcherProvider().io().execute(() -> {
-                    try {
-                        com.example.mysoftpos.data.local.AppDatabase db = com.example.mysoftpos.data.local.AppDatabase
-                                .getInstance(LoginActivity.this);
-                        com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
-
-                        // Find user in local cache
-                        com.example.mysoftpos.data.local.entity.UserEntity user = userDao.findByPhone(username);
-                        if (user == null)
-                            user = userDao.findByEmail(username);
-                        if (user == null) {
-                            String hash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
-                            user = userDao.findByUsernameHash(hash);
-                        }
-
-                        if (user != null) {
-                            // Check account lockout
-                            if (user.lockedUntil > System.currentTimeMillis()) {
-                                int min = (int) ((user.lockedUntil - System.currentTimeMillis()) / 60000) + 1;
-                                runOnUiThread(() -> {
-                                    if (!isDestroyed() && !isFinishing())
-                                        Toast.makeText(LoginActivity.this,
-                                                "Account locked. Try again in " + min + " minutes.",
-                                                Toast.LENGTH_LONG).show();
-                                });
-                                return;
-                            }
-
-                            // Verify password against local cache
-                            if (com.example.mysoftpos.utils.security.PasswordUtils
-                                    .verifyPassword(password, user.passwordHash)) {
-                                // ✅ LOCAL LOGIN SUCCESS — instant!
-                                user.failedLoginAttempts = 0;
-                                user.lockedUntil = 0;
-                                userDao.update(user);
-
-                                com.example.mysoftpos.utils.security.SessionManager.startSession();
-                                com.example.mysoftpos.utils.security.AuditLogger.log(
-                                        LoginActivity.this, username, "LOGIN",
-                                        true, "LoginActivity", "Local-first login: " + user.role);
-
-                                final com.example.mysoftpos.data.local.entity.UserEntity cachedUser = user;
-                                // Background: sync with API to refresh token & update cache
-                                // Pass a callback so we only navigate after we get the fresh token
-                                syncWithBackendInBackground(username, password, () -> {
-                                    runOnUiThread(() -> {
-                                        if (!isDestroyed() && !isFinishing()) {
-                                            String displayName = cachedUser.displayName != null ? cachedUser.displayName
-                                                    : "User";
-
-                                            // Set User IP/Port/TID to ConfigManager
-                                            com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
-                                                    .getInstance(LoginActivity.this);
-                                            config.resetServerConfig();
-                                            if (cachedUser.serverIp != null && !cachedUser.serverIp.isEmpty()
-                                                    && cachedUser.serverPort > 0) {
-                                                config.setServerIp(cachedUser.serverIp);
-                                                config.setServerPort(cachedUser.serverPort);
-                                            }
-                                            if (cachedUser.terminalId != null && !cachedUser.terminalId.isEmpty()) {
-                                                config.setTerminalId(cachedUser.terminalId);
-                                            }
-
-                                            navigateToDashboard(cachedUser.id, cachedUser.role, displayName,
-                                                    cachedUser.phone, cachedUser.email);
-                                        }
-                                    });
-                                });
-                                return;
-                            } else {
-                                // Wrong password — increment failed attempts
-                                user.failedLoginAttempts++;
-                                if (user.failedLoginAttempts >= 6) {
-                                    user.lockedUntil = System.currentTimeMillis() + (30 * 60 * 1000L);
-                                    user.failedLoginAttempts = 0;
-                                }
-                                userDao.update(user);
-                            }
-                        }
-
-                        // User not found locally OR wrong password → try API login (first-time or
-                        // re-verify)
-                        runOnUiThread(() -> {
-                            if (!isDestroyed() && !isFinishing())
-                                loginViaApi(username, password);
-                        });
-                    } catch (Exception e) {
-                        // SQLite error → fallback to API
-                        runOnUiThread(() -> {
-                            if (!isDestroyed() && !isFinishing())
-                                loginViaApi(username, password);
-                        });
-                    }
-                });
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(
+                android.content.Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager != null) {
+            NetworkCapabilities capabilities = connectivityManager
+                    .getNetworkCapabilities(connectivityManager.getActiveNetwork());
+            return capabilities != null && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+                    || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+                    || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
+        }
+        return false;
     }
 
     /**
@@ -326,6 +255,7 @@ public class LoginActivity extends BaseActivity {
                                                 .syncUnsynced();
 
                                         runOnUiThread(() -> {
+                                            hideLoading();
                                             if (isDestroyed() || isFinishing())
                                                 return;
                                             navigateToDashboard(localUserId, resp.user.role,
@@ -350,6 +280,7 @@ public class LoginActivity extends BaseActivity {
 
                             String finalMsg = errorMsg;
                             runOnUiThread(() -> {
+                                hideLoading();
                                 Toast.makeText(LoginActivity.this, finalMsg, Toast.LENGTH_SHORT).show();
                                 etPassword.setText("");
                             });
@@ -394,6 +325,7 @@ public class LoginActivity extends BaseActivity {
                             if (user.lockedUntil > System.currentTimeMillis()) {
                                 int min = (int) ((user.lockedUntil - System.currentTimeMillis()) / 60000) + 1;
                                 runOnUiThread(() -> {
+                                    hideLoading();
                                     if (!isDestroyed() && !isFinishing())
                                         Toast.makeText(LoginActivity.this,
                                                 "Account locked. Try again in " + min + " minutes.",
@@ -434,6 +366,7 @@ public class LoginActivity extends BaseActivity {
                                 final com.example.mysoftpos.data.local.entity.UserEntity finalUser = user;
                                 syncWithBackendInBackground(username, password, () -> {
                                     runOnUiThread(() -> {
+                                        hideLoading();
                                         if (!isDestroyed() && !isFinishing()) {
                                             Toast.makeText(LoginActivity.this,
                                                     "Login Successful (Offline)!", Toast.LENGTH_SHORT).show();
@@ -454,6 +387,7 @@ public class LoginActivity extends BaseActivity {
                         }
 
                         runOnUiThread(() -> {
+                            hideLoading();
                             if (!isDestroyed() && !isFinishing()) {
                                 Toast.makeText(LoginActivity.this,
                                         "Server không khả dụng và không tìm thấy tài khoản offline.",
@@ -463,6 +397,7 @@ public class LoginActivity extends BaseActivity {
                         });
                     } catch (Exception e) {
                         runOnUiThread(() -> {
+                            hideLoading();
                             if (!isDestroyed() && !isFinishing())
                                 Toast.makeText(LoginActivity.this,
                                         "Login Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();

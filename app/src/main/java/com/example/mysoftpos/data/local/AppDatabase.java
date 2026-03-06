@@ -20,7 +20,7 @@ import com.example.mysoftpos.data.local.dao.*;
         MerchantEntity.class,
         TerminalEntity.class,
         CardEntity.class
-}, version = 17, exportSchema = false)
+}, version = 18, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract TransactionDao transactionDao();
@@ -103,6 +103,23 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /**
+     * Migration 17 → 18:
+     * Performance: Denormalize ISO fields into transactions table so the UI
+     * never needs to hex-unpack requestHex/responseHex for list rendering.
+     * - processing_code (DE 3): "000000" = Purchase, "300000" = Balance
+     * - currency_code  (DE 49): "704" = VND, "840" = USD
+     * - rrn            (DE 37): Retrieval Reference Number
+     */
+    static final Migration MIGRATION_17_18 = new Migration(17, 18) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE transactions ADD COLUMN processing_code TEXT");
+            db.execSQL("ALTER TABLE transactions ADD COLUMN currency_code TEXT");
+            db.execSQL("ALTER TABLE transactions ADD COLUMN rrn TEXT");
+        }
+    };
+
     // ──────────────────────────────────────────────────────────────────────────
     // Singleton
     // ──────────────────────────────────────────────────────────────────────────
@@ -123,7 +140,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             "mysoftpos_db")
                             // Liệt kê toàn bộ migration để Room nâng cấp schema
                             // mà KHÔNG xoá dữ liệu cũ.
-                            .addMigrations(MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17)
+                            .addMigrations(MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18)
                             // WAL (Write-Ahead Logging): cải thiện hiệu năng đọc/ghi
                             // đồng thời, thay thế TRUNCATE.
                             .setJournalMode(RoomDatabase.JournalMode.AUTOMATIC)

@@ -72,6 +72,15 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
             }
         });
 
+        androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh = findViewById(R.id.swipeRefresh);
+        if (swipeRefresh != null) {
+            swipeRefresh.setOnRefreshListener(() -> {
+                loadUsers();
+                swipeRefresh.setRefreshing(false);
+                Toast.makeText(this, "Refreshed list", Toast.LENGTH_SHORT).show();
+            });
+        }
+
         loadUsers();
     }
 
@@ -84,28 +93,58 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
     // ====== Load from API ======
     private void loadUsers() {
         String token = ApiClient.bearerToken(this);
+        android.util.Log.d("UserMgmt", "loadUsers: token=" +
+                (token.length() > 15 ? token.substring(0, 15) + "..." : token));
+
         // If no token (offline login), show clear message
         if (token.isEmpty() || "Bearer ".equals(token) || !ApiClient.isLoggedIn(this)) {
-            Toast.makeText(this,
-                    "Not authenticated with backend server. Please log out and log in again with backend connected.",
-                    Toast.LENGTH_LONG).show();
             allUsers.clear();
             filterUsers("");
+            layoutEmpty.setVisibility(View.VISIBLE);
+            if (layoutEmpty instanceof android.widget.LinearLayout) {
+                View title = ((android.widget.LinearLayout) layoutEmpty).getChildAt(1);
+                View subtitle = ((android.widget.LinearLayout) layoutEmpty).getChildAt(2);
+                if (title instanceof TextView)
+                    ((TextView) title).setText("Backend Offline");
+                if (subtitle instanceof TextView)
+                    ((TextView) subtitle).setText("Connect to the network to manage users");
+            }
             return;
         }
+
+        if (layoutEmpty instanceof android.widget.LinearLayout) {
+            View title = ((android.widget.LinearLayout) layoutEmpty).getChildAt(1);
+            View subtitle = ((android.widget.LinearLayout) layoutEmpty).getChildAt(2);
+            if (title instanceof TextView)
+                ((TextView) title).setText("No users yet");
+            if (subtitle instanceof TextView)
+                ((TextView) subtitle).setText("Tap + to create a new user");
+        }
+
         ApiClient.getService(this).getUsers(token).enqueue(new Callback<List<ApiService.UserDto>>() {
             @Override
             public void onResponse(Call<List<ApiService.UserDto>> call, Response<List<ApiService.UserDto>> resp) {
+                android.util.Log.d("UserMgmt", "getUsers response: code=" + resp.code()
+                        + " body=" + (resp.body() != null ? resp.body().size() + " users" : "null"));
                 if (resp.isSuccessful() && resp.body() != null) {
                     allUsers = resp.body();
                     filterUsers(etSearch.getText().toString().trim());
                 } else {
-                    Toast.makeText(UserManagementActivity.this, "Failed to load users", Toast.LENGTH_SHORT).show();
+                    String errMsg = "Failed to load users (HTTP " + resp.code() + ")";
+                    try {
+                        if (resp.errorBody() != null) {
+                            errMsg += ": " + resp.errorBody().string();
+                        }
+                    } catch (Exception ignored) {
+                    }
+                    android.util.Log.w("UserMgmt", errMsg);
+                    Toast.makeText(UserManagementActivity.this, errMsg, Toast.LENGTH_LONG).show();
                 }
             }
 
             @Override
             public void onFailure(Call<List<ApiService.UserDto>> call, Throwable t) {
+                android.util.Log.e("UserMgmt", "getUsers failed: " + t.getMessage());
                 Toast.makeText(UserManagementActivity.this,
                         "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
@@ -281,7 +320,8 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                     ApiService.CreateUserRequest req = new ApiService.CreateUserRequest(
                             password, fullName, phone, email, terminalId, serverIp, serverPort > 0 ? serverPort : null);
                     ApiClient.getService(this).createUser(token, req)
-                            .enqueue(new SimpleCallbackWithLocalSync("User created", -1, fServerIp, fServerPort, fTerminalId));
+                            .enqueue(new SimpleCallbackWithLocalSync("User created", -1, fServerIp, fServerPort,
+                                    fTerminalId));
                 }
                 dialog.dismiss();
             });
@@ -345,7 +385,8 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         private final int serverPort;
         private final String terminalId;
 
-        SimpleCallbackWithLocalSync(String msg, long existingBackendId, String serverIp, int serverPort, String terminalId) {
+        SimpleCallbackWithLocalSync(String msg, long existingBackendId, String serverIp, int serverPort,
+                String terminalId) {
             this.successMsg = msg;
             this.existingBackendId = existingBackendId;
             this.serverIp = serverIp;

@@ -216,10 +216,12 @@ public class MultiThreadRunnerActivity extends BaseActivity {
                             .setLast4(PanUtils.getLast4(pan))
                             .setScheme(PanUtils.detectScheme(pan))
                             .setUsername("TEST_SUITE_MULTI")
+                            .setProcessingCode(ctx.processingCode3)
+                            .setCurrencyCode(ctx.currency49)
                             .build();
             transactionRepository.saveTransaction(record);
-            // Sync to backend
-            new com.example.mysoftpos.data.remote.TransactionSyncManager(this).syncUnsynced();
+            // Sync to backend via WorkManager
+            com.example.mysoftpos.data.remote.SyncWorker.enqueueOneTime(this);
         } catch (Exception e) {
             android.util.Log.e("MultiThreadRunner", "Save to DB failed", e);
         }

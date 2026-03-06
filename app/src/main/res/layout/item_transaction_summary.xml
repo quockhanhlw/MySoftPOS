@@ -4,54 +4,93 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="@dimen/card_margin_bottom"
-    app:cardCornerRadius="@dimen/card_corner_radius"
-    app:cardElevation="@dimen/card_elevation"
-    app:strokeColor="#F1F5F9"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    app:strokeColor="#E2E8F0"
     app:strokeWidth="1dp"
-    app:cardBackgroundColor="@color/background_deep">
+    app:cardBackgroundColor="@color/background_primary">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="@dimen/card_padding">
+        android:padding="16dp">
 
-        <!-- Row 1: Status Pill + Amount -->
+        <!-- Row 1: Icon, User, Amount -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <!-- Status Badge -->
-            <TextView
-                android:id="@+id/tvStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="APPROVED"
-                android:textSize="10sp"
-                android:fontFamily="sans-serif-medium"
-                android:textColor="@android:color/white"
-                android:background="@drawable/bg_status_approved"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="3dp"
-                android:textAllCaps="true" />
+            <!-- Transaction Icon -->
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_baseline_credit_card_24"
+                app:tint="@color/text_muted"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/bg_spinner_outlined"
+                android:padding="6dp"/>
 
-            <View
+            <!-- Username & Trace -->
+            <LinearLayout
                 android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                
+                <TextView
+                    android:id="@+id/tvUsername"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="John Doe"
+                    android:textSize="15sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/text_primary" />
 
-            <!-- Amount -->
-            <TextView
-                android:id="@+id/tvAmount"
+                <TextView
+                    android:id="@+id/tvTraceNumber"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="#000001"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif"
+                    android:textColor="@color/text_muted"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Amount & Status -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="100,000 VND"
-                android:textSize="@dimen/text_subtitle"
-                android:fontFamily="sans-serif-bold"
-                android:textColor="@color/text_primary" />
+                android:orientation="vertical"
+                android:gravity="end">
+
+                <TextView
+                    android:id="@+id/tvAmount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="$100.00"
+                    android:textSize="16sp"
+                    android:fontFamily="sans-serif-bold"
+                    android:textColor="@color/text_primary" />
+                
+                <TextView
+                    android:id="@+id/tvStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="APPROVED"
+                    android:textSize="10sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@android:color/white"
+                    android:background="@drawable/bg_status_approved"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp"
+                    android:layout_marginTop="4dp"
+                    android:textAllCaps="true" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- Divider -->
@@ -59,112 +98,67 @@
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#F1F5F9"
-            android:layout_marginVertical="10dp" />
+            android:layout_marginVertical="12dp" />
 
-        <!-- Row 2: Card Info + Trace -->
+        <!-- Row 2: Card Info, Terminal, Time -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <!-- Card Scheme Icon Area + Masked PAN -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/ic_baseline_credit_card_24"
-                    app:tint="@color/text_muted"
-                    android:layout_marginEnd="6dp" />
-
-                <TextView
-                    android:id="@+id/tvCardInfo"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="9704**7890 (Napas)"
-                    android:textSize="@dimen/text_caption"
-                    android:fontFamily="sans-serif"
-                    android:textColor="@color/text_secondary" />
-            </LinearLayout>
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_baseline_credit_card_24"
+                app:tint="@color/text_secondary"
+                android:layout_marginEnd="6dp" />
 
             <TextView
-                android:id="@+id/tvTraceNumber"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="#000001"
-                android:textSize="12sp"
-                android:fontFamily="monospace"
-                android:textColor="@color/text_muted" />
-        </LinearLayout>
-
-        <!-- Row 3: Terminal + Time -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="6dp">
-
-            <LinearLayout
+                android:id="@+id/tvCardInfo"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:text="9704**7890 (Napas)"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif"
+                android:textColor="@color/text_secondary" />
 
-                <ImageView
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:src="@drawable/ic_baseline_phonelink_24"
-                    app:tint="@color/text_muted"
-                    android:layout_marginEnd="6dp" />
-
-                <TextView
-                    android:id="@+id/tvTerminal"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="TERM0001"
-                    android:textSize="12sp"
-                    android:textColor="@color/text_muted" />
-            </LinearLayout>
-
+            <!-- Time aligned to end -->
             <TextView
                 android:id="@+id/tvTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="2025-01-01 10:00"
+                android:text="01-01 10:00"
                 android:textSize="12sp"
+                android:fontFamily="sans-serif"
                 android:textColor="@color/text_muted" />
         </LinearLayout>
 
-        <!-- Row 4: Username -->
+        <!-- Row 3: Terminal Info -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginTop="6dp">
+            android:layout_marginTop="4dp">
 
             <ImageView
                 android:layout_width="14dp"
                 android:layout_height="14dp"
-                android:src="@drawable/ic_baseline_person_24"
-                app:tint="@color/accent_cyan"
+                android:src="@drawable/ic_baseline_phonelink_24"
+                app:tint="@color/text_secondary"
                 android:layout_marginEnd="6dp" />
 
             <TextView
-                android:id="@+id/tvUsername"
-                android:layout_width="wrap_content"
+                android:id="@+id/tvTerminal"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="user01"
+                android:layout_weight="1"
+                android:text="TERM0001"
                 android:textSize="12sp"
-                android:fontFamily="sans-serif-medium"
-                android:textColor="@color/accent_blue" />
+                android:fontFamily="sans-serif"
+                android:textColor="@color/text_secondary" />
         </LinearLayout>
 
     </LinearLayout>

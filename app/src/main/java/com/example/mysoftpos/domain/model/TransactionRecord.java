@@ -24,6 +24,9 @@ public class TransactionRecord {
     public final String serverIp;
     public final int serverPort;
     public final String schemeName;
+    public final String processingCode;
+    public final String currencyCode;
+    public final String rrn;
 
     private TransactionRecord(Builder builder) {
         this.traceNumber = builder.traceNumber;
@@ -44,6 +47,9 @@ public class TransactionRecord {
         this.serverIp = builder.serverIp;
         this.serverPort = builder.serverPort;
         this.schemeName = builder.schemeName;
+        this.processingCode = builder.processingCode;
+        this.currencyCode = builder.currencyCode;
+        this.rrn = builder.rrn;
     }
 
     public static class Builder {
@@ -65,6 +71,9 @@ public class TransactionRecord {
         private String serverIp;
         private int serverPort;
         private String schemeName;
+        private String processingCode;
+        private String currencyCode;
+        private String rrn;
 
         public Builder() {
         }
@@ -156,6 +165,21 @@ public class TransactionRecord {
 
         public Builder setSchemeName(String schemeName) {
             this.schemeName = schemeName;
+            return this;
+        }
+
+        public Builder setProcessingCode(String processingCode) {
+            this.processingCode = processingCode;
+            return this;
+        }
+
+        public Builder setCurrencyCode(String currencyCode) {
+            this.currencyCode = currencyCode;
+            return this;
+        }
+
+        public Builder setRrn(String rrn) {
+            this.rrn = rrn;
             return this;
         }
 

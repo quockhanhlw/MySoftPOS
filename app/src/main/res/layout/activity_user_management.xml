@@ -114,15 +114,21 @@
     </com.google.android.material.card.MaterialCardView>
 
     <!-- ═══ RECYCLER VIEW ═══ -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvUsers"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:clipToPadding="false"
-        android:paddingTop="10dp"
-        android:paddingBottom="88dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/header" />
+        app:layout_constraintTop_toBottomOf="@id/header">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvUsers"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingTop="10dp"
+            android:paddingBottom="88dp" />
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <!-- ═══ EMPTY STATE ═══ -->
     <LinearLayout

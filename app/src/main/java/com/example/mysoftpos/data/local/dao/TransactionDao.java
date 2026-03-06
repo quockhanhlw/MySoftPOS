@@ -28,6 +28,10 @@ public interface TransactionDao {
     @Query("UPDATE transactions SET response_hex = :responseHex WHERE trace_number = :traceNumber")
     void updateResponseHex(String traceNumber, String responseHex);
 
+    /** Update the denormalized RRN column after a response is parsed. */
+    @Query("UPDATE transactions SET rrn = :rrn WHERE trace_number = :traceNumber")
+    void updateRrn(String traceNumber, String rrn);
+
     @Query("SELECT * FROM transactions WHERE trace_number = :traceNumber LIMIT 1")
     TransactionEntity getByTraceNumber(String traceNumber);
 

@@ -199,6 +199,7 @@ public interface ApiService {
                 public String serverIp;
                 public Integer serverPort;
                 public boolean active;
+                public boolean online;
         }
 
         class MerchantDto {

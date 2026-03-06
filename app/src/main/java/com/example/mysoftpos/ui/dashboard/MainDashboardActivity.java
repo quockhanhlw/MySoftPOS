@@ -13,8 +13,8 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
-import androidx.lifecycle.Observer;
+import android.widget.Toast;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.mysoftpos.data.local.AppDatabase;
 import com.example.mysoftpos.data.local.entity.TransactionEntity;
@@ -46,6 +46,7 @@ public class MainDashboardActivity extends BaseActivity {
     private LinearLayout historyListContainer;
     private TextView tvMerchantName;
     private View hiddenAdminTrigger;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +68,7 @@ public class MainDashboardActivity extends BaseActivity {
         tvMerchantName = findViewById(R.id.tvMerchantName);
         historyListContainer = findViewById(R.id.historyListContainer);
         hiddenAdminTrigger = findViewById(R.id.hiddenAdminTrigger);
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
         View btnPurchase = findViewById(R.id.btnPurchase);
         View btnBalance = findViewById(R.id.btnBalance);
@@ -188,8 +190,14 @@ public class MainDashboardActivity extends BaseActivity {
             View cardHistory = findViewById(R.id.cardHistory);
             if (cardHistory != null)
                 cardHistory.setVisibility(View.GONE);
+
+            // disable swipe to refresh for admin as they don't have history here
+            if (swipeRefreshLayout != null) {
+                swipeRefreshLayout.setEnabled(false);
+            }
         } else {
             setupHistoryObserver(false);
+            setupSwipeRefresh();
         }
     }
 
@@ -246,18 +254,40 @@ public class MainDashboardActivity extends BaseActivity {
                 this, this::updateHistoryList);
     }
 
+    private void setupSwipeRefresh() {
+        if (swipeRefreshLayout != null) {
+            // Set colors
+            swipeRefreshLayout.setColorSchemeColors(Color.parseColor("#0A2463")); // neoprimary dark
+
+            // On refresh listener
+            swipeRefreshLayout.setOnRefreshListener(() -> {
+                // Trigger a background sync using the Sync Manager
+                new com.example.mysoftpos.data.remote.TransactionSyncManager(MainDashboardActivity.this)
+                        .syncUnsynced();
+
+                // Artificial delay to show the spinner briefly, as the observer will update the
+                // list
+                swipeRefreshLayout.postDelayed(() -> {
+                    if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                        swipeRefreshLayout.setRefreshing(false);
+                        Toast.makeText(MainDashboardActivity.this, R.string.history_refreshed, Toast.LENGTH_SHORT)
+                                .show();
+                    }
+                }, 1000);
+            });
+        }
+    }
+
     // --- History Logic Refactored for Expansion --- //
     private boolean isHistoryExpanded = false;
     private List<TransactionEntity> currentTransactions;
 
     private void updateHistoryList(List<TransactionEntity> transactions) {
-        // Filter: Show only Purchases (Amount > 0 and Status isn't just arbitrary
-        // string)
-        // Or simply exclude Balance Inquiries (Amount "0" or null)
+        // Filter: Show only Purchases using the denormalized processing_code column.
+        // No ISO hex unpacking needed — zero CPU overhead per row.
         java.util.List<TransactionEntity> filtered = new java.util.ArrayList<>();
         if (transactions != null) {
             for (TransactionEntity t : transactions) {
-                // Only show Purchase transactions with non-zero amount
                 if (t.amount != null && !t.amount.equals("0") && isPurchaseTransaction(t)) {
                     filtered.add(t);
                 }
@@ -267,17 +297,25 @@ public class MainDashboardActivity extends BaseActivity {
         renderHistoryList();
     }
 
-    /** Check if transaction is a Purchase (DE 3 starts with 00) */
+    /**
+     * Check if transaction is a Purchase using the denormalized processing_code
+     * column.
+     * Falls back to hex unpacking only for legacy rows that were saved before
+     * migration 18.
+     */
     private boolean isPurchaseTransaction(TransactionEntity txn) {
+        // Fast path: use denormalized column (migration 17→18)
+        if (txn.processingCode != null) {
+            return txn.processingCode.startsWith("00");
+        }
+        // Legacy fallback: unpack hex for rows created before the migration
         try {
             if (txn.requestHex == null)
                 return false;
             com.example.mysoftpos.iso8583.message.IsoMessage req = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
                     .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
                             .hexToBytes(txn.requestHex));
-            if (req.hasField(3)) {
-                return req.getField(3).startsWith("00");
-            }
+            return req.hasField(3) && req.getField(3).startsWith("00");
         } catch (Exception ignored) {
         }
         return false;
@@ -366,27 +404,17 @@ public class MainDashboardActivity extends BaseActivity {
             // dp helper
             float density = getResources().getDisplayMetrics().density;
 
-            // Amount + Currency
+            // Amount + Currency — read from denormalized column (no hex unpacking!)
             TextView tvAmount = new TextView(this);
             String amtStr = txn.amount != null ? txn.amount : "0";
-            // Parse currency from DE 49
             String currencyLabel = "VND";
-            try {
-                if (txn.requestHex != null) {
-                    com.example.mysoftpos.iso8583.message.IsoMessage req = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
-                            .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker.hexToBytes(txn.requestHex));
-                    if (req.hasField(49)) {
-                        String code = req.getField(49).trim();
-                        if ("840".equals(code))
-                            currencyLabel = "USD";
-                        else if ("704".equals(code))
-                            currencyLabel = "VND";
-                        else
-                            currencyLabel = code;
-                    }
-                }
-            } catch (Exception e) {
-                // Ignore
+            if (txn.currencyCode != null) {
+                if ("840".equals(txn.currencyCode))
+                    currencyLabel = "USD";
+                else if ("704".equals(txn.currencyCode))
+                    currencyLabel = "VND";
+                else
+                    currencyLabel = txn.currencyCode;
             }
             try {
                 long amtVal = Long.parseLong(amtStr);
@@ -399,18 +427,23 @@ public class MainDashboardActivity extends BaseActivity {
             tvAmount.setTypeface(null, android.graphics.Typeface.BOLD);
             tvAmount.setGravity(Gravity.END);
 
-            // Extract RRN (DE 37)
+            // RRN — read from denormalized column (no hex unpacking!)
+            // Legacy fallback for rows created before migration 18
             String rrn = "";
-            try {
-                if (txn.responseHex != null) {
-                    com.example.mysoftpos.iso8583.message.IsoMessage resp = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
-                            .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker.hexToBytes(txn.responseHex));
-                    if (resp.hasField(37)) {
-                        rrn = resp.getField(37).trim();
+            if (txn.rrn != null && !txn.rrn.isEmpty()) {
+                rrn = txn.rrn;
+            } else {
+                try {
+                    if (txn.responseHex != null) {
+                        com.example.mysoftpos.iso8583.message.IsoMessage resp = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                                .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
+                                        .hexToBytes(txn.responseHex));
+                        if (resp.hasField(37)) {
+                            rrn = resp.getField(37).trim();
+                        }
                     }
+                } catch (Exception ignored) {
                 }
-            } catch (Exception e) {
-                // Ignore parse error
             }
 
             // RRN display (no label prefix)
