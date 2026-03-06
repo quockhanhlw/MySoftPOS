@@ -41,23 +41,31 @@ public class TransactionEntity {
     @ColumnInfo(name = "user_id")
     public Long userId;
 
-    /** Raw username (phone/email) of the user who initiated this transaction.
-     *  Admin test-suite uses "TEST_SUITE_USER", "TEST_SUITE_BATCH", etc. */
+    /**
+     * Raw username (phone/email) of the user who initiated this transaction.
+     * Admin test-suite uses "TEST_SUITE_USER", "TEST_SUITE_BATCH", etc.
+     */
     @ColumnInfo(name = "owner_username")
     public String ownerUsername;
 
-    /** DE 3 Processing Code (e.g. "000000" = Purchase, "300000" = Balance).
-     *  Stored at insert time so UI never needs to unpack requestHex. */
+    /**
+     * DE 3 Processing Code (e.g. "000000" = Purchase, "300000" = Balance).
+     * Stored at insert time so UI never needs to unpack requestHex.
+     */
     @ColumnInfo(name = "processing_code")
     public String processingCode;
 
-    /** DE 49 Currency Code (e.g. "704" = VND, "840" = USD).
-     *  Stored at insert time so UI never needs to unpack requestHex. */
+    /**
+     * DE 49 Currency Code (e.g. "704" = VND, "840" = USD).
+     * Stored at insert time so UI never needs to unpack requestHex.
+     */
     @ColumnInfo(name = "currency_code")
     public String currencyCode;
 
-    /** DE 37 Retrieval Reference Number from response.
-     *  Stored at insert time so UI never needs to unpack responseHex. */
+    /**
+     * DE 37 Retrieval Reference Number from response.
+     * Stored at insert time so UI never needs to unpack responseHex.
+     */
     @ColumnInfo(name = "rrn")
     public String rrn;
 
