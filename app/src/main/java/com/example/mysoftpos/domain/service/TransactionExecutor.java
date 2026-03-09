@@ -173,6 +173,8 @@ public class TransactionExecutor {
         if (logTag == null)
             logTag = "";
 
+        ensureConnectionConfigured(ctx);
+
         // 1. Build Message
         IsoMessage msg;
         if ("BALANCE".equals(txnType)) {
@@ -241,5 +243,13 @@ public class TransactionExecutor {
         String rc = respMsg.getField(39);
 
         return new TransactionResult(ctx.stan11, rc, reqHex, respHex);
+    }
+
+    private void ensureConnectionConfigured(TransactionContext ctx) {
+        String ip = ctx != null && ctx.ip != null ? ctx.ip.trim() : "";
+        int port = ctx != null ? ctx.port : 0;
+        if (ip.isEmpty() || port <= 0) {
+            throw new IllegalStateException("Server IP/Port is not configured");
+        }
     }
 }

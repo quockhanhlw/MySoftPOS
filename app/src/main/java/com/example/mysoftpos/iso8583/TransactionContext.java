@@ -164,10 +164,79 @@ public class TransactionContext {
     public static String defaultCurrencyVND() {
         return "704";
     }
+
+    public static final class Builder {
+        private final TransactionContext ctx;
+
+        public Builder(TxnType txnType) {
+            this.ctx = new TransactionContext();
+            this.ctx.txnType = txnType;
+        }
+
+        public Builder pan2(String value) { ctx.pan2 = value; return this; }
+        public Builder processingCode3(String value) { ctx.processingCode3 = value; return this; }
+        public Builder amount4(String value) { ctx.amount4 = value; return this; }
+        public Builder transmissionDt7(String value) { ctx.transmissionDt7 = value; return this; }
+        public Builder stan11(String value) { ctx.stan11 = value; return this; }
+        public Builder localTime12(String value) { ctx.localTime12 = value; return this; }
+        public Builder localDate13(String value) { ctx.localDate13 = value; return this; }
+        public Builder mcc18(String value) { ctx.mcc18 = value; return this; }
+        public Builder country19(String value) { ctx.country19 = value; return this; }
+        public Builder posEntryMode22(String value) { ctx.posEntryMode22 = value; return this; }
+        public Builder cardSeq23(String value) { ctx.cardSeq23 = value; return this; }
+        public Builder posCondition25(String value) { ctx.posCondition25 = value; return this; }
+        public Builder acquirerId32(String value) { ctx.acquirerId32 = value; return this; }
+        public Builder rrn37(String value) { ctx.rrn37 = value; return this; }
+        public Builder terminalId41(String value) { ctx.terminalId41 = value; return this; }
+        public Builder merchantId42(String value) { ctx.merchantId42 = value; return this; }
+        public Builder merchantNameLocation43(String value) { ctx.merchantNameLocation43 = value; return this; }
+        public Builder currency49(String value) { ctx.currency49 = value; return this; }
+        public Builder encryptPin(boolean value) { ctx.encryptPin = value; return this; }
+        public Builder pinBlock52(String value) { ctx.pinBlock52 = value; return this; }
+        public Builder field60(String value) { ctx.field60 = value; return this; }
+        public Builder mac128(String value) { ctx.mac128 = value; return this; }
+        public Builder ip(String value) { ctx.ip = value; return this; }
+        public Builder port(int value) { ctx.port = value; return this; }
+
+        public TransactionContext build() {
+            if (ctx.country19 == null || ctx.country19.isEmpty()) {
+                ctx.country19 = ctx.currency49 != null && !ctx.currency49.isEmpty() ? ctx.currency49 : defaultCurrencyVND();
+            }
+            return ctx;
+        }
+    }
+
+    public static String formatTid8(String tid) {
+        if (tid == null) tid = "";
+        if (tid.length() > 8) return tid.substring(0, 8);
+        return String.format(Locale.ROOT, "%-8s", tid);
+    }
+
+    public static String formatMid15(String mid) {
+        if (mid == null) mid = "";
+        if (mid.length() > 15) return mid.substring(0, 15);
+        return String.format(Locale.ROOT, "%-15s", mid);
+    }
+
+    public static String buildField60UpiChipCaseA(char terminalCapability,
+            char cardholderAuthCapability,
+            String attendedIndicator,
+            String partialAuthorizationIndicator,
+            char txnEnvironment) {
+        String seed = new StringBuilder()
+                .append(terminalCapability)
+                .append(cardholderAuthCapability)
+                .append(attendedIndicator == null ? "" : attendedIndicator)
+                .append(partialAuthorizationIndicator == null ? "" : partialAuthorizationIndicator)
+                .append(txnEnvironment)
+                .toString();
+        if (seed.length() >= 27) {
+            return seed.substring(0, 27);
+        }
+        StringBuilder out = new StringBuilder(seed);
+        while (out.length() < 27) {
+            out.append('0');
+        }
+        return out.toString();
+    }
 }
-
-
-
-
-
-

@@ -19,8 +19,8 @@
     <string name="login_button">Đăng nhập</string>
 
     <!-- Register Screen -->
-    <string name="register_title">Tạo tài khoản</string>
-    <string name="register_description">Tham gia với chúng tôi để bắt đầu chấp nhận thanh toán ngay hôm nay</string>
+    <string name="register_title">Tạo tài khoản quản trị</string>
+    <string name="register_description">Thiết lập hồ sơ quản trị để bắt đầu quản lý thanh toán và thiết bị</string>
     <string name="register_account_type">Loại tài khoản</string>
     <string name="register_personal">Cá nhân</string>
     <string name="register_business">Doanh nghiệp</string>
@@ -28,13 +28,13 @@
     <string name="register_username">Tên đăng nhập</string>
     <string name="register_username_hint">Chọn tên đăng nhập duy nhất</string>
     
-    <string name="register_full_name">Họ và tên</string>
+    <string name="register_full_name">Họ và tên quản trị</string>
     <string name="register_full_name_hint">Tên pháp lý của bạn</string>
     
     <string name="register_dob">Ngày sinh</string>
     <string name="register_dob_hint">DD/MM/YYYY</string>
     
-    <string name="register_phone">Số điện thoại</string>
+    <string name="register_phone">Số điện thoại quản trị</string>
     <string name="register_phone_hint">Nhập số điện thoại của bạn</string>
     
     <string name="register_address">Địa chỉ</string>
@@ -47,7 +47,8 @@
     <string name="register_confirm_password_hint">Nhập lại mật khẩu của bạn</string>
     
     <string name="register_terms_text">Bằng cách đăng ký, bạn đồng ý với Điều khoản &amp; Điều kiện và Chính sách bảo mật của chúng tôi</string>
-    <string name="register_button">Tạo tài khoản</string>
+    <string name="register_button">Tạo tài khoản quản trị</string>
+    <string name="register_email_hint">Email doanh nghiệp</string>
 
     <!-- Forgot Password Screen -->
     <string name="forgot_password_title">Đặt lại mật khẩu</string>
@@ -128,6 +129,7 @@
     <string name="dashboard_welcome">Chào</string>
     <string name="history_title">Lịch sử giao dịch</string>
     <string name="history_empty">Không có giao dịch gần đây</string>
+    <string name="history_refreshed">Đã làm mới lịch sử</string>
     <string name="label_txn_ref">CT</string>
     <string name="test_suite">Bộ kiểm thử</string>
 
@@ -171,10 +173,10 @@
     <string name="expiry_hint">2512</string>
     <string name="btn_check_balance">Kiểm tra số dư</string>
     <string name="btn_pay">Thanh toán</string>
-    <string name="reading_card_text">Đang đọc thẻ...</string>
+    <string name="reading_card_text">Đang đọc thẻ…</string>
 
-    <string name="msg_printing_receipt">Đang in hóa đơn...</string>
-    <string name="msg_sharing_receipt">Đang chia sẻ hóa đơn...</string>
+    <string name="msg_printing_receipt">Đang in hóa đơn…</string>
+    <string name="msg_sharing_receipt">Đang chia sẻ hóa đơn…</string>
     <string name="txn_approved_subtitle">Thanh toán hoàn tất thành công</string>
     <string name="txn_failed_title">Giao dịch thất bại</string>
     <string name="txn_failed_status">Thất bại</string>
@@ -186,7 +188,7 @@
     <string name="err_timeout_generic">Giao dịch hết giờ</string>
     <string name="guest_user">Khách</string>
     <string name="err_invalid_pan">Số thẻ hoặc ngày hết hạn không hợp lệ</string>
-    <string name="msg_using_mock_track2">Đang sử dụng Track 2 giả lập...</string>
+    <string name="msg_using_mock_track2">Đang sử dụng Track 2 giả lập…</string>
     <string name="msg_card_detected">Đã phát hiện thẻ</string>
     <string name="nfc_disabled_title">NFC đã tắt</string>
     <string name="nfc_disabled_message">Vui lòng bật NFC để quét thẻ</string>
@@ -292,4 +294,38 @@
     <string name="void_confirm_no">Không</string>
     <string name="terms_close">Đóng</string>
 
+    <!-- Phase 3 shared/auth/settings strings -->
+    <string name="common_required">Bắt buộc</string>
+    <string name="common_error_with_reason">Lỗi: %s</string>
+    <string name="settings_identity_saved">Đã lưu cài đặt định danh</string>
+    <string name="settings_security_saved">Đã lưu cài đặt bảo mật</string>
+    <string name="settings_backend_current">Hiện tại: %s</string>
+    <string name="settings_backend_testing">Đang kiểm tra kết nối…</string>
+    <string name="settings_backend_connected">✓ Đã kết nối — %s</string>
+    <string name="settings_backend_failed">✗ Thất bại — %s</string>
+    <string name="settings_backend_url_required">URL là bắt buộc</string>
+    <string name="settings_backend_url_https_required">URL phải bắt đầu bằng https://</string>
+    <string name="settings_backend_saved">Đã lưu URL backend</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_vi">Tiếng Việt</string>
+    <string name="settings_feature_wallpaper">Hình nền</string>
+    <string name="settings_feature_password">Mật khẩu</string>
+    <string name="settings_feature_coming_soon">Tính năng sắp ra mắt!</string>
+    <string name="settings_password_dialog_placeholder">Hộp thoại đổi mật khẩu sẽ hiển thị tại đây</string>
+    <string name="register_success">Đăng ký thành công!</string>
+    <string name="register_failed">Đăng ký thất bại</string>
+    <string name="register_admin_exists">Đã tồn tại tài khoản quản trị</string>
+    <string name="register_backend_required">Cần kết nối backend để tạo tài khoản quản trị.</string>
+    <string name="register_agree_terms">Vui lòng đồng ý với điều khoản</string>
+    <string name="register_error_exists_email">Email đã được đăng ký</string>
+    <string name="register_passwords_do_not_match">Mật khẩu không khớp</string>
+    <string name="settings_backend_dialog_title">Máy chủ backend</string>
+    <string name="settings_backend_dialog_description">Cấu hình URL API backend của MySoftPOS.&#10;Đây KHÔNG phải máy chủ ISO (ngân hàng/switch).</string>
+    <string name="settings_backend_input_hint">URL backend</string>
+    <string name="settings_backend_default_value">https://</string>
+    <string name="settings_backend_helper">• Cổng local/QA: https://your-gateway.example&#10;• Backend nội bộ: https://api.example.com&#10;• Production: https://your-domain.com</string>
+    <string name="common_test">Kiểm tra</string>
+    <string name="common_cancel">Huỷ</string>
+    <string name="common_save">Lưu</string>
+    <string name="err_server_not_configured">Server IP/Port chưa được cấu hình. Hãy dùng IP/Port nhập động trước khi giao dịch.</string>
 </resources>

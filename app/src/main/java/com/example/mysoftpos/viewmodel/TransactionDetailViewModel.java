@@ -98,7 +98,7 @@ public class TransactionDetailViewModel extends BaseViewModel {
                 // IP/Port resolution:
                 // 1) If schemeName provided (admin void from scheme history) → use scheme's IP/port
                 // 2) Else if user has server config (user void) → use user's IP/port
-                // 3) Fallback to current configManager
+                // 3) Else use the current runtime config if it was set dynamically
                 String serverIp = configManager.getServerIp();
                 int serverPort = configManager.getServerPort();
 
@@ -116,7 +116,13 @@ public class TransactionDetailViewModel extends BaseViewModel {
                     serverIp = txnDetails.user.serverIp;
                     serverPort = txnDetails.user.serverPort;
                 }
-                ctx.ip = serverIp;
+
+                if (serverIp == null || serverIp.trim().isEmpty() || serverPort <= 0) {
+                    postError(getApplication().getString(R.string.err_server_not_configured));
+                    return;
+                }
+
+                ctx.ip = serverIp.trim();
                 ctx.port = serverPort;
 
                 // Reconstruct Card Data

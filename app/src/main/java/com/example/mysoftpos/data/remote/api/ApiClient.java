@@ -35,8 +35,18 @@ public final class ApiClient {
     // Default backend URL
     private static final String DEFAULT_BASE_URL = "https://mysoftpos-backend.onrender.com/";
 
+    private static final long DEFAULT_CONNECT_TIMEOUT_SECONDS = 20;
+    private static final long DEFAULT_READ_TIMEOUT_SECONDS = 30;
+    private static final long DEFAULT_WRITE_TIMEOUT_SECONDS = 30;
+    private static final long AUTH_CONNECT_TIMEOUT_SECONDS = 8;
+    private static final long AUTH_READ_TIMEOUT_SECONDS = 12;
+    private static final long AUTH_WRITE_TIMEOUT_SECONDS = 12;
+    private static final long AUTH_CALL_TIMEOUT_SECONDS = 15;
+
     private static volatile ApiService apiService;
+    private static volatile ApiService authApiService;
     private static volatile Retrofit retrofit;
+    private static volatile Retrofit authRetrofit;
 
     private ApiClient() {
     }
@@ -46,24 +56,13 @@ public final class ApiClient {
             synchronized (ApiClient.class) {
                 if (apiService == null) {
                     String baseUrl = getBaseUrl(context);
-
-                    // Render free tier instances take ~50 seconds to wake up from sleep.
-                    // Increased timeouts to 60 seconds to prevent failing back to offline mode
-                    // during cold starts.
-                    OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
-                            .connectTimeout(60, TimeUnit.SECONDS)
-                            .readTimeout(60, TimeUnit.SECONDS)
-                            .writeTimeout(60, TimeUnit.SECONDS);
-
-                    if (BuildConfig.DEBUG) {
-                        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-                        logging.setLevel(HttpLoggingInterceptor.Level.HEADERS);
-                        clientBuilder.addInterceptor(logging);
-                    }
-
                     retrofit = new Retrofit.Builder()
                             .baseUrl(baseUrl)
-                            .client(clientBuilder.build())
+                            .client(buildClient(
+                                    DEFAULT_CONNECT_TIMEOUT_SECONDS,
+                                    DEFAULT_READ_TIMEOUT_SECONDS,
+                                    DEFAULT_WRITE_TIMEOUT_SECONDS,
+                                    0))
                             .addConverterFactory(GsonConverterFactory.create())
                             .build();
 
@@ -74,11 +73,39 @@ public final class ApiClient {
         return apiService;
     }
 
+    /**
+     * Dedicated auth client with shorter timeout so login can fall back faster
+     * when the backend is sleeping or temporarily unreachable.
+     */
+    public static ApiService getAuthService(Context context) {
+        if (authApiService == null) {
+            synchronized (ApiClient.class) {
+                if (authApiService == null) {
+                    String baseUrl = getBaseUrl(context);
+                    authRetrofit = new Retrofit.Builder()
+                            .baseUrl(baseUrl)
+                            .client(buildClient(
+                                    AUTH_CONNECT_TIMEOUT_SECONDS,
+                                    AUTH_READ_TIMEOUT_SECONDS,
+                                    AUTH_WRITE_TIMEOUT_SECONDS,
+                                    AUTH_CALL_TIMEOUT_SECONDS))
+                            .addConverterFactory(GsonConverterFactory.create())
+                            .build();
+
+                    authApiService = authRetrofit.create(ApiService.class);
+                }
+            }
+        }
+        return authApiService;
+    }
+
     /** Force re-create the Retrofit instance (e.g. when base URL changed) */
     public static void reset() {
         synchronized (ApiClient.class) {
             apiService = null;
             retrofit = null;
+            authApiService = null;
+            authRetrofit = null;
         }
     }
 
@@ -154,5 +181,27 @@ public final class ApiClient {
 
     private static SharedPreferences getPrefs(Context ctx) {
         return ctx.getApplicationContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+    }
+
+    private static OkHttpClient buildClient(long connectTimeoutSeconds,
+                                            long readTimeoutSeconds,
+                                            long writeTimeoutSeconds,
+                                            long callTimeoutSeconds) {
+        OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
+                .connectTimeout(connectTimeoutSeconds, TimeUnit.SECONDS)
+                .readTimeout(readTimeoutSeconds, TimeUnit.SECONDS)
+                .writeTimeout(writeTimeoutSeconds, TimeUnit.SECONDS);
+
+        if (callTimeoutSeconds > 0) {
+            clientBuilder.callTimeout(callTimeoutSeconds, TimeUnit.SECONDS);
+        }
+
+        if (BuildConfig.DEBUG) {
+            HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+            logging.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+            clientBuilder.addInterceptor(logging);
+        }
+
+        return clientBuilder.build();
     }
 }

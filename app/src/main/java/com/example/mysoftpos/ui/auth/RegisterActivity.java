@@ -5,6 +5,7 @@ import com.example.mysoftpos.data.local.dao.UserDao;
 import com.example.mysoftpos.data.local.entity.UserEntity;
 import com.example.mysoftpos.ui.BaseActivity;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -20,14 +21,13 @@ import android.view.View;
 import android.view.Window;
 import android.widget.CheckBox;
 import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.material.button.MaterialButton;
-
 import androidx.annotation.NonNull;
+import androidx.appcompat.content.res.AppCompatResources;
+
+import com.google.android.material.button.MaterialButton;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -35,6 +35,8 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 public class RegisterActivity extends BaseActivity {
+    private static final String TAG = "RegisterActivity";
+    private static final String REGISTERED_ADMIN_ROLE = "ADMIN";
 
     // Step 1 Views
     private EditText etFullName;
@@ -85,11 +87,13 @@ public class RegisterActivity extends BaseActivity {
         setupTermsText();
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private void setupPasswordToggle(EditText editText, boolean isMainPassword) {
         editText.setOnTouchListener((v, event) -> {
             if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
                 android.graphics.drawable.Drawable end = editText.getCompoundDrawablesRelative()[2];
                 if (end != null && event.getRawX() >= (editText.getRight() - end.getBounds().width() - editText.getPaddingEnd())) {
+                    v.performClick();
                     boolean visible;
                     if (isMainPassword) {
                         passwordVisible = !passwordVisible;
@@ -102,12 +106,12 @@ public class RegisterActivity extends BaseActivity {
                         editText.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
                         editText.setCompoundDrawablesRelativeWithIntrinsicBounds(
                                 editText.getCompoundDrawablesRelative()[0], null,
-                                getDrawable(R.drawable.ic_baseline_visibility_24), null);
+                                AppCompatResources.getDrawable(this, R.drawable.ic_baseline_visibility_24), null);
                     } else {
                         editText.setTransformationMethod(PasswordTransformationMethod.getInstance());
                         editText.setCompoundDrawablesRelativeWithIntrinsicBounds(
                                 editText.getCompoundDrawablesRelative()[0], null,
-                                getDrawable(R.drawable.ic_baseline_visibility_off_24), null);
+                                AppCompatResources.getDrawable(this, R.drawable.ic_baseline_visibility_off_24), null);
                     }
                     editText.setSelection(editText.getText().length());
                     return true;
@@ -118,99 +122,78 @@ public class RegisterActivity extends BaseActivity {
     }
 
     private void handleRegister() {
-        String fullName = etFullName.getText().toString().trim();
-        String phone = etPhone.getText().toString().trim();
-        String email = etEmail.getText().toString().trim();
-        String password = etPassword.getText().toString().trim();
-        String confirmPassword = etConfirmPassword.getText().toString().trim();
+        String fullName = getTrimmedText(etFullName);
+        String phone = getTrimmedText(etPhone);
+        String email = getTrimmedText(etEmail);
+        String password = getTrimmedText(etPassword);
+        String confirmPassword = getTrimmedText(etConfirmPassword);
 
-        if (fullName.isEmpty()) {
-            etFullName.setError("Required");
-            return;
-        }
-        if (email.isEmpty()) {
-            etEmail.setError("Required");
-            return;
-        }
-        if (phone.isEmpty()) {
-            etPhone.setError("Required");
-            return;
-        }
-        if (password.isEmpty()) {
-            etPassword.setError("Required");
-            return;
-        }
-        if (confirmPassword.isEmpty()) {
-            etConfirmPassword.setError("Required");
+        if (requireValue(etFullName, fullName)
+                || requireValue(etEmail, email)
+                || requireValue(etPhone, phone)
+                || requireValue(etPassword, password)
+                || requireValue(etConfirmPassword, confirmPassword)) {
             return;
         }
         if (!password.equals(confirmPassword)) {
-            etConfirmPassword.setError("Passwords do not match");
+            etConfirmPassword.setError(getString(R.string.register_passwords_do_not_match));
             etConfirmPassword.requestFocus();
             return;
         }
 
         if (!cbTerms.isChecked()) {
-            Toast.makeText(this, "Please agree to Terms", Toast.LENGTH_SHORT).show();
+            showToast(R.string.register_agree_terms);
             return;
         }
 
-        // Use Email as Username for simplicity in this new design
-        String username = email;
 
-        registerUser(fullName, phone, email, username, password);
+        registerUser(fullName, phone, email, email, password);
     }
 
     private void registerUser(String fullName, String phone, String email, String username,
             String password) {
-        // PRIMARY: Register via backend API
         com.example.mysoftpos.data.remote.api.ApiService api =
                 com.example.mysoftpos.data.remote.api.ApiClient.getService(this);
 
         api.register(new com.example.mysoftpos.data.remote.api.ApiService.RegisterRequest(
                 username, password, fullName, phone, email
-        )).enqueue(new retrofit2.Callback<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse>() {
+        )).enqueue(new retrofit2.Callback<>() {
             @Override
             public void onResponse(
-                    retrofit2.Call<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> call,
-                    retrofit2.Response<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> response) {
+                    @NonNull retrofit2.Call<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> call,
+                    @NonNull retrofit2.Response<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    // Cache user locally for offline login
                     cacheUserLocally(fullName, phone, email, username, password);
                     runOnUiThread(() -> {
-                        Toast.makeText(RegisterActivity.this,
-                                "Registration Successful!", Toast.LENGTH_SHORT).show();
+                        showToast(R.string.register_success);
                         finish();
                     });
                 } else {
-                    String errorMsg = "Registration failed";
-                    try {
-                        if (response.errorBody() != null) {
-                            String body = response.errorBody().string();
-                            if (body.contains("already exists"))
-                                errorMsg = "Username already exists";
+                    String errorMsg = getString(R.string.register_failed);
+                    try (okhttp3.ResponseBody errorBody = response.errorBody()) {
+                        if (errorBody != null) {
+                            String body = errorBody.string();
+                            if (body.contains("already registered") || body.contains("already exists")) {
+                                errorMsg = getString(R.string.register_admin_exists);
+                            }
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                     String finalMsg = errorMsg;
-                    runOnUiThread(() -> {
-                        Toast.makeText(RegisterActivity.this, finalMsg, Toast.LENGTH_SHORT).show();
-                    });
+                    runOnUiThread(() -> Toast.makeText(RegisterActivity.this, finalMsg, Toast.LENGTH_SHORT).show());
                 }
             }
 
             @Override
             public void onFailure(
-                    retrofit2.Call<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> call,
-                    Throwable t) {
-                Log.w("RegisterActivity",
-                        "API unreachable, falling back to offline registration: " + t.getMessage());
-                // FALLBACK: Register locally only
-                registerUserLocally(fullName, phone, email, username, password);
+                    @NonNull retrofit2.Call<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> call,
+                    @NonNull Throwable t) {
+                Log.w(TAG, "Admin registration requires backend connectivity: " + t.getMessage());
+                runOnUiThread(() -> showToast(R.string.register_backend_required, Toast.LENGTH_LONG));
             }
         });
     }
 
-    /** Cache a backend-registered user into local Room for offline login */
     private void cacheUserLocally(String fullName, String phone, String email,
             String username, String password) {
         new Thread(() -> {
@@ -224,54 +207,11 @@ public class RegisterActivity extends BaseActivity {
                     // PA-DSS 2.x: Use PBKDF2 for password hashing, not SHA-256
                     String passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashPassword(password);
                     UserEntity user = new UserEntity(usernameHash, passwordHash, fullName,
-                            "USER", email, phone, null);
+                            REGISTERED_ADMIN_ROLE, email, phone, null);
                     userDao.insert(user);
                 }
             } catch (Exception e) {
-                Log.w("RegisterActivity", "Failed to cache user locally: " + e.getMessage());
-            }
-        }).start();
-    }
-
-    /** Fallback: Register user locally only (when backend is unreachable) */
-    private void registerUserLocally(String fullName, String phone, String email,
-            String username, String password) {
-        new Thread(() -> {
-            try {
-                com.example.mysoftpos.data.local.AppDatabase db =
-                        com.example.mysoftpos.data.local.AppDatabase.getInstance(this);
-                UserDao userDao = db.userDao();
-
-                String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
-
-                if (userDao.existsByUsernameHash(usernameHash) || userDao.existsByEmail(email)) {
-                    runOnUiThread(() -> {
-                        Toast.makeText(this, "Email already registered", Toast.LENGTH_SHORT).show();
-                        etEmail.setError("Already registered");
-                    });
-                    return;
-                }
-                if (userDao.existsByPhone(phone)) {
-                    runOnUiThread(() -> {
-                        Toast.makeText(this, "Phone already registered", Toast.LENGTH_SHORT).show();
-                        etPhone.setError("Already registered");
-                    });
-                    return;
-                }
-
-                String passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashPassword(password);
-                UserEntity user = new UserEntity(usernameHash, passwordHash, fullName,
-                        "USER", email, phone, null);
-                userDao.insert(user);
-
-                runOnUiThread(() -> {
-                    Toast.makeText(this, "Registration Successful (Offline)!", Toast.LENGTH_SHORT).show();
-                    finish();
-                });
-            } catch (Exception e) {
-                Log.e("RegisterActivity", "Registration failed", e);
-                runOnUiThread(() -> Toast.makeText(this,
-                        "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                Log.w(TAG, "Failed to cache user locally: " + e.getMessage());
             }
         }).start();
     }
@@ -361,8 +301,29 @@ public class RegisterActivity extends BaseActivity {
             reader.close();
             return sb.toString().trim();
         } catch (Exception e) {
-            Log.e("RegisterActivity", "Error reading raw file", e);
+            Log.e(TAG, "Error reading raw file", e);
             return "";
         }
+    }
+
+    private String getTrimmedText(EditText editText) {
+        return String.valueOf(editText.getText()).trim();
+    }
+
+    private boolean requireValue(EditText editText, String value) {
+        if (!value.isEmpty()) {
+            return false;
+        }
+        editText.setError(getString(R.string.common_required));
+        editText.requestFocus();
+        return true;
+    }
+
+    private void showToast(int stringResId) {
+        showToast(stringResId, Toast.LENGTH_SHORT);
+    }
+
+    private void showToast(int stringResId, int duration) {
+        Toast.makeText(this, stringResId, duration).show();
     }
 }

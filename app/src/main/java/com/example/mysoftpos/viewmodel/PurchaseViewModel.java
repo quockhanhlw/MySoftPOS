@@ -54,6 +54,11 @@ public class PurchaseViewModel extends BaseViewModel {
             TransactionEntity entity = new TransactionEntity();
 
             try {
+                if (!configManager.hasServerConnectionConfig()) {
+                    postError(getApplication().getString(R.string.err_server_not_configured));
+                    return;
+                }
+
                 // Validation
                 boolean isPurchase = (txnType == TxnType.PURCHASE);
                 String amtF4 = isPurchase ? TransactionContext.formatAmount12(amount, currencyCode) : "000000000000";

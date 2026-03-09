@@ -15,6 +15,7 @@ import android.widget.Toast;
 
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
+import androidx.appcompat.content.res.AppCompatResources;
 import com.example.mysoftpos.ui.BaseActivity;
 
 public class LoginActivity extends BaseActivity {
@@ -36,23 +37,24 @@ public class LoginActivity extends BaseActivity {
         // Password toggle
         etPassword.setCompoundDrawablesRelativeWithIntrinsicBounds(
                 etPassword.getCompoundDrawablesRelative()[0], null,
-                getDrawable(R.drawable.ic_baseline_visibility_off_24), null);
+                getPasswordToggleDrawable(R.drawable.ic_baseline_visibility_off_24), null);
         etPassword.setOnTouchListener((v, event) -> {
             if (event.getAction() == MotionEvent.ACTION_UP) {
                 Drawable end = etPassword.getCompoundDrawablesRelative()[2];
                 if (end != null && event
                         .getRawX() >= (etPassword.getRight() - end.getBounds().width() - etPassword.getPaddingEnd())) {
+                    v.performClick();
                     passwordVisible = !passwordVisible;
                     if (passwordVisible) {
                         etPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
                         etPassword.setCompoundDrawablesRelativeWithIntrinsicBounds(
                                 etPassword.getCompoundDrawablesRelative()[0], null,
-                                getDrawable(R.drawable.ic_baseline_visibility_24), null);
+                                getPasswordToggleDrawable(R.drawable.ic_baseline_visibility_24), null);
                     } else {
                         etPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
                         etPassword.setCompoundDrawablesRelativeWithIntrinsicBounds(
                                 etPassword.getCompoundDrawablesRelative()[0], null,
-                                getDrawable(R.drawable.ic_baseline_visibility_off_24), null);
+                                getPasswordToggleDrawable(R.drawable.ic_baseline_visibility_off_24), null);
                     }
                     etPassword.setSelection(etPassword.getText().length());
                     return true;
@@ -118,14 +120,8 @@ public class LoginActivity extends BaseActivity {
         }
 
         showLoading();
-        if (isNetworkAvailable()) {
-            // ONLINE-FIRST: Network available, try API login
-            loginViaApi(username, password);
-        } else {
-            // OFFLINE: Fallback to SQLite cache
-            Toast.makeText(this, "Network unavailable. Attempting offline login...", Toast.LENGTH_SHORT).show();
-            loginViaLocalRoom(username, password);
-        }
+        boolean networkAvailable = isNetworkAvailable();
+        loginViaLocalRoom(username, password, networkAvailable);
     }
 
     private boolean isNetworkAvailable() {
@@ -145,27 +141,24 @@ public class LoginActivity extends BaseActivity {
      * Background sync with backend API after successful local login.
      * Refreshes JWT token, updates local cache, syncs transactions.
      */
-    private void syncWithBackendInBackground(String username, String password, Runnable onComplete) {
+    private void syncWithBackendInBackground(String username, String password) {
         try {
             com.example.mysoftpos.data.remote.api.ApiService api = com.example.mysoftpos.data.remote.api.ApiClient
-                    .getService(this);
+                    .getAuthService(this);
 
             api.login(new com.example.mysoftpos.data.remote.api.ApiService.LoginRequest(username, password))
-                    .enqueue(new retrofit2.Callback<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse>() {
+                    .enqueue(new retrofit2.Callback<>() {
                         @Override
                         public void onResponse(
                                 retrofit2.Call<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> call,
                                 retrofit2.Response<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> response) {
                             if (response.isSuccessful() && response.body() != null) {
                                 com.example.mysoftpos.data.remote.api.ApiService.LoginResponse resp = response.body();
-                                // Save fresh JWT token
                                 com.example.mysoftpos.data.remote.api.ApiClient.saveUserSession(LoginActivity.this,
                                         resp);
-                                // Update local cache with latest data from backend
                                 com.example.mysoftpos.di.ServiceLocator.getInstance(LoginActivity.this)
                                         .getDispatcherProvider().io().execute(() -> {
                                             cacheUserLocallySync(username, password, resp.user);
-                                            // Sync config & transactions
                                             if ("ADMIN".equals(resp.user.role)) {
                                                 new com.example.mysoftpos.data.remote.ConfigSyncManager(
                                                         LoginActivity.this).sync();
@@ -176,24 +169,17 @@ public class LoginActivity extends BaseActivity {
                                                     LoginActivity.this).syncUnsynced();
                                         });
                             }
-                            if (onComplete != null)
-                                onComplete.run();
                         }
 
                         @Override
                         public void onFailure(
                                 retrofit2.Call<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> call,
                                 Throwable t) {
-                            // Network unavailable — no problem, user already logged in
                             android.util.Log.d("LoginActivity", "Background sync skipped: " + t.getMessage());
-                            if (onComplete != null)
-                                onComplete.run();
                         }
                     });
         } catch (Exception e) {
             android.util.Log.w("LoginActivity", "Background sync error: " + e.getMessage());
-            if (onComplete != null)
-                onComplete.run();
         }
     }
 
@@ -202,10 +188,10 @@ public class LoginActivity extends BaseActivity {
     // ====================================================================
     private void loginViaApi(String username, String password) {
         com.example.mysoftpos.data.remote.api.ApiService api = com.example.mysoftpos.data.remote.api.ApiClient
-                .getService(this);
+                .getAuthService(this);
 
         api.login(new com.example.mysoftpos.data.remote.api.ApiService.LoginRequest(username, password))
-                .enqueue(new retrofit2.Callback<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse>() {
+                .enqueue(new retrofit2.Callback<>() {
                     @Override
                     public void onResponse(
                             retrofit2.Call<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> call,
@@ -265,11 +251,12 @@ public class LoginActivity extends BaseActivity {
                                     });
                         } else {
                             String errorMsg = "Invalid username or password!";
-                            try {
-                                if (response.errorBody() != null) {
-                                    String body = response.errorBody().string();
-                                    if (body.contains("locked"))
+                            try (okhttp3.ResponseBody errorBody = response.errorBody()) {
+                                if (errorBody != null) {
+                                    String body = errorBody.string();
+                                    if (body.contains("locked")) {
                                         errorMsg = "Account locked. Try again later.";
+                                    }
                                 }
                             } catch (Exception ignored) {
                             }
@@ -295,15 +282,15 @@ public class LoginActivity extends BaseActivity {
                             return;
                         android.util.Log.w("LoginActivity",
                                 "API unreachable, falling back to offline login: " + t.getMessage());
-                        loginViaLocalRoom(username, password);
+                        loginViaLocalRoom(username, password, false);
                     }
                 });
     }
 
     // ====================================================================
-    // FALLBACK: Local Room DB login (offline mode)
+    // LOCAL-FIRST: cached Room login with optional API fallback
     // ====================================================================
-    private void loginViaLocalRoom(String username, String password) {
+    private void loginViaLocalRoom(String username, String password, boolean allowApiFallback) {
         com.example.mysoftpos.di.ServiceLocator.getInstance(this)
                 .getDispatcherProvider().io().execute(() -> {
                     try {
@@ -339,7 +326,6 @@ public class LoginActivity extends BaseActivity {
                                 user.failedLoginAttempts = 0;
                                 user.lockedUntil = 0;
 
-                                // Progressive migration: upgrade legacy SHA-256 hashes to PBKDF2
                                 if (!user.passwordHash.contains(":")) {
                                     user.passwordHash = com.example.mysoftpos.utils.security.PasswordUtils
                                             .hashPassword(password);
@@ -360,21 +346,22 @@ public class LoginActivity extends BaseActivity {
                                 com.example.mysoftpos.utils.security.SessionManager.startSession();
                                 com.example.mysoftpos.utils.security.AuditLogger.log(
                                         LoginActivity.this, username, "LOGIN",
-                                        true, "LoginActivity", "Offline login: " + user.role);
+                                        true, "LoginActivity", "Local login: " + user.role);
 
-                                // Background: sync with API to refresh JWT token for API-dependent screens
                                 final com.example.mysoftpos.data.local.entity.UserEntity finalUser = user;
-                                syncWithBackendInBackground(username, password, () -> {
-                                    runOnUiThread(() -> {
-                                        hideLoading();
-                                        if (!isDestroyed() && !isFinishing()) {
-                                            Toast.makeText(LoginActivity.this,
-                                                    "Login Successful (Offline)!", Toast.LENGTH_SHORT).show();
-                                            navigateToDashboard(finalUser.id, finalUser.role, displayName,
-                                                    finalUser.phone, finalUser.email);
-                                        }
-                                    });
+                                runOnUiThread(() -> {
+                                    hideLoading();
+                                    if (!isDestroyed() && !isFinishing()) {
+                                        Toast.makeText(LoginActivity.this,
+                                                "Login Successful!", Toast.LENGTH_SHORT).show();
+                                        navigateToDashboard(finalUser.id, finalUser.role, displayName,
+                                                finalUser.phone, finalUser.email);
+                                    }
                                 });
+
+                                if (allowApiFallback) {
+                                    syncWithBackendInBackground(username, password);
+                                }
                                 return;
                             } else {
                                 user.failedLoginAttempts++;
@@ -384,6 +371,11 @@ public class LoginActivity extends BaseActivity {
                                 }
                                 userDao.update(user);
                             }
+                        }
+
+                        if (allowApiFallback) {
+                            runOnUiThread(() -> loginViaApi(username, password));
+                            return;
                         }
 
                         runOnUiThread(() -> {
@@ -396,6 +388,10 @@ public class LoginActivity extends BaseActivity {
                             }
                         });
                     } catch (Exception e) {
+                        if (allowApiFallback) {
+                            runOnUiThread(() -> loginViaApi(username, password));
+                            return;
+                        }
                         runOnUiThread(() -> {
                             hideLoading();
                             if (!isDestroyed() && !isFinishing())
@@ -505,5 +501,9 @@ public class LoginActivity extends BaseActivity {
             android.util.Log.w("LoginActivity", "Failed to resolve local user ID: " + e.getMessage());
         }
         return backendId; // fallback
+    }
+
+    private Drawable getPasswordToggleDrawable(int drawableResId) {
+        return AppCompatResources.getDrawable(this, drawableResId);
     }
 }

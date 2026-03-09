@@ -19,8 +19,8 @@
     <string name="login_button">Log In</string>
 
     <!-- Register Screen -->
-    <string name="register_title">Create Account</string>
-    <string name="register_description">Join us to start accepting payments today</string>
+    <string name="register_title">Create Admin Account</string>
+    <string name="register_description">Set up your admin profile to start managing payments and terminals</string>
     <string name="register_account_type">Account Type</string>
     <string name="register_personal">Personal</string>
     <string name="register_business">Business</string>
@@ -28,13 +28,13 @@
     <string name="register_username">Username</string>
     <string name="register_username_hint">Choose a unique username</string>
     
-    <string name="register_full_name">Full Name</string>
+    <string name="register_full_name">Admin Full Name</string>
     <string name="register_full_name_hint">Your legal name</string>
     
     <string name="register_dob">Date of Birth</string>
     <string name="register_dob_hint">DD/MM/YYYY</string>
     
-    <string name="register_phone">Phone Number</string>
+    <string name="register_phone">Admin Phone Number</string>
     <string name="register_phone_hint">Enter your phone number</string>
     
     <string name="register_address">Address</string>
@@ -47,7 +47,8 @@
     <string name="register_confirm_password_hint">Re-enter your password</string>
     
     <string name="register_terms_text">By registering, you agree to our Terms &amp; Conditions and Privacy Policy</string>
-    <string name="register_button">Create Account</string>
+    <string name="register_button">Create Admin Account</string>
+    <string name="register_email_hint">Business Email</string>
 
     <!-- Forgot Password Screen -->
     <string name="forgot_password_title">Reset Password</string>
@@ -172,10 +173,10 @@
     <string name="expiry_hint">2512</string>
     <string name="btn_check_balance">Check Balance</string>
     <string name="btn_pay">Pay</string>
-    <string name="reading_card_text">Reading Card...</string>
-    
-    <string name="msg_printing_receipt">Printing Receipt...</string>
-    <string name="msg_sharing_receipt">Sharing Receipt...</string>
+    <string name="reading_card_text">Reading Card…</string>
+
+    <string name="msg_printing_receipt">Printing Receipt…</string>
+    <string name="msg_sharing_receipt">Sharing Receipt…</string>
     <string name="txn_approved_subtitle">Payment completed successfully</string>
     <string name="txn_failed_title">Transaction Failed</string>
     <string name="txn_failed_status">Failed</string>
@@ -187,7 +188,7 @@
     <string name="err_timeout_generic">Transaction Timed Out</string>
     <string name="guest_user">Guest</string>
     <string name="err_invalid_pan">Invalid PAN or Expiry</string>
-    <string name="msg_using_mock_track2">Using Mock Track 2...</string>
+    <string name="msg_using_mock_track2">Using Mock Track 2…</string>
     <string name="msg_card_detected">Card Detected</string>
     <string name="nfc_disabled_title">NFC is Disabled</string>
     <string name="nfc_disabled_message">Please enable NFC to scan your card</string>
@@ -292,5 +293,37 @@
     <string name="void_confirm_yes">Yes, Cancel</string>
     <string name="void_confirm_no">No</string>
     <string name="terms_close">Close</string>
-
+    <string name="common_required">Required</string>
+    <string name="common_error_with_reason">Error: %s</string>
+    <string name="settings_identity_saved">Identity settings saved</string>
+    <string name="settings_security_saved">Security settings saved</string>
+    <string name="settings_backend_current">Current: %s</string>
+    <string name="settings_backend_testing">Testing connection…</string>
+    <string name="settings_backend_connected">✓ Connected — %s</string>
+    <string name="settings_backend_failed">✗ Failed — %s</string>
+    <string name="settings_backend_url_required">URL is required</string>
+    <string name="settings_backend_url_https_required">URL must start with https://</string>
+    <string name="settings_backend_saved">Backend URL saved</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_vi">Tiếng Việt</string>
+    <string name="settings_feature_wallpaper">Wallpaper</string>
+    <string name="settings_feature_password">Password</string>
+    <string name="settings_feature_coming_soon">Feature Coming Soon!</string>
+    <string name="settings_password_dialog_placeholder">Change Password Dialog would appear here</string>
+    <string name="register_success">Registration Successful!</string>
+    <string name="register_failed">Registration failed</string>
+    <string name="register_admin_exists">An admin account already exists</string>
+    <string name="register_backend_required">Backend connection is required to create the admin account.</string>
+    <string name="register_agree_terms">Please agree to Terms</string>
+    <string name="register_error_exists_email">Email already registered</string>
+    <string name="register_passwords_do_not_match">Passwords do not match</string>
+    <string name="settings_backend_dialog_title">Backend Server</string>
+    <string name="settings_backend_dialog_description">Configure the MySoftPOS backend API URL.&#10;This is NOT the ISO server (bank/switch).</string>
+    <string name="settings_backend_input_hint">Backend URL</string>
+    <string name="settings_backend_default_value">https://</string>
+    <string name="settings_backend_helper">• Local/QA gateway: https://your-gateway.example&#10;• Corporate backend: https://api.example.com&#10;• Production: https://your-domain.com</string>
+    <string name="common_test">Test</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_save">Save</string>
+    <string name="err_server_not_configured">Server IP/Port chưa được cấu hình. Hãy dùng IP/Port nhập động trước khi giao dịch.</string>
 </resources>

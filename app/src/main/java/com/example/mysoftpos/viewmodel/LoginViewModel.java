@@ -54,7 +54,6 @@ public class LoginViewModel extends BaseViewModel {
 
         launchIo(() -> {
             try {
-                // Step 1: Try local cache first
                 UserEntity user = userRepository.findUser(username);
 
                 if (user != null) {
@@ -75,14 +74,13 @@ public class LoginViewModel extends BaseViewModel {
                                 true, TAG, "Local-first login: " + user.role);
 
                         final UserEntity cachedUser = user;
+                        launchUi(() -> loginState.setValue(LoginState.success(
+                                cachedUser.id, cachedUser.role,
+                                cachedUser.displayName != null ? cachedUser.displayName : "User",
+                                cachedUser.phone, cachedUser.email)));
 
                         // Background: sync with API to refresh JWT token
-                        syncWithBackendInBackground(username, password, () -> {
-                            launchUi(() -> loginState.setValue(LoginState.success(
-                                    cachedUser.id, cachedUser.role,
-                                    cachedUser.displayName != null ? cachedUser.displayName : "User",
-                                    cachedUser.phone, cachedUser.email)));
-                        });
+                        syncWithBackendInBackground(username, password);
                         return;
                     } else {
                         // Wrong password — increment failed attempts
@@ -105,7 +103,7 @@ public class LoginViewModel extends BaseViewModel {
      */
     private void loginViaApi(String username, String password) {
         try {
-            ApiService api = ApiClient.getService(getApplication());
+            ApiService api = ApiClient.getAuthService(getApplication());
 
             api.login(new ApiService.LoginRequest(username, password))
                     .enqueue(new Callback<ApiService.LoginResponse>() {
@@ -119,7 +117,6 @@ public class LoginViewModel extends BaseViewModel {
                                 AuditLogger.log(getApplication(), username, "LOGIN",
                                         true, TAG, "API login: " + resp.user.role);
 
-                                // Cache + resolve local ID in background
                                 launchIo(() -> {
                                     userRepository.cacheUser(username, password, resp.user);
                                     long localUserId = userRepository.resolveLocalUserId(
@@ -138,7 +135,6 @@ public class LoginViewModel extends BaseViewModel {
 
                         @Override
                         public void onFailure(Call<ApiService.LoginResponse> call, Throwable t) {
-                            // Network unreachable → offline fallback
                             Log.w(TAG, "API unreachable, falling back to offline: " + t.getMessage());
                             loginViaLocalRoom(username, password);
                         }
@@ -171,13 +167,11 @@ public class LoginViewModel extends BaseViewModel {
                                 true, TAG, "Offline login: " + user.role);
 
                         final UserEntity finalUser = user;
-                        // Background: try to sync JWT token
-                        syncWithBackendInBackground(username, password, () -> {
-                            launchUi(() -> loginState.setValue(LoginState.success(
-                                    finalUser.id, finalUser.role,
-                                    finalUser.displayName != null ? finalUser.displayName : "User",
-                                    finalUser.phone, finalUser.email)));
-                        });
+                        launchUi(() -> loginState.setValue(LoginState.success(
+                                finalUser.id, finalUser.role,
+                                finalUser.displayName != null ? finalUser.displayName : "User",
+                                finalUser.phone, finalUser.email)));
+                        syncWithBackendInBackground(username, password);
                         return;
                     } else {
                         userRepository.incrementFailedAttempts(user);
@@ -196,9 +190,9 @@ public class LoginViewModel extends BaseViewModel {
     /**
      * Background sync with backend — doesn't block login flow.
      */
-    private void syncWithBackendInBackground(String username, String password, Runnable onComplete) {
+    private void syncWithBackendInBackground(String username, String password) {
         try {
-            ApiService api = ApiClient.getService(getApplication());
+            ApiService api = ApiClient.getAuthService(getApplication());
             api.login(new ApiService.LoginRequest(username, password))
                     .enqueue(new Callback<ApiService.LoginResponse>() {
                         @Override
@@ -212,18 +206,15 @@ public class LoginViewModel extends BaseViewModel {
                                     triggerBackendSync(resp.user.role);
                                 });
                             }
-                            if (onComplete != null) onComplete.run();
                         }
 
                         @Override
                         public void onFailure(Call<ApiService.LoginResponse> call, Throwable t) {
                             Log.d(TAG, "Background sync skipped: " + t.getMessage());
-                            if (onComplete != null) onComplete.run();
                         }
                     });
         } catch (Exception e) {
             Log.w(TAG, "Background sync error: " + e.getMessage());
-            if (onComplete != null) onComplete.run();
         }
     }
 
@@ -239,11 +230,12 @@ public class LoginViewModel extends BaseViewModel {
 
     private void handleApiError(String username, Response<ApiService.LoginResponse> response) {
         String errorMsg = "Invalid username or password!";
-        try {
-            if (response.errorBody() != null) {
-                String body = response.errorBody().string();
-                if (body.contains("locked"))
+        try (okhttp3.ResponseBody errorBody = response.errorBody()) {
+            if (errorBody != null) {
+                String body = errorBody.string();
+                if (body.contains("locked")) {
                     errorMsg = "Account locked. Try again later.";
+                }
             }
         } catch (Exception ignored) {
         }

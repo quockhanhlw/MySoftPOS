@@ -1,20 +1,27 @@
 package com.example.mysoftpos.ui.admin;
 
+import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.mysoftpos.R;
+import com.example.mysoftpos.data.local.AppDatabase;
+import com.example.mysoftpos.data.local.dao.UserDao;
+import com.example.mysoftpos.data.local.entity.UserEntity;
 import com.example.mysoftpos.data.remote.api.ApiClient;
 import com.example.mysoftpos.data.remote.api.ApiService;
 import com.example.mysoftpos.ui.BaseActivity;
+import com.example.mysoftpos.utils.security.PasswordUtils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
@@ -31,11 +38,18 @@ import retrofit2.Response;
  */
 public class UserManagementActivity extends BaseActivity implements UserAdapter.OnUserListener {
 
+    private static final int MAX_TOKEN_WAIT_RETRIES = 15;
+    private static final long TOKEN_WAIT_RETRY_DELAY_MS = 1200L;
+
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final Runnable retryLoadRunnable = this::loadUsers;
+
     private UserAdapter adapter;
     private TextView tvUserCount;
     private View layoutEmpty;
     private EditText etSearch;
     private List<ApiService.UserDto> allUsers = new ArrayList<>();
+    private int tokenWaitRetryCount = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,36 +104,44 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         loadUsers();
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mainHandler.removeCallbacks(retryLoadRunnable);
+    }
+
     // ====== Load from API ======
     private void loadUsers() {
+        loadCachedUsers();
+
         String token = ApiClient.bearerToken(this);
         android.util.Log.d("UserMgmt", "loadUsers: token=" +
                 (token.length() > 15 ? token.substring(0, 15) + "..." : token));
 
-        // If no token (offline login), show clear message
         if (token.isEmpty() || "Bearer ".equals(token) || !ApiClient.isLoggedIn(this)) {
-            allUsers.clear();
-            filterUsers("");
-            layoutEmpty.setVisibility(View.VISIBLE);
-            if (layoutEmpty instanceof android.widget.LinearLayout) {
-                View title = ((android.widget.LinearLayout) layoutEmpty).getChildAt(1);
-                View subtitle = ((android.widget.LinearLayout) layoutEmpty).getChildAt(2);
-                if (title instanceof TextView)
-                    ((TextView) title).setText("Backend Offline");
-                if (subtitle instanceof TextView)
-                    ((TextView) subtitle).setText("Connect to the network to manage users");
+            if (!allUsers.isEmpty()) {
+                showEmptyStateText("Showing cached users",
+                        isNetworkAvailable()
+                                ? "Syncing backend session… pull to refresh in a moment"
+                                : "Offline mode: cached users only");
+            } else if (isNetworkAvailable() && tokenWaitRetryCount < MAX_TOKEN_WAIT_RETRIES) {
+                tokenWaitRetryCount++;
+                showEmptyStateText("Preparing backend session",
+                        "Please wait while your admin session is restored");
+                mainHandler.removeCallbacks(retryLoadRunnable);
+                mainHandler.postDelayed(retryLoadRunnable, TOKEN_WAIT_RETRY_DELAY_MS);
+            } else {
+                showEmptyStateText("Backend Offline",
+                        isNetworkAvailable()
+                                ? "Unable to restore backend session. Pull to retry."
+                                : "Connect to the network to manage users");
             }
+            filterUsers(etSearch.getText().toString().trim());
             return;
         }
 
-        if (layoutEmpty instanceof android.widget.LinearLayout) {
-            View title = ((android.widget.LinearLayout) layoutEmpty).getChildAt(1);
-            View subtitle = ((android.widget.LinearLayout) layoutEmpty).getChildAt(2);
-            if (title instanceof TextView)
-                ((TextView) title).setText("No users yet");
-            if (subtitle instanceof TextView)
-                ((TextView) subtitle).setText("Tap + to create a new user");
-        }
+        tokenWaitRetryCount = 0;
+        showEmptyStateText("No users yet", "Tap + to create a new user");
 
         ApiClient.getService(this).getUsers(token).enqueue(new Callback<List<ApiService.UserDto>>() {
             @Override
@@ -128,12 +150,13 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                         + " body=" + (resp.body() != null ? resp.body().size() + " users" : "null"));
                 if (resp.isSuccessful() && resp.body() != null) {
                     allUsers = resp.body();
+                    syncUsersToLocal(resp.body());
                     filterUsers(etSearch.getText().toString().trim());
                 } else {
                     String errMsg = "Failed to load users (HTTP " + resp.code() + ")";
-                    try {
-                        if (resp.errorBody() != null) {
-                            errMsg += ": " + resp.errorBody().string();
+                    try (okhttp3.ResponseBody errorBody = resp.errorBody()) {
+                        if (errorBody != null) {
+                            errMsg += ": " + errorBody.string();
                         }
                     } catch (Exception ignored) {
                     }
@@ -145,6 +168,11 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
             @Override
             public void onFailure(Call<List<ApiService.UserDto>> call, Throwable t) {
                 android.util.Log.e("UserMgmt", "getUsers failed: " + t.getMessage());
+                if (allUsers.isEmpty()) {
+                    showEmptyStateText("Network error",
+                            "Could not load users from backend. Cached users are unavailable.");
+                    filterUsers(etSearch.getText().toString().trim());
+                }
                 Toast.makeText(UserManagementActivity.this,
                         "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
@@ -399,28 +427,24 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
             if (resp.isSuccessful() && resp.body() != null) {
                 Toast.makeText(UserManagementActivity.this, successMsg, Toast.LENGTH_SHORT).show();
 
-                // Save serverIp/serverPort/terminalId to local Room DB
                 ApiService.UserDto savedUser = resp.body();
                 new Thread(() -> {
                     try {
-                        com.example.mysoftpos.data.local.AppDatabase db = com.example.mysoftpos.data.local.AppDatabase
-                                .getInstance(UserManagementActivity.this);
-                        com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
+                        AppDatabase db = AppDatabase.getInstance(UserManagementActivity.this);
+                        UserDao userDao = db.userDao();
 
-                        String phoneHash = com.example.mysoftpos.utils.security.PasswordUtils
-                                .hashSHA256(savedUser.phone);
-                        com.example.mysoftpos.data.local.entity.UserEntity localUser = userDao
-                                .findByUsernameHash(phoneHash);
+                        String phoneHash = PasswordUtils.hashSHA256(savedUser.phone);
+                        UserEntity localUser = userDao.findByUsernameHash(phoneHash);
 
                         if (localUser != null) {
                             localUser.serverIp = serverIp;
                             localUser.serverPort = serverPort;
                             localUser.terminalId = terminalId;
                             localUser.backendId = savedUser.id;
+                            localUser.adminId = getCurrentAdminHash();
                             userDao.update(localUser);
                         } else {
-                            // Create local entry
-                            localUser = new com.example.mysoftpos.data.local.entity.UserEntity();
+                            localUser = new UserEntity();
                             localUser.usernameHash = phoneHash;
                             localUser.passwordHash = "";
                             localUser.displayName = savedUser.fullName;
@@ -431,6 +455,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                             localUser.terminalId = terminalId;
                             localUser.serverIp = serverIp;
                             localUser.serverPort = serverPort;
+                            localUser.adminId = getCurrentAdminHash();
                             localUser.createdAt = System.currentTimeMillis();
                             userDao.insert(localUser);
                         }
@@ -451,4 +476,122 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         }
     }
 
+    private void loadCachedUsers() {
+        new Thread(() -> {
+            try {
+                AppDatabase db = AppDatabase.getInstance(UserManagementActivity.this);
+                UserDao userDao = db.userDao();
+                List<UserEntity> cached = userDao.getAllByAdminIdSync(getCurrentAdminHash());
+                List<ApiService.UserDto> mapped = new ArrayList<>();
+                for (UserEntity entity : cached) {
+                    if (entity.backendId <= 0) {
+                        continue;
+                    }
+                    mapped.add(toUserDto(entity));
+                }
+                runOnUiThread(() -> {
+                    allUsers = mapped;
+                    filterUsers(etSearch.getText().toString().trim());
+                });
+            } catch (Exception e) {
+                android.util.Log.w("UserMgmt", "Failed to load cached users: " + e.getMessage());
+            }
+        }).start();
+    }
+
+    private void syncUsersToLocal(List<ApiService.UserDto> remoteUsers) {
+        new Thread(() -> {
+            try {
+                AppDatabase db = AppDatabase.getInstance(UserManagementActivity.this);
+                UserDao userDao = db.userDao();
+                String adminHash = getCurrentAdminHash();
+
+                for (ApiService.UserDto remoteUser : remoteUsers) {
+                    UserEntity localUser = userDao.findByBackendId(remoteUser.id);
+                    if (localUser == null && remoteUser.phone != null) {
+                        localUser = userDao.findByPhone(remoteUser.phone);
+                    }
+                    if (localUser == null && remoteUser.email != null) {
+                        localUser = userDao.findByEmail(remoteUser.email);
+                    }
+
+                    if (localUser == null) {
+                        localUser = new UserEntity();
+                        localUser.usernameHash = PasswordUtils.hashSHA256(
+                                remoteUser.phone != null && !remoteUser.phone.isEmpty()
+                                        ? remoteUser.phone
+                                        : String.valueOf(remoteUser.id));
+                        localUser.passwordHash = "";
+                        localUser.createdAt = System.currentTimeMillis();
+                    }
+
+                    localUser.displayName = remoteUser.fullName;
+                    localUser.role = remoteUser.role;
+                    localUser.email = remoteUser.email;
+                    localUser.phone = remoteUser.phone;
+                    localUser.backendId = remoteUser.id;
+                    localUser.terminalId = remoteUser.terminalId;
+                    localUser.serverIp = remoteUser.serverIp;
+                    localUser.serverPort = remoteUser.serverPort != null ? remoteUser.serverPort : 0;
+                    localUser.adminId = adminHash;
+
+                    if (localUser.id > 0) {
+                        userDao.update(localUser);
+                    } else {
+                        userDao.insert(localUser);
+                    }
+                }
+            } catch (Exception e) {
+                android.util.Log.w("UserMgmt", "Failed to cache remote users: " + e.getMessage());
+            }
+        }).start();
+    }
+
+    private ApiService.UserDto toUserDto(UserEntity entity) {
+        ApiService.UserDto dto = new ApiService.UserDto();
+        dto.id = entity.backendId;
+        dto.role = entity.role;
+        dto.fullName = entity.displayName;
+        dto.phone = entity.phone;
+        dto.email = entity.email;
+        dto.terminalId = entity.terminalId;
+        dto.serverIp = entity.serverIp;
+        dto.serverPort = entity.serverPort > 0 ? entity.serverPort : null;
+        dto.active = true;
+        dto.online = false;
+        return dto;
+    }
+
+    private String getCurrentAdminHash() {
+        String adminIdentifier = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME);
+        if (adminIdentifier == null) {
+            adminIdentifier = "";
+        }
+        return PasswordUtils.hashSHA256(adminIdentifier.trim());
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        if (connectivityManager == null) {
+            return false;
+        }
+        NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.getActiveNetwork());
+        return capabilities != null && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+                || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+                || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
+    }
+
+    private void showEmptyStateText(String titleText, String subtitleText) {
+        layoutEmpty.setVisibility(View.VISIBLE);
+        if (layoutEmpty instanceof android.widget.LinearLayout) {
+            View title = ((android.widget.LinearLayout) layoutEmpty).getChildAt(1);
+            View subtitle = ((android.widget.LinearLayout) layoutEmpty).getChildAt(2);
+            if (title instanceof TextView) {
+                ((TextView) title).setText(titleText);
+            }
+            if (subtitle instanceof TextView) {
+                ((TextView) subtitle).setText(subtitleText);
+            }
+        }
+    }
 }

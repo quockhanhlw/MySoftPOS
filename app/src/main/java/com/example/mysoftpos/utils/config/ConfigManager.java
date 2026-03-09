@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.util.Log;
 
 import org.json.JSONObject;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
@@ -54,16 +55,20 @@ public class ConfigManager {
     }
 
     private void loadConfig(Context context) {
-        try (InputStream is = context.getAssets().open("pos_config.json")) {
-            byte[] buffer = new byte[is.available()];
-            is.read(buffer);
-            JSONObject config = new JSONObject(new String(buffer, StandardCharsets.UTF_8));
+        try (InputStream is = context.getAssets().open("pos_config.json");
+             ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+            byte[] chunk = new byte[4096];
+            int read;
+            while ((read = is.read(chunk)) != -1) {
+                buffer.write(chunk, 0, read);
+            }
+            JSONObject config = new JSONObject(buffer.toString(StandardCharsets.UTF_8.name()));
 
             // Server
             JSONObject server = config.optJSONObject("server");
             if (server != null) {
-                serverIp = server.optString("ip", "10.145.54.206");
-                serverPort = server.optInt("port", 8583);
+                serverIp = server.optString("ip", "").trim();
+                serverPort = server.optInt("port", 0);
                 timeoutMs = server.optInt("timeout_ms", 30000);
                 serverId = server.optString("server_id", "01");
             }
@@ -127,8 +132,8 @@ public class ConfigManager {
     }
 
     private void setDefaults() {
-        serverIp = "10.145.54.206";
-        serverPort = 8583;
+        serverIp = "";
+        serverPort = 0;
         timeoutMs = 30000;
         serverId = "01";
         terminalId = "AUTO0001";
@@ -163,11 +168,12 @@ public class ConfigManager {
 
     // ==================== SERVER ====================
     public String getServerIp() {
-        return prefs.getString(KEY_IP, serverIp);
+        String value = prefs.getString(KEY_IP, serverIp);
+        return value != null ? value.trim() : "";
     }
 
     public void setServerIp(String ip) {
-        prefs.edit().putString(KEY_IP, ip).apply();
+        prefs.edit().putString(KEY_IP, ip != null ? ip.trim() : "").apply();
     }
 
     public int getServerPort() {
@@ -176,8 +182,8 @@ public class ConfigManager {
         } catch (ClassCastException e) {
             try {
                 String val = prefs.getString(KEY_PORT, String.valueOf(serverPort));
-                if (val != null) {
-                    int p = Integer.parseInt(val);
+                if (!val.trim().isEmpty()) {
+                    int p = Integer.parseInt(val.trim());
                     setServerPort(p); // Self-heal
                     return p;
                 }
@@ -191,6 +197,10 @@ public class ConfigManager {
         prefs.edit().putInt(KEY_PORT, port).apply();
     }
 
+    public boolean hasServerConnectionConfig() {
+        return !getServerIp().isEmpty() && getServerPort() > 0;
+    }
+
     public void resetServerConfig() {
         prefs.edit().remove(KEY_IP).remove(KEY_PORT).remove(KEY_TID).apply();
     }
@@ -201,8 +211,8 @@ public class ConfigManager {
         } catch (ClassCastException e) {
             try {
                 String val = prefs.getString(KEY_TIMEOUT, String.valueOf(timeoutMs));
-                if (val != null) {
-                    int t = Integer.parseInt(val);
+                if (!val.trim().isEmpty()) {
+                    int t = Integer.parseInt(val.trim());
                     setTimeout(t); // Self-heal
                     return t;
                 }
