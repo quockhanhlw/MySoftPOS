@@ -9,6 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
+import com.example.mysoftpos.utils.mcc.BusinessTypeMccMapper;
 
 /**
  * Centralized configuration manager.
@@ -26,6 +27,7 @@ public class ConfigManager {
     private static final String KEY_TID = "terminal_id";
     private static final String KEY_MID = "merchant_id";
     private static final String KEY_ENCRYPT_PIN = "encrypt_pin";
+    private static final String KEY_MCC18 = "merchant_type";
 
     private static final int DEFAULT_TRACE_START = 111300;
 
@@ -248,7 +250,18 @@ public class ConfigManager {
     }
 
     public String getMcc18() {
-        return merchantType;
+        String override = prefs.getString(KEY_MCC18, "");
+        String normalizedOverride = BusinessTypeMccMapper.toMcc(override);
+        if (!normalizedOverride.isEmpty()) {
+            return normalizedOverride;
+        }
+        String fallback = BusinessTypeMccMapper.toMcc(merchantType);
+        return !fallback.isEmpty() ? fallback : merchantType;
+    }
+
+    public void setMcc18(String mcc) {
+        String normalized = BusinessTypeMccMapper.toMcc(mcc);
+        prefs.edit().putString(KEY_MCC18, normalized.isEmpty() ? mcc : normalized).apply();
     }
 
     public String getMerchantName() {

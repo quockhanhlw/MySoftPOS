@@ -37,6 +37,21 @@ public class UserEntity {
     @ColumnInfo(name = "dob")
     public String dob;
 
+    @ColumnInfo(name = "gender")
+    public String gender;
+
+    @ColumnInfo(name = "store_name")
+    public String storeName;
+
+    @ColumnInfo(name = "business_type")
+    public String businessType;
+
+    @ColumnInfo(name = "store_address")
+    public String storeAddress;
+
+    @ColumnInfo(name = "phone_verified", defaultValue = "0")
+    public boolean phoneVerified;
+
     @ColumnInfo(name = "role")
     public String role; // "ADMIN" or "USER"
 
@@ -80,6 +95,11 @@ public class UserEntity {
         this.email = email;
         this.phone = phone;
         this.dob = dob;
+        this.gender = "";
+        this.storeName = "";
+        this.businessType = "";
+        this.storeAddress = "";
+        this.phoneVerified = false;
         this.createdAt = System.currentTimeMillis();
         this.terminalId = "";
         this.serverIp = "";

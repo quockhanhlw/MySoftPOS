@@ -1,6 +1,7 @@
 package com.example.mysoftpos.ui.auth;
 
 import com.example.mysoftpos.R;
+import com.example.mysoftpos.utils.mcc.BusinessTypeMccMapper;
 
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
@@ -19,6 +20,8 @@ import androidx.appcompat.content.res.AppCompatResources;
 import com.example.mysoftpos.ui.BaseActivity;
 
 public class LoginActivity extends BaseActivity {
+
+    private static final String EXTRA_PASSWORD_CHANGED_RELOGIN = "PASSWORD_CHANGED_RELOGIN";
 
     private EditText etUsername;
     private EditText etPassword;
@@ -82,6 +85,11 @@ public class LoginActivity extends BaseActivity {
                 Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
                 startActivity(intent);
             });
+        }
+
+        if (getIntent().getBooleanExtra(EXTRA_PASSWORD_CHANGED_RELOGIN, false)) {
+            Toast.makeText(this, R.string.settings_password_relogin_required, Toast.LENGTH_SHORT).show();
+            getIntent().removeExtra(EXTRA_PASSWORD_CHANGED_RELOGIN);
         }
 
         btnLogin.setOnClickListener(v -> handleLogin());
@@ -156,6 +164,9 @@ public class LoginActivity extends BaseActivity {
                                 com.example.mysoftpos.data.remote.api.ApiService.LoginResponse resp = response.body();
                                 com.example.mysoftpos.data.remote.api.ApiClient.saveUserSession(LoginActivity.this,
                                         resp);
+                                com.example.mysoftpos.utils.config.ConfigManager
+                                        .getInstance(LoginActivity.this)
+                                        .setMcc18(resp.user != null ? resp.user.businessType : null);
                                 com.example.mysoftpos.di.ServiceLocator.getInstance(LoginActivity.this)
                                         .getDispatcherProvider().io().execute(() -> {
                                             cacheUserLocallySync(username, password, resp.user);
@@ -220,6 +231,7 @@ public class LoginActivity extends BaseActivity {
                             if (resp.user.terminalId != null && !resp.user.terminalId.isEmpty()) {
                                 config.setTerminalId(resp.user.terminalId);
                             }
+                            config.setMcc18(resp.user.businessType);
 
                             // Cache user locally for offline login, then resolve local ID and navigate
                             com.example.mysoftpos.di.ServiceLocator.getInstance(LoginActivity.this)
@@ -342,6 +354,7 @@ public class LoginActivity extends BaseActivity {
                                 if (user.terminalId != null && !user.terminalId.isEmpty()) {
                                     config.setTerminalId(user.terminalId);
                                 }
+                                config.setMcc18(user.businessType);
 
                                 com.example.mysoftpos.utils.security.SessionManager.startSession();
                                 com.example.mysoftpos.utils.security.AuditLogger.log(
@@ -436,12 +449,21 @@ public class LoginActivity extends BaseActivity {
                     existing = userDao.findByEmail(userDto.email);
             }
 
+            String normalizedBusinessType = BusinessTypeMccMapper.toMcc(userDto.businessType);
+
             if (existing != null) {
+                existing.usernameHash = usernameHash;
                 existing.passwordHash = passwordHash;
                 existing.displayName = userDto.fullName;
                 existing.role = userDto.role;
                 existing.phone = userDto.phone;
                 existing.email = userDto.email;
+                existing.dob = userDto.dob;
+                existing.gender = safeText(userDto.gender);
+                existing.storeName = safeText(userDto.storeName);
+                existing.businessType = normalizedBusinessType;
+                existing.storeAddress = safeText(userDto.storeAddress);
+                existing.phoneVerified = Boolean.TRUE.equals(userDto.phoneVerified);
                 existing.backendId = userDto.id;
                 existing.failedLoginAttempts = 0;
                 existing.lockedUntil = 0;
@@ -456,7 +478,12 @@ public class LoginActivity extends BaseActivity {
                 com.example.mysoftpos.data.local.entity.UserEntity newUser = new com.example.mysoftpos.data.local.entity.UserEntity(
                         usernameHash, passwordHash,
                         userDto.fullName, userDto.role,
-                        userDto.email, userDto.phone, null);
+                        userDto.email, userDto.phone, userDto.dob);
+                newUser.gender = safeText(userDto.gender);
+                newUser.storeName = safeText(userDto.storeName);
+                newUser.businessType = normalizedBusinessType;
+                newUser.storeAddress = safeText(userDto.storeAddress);
+                newUser.phoneVerified = Boolean.TRUE.equals(userDto.phoneVerified);
                 newUser.backendId = userDto.id;
                 if (userDto.terminalId != null)
                     newUser.terminalId = userDto.terminalId;
@@ -470,6 +497,10 @@ public class LoginActivity extends BaseActivity {
             android.util.Log.w("LoginActivity",
                     "Failed to cache user locally: " + e.getMessage());
         }
+    }
+
+    private String safeText(String value) {
+        return value != null ? value : "";
     }
 
     /**

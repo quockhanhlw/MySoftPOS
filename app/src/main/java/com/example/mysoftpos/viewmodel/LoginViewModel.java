@@ -11,6 +11,7 @@ import com.example.mysoftpos.data.remote.api.ApiClient;
 import com.example.mysoftpos.data.remote.api.ApiService;
 import com.example.mysoftpos.data.repository.UserRepository;
 import com.example.mysoftpos.ui.base.BaseViewModel;
+import com.example.mysoftpos.utils.config.ConfigManager;
 import com.example.mysoftpos.utils.security.AuditLogger;
 import com.example.mysoftpos.utils.security.PasswordUtils;
 import com.example.mysoftpos.utils.security.SessionManager;
@@ -70,6 +71,7 @@ public class LoginViewModel extends BaseViewModel {
                         // ✅ LOCAL LOGIN SUCCESS
                         userRepository.resetFailedAttempts(user);
                         SessionManager.startSession();
+                        ConfigManager.getInstance(getApplication()).setMcc18(user.businessType);
                         AuditLogger.log(getApplication(), username, "LOGIN",
                                 true, TAG, "Local-first login: " + user.role);
 
@@ -114,6 +116,8 @@ public class LoginViewModel extends BaseViewModel {
                                 ApiService.LoginResponse resp = response.body();
                                 ApiClient.saveUserSession(getApplication(), resp);
                                 SessionManager.startSession();
+                                ConfigManager.getInstance(getApplication())
+                                        .setMcc18(resp.user != null ? resp.user.businessType : null);
                                 AuditLogger.log(getApplication(), username, "LOGIN",
                                         true, TAG, "API login: " + resp.user.role);
 
@@ -163,6 +167,7 @@ public class LoginViewModel extends BaseViewModel {
                     if (PasswordUtils.verifyPassword(password, user.passwordHash)) {
                         userRepository.resetFailedAttempts(user);
                         SessionManager.startSession();
+                        ConfigManager.getInstance(getApplication()).setMcc18(user.businessType);
                         AuditLogger.log(getApplication(), username, "LOGIN",
                                 true, TAG, "Offline login: " + user.role);
 
@@ -201,6 +206,8 @@ public class LoginViewModel extends BaseViewModel {
                             if (response.isSuccessful() && response.body() != null) {
                                 ApiService.LoginResponse resp = response.body();
                                 ApiClient.saveUserSession(getApplication(), resp);
+                                ConfigManager.getInstance(getApplication())
+                                        .setMcc18(resp.user != null ? resp.user.businessType : null);
                                 launchIo(() -> {
                                     userRepository.cacheUser(username, password, resp.user);
                                     triggerBackendSync(resp.user.role);
@@ -247,4 +254,3 @@ public class LoginViewModel extends BaseViewModel {
         loginState.setValue(LoginState.error(finalMsg));
     }
 }
-

@@ -183,11 +183,11 @@ public class TestSuiteActivity extends BaseActivity {
     }
 
     private void onScenarioToggle(TestScenario scenario) {
-        // In Delete Mode, checkbox simply toggles selection for deletion
         if (deleteMode) {
             if (scenario.isCustom()) {
                 scenario.setSelected(!scenario.isSelected());
                 adapter.notifyDataSetChanged();
+                refreshSelectionControls();
             } else {
                 Toast.makeText(this, "Cannot delete built-in scenarios", Toast.LENGTH_SHORT).show();
             }
@@ -208,6 +208,7 @@ public class TestSuiteActivity extends BaseActivity {
         // Toggle from Checked -> Unchecked
         scenario.setSelected(false);
         adapter.notifyDataSetChanged();
+        refreshSelectionControls();
     }
 
     private void checkPinAndConfig(TestScenario scenario) {
@@ -215,34 +216,43 @@ public class TestSuiteActivity extends BaseActivity {
         if ("011".equals(de22) || "021".equals(de22)) {
             showPinDialog(scenario, pin -> {
                 scenario.setUserPin(pin);
-                // Auto-select after full config
                 scenario.setSelected(true);
                 adapter.notifyDataSetChanged();
                 configuringInProgress = false;
-                updateRunAllButton();
+                refreshSelectionControls();
                 Toast.makeText(this, "Configured & Selected!", Toast.LENGTH_SHORT).show();
             });
         } else {
-            // Auto-select after full config
             scenario.setSelected(true);
             adapter.notifyDataSetChanged();
             Toast.makeText(this, "Configured & Selected!", Toast.LENGTH_SHORT).show();
 
             configuringInProgress = false;
-            updateRunAllButton();
+            refreshSelectionControls();
         }
     }
 
     private void updateRunAllButton() {
-        if (displayedScenarios == null)
+        if (displayedScenarios == null || btnRunAll == null)
             return;
-        long count = displayedScenarios.stream().filter(TestScenario::isSelected).count();
-        String label = "MULTI".equals(perfMode) ? "Run Transaction" : "Confirm Selection";
-        if (count > 0) {
-            btnRunAll.setText(label + " (" + count + ")");
-        } else {
-            btnRunAll.setText(label);
+
+        long count = 0;
+        for (TestScenario scenario : displayedScenarios) {
+            if (scenario.isSelected() && (!deleteMode || scenario.isCustom())) {
+                count++;
+            }
         }
+
+        String label;
+        if (deleteMode) {
+            label = "Delete Selected";
+        } else if ("MULTI".equals(perfMode)) {
+            label = "Run Transaction";
+        } else {
+            label = "Confirm Selection";
+        }
+
+        btnRunAll.setText(count > 0 ? label + " (" + count + ")" : label);
     }
 
     private void setupMultiMode() {
@@ -254,8 +264,11 @@ public class TestSuiteActivity extends BaseActivity {
         btnRunAll.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF0F172A)); // Dark Blue
 
         cbSelectAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (suppressSelectAllCallback) {
+                return;
+            }
             if (isChecked) {
-                selectAllIndex = 0; // Only relevant for Multi-thread
+                selectAllIndex = 0;
                 configureNextForSelectAll();
             } else {
                 for (TestScenario s : displayedScenarios) {
@@ -263,6 +276,7 @@ public class TestSuiteActivity extends BaseActivity {
                     s.setUserPin(null);
                 }
                 adapter.notifyDataSetChanged();
+                refreshSelectionControls();
             }
         });
 
@@ -280,11 +294,14 @@ public class TestSuiteActivity extends BaseActivity {
         btnRunAll.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF0F172A));
 
         cbSelectAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (suppressSelectAllCallback) {
+                return;
+            }
             for (TestScenario s : displayedScenarios) {
                 s.setSelected(isChecked);
             }
             adapter.notifyDataSetChanged();
-            updateRunAllButton();
+            refreshSelectionControls();
         });
 
         btnRunAll.setOnClickListener(v -> {
@@ -300,6 +317,8 @@ public class TestSuiteActivity extends BaseActivity {
             // Return selected scenarios to caller
             returnSelectedScenarios();
         });
+
+        refreshSelectionControls();
     }
 
     private void exitSelectionMode() {
@@ -343,12 +362,16 @@ public class TestSuiteActivity extends BaseActivity {
 
             // Logic for "Select All" in Delete Mode
             cbSelectAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (suppressSelectAllCallback) {
+                    return;
+                }
                 for (TestScenario s : displayedScenarios) {
-                    // Only select Custom cases for deletion
-                    if (s.isCustom())
+                    if (s.isCustom()) {
                         s.setSelected(isChecked);
+                    }
                 }
                 adapter.notifyDataSetChanged();
+                refreshSelectionControls();
             });
 
             btnRunAll.setOnClickListener(v -> executeBatchDelete());
@@ -373,13 +396,24 @@ public class TestSuiteActivity extends BaseActivity {
                 layoutSelectAll.setVisibility(View.VISIBLE);
                 btnRunAll.setVisibility(View.VISIBLE);
                 selectionMode = true;
+                btnRunAll.setText("Confirm Selection");
+                btnRunAll.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF0F172A));
+                cbSelectAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                    if (suppressSelectAllCallback) {
+                        return;
+                    }
+                    for (TestScenario s : displayedScenarios) {
+                        s.setSelected(isChecked);
+                    }
+                    adapter.notifyDataSetChanged();
+                    refreshSelectionControls();
+                });
             }
 
-            // clear selection
             for (TestScenario s : displayedScenarios)
                 s.setSelected(false);
             adapter.notifyDataSetChanged();
-            updateRunAllButton();
+            refreshSelectionControls();
         }
     }
 
@@ -499,12 +533,14 @@ public class TestSuiteActivity extends BaseActivity {
 
     private boolean selectionMode = false;
     private boolean configuringInProgress = false;
+    private boolean suppressSelectAllCallback = false;
 
     private void onScenarioClicked(TestScenario scenario) {
         if (deleteMode) {
             if (scenario.isCustom()) {
                 scenario.setSelected(!scenario.isSelected());
                 adapter.notifyDataSetChanged();
+                refreshSelectionControls();
             } else {
                 Toast.makeText(this, "Cannot delete built-in scenarios", Toast.LENGTH_SHORT).show();
             }
@@ -1380,7 +1416,7 @@ public class TestSuiteActivity extends BaseActivity {
             scenario.setSelected(false);
             scenario.setUserPin(null);
             adapter.notifyDataSetChanged();
-            updateSelectAllCheckbox();
+            refreshSelectionControls();
             return;
         }
 
@@ -1392,7 +1428,7 @@ public class TestSuiteActivity extends BaseActivity {
                     scenario.setUserPin(pin);
                     scenario.setSelected(true);
                     adapter.notifyDataSetChanged();
-                    updateSelectAllCheckbox();
+                    refreshSelectionControls();
 
                     if (selectAllIndex >= 0) {
                         selectAllIndex++;
@@ -1402,7 +1438,7 @@ public class TestSuiteActivity extends BaseActivity {
             } else {
                 scenario.setSelected(true);
                 adapter.notifyDataSetChanged();
-                updateSelectAllCheckbox();
+                refreshSelectionControls();
 
                 if (selectAllIndex >= 0) {
                     selectAllIndex++;
@@ -1432,17 +1468,40 @@ public class TestSuiteActivity extends BaseActivity {
         configureForMultiMode(next);
     }
 
-    private void updateSelectAllCheckbox() {
-        boolean all = true;
-        for (TestScenario s : displayedScenarios) {
-            if (!s.isSelected()) {
-                all = false;
+    private void refreshSelectionControls() {
+        updateRunAllButton();
+        syncSelectAllCheckbox();
+    }
+
+    private void syncSelectAllCheckbox() {
+        if (cbSelectAll == null || displayedScenarios == null) {
+            return;
+        }
+
+        boolean hasSelectable = false;
+        boolean allSelected = true;
+        for (TestScenario scenario : displayedScenarios) {
+            if (deleteMode && !scenario.isCustom()) {
+                continue;
+            }
+            hasSelectable = true;
+            if (!scenario.isSelected()) {
+                allSelected = false;
                 break;
             }
         }
-        cbSelectAll.setOnCheckedChangeListener(null);
-        cbSelectAll.setChecked(all);
+
+        suppressSelectAllCallback = true;
+        cbSelectAll.setChecked(hasSelectable && allSelected);
+        suppressSelectAllCallback = false;
+    }
+
+    private void updateSelectAllCheckbox() {
+        refreshSelectionControls();
         cbSelectAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (suppressSelectAllCallback) {
+                return;
+            }
             if (isChecked) {
                 selectAllIndex = 0;
                 configureNextForSelectAll();
@@ -1452,6 +1511,7 @@ public class TestSuiteActivity extends BaseActivity {
                     s.setUserPin(null);
                 }
                 adapter.notifyDataSetChanged();
+                refreshSelectionControls();
             }
         });
     }

@@ -60,10 +60,19 @@ public class TransactionManagementActivity extends BaseActivity {
     private TextView tvTxnCount, tvApprovedCount, tvDeclinedCount, tvOtherCount;
     private Spinner spinnerUserFilter;
     private View layoutEmpty;
+    private RecyclerView rvTransactions;
+    private View layoutStats;
+    private View layoutFilterBar;
+    private TextView tvEmptyTitle;
+    private TextView tvEmptySubtitle;
+    private View btnRetryConnection;
 
     private List<ApiService.TransactionSummaryDto> userTransactions = new ArrayList<>();
     private Map<Long, String> userIdToName = new LinkedHashMap<>();
     private int tokenWaitRetryCount = 0;
+    private boolean backendTransactionsAvailable = false;
+    private boolean networkCallbackRegistered = false;
+    private ConnectivityManager.NetworkCallback networkCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,12 +85,21 @@ public class TransactionManagementActivity extends BaseActivity {
         tvOtherCount = findViewById(R.id.tvOtherCount);
         spinnerUserFilter = findViewById(R.id.spinnerUserFilter);
         layoutEmpty = findViewById(R.id.layoutEmpty);
+        rvTransactions = findViewById(R.id.rvTransactions);
+        layoutStats = findViewById(R.id.layoutStats);
+        layoutFilterBar = findViewById(R.id.layoutFilterBar);
+        tvEmptyTitle = findViewById(R.id.tvEmptyTitle);
+        tvEmptySubtitle = findViewById(R.id.tvEmptySubtitle);
+        btnRetryConnection = findViewById(R.id.btnRetryConnection);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
-        RecyclerView rv = findViewById(R.id.rvTransactions);
-        rv.setLayoutManager(new LinearLayoutManager(this));
+        rvTransactions.setLayoutManager(new LinearLayoutManager(this));
         adapter = new TxnAdapter();
-        rv.setAdapter(adapter);
+        rvTransactions.setAdapter(adapter);
+
+        if (btnRetryConnection != null) {
+            btnRetryConnection.setOnClickListener(v -> loadUsersAndTransactions());
+        }
 
         spinnerUserFilter.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -94,6 +112,7 @@ public class TransactionManagementActivity extends BaseActivity {
             }
         });
 
+        initNetworkCallback();
         loadUsersAndTransactions();
     }
 
@@ -109,30 +128,46 @@ public class TransactionManagementActivity extends BaseActivity {
         mainHandler.removeCallbacks(retryLoadRunnable);
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        registerNetworkCallback();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        unregisterNetworkCallback();
+    }
+
     private void loadUsersAndTransactions() {
-        loadCachedTransactions();
+        mainHandler.removeCallbacks(retryLoadRunnable);
+
+        if (!isNetworkAvailable()) {
+            tokenWaitRetryCount = 0;
+            showOfflineState();
+            return;
+        }
 
         String token = ApiClient.bearerToken(this);
         if (token.isEmpty() || "Bearer ".equals(token) || !ApiClient.isLoggedIn(this)) {
-            if (!userTransactions.isEmpty()) {
-                showEmptyMessage(isNetworkAvailable()
-                        ? "Showing cached transactions while backend session is restoring"
-                        : "Offline mode: showing cached transactions only");
-            } else if (isNetworkAvailable() && tokenWaitRetryCount < MAX_TOKEN_WAIT_RETRIES) {
+            clearRenderedTransactions();
+            if (tokenWaitRetryCount < MAX_TOKEN_WAIT_RETRIES) {
                 tokenWaitRetryCount++;
-                showEmptyMessage("Preparing backend session…");
-                mainHandler.removeCallbacks(retryLoadRunnable);
+                showNonContentState("Preparing backend session",
+                        "Please wait while your admin session is restored.", false);
                 mainHandler.postDelayed(retryLoadRunnable, TOKEN_WAIT_RETRY_DELAY_MS);
             } else {
-                showEmptyMessage(isNetworkAvailable()
-                        ? "Unable to restore backend session. Please try again."
-                        : "Connect to the network to load transactions.");
+                showNonContentState("Backend session unavailable",
+                        "Please sign in again or try again.", true);
             }
-            applyCurrentFilter();
             return;
         }
 
         tokenWaitRetryCount = 0;
+        showNonContentState("Loading transactions",
+                "Fetching the latest transaction data from backend…", false);
+
         ApiClient.getService(this).getUsers(token).enqueue(
                 new Callback<>() {
                     @Override
@@ -147,17 +182,21 @@ public class TransactionManagementActivity extends BaseActivity {
                             syncUsersToLocal(resp.body());
                             loadTransactions(token);
                         } else {
+                            clearRenderedTransactions();
+                            showNonContentState("Backend unavailable",
+                                    "Could not load users from backend. Please try again.", true);
                             Toast.makeText(TransactionManagementActivity.this,
                                     "Failed to load users", Toast.LENGTH_SHORT).show();
-                            applyCurrentFilter();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<List<ApiService.UserDto>> call, Throwable t) {
+                        clearRenderedTransactions();
+                        showNonContentState("Backend unavailable",
+                                "Could not load users from backend. Please check your connection and try again.", true);
                         Toast.makeText(TransactionManagementActivity.this,
                                 "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-                        applyCurrentFilter();
                     }
                 });
     }
@@ -178,73 +217,33 @@ public class TransactionManagementActivity extends BaseActivity {
                                     userTransactions.add(displayTxn);
                                 }
                             }
+                            backendTransactionsAvailable = true;
                             syncTransactionsToLocal(rawTransactions);
                             populateUserFilter();
+                            showContentChrome();
                             applyCurrentFilter();
                         } else {
+                            clearRenderedTransactions();
+                            showNonContentState("Backend unavailable",
+                                    "Could not load transactions from backend. Please try again.", true);
                             Toast.makeText(TransactionManagementActivity.this,
                                     "Failed to load transactions", Toast.LENGTH_SHORT).show();
-                            applyCurrentFilter();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<List<ApiService.TransactionSummaryDto>> call, Throwable t) {
+                        clearRenderedTransactions();
+                        showNonContentState("Backend unavailable",
+                                "Could not load transactions from backend. Please check your connection and try again.", true);
                         Toast.makeText(TransactionManagementActivity.this,
                                 "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-                        applyCurrentFilter();
                     }
                 });
     }
 
     private void loadCachedTransactions() {
-        new Thread(() -> {
-            try {
-                AppDatabase db = AppDatabase.getInstance(TransactionManagementActivity.this);
-                UserDao userDao = db.userDao();
-                TransactionDao transactionDao = db.transactionDao();
-
-                List<UserEntity> managedUsers = userDao.getAllByAdminIdSync(getCurrentAdminHash());
-                Map<Long, String> localUserNamesById = new LinkedHashMap<>();
-                Set<String> managedUserIdentifiers = new HashSet<>();
-                for (UserEntity user : managedUsers) {
-                    String displayName = user.displayName != null && !user.displayName.isEmpty()
-                            ? user.displayName
-                            : (user.phone != null && !user.phone.isEmpty() ? user.phone : user.email);
-                    localUserNamesById.put(user.id, displayName != null ? displayName : "Unknown");
-                    if (user.phone != null && !user.phone.isEmpty()) {
-                        managedUserIdentifiers.add(user.phone);
-                    }
-                    if (user.email != null && !user.email.isEmpty()) {
-                        managedUserIdentifiers.add(user.email);
-                    }
-                }
-
-                List<ApiService.TransactionSummaryDto> cachedTransactions = new ArrayList<>();
-                for (TransactionEntity txn : transactionDao.getAllTransactions()) {
-                    if (!belongsToManagedUser(txn, localUserNamesById.keySet(), managedUserIdentifiers)) {
-                        continue;
-                    }
-                    ApiService.TransactionSummaryDto dto = new ApiService.TransactionSummaryDto();
-                    dto.traceNumber = txn.traceNumber;
-                    dto.amount = txn.amount;
-                    dto.status = txn.status;
-                    dto.terminalCode = txn.terminalId != null ? String.valueOf(txn.terminalId) : null;
-                    dto.txnTimestamp = formatTimestamp(txn.timestamp);
-                    dto.userId = txn.userId;
-                    dto.username = resolveLocalUsername(txn, localUserNamesById);
-                    cachedTransactions.add(dto);
-                }
-
-                runOnUiThread(() -> {
-                    userTransactions = cachedTransactions;
-                    populateUserFilter();
-                    applyCurrentFilter();
-                });
-            } catch (Exception e) {
-                android.util.Log.w("TxnMgmt", "Failed to load cached transactions: " + e.getMessage());
-            }
-        }).start();
+        // Admin screens are backend-only for rendering.
     }
 
     private void syncUsersToLocal(List<ApiService.UserDto> remoteUsers) {
@@ -333,6 +332,9 @@ public class TransactionManagementActivity extends BaseActivity {
     }
 
     private void populateUserFilter() {
+        if (!backendTransactionsAvailable) {
+            return;
+        }
         String selectedUser = getSelectedUserFilter();
         List<String> names = new ArrayList<>();
         names.add(FILTER_ALL_USERS);
@@ -352,6 +354,10 @@ public class TransactionManagementActivity extends BaseActivity {
     }
 
     private void filterByUser(String selectedUser) {
+        if (!backendTransactionsAvailable) {
+            return;
+        }
+
         List<ApiService.TransactionSummaryDto> filtered;
         if (selectedUser == null || FILTER_ALL_USERS.equals(selectedUser)) {
             filtered = userTransactions;
@@ -366,9 +372,17 @@ public class TransactionManagementActivity extends BaseActivity {
         adapter.setData(filtered);
         updateStats(filtered);
         tvTxnCount.setText(String.valueOf(filtered.size()));
-        layoutEmpty.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
+        showContentChrome();
         if (filtered.isEmpty()) {
-            showEmptyMessage("No transactions found");
+            if (userTransactions.isEmpty()) {
+                showEmptyMessage("No transactions found",
+                        "Transactions from user accounts will appear here when available.", false);
+            } else {
+                showEmptyMessage("No transactions match the filter",
+                        "Try selecting a different user.", false);
+            }
+        } else {
+            layoutEmpty.setVisibility(View.GONE);
         }
     }
 
@@ -468,20 +482,129 @@ public class TransactionManagementActivity extends BaseActivity {
     }
 
     private void applyCurrentFilter() {
+        if (!backendTransactionsAvailable) {
+            return;
+        }
         if (spinnerUserFilter.getAdapter() == null || spinnerUserFilter.getAdapter().getCount() == 0) {
             populateUserFilter();
         }
         filterByUser(getSelectedUserFilter());
     }
 
-    private void showEmptyMessage(String message) {
-        layoutEmpty.setVisibility(View.VISIBLE);
-        if (layoutEmpty instanceof android.widget.LinearLayout) {
-            View text = ((android.widget.LinearLayout) layoutEmpty).getChildAt(1);
-            if (text instanceof TextView) {
-                ((TextView) text).setText(message);
-            }
+    private void showOfflineState() {
+        clearRenderedTransactions();
+        showNonContentState("Internet connection required",
+                "Connect to Wi‑Fi or mobile data to view transaction management.", true);
+    }
+
+    private void showContentChrome() {
+        backendTransactionsAvailable = true;
+        if (layoutStats != null) {
+            layoutStats.setVisibility(View.VISIBLE);
         }
+        if (layoutFilterBar != null) {
+            layoutFilterBar.setVisibility(View.VISIBLE);
+        }
+        if (spinnerUserFilter != null) {
+            spinnerUserFilter.setEnabled(true);
+        }
+        if (rvTransactions != null) {
+            rvTransactions.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void clearRenderedTransactions() {
+        backendTransactionsAvailable = false;
+        userTransactions = new ArrayList<>();
+        userIdToName.clear();
+        adapter.setData(new ArrayList<>());
+        tvTxnCount.setText("0");
+        updateStats(new ArrayList<>());
+        if (spinnerUserFilter != null) {
+            spinnerUserFilter.setAdapter(null);
+        }
+    }
+
+    private void showNonContentState(String title, String subtitle, boolean showRetry) {
+        if (layoutStats != null) {
+            layoutStats.setVisibility(View.GONE);
+        }
+        if (layoutFilterBar != null) {
+            layoutFilterBar.setVisibility(View.GONE);
+        }
+        if (spinnerUserFilter != null) {
+            spinnerUserFilter.setEnabled(false);
+        }
+        if (rvTransactions != null) {
+            rvTransactions.setVisibility(View.GONE);
+        }
+        showEmptyMessage(title, subtitle, showRetry);
+    }
+
+    private void showEmptyMessage(String title, String subtitle, boolean showRetry) {
+        layoutEmpty.setVisibility(View.VISIBLE);
+        if (tvEmptyTitle != null) {
+            tvEmptyTitle.setText(title);
+        }
+        if (tvEmptySubtitle != null) {
+            tvEmptySubtitle.setText(subtitle);
+        }
+        if (btnRetryConnection != null) {
+            btnRetryConnection.setVisibility(showRetry ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private void initNetworkCallback() {
+        if (networkCallback != null) {
+            return;
+        }
+        networkCallback = new ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onAvailable(android.net.Network network) {
+                runOnUiThread(() -> {
+                    if (!backendTransactionsAvailable && isNetworkAvailable()) {
+                        loadUsersAndTransactions();
+                    }
+                });
+            }
+
+            @Override
+            public void onLost(android.net.Network network) {
+                runOnUiThread(() -> showOfflineState());
+            }
+        };
+    }
+
+    private void registerNetworkCallback() {
+        if (networkCallbackRegistered || networkCallback == null) {
+            return;
+        }
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        if (connectivityManager == null) {
+            return;
+        }
+        try {
+            connectivityManager.registerDefaultNetworkCallback(networkCallback);
+            networkCallbackRegistered = true;
+        } catch (Exception e) {
+            android.util.Log.w("TxnMgmt", "Failed to register network callback: " + e.getMessage());
+        }
+    }
+
+    private void unregisterNetworkCallback() {
+        if (!networkCallbackRegistered || networkCallback == null) {
+            return;
+        }
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        if (connectivityManager == null) {
+            return;
+        }
+        try {
+            connectivityManager.unregisterNetworkCallback(networkCallback);
+        } catch (Exception e) {
+            android.util.Log.w("TxnMgmt", "Failed to unregister network callback: " + e.getMessage());
+        }
+        networkCallbackRegistered = false;
     }
 
     // ====== Adapter ======

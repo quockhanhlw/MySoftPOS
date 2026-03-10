@@ -22,6 +22,10 @@ public interface ApiService {
         @POST("/api/auth/refresh")
         Call<LoginResponse> refreshToken(@Body Map<String, String> body);
 
+        @PUT("/api/auth/change-password")
+        Call<Map<String, String>> changePassword(@Header("Authorization") String token,
+                        @Body ChangePasswordRequest request);
+
         // ==================== Users (Admin) ====================
 
         @GET("/api/users")
@@ -152,13 +156,32 @@ public interface ApiService {
                 public String fullName;
                 public String phone;
                 public String email;
+                public String dob;
+                public String gender;
+                public String storeName;
+                public String businessType;
+                public String storeAddress;
+                public String role;
 
                 public RegisterRequest(String username, String password, String fullName, String phone, String email) {
+                        this(username, password, fullName, phone, email,
+                                null, null, null, null, null, null);
+                }
+
+                public RegisterRequest(String username, String password, String fullName, String phone, String email,
+                                String dob, String gender, String storeName, String businessType,
+                                String storeAddress, String role) {
                         this.username = username;
                         this.password = password;
                         this.fullName = fullName;
                         this.phone = phone;
                         this.email = email;
+                        this.dob = dob;
+                        this.gender = gender;
+                        this.storeName = storeName;
+                        this.businessType = businessType;
+                        this.storeAddress = storeAddress;
+                        this.role = role;
                 }
         }
 
@@ -183,6 +206,18 @@ public interface ApiService {
                 }
         }
 
+        class ChangePasswordRequest {
+                public String currentPassword;
+                public String newPassword;
+                public String confirmPassword;
+
+                public ChangePasswordRequest(String currentPassword, String newPassword, String confirmPassword) {
+                        this.currentPassword = currentPassword;
+                        this.newPassword = newPassword;
+                        this.confirmPassword = confirmPassword;
+                }
+        }
+
         class LoginResponse {
                 public String accessToken;
                 public String refreshToken;
@@ -195,6 +230,12 @@ public interface ApiService {
                 public String fullName;
                 public String phone;
                 public String email;
+                public String dob;
+                public String gender;
+                public String storeName;
+                public String businessType;
+                public String storeAddress;
+                public Boolean phoneVerified;
                 public String terminalId;
                 public String serverIp;
                 public Integer serverPort;

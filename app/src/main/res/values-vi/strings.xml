@@ -17,10 +17,13 @@
     <string name="login_password_hint">Nhập mật khẩu của bạn</string>
     <string name="login_forgot_password">Quên mật khẩu?</string>
     <string name="login_button">Đăng nhập</string>
+    <string name="login_email_label">Email hoặc số điện thoại</string>
+    <string name="login_no_account">Chưa có tài khoản?</string>
+    <string name="login_sign_up">Đăng ký</string>
 
     <!-- Register Screen -->
-    <string name="register_title">Tạo tài khoản quản trị</string>
-    <string name="register_description">Thiết lập hồ sơ quản trị để bắt đầu quản lý thanh toán và thiết bị</string>
+    <string name="register_title">Tạo tài khoản người dùng</string>
+    <string name="register_description">Đăng ký phía người dùng và bắt đầu sử dụng MySoftPOS.</string>
     <string name="register_account_type">Loại tài khoản</string>
     <string name="register_personal">Cá nhân</string>
     <string name="register_business">Doanh nghiệp</string>
@@ -28,27 +31,27 @@
     <string name="register_username">Tên đăng nhập</string>
     <string name="register_username_hint">Chọn tên đăng nhập duy nhất</string>
     
-    <string name="register_full_name">Họ và tên quản trị</string>
-    <string name="register_full_name_hint">Tên pháp lý của bạn</string>
-    
-    <string name="register_dob">Ngày sinh</string>
+    <string name="register_full_name">Họ và tên</string>
+    <string name="register_full_name_hint">Nhập họ và tên của bạn</string>
+
+    <string name="register_dob">Ngày tháng năm sinh</string>
     <string name="register_dob_hint">DD/MM/YYYY</string>
     
-    <string name="register_phone">Số điện thoại quản trị</string>
-    <string name="register_phone_hint">Nhập số điện thoại của bạn</string>
-    
+    <string name="register_phone">Số điện thoại</string>
+    <string name="register_phone_hint">Nhập số điện thoại di động</string>
+
     <string name="register_address">Địa chỉ</string>
     <string name="register_address_hint">Nhập địa chỉ của bạn</string>
     
     <string name="register_password">Mật khẩu</string>
-    <string name="register_password_hint">Tạo mật khẩu mạnh</string>
-    
+    <string name="register_password_hint">Tối thiểu 8 ký tự, gồm chữ và số</string>
+
     <string name="register_confirm_password">Xác nhận mật khẩu</string>
-    <string name="register_confirm_password_hint">Nhập lại mật khẩu của bạn</string>
-    
+    <string name="register_confirm_password_hint">Nhập lại mật khẩu</string>
+
     <string name="register_terms_text">Bằng cách đăng ký, bạn đồng ý với Điều khoản &amp; Điều kiện và Chính sách bảo mật của chúng tôi</string>
-    <string name="register_button">Tạo tài khoản quản trị</string>
-    <string name="register_email_hint">Email doanh nghiệp</string>
+    <string name="register_button">Tạo tài khoản</string>
+    <string name="register_email_hint">Địa chỉ email</string>
 
     <!-- Forgot Password Screen -->
     <string name="forgot_password_title">Đặt lại mật khẩu</string>
@@ -58,6 +61,13 @@
     <string name="forgot_password_hint">········</string>
     <string name="forgot_password_button">Đặt lại mật khẩu</string>
     <string name="forgot_password_subtitle">Nhập email hoặc số điện thoại đã đăng ký để nhận mã</string>
+    <string name="forgot_email_label">Email hoặc số điện thoại</string>
+    <string name="forgot_code_label">Mã xác thực</string>
+    <string name="forgot_send_code">Gửi mã xác thực</string>
+    <string name="forgot_verify">Xác minh mã</string>
+    <string name="forgot_resend_code">Gửi lại mã</string>
+    <string name="forgot_remember_password">Đã nhớ mật khẩu?</string>
+    <string name="forgot_back_to_login">Đăng nhập</string>
 
     <!-- Missing Register Strings -->
     <string name="register_subtitle">Vui lòng điền thông tin của bạn</string>
@@ -67,7 +77,7 @@
     <string name="register_hint_dob">Ngày sinh</string>
     <string name="register_hint_phone">Số điện thoại</string>
     <string name="register_hint_address">Địa chỉ</string>
-    <string name="register_hint_username">Tên đăng nhập</string>
+    <string name="register_hint_username">Số điện thoại</string>
     <string name="register_hint_password">Mật khẩu</string>
     <string name="register_hint_confirm_password">Xác nhận mật khẩu</string>
     <string name="register_step1_title">Thông tin cá nhân</string>
@@ -75,24 +85,34 @@
     <string name="register_next_step">Bước tiếp</string>
     <string name="register_back">Quay lại</string>
 
-    <!-- Login Extras -->
-    <string name="login_email_label">Email hoặc Số điện thoại</string>
-    <string name="login_no_account">Chưa có tài khoản?</string>
-    <string name="login_sign_up">Đăng ký</string>
-
-    <!-- Forgot Password Extras -->
-    <string name="forgot_email_label">Email hoặc Số điện thoại</string>
-    <string name="forgot_code_label">Mã xác thực</string>
-    <string name="forgot_send_code">Gửi mã xác thực</string>
-    <string name="forgot_verify">Xác thực mã</string>
-    <string name="forgot_resend_code">Gửi lại mã</string>
-    <string name="forgot_remember_password">Nhớ mật khẩu?</string>
-    <string name="forgot_back_to_login">Đăng nhập</string>
-
-    <!-- Welcome Features -->
-    <string name="feature_contactless">Không tiếp xúc</string>
-    <string name="feature_secure">An toàn</string>
-    <string name="feature_fast">Nhanh chóng</string>
+    <string name="register_store_section_title">Thông tin cửa hàng</string>
+    <string name="register_store_section_subtitle">Cho biết cửa hàng nào sẽ sử dụng MySoftPOS.</string>
+    <string name="register_store_name">Tên cửa hàng</string>
+    <string name="register_store_name_hint">Ví dụ: Tạp hoá Khánh</string>
+    <string name="register_business_type">Loại hình kinh doanh</string>
+    <string name="register_business_type_hint">Chọn loại hình kinh doanh</string>
+    <string name="register_store_address">Địa chỉ cửa hàng</string>
+    <string name="register_store_address_hint">Số nhà, phường/xã, quận/huyện, tỉnh/thành phố</string>
+    <string name="register_personal_section_title">Thông tin cá nhân</string>
+    <string name="register_personal_section_subtitle">Thông tin này dùng để định danh và bảo vệ tài khoản của bạn.</string>
+    <string name="register_full_name_user">Họ và tên</string>
+    <string name="register_full_name_hint_user">Theo giấy tờ tuỳ thân</string>
+    <string name="register_gender">Giới tính</string>
+    <string name="register_gender_hint">Chọn giới tính</string>
+    <string name="register_email">Email</string>
+    <string name="register_email_hint_user">tenban@example.com</string>
+    <string name="register_security_section_title">Bảo mật tài khoản</string>
+    <string name="register_security_section_subtitle">Tạo mật khẩu mạnh để bảo vệ tài khoản của bạn.</string>
+    <string name="register_invalid_phone">Vui lòng nhập số điện thoại hợp lệ</string>
+    <string name="register_invalid_email">Vui lòng nhập địa chỉ email hợp lệ</string>
+    <string name="register_invalid_business_type">Vui lòng chọn loại hình kinh doanh hợp lệ từ danh sách</string>
+    <string name="register_password_policy">Mật khẩu phải có ít nhất 8 ký tự và gồm cả chữ lẫn số</string>
+    <string name="register_error_exists_phone">Số điện thoại đã được đăng ký</string>
+    <string name="register_invalid_store_name">Tên cửa hàng phải từ 3–80 ký tự và có chữ hoặc số</string>
+    <string name="register_invalid_store_address">Địa chỉ cửa hàng phải từ 8–160 ký tự và có nội dung rõ ràng</string>
+    <string name="register_invalid_full_name">Vui lòng nhập họ và tên hợp lệ, không chứa số hoặc ký tự không hợp lệ</string>
+    <string name="register_invalid_gender">Vui lòng chọn giới tính hợp lệ từ danh sách</string>
+    <string name="register_invalid_dob">Vui lòng nhập ngày sinh hợp lệ và đảm bảo bạn từ 18 tuổi trở lên</string>
 
     <!-- Common -->
     <string name="back">Quay lại</string>
@@ -314,8 +334,8 @@
     <string name="settings_password_dialog_placeholder">Hộp thoại đổi mật khẩu sẽ hiển thị tại đây</string>
     <string name="register_success">Đăng ký thành công!</string>
     <string name="register_failed">Đăng ký thất bại</string>
-    <string name="register_admin_exists">Đã tồn tại tài khoản quản trị</string>
-    <string name="register_backend_required">Cần kết nối backend để tạo tài khoản quản trị.</string>
+    <string name="register_admin_exists">Đã tồn tại tài khoản với thông tin này</string>
+    <string name="register_backend_required">Cần kết nối backend để hoàn tất đăng ký.</string>
     <string name="register_agree_terms">Vui lòng đồng ý với điều khoản</string>
     <string name="register_error_exists_email">Email đã được đăng ký</string>
     <string name="register_passwords_do_not_match">Mật khẩu không khớp</string>
@@ -328,4 +348,25 @@
     <string name="common_cancel">Huỷ</string>
     <string name="common_save">Lưu</string>
     <string name="err_server_not_configured">Server IP/Port chưa được cấu hình. Hãy dùng IP/Port nhập động trước khi giao dịch.</string>
+
+    <!-- Feature Descriptions -->
+    <string name="feature_contactless">Không tiếp xúc</string>
+    <string name="feature_secure">Bảo mật</string>
+    <string name="feature_fast">Nhanh chóng</string>
+    <string name="common_preview_unknown">\?</string>
+
+    <!-- Change Password Strings -->
+    <string name="settings_password_dialog_title">Đổi mật khẩu</string>
+    <string name="settings_password_dialog_description">Cập nhật mật khẩu dùng cho các lần đăng nhập sau trên thiết bị này và trên tài khoản backend.</string>
+    <string name="settings_password_current_label">Mật khẩu hiện tại</string>
+    <string name="settings_password_new_label">Mật khẩu mới</string>
+    <string name="settings_password_confirm_label">Xác nhận mật khẩu mới</string>
+    <string name="settings_password_save_action">Cập nhật mật khẩu</string>
+    <string name="settings_password_success">Đổi mật khẩu thành công</string>
+    <string name="settings_password_network_required">Cần có kết nối internet để đổi mật khẩu.</string>
+    <string name="settings_password_session_required">Vui lòng đăng nhập lại trước khi đổi mật khẩu.</string>
+    <string name="settings_password_new_same_as_current">Mật khẩu mới phải khác mật khẩu hiện tại</string>
+    <string name="settings_password_local_sync_failed">Đã đổi mật khẩu, nhưng chưa cập nhật được cache local.</string>
+    <string name="settings_password_backend_unavailable">Không thể đổi mật khẩu trên backend. Vui lòng thử lại.</string>
+    <string name="settings_password_relogin_required">Đã đổi mật khẩu. Vui lòng đăng nhập lại.</string>
 </resources>

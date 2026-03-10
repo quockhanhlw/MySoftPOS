@@ -164,6 +164,7 @@
     <!--              FILTER BAR                        -->
     <!-- ═══════════════════════════════════════════════ -->
     <LinearLayout
+        android:id="@+id/layoutFilterBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -222,12 +223,33 @@
                 android:alpha="0.4" />
 
             <TextView
+                android:id="@+id/tvEmptyTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="No transactions found"
                 android:textColor="@color/text_muted"
                 android:textSize="14sp"
                 android:layout_marginTop="12dp" />
+
+            <TextView
+                android:id="@+id/tvEmptySubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Connect to the internet to load transaction management"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:gravity="center" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRetryConnection"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Try Again"
+                android:visibility="gone"
+                app:cornerRadius="18dp" />
         </LinearLayout>
     </FrameLayout>
 

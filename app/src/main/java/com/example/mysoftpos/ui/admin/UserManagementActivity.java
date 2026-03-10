@@ -48,8 +48,18 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
     private TextView tvUserCount;
     private View layoutEmpty;
     private EditText etSearch;
+    private RecyclerView rvUsers;
+    private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh;
+    private FloatingActionButton fabAdd;
+    private View layoutSearch;
+    private TextView tvEmptyTitle;
+    private TextView tvEmptySubtitle;
+    private View btnRetryConnection;
     private List<ApiService.UserDto> allUsers = new ArrayList<>();
     private int tokenWaitRetryCount = 0;
+    private boolean backendListAvailable = false;
+    private boolean networkCallbackRegistered = false;
+    private ConnectivityManager.NetworkCallback networkCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,18 +69,32 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         tvUserCount = findViewById(R.id.tvUserCount);
         layoutEmpty = findViewById(R.id.layoutEmpty);
         etSearch = findViewById(R.id.etSearch);
+        rvUsers = findViewById(R.id.rvUsers);
+        swipeRefresh = findViewById(R.id.swipeRefresh);
+        fabAdd = findViewById(R.id.fabAdd);
+        layoutSearch = findViewById(R.id.layoutSearch);
+        tvEmptyTitle = findViewById(R.id.tvEmptyTitle);
+        tvEmptySubtitle = findViewById(R.id.tvEmptySubtitle);
+        btnRetryConnection = findViewById(R.id.btnRetryConnection);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
-        RecyclerView rv = findViewById(R.id.rvUsers);
-        rv.setLayoutManager(new LinearLayoutManager(this));
+        rvUsers.setLayoutManager(new LinearLayoutManager(this));
         adapter = new UserAdapter(this);
-        rv.setAdapter(adapter);
+        rvUsers.setAdapter(adapter);
 
-        FloatingActionButton fab = findViewById(R.id.fabAdd);
-        fab.setOnClickListener(v -> showAddEditDialog(null));
+        fabAdd.setOnClickListener(v -> {
+            if (!isNetworkAvailable()) {
+                showOfflineState();
+                return;
+            }
+            showAddEditDialog(null);
+        });
 
-        // Search
+        if (btnRetryConnection != null) {
+            btnRetryConnection.setOnClickListener(v -> loadUsers());
+        }
+
         etSearch.addTextChangedListener(new android.text.TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -86,15 +110,14 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
             }
         });
 
-        androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh = findViewById(R.id.swipeRefresh);
         if (swipeRefresh != null) {
             swipeRefresh.setOnRefreshListener(() -> {
                 loadUsers();
                 swipeRefresh.setRefreshing(false);
-                Toast.makeText(this, "Refreshed list", Toast.LENGTH_SHORT).show();
             });
         }
 
+        initNetworkCallback();
         loadUsers();
     }
 
@@ -110,38 +133,49 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         mainHandler.removeCallbacks(retryLoadRunnable);
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        registerNetworkCallback();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        unregisterNetworkCallback();
+    }
+
     // ====== Load from API ======
     private void loadUsers() {
-        loadCachedUsers();
+        mainHandler.removeCallbacks(retryLoadRunnable);
+
+        if (!isNetworkAvailable()) {
+            tokenWaitRetryCount = 0;
+            showOfflineState();
+            return;
+        }
 
         String token = ApiClient.bearerToken(this);
         android.util.Log.d("UserMgmt", "loadUsers: token=" +
                 (token.length() > 15 ? token.substring(0, 15) + "..." : token));
 
         if (token.isEmpty() || "Bearer ".equals(token) || !ApiClient.isLoggedIn(this)) {
-            if (!allUsers.isEmpty()) {
-                showEmptyStateText("Showing cached users",
-                        isNetworkAvailable()
-                                ? "Syncing backend session… pull to refresh in a moment"
-                                : "Offline mode: cached users only");
-            } else if (isNetworkAvailable() && tokenWaitRetryCount < MAX_TOKEN_WAIT_RETRIES) {
+            clearRenderedUsers();
+            if (tokenWaitRetryCount < MAX_TOKEN_WAIT_RETRIES) {
                 tokenWaitRetryCount++;
-                showEmptyStateText("Preparing backend session",
-                        "Please wait while your admin session is restored");
-                mainHandler.removeCallbacks(retryLoadRunnable);
+                showNonContentState("Preparing backend session",
+                        "Please wait while your admin session is restored", false);
                 mainHandler.postDelayed(retryLoadRunnable, TOKEN_WAIT_RETRY_DELAY_MS);
             } else {
-                showEmptyStateText("Backend Offline",
-                        isNetworkAvailable()
-                                ? "Unable to restore backend session. Pull to retry."
-                                : "Connect to the network to manage users");
+                showNonContentState("Backend session unavailable",
+                        "Please sign in again or pull to retry.", true);
             }
-            filterUsers(etSearch.getText().toString().trim());
             return;
         }
 
         tokenWaitRetryCount = 0;
-        showEmptyStateText("No users yet", "Tap + to create a new user");
+        showNonContentState("Loading users",
+                "Fetching the latest users from backend…", false);
 
         ApiClient.getService(this).getUsers(token).enqueue(new Callback<List<ApiService.UserDto>>() {
             @Override
@@ -149,30 +183,34 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                 android.util.Log.d("UserMgmt", "getUsers response: code=" + resp.code()
                         + " body=" + (resp.body() != null ? resp.body().size() + " users" : "null"));
                 if (resp.isSuccessful() && resp.body() != null) {
-                    allUsers = resp.body();
+                    allUsers = new ArrayList<>(resp.body());
+                    backendListAvailable = true;
                     syncUsersToLocal(resp.body());
+                    showContentChrome();
                     filterUsers(etSearch.getText().toString().trim());
-                } else {
-                    String errMsg = "Failed to load users (HTTP " + resp.code() + ")";
-                    try (okhttp3.ResponseBody errorBody = resp.errorBody()) {
-                        if (errorBody != null) {
-                            errMsg += ": " + errorBody.string();
-                        }
-                    } catch (Exception ignored) {
-                    }
-                    android.util.Log.w("UserMgmt", errMsg);
-                    Toast.makeText(UserManagementActivity.this, errMsg, Toast.LENGTH_LONG).show();
+                    return;
                 }
+
+                String errMsg = "Failed to load users (HTTP " + resp.code() + ")";
+                try (okhttp3.ResponseBody errorBody = resp.errorBody()) {
+                    if (errorBody != null) {
+                        errMsg += ": " + errorBody.string();
+                    }
+                } catch (Exception ignored) {
+                }
+                android.util.Log.w("UserMgmt", errMsg);
+                clearRenderedUsers();
+                showNonContentState("Backend unavailable",
+                        "Could not load users from backend. Please try again.", true);
+                Toast.makeText(UserManagementActivity.this, errMsg, Toast.LENGTH_LONG).show();
             }
 
             @Override
             public void onFailure(Call<List<ApiService.UserDto>> call, Throwable t) {
                 android.util.Log.e("UserMgmt", "getUsers failed: " + t.getMessage());
-                if (allUsers.isEmpty()) {
-                    showEmptyStateText("Network error",
-                            "Could not load users from backend. Cached users are unavailable.");
-                    filterUsers(etSearch.getText().toString().trim());
-                }
+                clearRenderedUsers();
+                showNonContentState("Backend unavailable",
+                        "Could not load users from backend. Please check your connection and try again.", true);
                 Toast.makeText(UserManagementActivity.this,
                         "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
@@ -180,32 +218,56 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
     }
 
     private void filterUsers(String query) {
+        if (!backendListAvailable) {
+            return;
+        }
+
+        List<ApiService.UserDto> displayUsers;
         if (query.isEmpty()) {
-            adapter.setUsers(allUsers);
+            displayUsers = new ArrayList<>(allUsers);
         } else {
-            List<ApiService.UserDto> filtered = new ArrayList<>();
+            displayUsers = new ArrayList<>();
             String q = query.toLowerCase();
             for (ApiService.UserDto u : allUsers) {
                 if ((u.fullName != null && u.fullName.toLowerCase().contains(q)) ||
                         (u.phone != null && u.phone.toLowerCase().contains(q)) ||
                         (u.terminalId != null && u.terminalId.toLowerCase().contains(q))) {
-                    filtered.add(u);
+                    displayUsers.add(u);
                 }
             }
-            adapter.setUsers(filtered);
         }
-        int count = adapter.getItemCount();
+
+        adapter.setUsers(displayUsers);
+        int count = displayUsers.size();
         tvUserCount.setText(count + " user(s)");
-        layoutEmpty.setVisibility(count == 0 ? View.VISIBLE : View.GONE);
+        showContentChrome();
+
+        if (count == 0) {
+            if (allUsers.isEmpty()) {
+                showEmptyStateText("No users yet", "Tap + to create a new user", false);
+            } else {
+                showEmptyStateText("No matching users", "Try another name, phone, or terminal ID", false);
+            }
+        } else {
+            layoutEmpty.setVisibility(View.GONE);
+        }
     }
 
     @Override
     public void onUserClick(ApiService.UserDto user) {
+        if (!isNetworkAvailable()) {
+            showOfflineState();
+            return;
+        }
         showAddEditDialog(user);
     }
 
     @Override
     public void onUserLongClick(ApiService.UserDto user) {
+        if (!isNetworkAvailable()) {
+            showOfflineState();
+            return;
+        }
         confirmDelete(user);
     }
 
@@ -477,26 +539,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
     }
 
     private void loadCachedUsers() {
-        new Thread(() -> {
-            try {
-                AppDatabase db = AppDatabase.getInstance(UserManagementActivity.this);
-                UserDao userDao = db.userDao();
-                List<UserEntity> cached = userDao.getAllByAdminIdSync(getCurrentAdminHash());
-                List<ApiService.UserDto> mapped = new ArrayList<>();
-                for (UserEntity entity : cached) {
-                    if (entity.backendId <= 0) {
-                        continue;
-                    }
-                    mapped.add(toUserDto(entity));
-                }
-                runOnUiThread(() -> {
-                    allUsers = mapped;
-                    filterUsers(etSearch.getText().toString().trim());
-                });
-            } catch (Exception e) {
-                android.util.Log.w("UserMgmt", "Failed to load cached users: " + e.getMessage());
-            }
-        }).start();
+        // Admin screens are backend-only for rendering.
     }
 
     private void syncUsersToLocal(List<ApiService.UserDto> remoteUsers) {
@@ -581,17 +624,128 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                 || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
     }
 
-    private void showEmptyStateText(String titleText, String subtitleText) {
-        layoutEmpty.setVisibility(View.VISIBLE);
-        if (layoutEmpty instanceof android.widget.LinearLayout) {
-            View title = ((android.widget.LinearLayout) layoutEmpty).getChildAt(1);
-            View subtitle = ((android.widget.LinearLayout) layoutEmpty).getChildAt(2);
-            if (title instanceof TextView) {
-                ((TextView) title).setText(titleText);
-            }
-            if (subtitle instanceof TextView) {
-                ((TextView) subtitle).setText(subtitleText);
-            }
+    private void showOfflineState() {
+        clearRenderedUsers();
+        showNonContentState("Internet connection required",
+                "Connect to Wi‑Fi or mobile data to view user management.", true);
+    }
+
+    private void showContentChrome() {
+        backendListAvailable = true;
+        if (swipeRefresh != null) {
+            swipeRefresh.setVisibility(View.VISIBLE);
+            swipeRefresh.setEnabled(true);
         }
+        if (rvUsers != null) {
+            rvUsers.setVisibility(View.VISIBLE);
+        }
+        if (layoutSearch != null) {
+            layoutSearch.setVisibility(View.VISIBLE);
+        }
+        if (etSearch != null) {
+            etSearch.setEnabled(true);
+        }
+        if (fabAdd != null) {
+            fabAdd.show();
+            fabAdd.setEnabled(true);
+        }
+    }
+
+    private void clearRenderedUsers() {
+        backendListAvailable = false;
+        allUsers = new ArrayList<>();
+        adapter.setUsers(new ArrayList<>());
+        tvUserCount.setText("0 user(s)");
+        if (swipeRefresh != null) {
+            swipeRefresh.setRefreshing(false);
+        }
+    }
+
+    private void showNonContentState(String title, String subtitle, boolean showRetry) {
+        if (swipeRefresh != null) {
+            swipeRefresh.setRefreshing(false);
+            swipeRefresh.setVisibility(View.GONE);
+            swipeRefresh.setEnabled(showRetry);
+        }
+        if (rvUsers != null) {
+            rvUsers.setVisibility(View.GONE);
+        }
+        if (layoutSearch != null) {
+            layoutSearch.setVisibility(View.GONE);
+        }
+        if (etSearch != null) {
+            etSearch.setEnabled(false);
+        }
+        if (fabAdd != null) {
+            fabAdd.hide();
+            fabAdd.setEnabled(false);
+        }
+        showEmptyStateText(title, subtitle, showRetry);
+    }
+
+    private void showEmptyStateText(String titleText, String subtitleText, boolean showRetry) {
+        layoutEmpty.setVisibility(View.VISIBLE);
+        if (tvEmptyTitle != null) {
+            tvEmptyTitle.setText(titleText);
+        }
+        if (tvEmptySubtitle != null) {
+            tvEmptySubtitle.setText(subtitleText);
+        }
+        if (btnRetryConnection != null) {
+            btnRetryConnection.setVisibility(showRetry ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private void initNetworkCallback() {
+        if (networkCallback != null) {
+            return;
+        }
+        networkCallback = new ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onAvailable(android.net.Network network) {
+                runOnUiThread(() -> {
+                    if (!backendListAvailable && isNetworkAvailable()) {
+                        loadUsers();
+                    }
+                });
+            }
+
+            @Override
+            public void onLost(android.net.Network network) {
+                runOnUiThread(() -> showOfflineState());
+            }
+        };
+    }
+
+    private void registerNetworkCallback() {
+        if (networkCallbackRegistered || networkCallback == null) {
+            return;
+        }
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        if (connectivityManager == null) {
+            return;
+        }
+        try {
+            connectivityManager.registerDefaultNetworkCallback(networkCallback);
+            networkCallbackRegistered = true;
+        } catch (Exception e) {
+            android.util.Log.w("UserMgmt", "Failed to register network callback: " + e.getMessage());
+        }
+    }
+
+    private void unregisterNetworkCallback() {
+        if (!networkCallbackRegistered || networkCallback == null) {
+            return;
+        }
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        if (connectivityManager == null) {
+            return;
+        }
+        try {
+            connectivityManager.unregisterNetworkCallback(networkCallback);
+        } catch (Exception e) {
+            android.util.Log.w("UserMgmt", "Failed to unregister network callback: " + e.getMessage());
+        }
+        networkCallbackRegistered = false;
     }
 }

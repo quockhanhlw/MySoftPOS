@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="register_business_type_options">
+        <item>Nông nghiệp / Thuốc thú y / Dịch vụ thú y / Sản xuất rượu mạnh / Sản xuất rượu vang</item>
+        <item>Vận tải / Đường sắt / Taxi / limousine / Thuê tàu / cho thuê thuyền / Sân bay / bãi đáp / nhà ga hàng không</item>
+        <item>Vận tải hành khách chung</item>
+        <item>Đường sắt chở khách</item>
+        <item>Tuyến xe buýt</item>
+        <item>Dịch vụ vận tải khác</item>
+        <item>Thu phí cầu và đường</item>
+        <item>Dịch vụ tiện ích</item>
+        <item>Viễn thông</item>
+        <item>Dịch vụ mạng máy tính / thông tin</item>
+        <item>Truyền hình cáp / truyền hình trả tiền</item>
+        <item>Điện / Gas / Nước / Vệ sinh môi trường</item>
+        <item>Bán lẻ / Nhà sách / báo / tạp chí / Cửa hàng xì gà / thuốc lá xì gà / Văn phòng phẩm / Thiết bị máy tính / Cửa hàng vật liệu xây dựng / Nội thất văn phòng / thương mại / Thiết bị gia dụng / Đồ ăn và đồ uống / Hoa / vật tư làm vườn / Cửa hàng điện thoại di động / Cửa hàng miễn thuế / Cửa hàng bánh</item>
+        <item>Tạp hóa / siêu thị / Ô tô và phương tiện</item>
+        <item>Đại lý ô tô / xe tải mới và cũ / Dịch vụ sửa chữa ô tô / Phụ tùng ô tô / Cho thuê / leasing ô tô xe tải / Cửa hàng lốp xe / Cửa hàng phụ kiện ô tô / Trạm dịch vụ / Trạm xăng / Đại lý thuyền / Đại lý motor home</item>
+    </string-array>
+
+    <string-array name="register_gender_options">
+        <item>Nam</item>
+        <item>Nữ</item>
+        <item>Khác</item>
+        <item>Không muốn tiết lộ</item>
+    </string-array>
+</resources>

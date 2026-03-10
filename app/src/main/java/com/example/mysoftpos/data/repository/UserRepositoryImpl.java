@@ -6,6 +6,7 @@ import com.example.mysoftpos.data.local.AppDatabase;
 import com.example.mysoftpos.data.local.dao.UserDao;
 import com.example.mysoftpos.data.local.entity.UserEntity;
 import com.example.mysoftpos.data.remote.api.ApiService;
+import com.example.mysoftpos.utils.mcc.BusinessTypeMccMapper;
 import com.example.mysoftpos.utils.security.PasswordUtils;
 
 /**
@@ -54,6 +55,7 @@ public class UserRepositoryImpl implements UserRepository {
             UserDao dao = db.userDao();
             String usernameHash = PasswordUtils.hashSHA256(username);
             String passwordHash = PasswordUtils.hashPassword(password);
+            String normalizedBusinessType = BusinessTypeMccMapper.toMcc(userDto.businessType);
 
             UserEntity existing = dao.findByUsernameHash(usernameHash);
             if (existing == null && userDto.phone != null) {
@@ -64,11 +66,18 @@ public class UserRepositoryImpl implements UserRepository {
             }
 
             if (existing != null) {
+                existing.usernameHash = usernameHash;
                 existing.passwordHash = passwordHash;
                 existing.displayName = userDto.fullName;
                 existing.role = userDto.role;
                 existing.phone = userDto.phone;
                 existing.email = userDto.email;
+                existing.dob = userDto.dob;
+                existing.gender = safeText(userDto.gender);
+                existing.storeName = safeText(userDto.storeName);
+                existing.businessType = normalizedBusinessType;
+                existing.storeAddress = safeText(userDto.storeAddress);
+                existing.phoneVerified = Boolean.TRUE.equals(userDto.phoneVerified);
                 existing.backendId = userDto.id;
                 existing.failedLoginAttempts = 0;
                 existing.lockedUntil = 0;
@@ -80,7 +89,12 @@ public class UserRepositoryImpl implements UserRepository {
                 UserEntity newUser = new UserEntity(
                         usernameHash, passwordHash,
                         userDto.fullName, userDto.role,
-                        userDto.email, userDto.phone, null);
+                        userDto.email, userDto.phone, userDto.dob);
+                newUser.gender = safeText(userDto.gender);
+                newUser.storeName = safeText(userDto.storeName);
+                newUser.businessType = normalizedBusinessType;
+                newUser.storeAddress = safeText(userDto.storeAddress);
+                newUser.phoneVerified = Boolean.TRUE.equals(userDto.phoneVerified);
                 newUser.backendId = userDto.id;
                 if (userDto.terminalId != null) newUser.terminalId = userDto.terminalId;
                 if (userDto.serverIp != null) newUser.serverIp = userDto.serverIp;
@@ -90,6 +104,10 @@ public class UserRepositoryImpl implements UserRepository {
         } catch (Exception e) {
             Log.w(TAG, "Failed to cache user locally: " + e.getMessage());
         }
+    }
+
+    private String safeText(String value) {
+        return value != null ? value : "";
     }
 
     @Override
