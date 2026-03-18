@@ -152,17 +152,17 @@ public class TransactionSelectActivity extends BaseActivity {
 
         if (total > 0) {
             btnRunSelected.setVisibility(View.VISIBLE);
-            StringBuilder label = new StringBuilder("Run Selected (");
+            StringBuilder label = new StringBuilder(getString(R.string.txn_select_run_selected_prefix));
             if (!purchaseSelected.isEmpty()) {
-                label.append(purchaseSelected.size()).append(" Purchase");
+                label.append(getString(R.string.txn_select_run_selected_purchase_part, purchaseSelected.size()));
             }
             if (!purchaseSelected.isEmpty() && !balanceSelected.isEmpty()) {
-                label.append(" + ");
+                label.append(getString(R.string.txn_select_run_selected_separator));
             }
             if (!balanceSelected.isEmpty()) {
-                label.append(balanceSelected.size()).append(" Balance");
+                label.append(getString(R.string.txn_select_run_selected_balance_part, balanceSelected.size()));
             }
-            label.append(")");
+            label.append(getString(R.string.txn_select_run_selected_suffix));
             btnRunSelected.setText(label.toString());
         } else {
             btnRunSelected.setVisibility(View.GONE);
@@ -175,7 +175,7 @@ public class TransactionSelectActivity extends BaseActivity {
         all.addAll(balanceSelected);
 
         if (all.isEmpty()) {
-            Toast.makeText(this, "No test cases selected", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.testsuite_no_case_selected, Toast.LENGTH_SHORT).show();
             return;
         }
 

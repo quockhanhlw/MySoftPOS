@@ -76,9 +76,11 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         }
 
         void bind(ApiService.UserDto user, int position, OnUserListener listener) {
-            String name = user.fullName != null ? user.fullName : "User";
+            String name = user.fullName != null
+                    ? user.fullName
+                    : itemView.getContext().getString(R.string.common_user);
             tvName.setText(name);
-            tvPhone.setText(user.phone != null ? user.phone : "—");
+            tvPhone.setText(user.phone != null ? user.phone : itemView.getContext().getString(R.string.txn_detail_placeholder_dash));
 
             // Avatar
             String letter = name.substring(0, 1).toUpperCase();
@@ -90,7 +92,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
             // TID badge
             if (user.terminalId != null && !user.terminalId.isEmpty()) {
-                tvServerInfo.setText("TID: " + user.terminalId);
+                tvServerInfo.setText(itemView.getContext().getString(R.string.user_mgmt_tid_format, user.terminalId));
                 tvServerInfo.setVisibility(View.VISIBLE);
             } else {
                 tvServerInfo.setVisibility(View.GONE);

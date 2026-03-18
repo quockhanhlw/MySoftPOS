@@ -26,6 +26,15 @@ public interface ApiService {
         Call<Map<String, String>> changePassword(@Header("Authorization") String token,
                         @Body ChangePasswordRequest request);
 
+        @POST("/api/auth/forgot-password/request-code")
+        Call<Map<String, String>> requestForgotPasswordCode(@Body ForgotPasswordRequest request);
+
+        @POST("/api/auth/forgot-password/verify-code")
+        Call<Map<String, String>> verifyForgotPasswordCode(@Body ForgotPasswordVerifyCodeRequest request);
+
+        @POST("/api/auth/forgot-password/reset")
+        Call<Map<String, String>> resetForgotPassword(@Body ForgotPasswordResetRequest request);
+
         // ==================== Users (Admin) ====================
 
         @GET("/api/users")
@@ -151,7 +160,6 @@ public interface ApiService {
         }
 
         class RegisterRequest {
-                public String username;
                 public String password;
                 public String fullName;
                 public String phone;
@@ -161,17 +169,15 @@ public interface ApiService {
                 public String storeName;
                 public String businessType;
                 public String storeAddress;
-                public String role;
 
-                public RegisterRequest(String username, String password, String fullName, String phone, String email) {
-                        this(username, password, fullName, phone, email,
-                                null, null, null, null, null, null);
+                public RegisterRequest(String password, String fullName, String phone, String email) {
+                        this(password, fullName, phone, email,
+                                null, null, null, null, null);
                 }
 
-                public RegisterRequest(String username, String password, String fullName, String phone, String email,
+                public RegisterRequest(String password, String fullName, String phone, String email,
                                 String dob, String gender, String storeName, String businessType,
-                                String storeAddress, String role) {
-                        this.username = username;
+                                String storeAddress) {
                         this.password = password;
                         this.fullName = fullName;
                         this.phone = phone;
@@ -181,7 +187,6 @@ public interface ApiService {
                         this.storeName = storeName;
                         this.businessType = businessType;
                         this.storeAddress = storeAddress;
-                        this.role = role;
                 }
         }
 
@@ -190,16 +195,35 @@ public interface ApiService {
                 public String fullName;
                 public String phone;
                 public String email;
+                public String dob;
+                public String gender;
+                public String storeName;
+                public String businessType;
+                public String storeAddress;
                 public String terminalId;
                 public String serverIp;
                 public Integer serverPort;
 
                 public CreateUserRequest(String password, String fullName, String phone, String email,
                                 String terminalId, String serverIp, Integer serverPort) {
+                        this(password, fullName, phone, email,
+                                        null, null, null, null, null,
+                                        terminalId, serverIp, serverPort);
+                }
+
+                public CreateUserRequest(String password, String fullName, String phone, String email,
+                                String dob, String gender, String storeName, String businessType,
+                                String storeAddress,
+                                String terminalId, String serverIp, Integer serverPort) {
                         this.password = password;
                         this.fullName = fullName;
                         this.phone = phone;
                         this.email = email;
+                        this.dob = dob;
+                        this.gender = gender;
+                        this.storeName = storeName;
+                        this.businessType = businessType;
+                        this.storeAddress = storeAddress;
                         this.terminalId = terminalId;
                         this.serverIp = serverIp;
                         this.serverPort = serverPort;
@@ -213,6 +237,38 @@ public interface ApiService {
 
                 public ChangePasswordRequest(String currentPassword, String newPassword, String confirmPassword) {
                         this.currentPassword = currentPassword;
+                        this.newPassword = newPassword;
+                        this.confirmPassword = confirmPassword;
+                }
+        }
+
+        class ForgotPasswordRequest {
+                public String email;
+
+                public ForgotPasswordRequest(String email) {
+                        this.email = email;
+                }
+        }
+
+        class ForgotPasswordVerifyCodeRequest {
+                public String email;
+                public String code;
+
+                public ForgotPasswordVerifyCodeRequest(String email, String code) {
+                        this.email = email;
+                        this.code = code;
+                }
+        }
+
+        class ForgotPasswordResetRequest {
+                public String email;
+                public String code;
+                public String newPassword;
+                public String confirmPassword;
+
+                public ForgotPasswordResetRequest(String email, String code, String newPassword, String confirmPassword) {
+                        this.email = email;
+                        this.code = code;
                         this.newPassword = newPassword;
                         this.confirmPassword = confirmPassword;
                 }
@@ -247,7 +303,10 @@ public interface ApiService {
                 public long id;
                 public String merchantCode;
                 public String merchantName;
-                public long adminId;
+                public Long adminId;
+                public Long ownerUserId;
+                public String businessType;
+                public String storeAddress;
         }
 
         class TerminalDto {

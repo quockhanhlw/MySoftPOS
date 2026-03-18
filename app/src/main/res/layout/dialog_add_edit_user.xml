@@ -29,7 +29,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif-medium"
-                    android:text="Add User"
+                    android:text="@string/user_dialog_title_add"
                     android:textColor="#0F172A"
                     android:textSize="20sp"
                     android:textStyle="bold" />
@@ -39,7 +39,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="Create a new user account"
+                    android:text="@string/user_dialog_subtitle_add"
                     android:textColor="#94A3B8"
                     android:textSize="13sp" />
             </LinearLayout>
@@ -72,7 +72,7 @@
             android:drawablePadding="8dp"
             android:drawableTint="#64748B"
             android:fontFamily="sans-serif-medium"
-            android:text="Personal Info"
+            android:text="@string/user_dialog_personal_info"
             android:textColor="#475569"
             android:textSize="12sp"
             android:textStyle="bold" />
@@ -100,7 +100,7 @@
                 android:id="@+id/etName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Full Name *"
+                android:hint="@string/user_dialog_full_name_hint"
                 android:inputType="textPersonName" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -115,7 +115,7 @@
             app:boxCornerRadiusBottomStart="12dp"
             app:boxCornerRadiusTopEnd="12dp"
             app:boxCornerRadiusTopStart="12dp"
-            app:helperText="Used for login"
+            app:helperText="@string/user_dialog_phone_helper"
             app:helperTextTextColor="#0D9488"
             app:startIconDrawable="@drawable/ic_baseline_phone_24">
 
@@ -123,7 +123,7 @@
                 android:id="@+id/etPhone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Phone Number *"
+                android:hint="@string/user_dialog_phone_hint"
                 android:inputType="phone" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -145,7 +145,7 @@
                 android:id="@+id/etPassword"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Password *"
+                android:hint="@string/user_dialog_password_hint"
                 android:inputType="textPassword" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -166,8 +166,115 @@
                 android:id="@+id/etEmail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Email (Optional)"
+                android:hint="@string/user_dialog_email_hint"
                 android:inputType="textEmailAddress" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- DOB -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilDob"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusBottomEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusTopStart="12dp"
+            app:startIconDrawable="@drawable/ic_baseline_list_24">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etDob"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/user_dialog_dob_hint"
+                android:inputType="text" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Gender -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilGender"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusBottomEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusTopStart="12dp"
+            app:startIconDrawable="@drawable/ic_baseline_person_24">
+
+            <AutoCompleteTextView
+                android:id="@+id/etGender"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/user_dialog_gender_hint"
+                android:inputType="text" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Store Name -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilStoreName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusBottomEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusTopStart="12dp"
+            app:startIconDrawable="@drawable/ic_baseline_person_24">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etStoreName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/user_dialog_store_name_hint"
+                android:inputType="textCapWords" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Business Type (MCC) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilBusinessType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusBottomEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusTopStart="12dp"
+            app:startIconDrawable="@drawable/ic_baseline_list_24">
+
+            <AutoCompleteTextView
+                android:id="@+id/etBusinessType"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/user_dialog_business_type_hint"
+                android:inputType="text" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Store Address -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilStoreAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusBottomEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusTopStart="12dp"
+            app:startIconDrawable="@drawable/ic_baseline_dns_24">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etStoreAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/user_dialog_store_address_hint"
+                android:inputType="textPostalAddress" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- ═══ SECTION: Account & Terminal ═══ -->
@@ -179,7 +286,7 @@
             android:drawablePadding="8dp"
             android:drawableTint="#64748B"
             android:fontFamily="sans-serif-medium"
-            android:text="Account &amp; Terminal"
+            android:text="@string/user_dialog_account_terminal"
             android:textColor="#475569"
             android:textSize="12sp"
             android:textStyle="bold" />
@@ -207,7 +314,7 @@
                 android:id="@+id/etTerminalId"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Terminal ID (TID)"
+                android:hint="@string/user_dialog_terminal_id_hint"
                 android:inputType="text" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -220,7 +327,7 @@
             android:drawablePadding="8dp"
             android:drawableTint="#64748B"
             android:fontFamily="sans-serif-medium"
-            android:text="Server Connection"
+            android:text="@string/user_dialog_server_connection"
             android:textColor="#475569"
             android:textSize="12sp"
             android:textStyle="bold" />
@@ -235,7 +342,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="IP and port for this user's transactions"
+            android:text="@string/user_dialog_server_connection_desc"
             android:textColor="#94A3B8"
             android:textSize="11sp" />
 
@@ -261,7 +368,7 @@
                     android:id="@+id/etServerIp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Server IP"
+                    android:hint="@string/user_dialog_server_ip_hint"
                     android:inputType="text" />
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -281,7 +388,7 @@
                     android:id="@+id/etServerPort"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Port"
+                    android:hint="@string/user_dialog_server_port_hint"
                     android:inputType="number" />
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
@@ -293,7 +400,7 @@
             android:layout_width="match_parent"
             android:layout_height="40dp"
             android:layout_marginTop="8dp"
-            android:text="⚡ Test Connection"
+            android:text="@string/user_dialog_test_connection"
             android:textAllCaps="false"
             android:textSize="13sp"
             app:cornerRadius="12dp"
@@ -321,7 +428,7 @@
                 android:layout_height="48dp"
                 android:layout_marginEnd="8dp"
                 android:layout_weight="1"
-                android:text="Cancel"
+                android:text="@string/common_cancel"
                 android:textAllCaps="false"
                 android:textColor="#64748B"
                 app:cornerRadius="12dp"
@@ -333,7 +440,7 @@
                 android:layout_height="48dp"
                 android:layout_weight="1"
                 android:backgroundTint="#0F172A"
-                android:text="Save"
+                android:text="@string/common_save"
                 android:textAllCaps="false"
                 app:cornerRadius="12dp" />
         </LinearLayout>
@@ -345,7 +452,7 @@
             android:layout_width="match_parent"
             android:layout_height="40dp"
             android:layout_marginTop="8dp"
-            android:text="🗑 Delete User"
+            android:text="@string/user_dialog_delete_user"
             android:textAllCaps="false"
             android:textColor="#EF4444"
             android:textSize="13sp"

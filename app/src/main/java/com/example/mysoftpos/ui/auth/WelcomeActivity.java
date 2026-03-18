@@ -2,6 +2,7 @@ package com.example.mysoftpos.ui.auth;
 
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.ui.dashboard.MainDashboardActivity;
+import com.example.mysoftpos.utils.LocaleHelper;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -41,6 +42,18 @@ public class WelcomeActivity extends BaseActivity {
         btnRegister.setOnClickListener(v -> {
             startActivity(new Intent(this, RegisterActivity.class));
         });
+
+        // Language toggle
+        View btnLanguageToggle = findViewById(R.id.btnLanguageToggle);
+        if (btnLanguageToggle != null) {
+            btnLanguageToggle.setOnClickListener(v -> {
+                String current = LocaleHelper.getLanguage(this);
+                String next = "vi".equals(current) ? "en" : "vi";
+                LocaleHelper.setLocale(getApplicationContext(), next);
+                recreate();
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
 
         // Money icon rotation
         View moneyIcon = findViewById(R.id.ivMoneyIcon);

@@ -1,6 +1,7 @@
 package com.example.mysoftpos.domain.service;
 
 import android.content.Context;
+import com.example.mysoftpos.BuildConfig;
 import com.example.mysoftpos.data.remote.IsoNetworkClient;
 import com.example.mysoftpos.domain.model.CardInputData;
 import com.example.mysoftpos.iso8583.TransactionContext;
@@ -131,7 +132,7 @@ public class TransactionExecutor {
                 ctx.pinBlock52 = clearBlock;
                 ctx.encryptPin = true;
                 card.setPinBlock(clearBlock);
-                logger.log("PIN Block: " + clearBlock);
+                logger.log("PIN block prepared");
             } catch (Exception e) {
                 logger.log("PIN Error: " + e.getMessage());
                 ctx.pinBlock52 = null;
@@ -203,7 +204,7 @@ public class TransactionExecutor {
             }
         }
 
-        if (logger != null) {
+        if (logger != null && BuildConfig.DEBUG) {
             logger.log("Built " + msg.getMti() + " | STAN=" + ctx.stan11);
             logger.log("--- ISO REQUEST DETAIL ---\n" + StandardIsoPacker.logIsoMessage(msg)
                     + "--------------------------");
@@ -213,9 +214,11 @@ public class TransactionExecutor {
         byte[] packed = StandardIsoPacker.pack(msg);
         String reqHex = StandardIsoPacker.bytesToHex(packed);
 
-        FileLogger.logTestSuitePacket(appContext, logTag + " SEND", packed);
-        FileLogger.logTestSuiteString(appContext, logTag + " SEND DETAIL",
-                StandardIsoPacker.logIsoMessage(msg));
+        if (BuildConfig.DEBUG) {
+            FileLogger.logTestSuitePacket(appContext, logTag + " SEND", packed);
+            FileLogger.logTestSuiteString(appContext, logTag + " SEND DETAIL",
+                    StandardIsoPacker.logIsoMessage(msg));
+        }
 
         // 3. Send
         if (logger != null) {
@@ -225,16 +228,20 @@ public class TransactionExecutor {
         // Use injected client
         byte[] responseBytes = isoNetworkClient.sendAndReceive(ctx.ip, ctx.port, packed);
 
-        FileLogger.logTestSuitePacket(appContext, logTag + " RECV", responseBytes);
+        if (BuildConfig.DEBUG) {
+            FileLogger.logTestSuitePacket(appContext, logTag + " RECV", responseBytes);
+        }
 
         // 4. Unpack
         IsoMessage respMsg = new StandardIsoPacker().unpack(responseBytes);
         String respHex = StandardIsoPacker.bytesToHex(responseBytes);
 
-        FileLogger.logTestSuiteString(appContext, logTag + " RECV DETAIL",
-                StandardIsoPacker.logIsoMessage(respMsg));
+        if (BuildConfig.DEBUG) {
+            FileLogger.logTestSuiteString(appContext, logTag + " RECV DETAIL",
+                    StandardIsoPacker.logIsoMessage(respMsg));
+        }
 
-        if (logger != null) {
+        if (logger != null && BuildConfig.DEBUG) {
             logger.log("--- ISO RESPONSE DETAIL ---\n" + StandardIsoPacker.logIsoMessage(respMsg)
                     + "---------------------------");
         }

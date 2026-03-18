@@ -82,6 +82,7 @@ public class MultiThreadRunnerActivity extends BaseActivity {
             CardInputData[] cards = new CardInputData[threadCount];
             String[] types = new String[threadCount];
             String[] tags = new String[threadCount];
+            String[] fieldOverrides = new String[threadCount];
 
             for (int i = 0; i < threadCount; i++) {
                 TestScenario scenario = scenarios.get(i);
@@ -113,6 +114,7 @@ public class MultiThreadRunnerActivity extends BaseActivity {
                             scenario.getField(2), scenario.getField(14),
                             scenario.getField(35), scenario.getUserPin(),
                             contexts[i], noop);
+                    fieldOverrides[i] = buildFieldOverridesJson(scenario);
                 } catch (Exception e) {
                     appendLog(tags[i] + " Build error: " + e.getMessage() + "\n");
                 }
@@ -127,6 +129,7 @@ public class MultiThreadRunnerActivity extends BaseActivity {
                 final TransactionContext ctx = contexts[i];
                 final CardInputData card = cards[i];
                 final String typeToRun = types[i];
+                final String fieldConfigJson = fieldOverrides[i];
 
                 if (ctx == null || card == null) {
                     failed.incrementAndGet();
@@ -147,7 +150,7 @@ public class MultiThreadRunnerActivity extends BaseActivity {
                         TransactionExecutor.LogCallback logger = msg -> appendLog(tag + " " + msg + "\n");
 
                         TransactionResult result = transactionExecutor.execute(
-                                getApplicationContext(), ctx, card, typeToRun, logger, tag);
+                                getApplicationContext(), ctx, card, typeToRun, logger, tag, fieldConfigJson);
 
                         appendLog(tag + " Packed Hex (" + result.reqHex.length() / 2 + " bytes):\n" + result.reqHex + "\n");
                         appendLog(tag + " Response Hex:\n" + result.respHex + "\n");
@@ -194,6 +197,30 @@ public class MultiThreadRunnerActivity extends BaseActivity {
             tvLog.append(text);
             scrollLog.post(() -> scrollLog.fullScroll(ScrollView.FOCUS_DOWN));
         });
+    }
+
+    private String buildFieldOverridesJson(TestScenario scenario) {
+        if (scenario == null || scenario.getAllFields() == null || scenario.getAllFields().isEmpty()) {
+            return null;
+        }
+
+        org.json.JSONObject json = new org.json.JSONObject();
+        java.util.Set<Integer> reserved = new java.util.HashSet<>(
+                java.util.Arrays.asList(2, 4, 14, 22, 35, 52));
+
+        for (java.util.Map.Entry<Integer, String> entry : scenario.getAllFields().entrySet()) {
+            Integer field = entry.getKey();
+            String value = entry.getValue();
+            if (field == null || reserved.contains(field) || value == null || value.trim().isEmpty()) {
+                continue;
+            }
+            try {
+                json.put(String.valueOf(field), value);
+            } catch (Exception ignored) {
+            }
+        }
+
+        return json.length() > 0 ? json.toString() : null;
     }
 
     private void saveTransactionToDb(TransactionContext ctx, CardInputData card,

@@ -34,7 +34,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="Admin Configuration"
+                android:text="@string/settings_title"
                 android:textColor="@android:color/white"
                 android:textSize="@dimen/text_subtitle"
                 android:textStyle="bold" />
@@ -145,7 +145,7 @@
                         android:id="@+id/tvCurrentLanguage"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="English"
+                        android:text="@string/settings_language_en"
                         android:textColor="#64748B"
                         android:textSize="14sp"
                         android:layout_marginEnd="8dp"/>
@@ -230,7 +230,7 @@
             android:layout_marginTop="16dp"
             android:layout_marginStart="16dp"
             android:layout_marginBottom="8dp"
-            android:text="ADMIN SETTINGS"
+            android:text="@string/settings_identity_group"
             android:fontFamily="sans-serif-medium"
             android:textColor="#64748B"
             android:textSize="14sp"
@@ -275,44 +275,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginStart="16dp"
-                        android:text="Terminal Identity"
-                        android:textColor="@color/text_primary"
-                        android:textSize="16sp"
-                        android:fontFamily="sans-serif-medium"/>
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_arrow_right"
-                        app:tint="#CBD5E1" />
-                </LinearLayout>
-
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F1F5F9" android:layout_marginStart="56dp"/>
-
-                <!-- Security Settings -->
-                <LinearLayout
-                    android:id="@+id/btnSecuritySettings"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:gravity="center_vertical"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="?attr/selectableItemBackground">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_shield"
-                        app:tint="@color/primary" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="16dp"
-                        android:text="Security Settings"
+                        android:text="@string/settings_identity_group"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp"
                         android:fontFamily="sans-serif-medium"/>
@@ -354,7 +317,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Backend URL"
+                            android:text="@string/settings_backend_input_hint"
                             android:textColor="@color/text_primary"
                             android:textSize="16sp"
                             android:fontFamily="sans-serif-medium"/>
@@ -363,7 +326,7 @@
                             android:id="@+id/tvCurrentBackendUrl"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="http://10.0.2.2:8080"
+                            android:text="@string/settings_backend_default_value"
                             android:textColor="#64748B"
                             android:textSize="12sp"
                             android:singleLine="true"

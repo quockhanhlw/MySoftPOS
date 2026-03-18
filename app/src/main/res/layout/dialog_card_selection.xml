@@ -19,7 +19,7 @@
             android:id="@+id/tvDialogTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Select Card"
+            android:text="@string/dialog_select_card_title"
             android:textColor="#0F172A"
             android:textSize="20sp"
             android:textStyle="bold"
@@ -41,7 +41,7 @@
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginHorizontal="24dp"
-            android:text="Cancel"
+            android:text="@string/common_cancel"
             android:textColor="#64748B"
             style="@style/Widget.MaterialComponents.Button.TextButton"
             app:cornerRadius="16dp"/>

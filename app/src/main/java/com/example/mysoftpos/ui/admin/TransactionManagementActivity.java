@@ -51,7 +51,6 @@ public class TransactionManagementActivity extends BaseActivity {
 
     private static final int MAX_TOKEN_WAIT_RETRIES = 15;
     private static final long TOKEN_WAIT_RETRY_DELAY_MS = 1200L;
-    private static final String FILTER_ALL_USERS = "All Users";
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Runnable retryLoadRunnable = this::loadUsersAndTransactions;
@@ -154,19 +153,19 @@ public class TransactionManagementActivity extends BaseActivity {
             clearRenderedTransactions();
             if (tokenWaitRetryCount < MAX_TOKEN_WAIT_RETRIES) {
                 tokenWaitRetryCount++;
-                showNonContentState("Preparing backend session",
-                        "Please wait while your admin session is restored.", false);
+                showNonContentState(getString(R.string.txn_mgmt_state_preparing_session_title),
+                        getString(R.string.txn_mgmt_state_preparing_session_subtitle), false);
                 mainHandler.postDelayed(retryLoadRunnable, TOKEN_WAIT_RETRY_DELAY_MS);
             } else {
-                showNonContentState("Backend session unavailable",
-                        "Please sign in again or try again.", true);
+                showNonContentState(getString(R.string.txn_mgmt_state_backend_session_unavailable_title),
+                        getString(R.string.txn_mgmt_state_backend_session_unavailable_subtitle), true);
             }
             return;
         }
 
         tokenWaitRetryCount = 0;
-        showNonContentState("Loading transactions",
-                "Fetching the latest transaction data from backend…", false);
+        showNonContentState(getString(R.string.txn_mgmt_state_loading_title),
+                getString(R.string.txn_mgmt_state_loading_subtitle), false);
 
         ApiClient.getService(this).getUsers(token).enqueue(
                 new Callback<>() {
@@ -183,20 +182,20 @@ public class TransactionManagementActivity extends BaseActivity {
                             loadTransactions(token);
                         } else {
                             clearRenderedTransactions();
-                            showNonContentState("Backend unavailable",
-                                    "Could not load users from backend. Please try again.", true);
+                            showNonContentState(getString(R.string.txn_mgmt_state_backend_unavailable_title),
+                                    getString(R.string.txn_mgmt_state_load_users_failed_subtitle), true);
                             Toast.makeText(TransactionManagementActivity.this,
-                                    "Failed to load users", Toast.LENGTH_SHORT).show();
+                                    R.string.txn_mgmt_toast_load_users_failed, Toast.LENGTH_SHORT).show();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<List<ApiService.UserDto>> call, Throwable t) {
                         clearRenderedTransactions();
-                        showNonContentState("Backend unavailable",
-                                "Could not load users from backend. Please check your connection and try again.", true);
+                        showNonContentState(getString(R.string.txn_mgmt_state_backend_unavailable_title),
+                                getString(R.string.txn_mgmt_state_load_users_network_subtitle), true);
                         Toast.makeText(TransactionManagementActivity.this,
-                                "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                                getString(R.string.common_error_with_reason, t.getMessage()), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
@@ -224,20 +223,20 @@ public class TransactionManagementActivity extends BaseActivity {
                             applyCurrentFilter();
                         } else {
                             clearRenderedTransactions();
-                            showNonContentState("Backend unavailable",
-                                    "Could not load transactions from backend. Please try again.", true);
+                            showNonContentState(getString(R.string.txn_mgmt_state_backend_unavailable_title),
+                                    getString(R.string.txn_mgmt_state_load_txn_failed_subtitle), true);
                             Toast.makeText(TransactionManagementActivity.this,
-                                    "Failed to load transactions", Toast.LENGTH_SHORT).show();
+                                    R.string.txn_mgmt_toast_load_txn_failed, Toast.LENGTH_SHORT).show();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<List<ApiService.TransactionSummaryDto>> call, Throwable t) {
                         clearRenderedTransactions();
-                        showNonContentState("Backend unavailable",
-                                "Could not load transactions from backend. Please check your connection and try again.", true);
+                        showNonContentState(getString(R.string.txn_mgmt_state_backend_unavailable_title),
+                                getString(R.string.txn_mgmt_state_load_txn_network_subtitle), true);
                         Toast.makeText(TransactionManagementActivity.this,
-                                "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                                getString(R.string.common_error_with_reason, t.getMessage()), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
@@ -337,10 +336,10 @@ public class TransactionManagementActivity extends BaseActivity {
         }
         String selectedUser = getSelectedUserFilter();
         List<String> names = new ArrayList<>();
-        names.add(FILTER_ALL_USERS);
+        names.add(getString(R.string.txn_mgmt_filter_all_users));
         Map<String, Boolean> seen = new LinkedHashMap<>();
         for (ApiService.TransactionSummaryDto txn : userTransactions) {
-            String name = txn.username != null ? txn.username : "Unknown";
+            String name = txn.username != null ? txn.username : getString(R.string.txn_detail_unknown);
             seen.put(name, true);
         }
         names.addAll(seen.keySet());
@@ -359,12 +358,12 @@ public class TransactionManagementActivity extends BaseActivity {
         }
 
         List<ApiService.TransactionSummaryDto> filtered;
-        if (selectedUser == null || FILTER_ALL_USERS.equals(selectedUser)) {
+        if (selectedUser == null || getString(R.string.txn_mgmt_filter_all_users).equals(selectedUser)) {
             filtered = userTransactions;
         } else {
             filtered = new ArrayList<>();
             for (ApiService.TransactionSummaryDto txn : userTransactions) {
-                String name = txn.username != null ? txn.username : "Unknown";
+                String name = txn.username != null ? txn.username : getString(R.string.txn_detail_unknown);
                 if (name.equals(selectedUser))
                     filtered.add(txn);
             }
@@ -375,11 +374,11 @@ public class TransactionManagementActivity extends BaseActivity {
         showContentChrome();
         if (filtered.isEmpty()) {
             if (userTransactions.isEmpty()) {
-                showEmptyMessage("No transactions found",
-                        "Transactions from user accounts will appear here when available.", false);
+                showEmptyMessage(getString(R.string.txn_mgmt_empty_no_transactions_title),
+                        getString(R.string.txn_mgmt_empty_no_transactions_subtitle), false);
             } else {
-                showEmptyMessage("No transactions match the filter",
-                        "Try selecting a different user.", false);
+                showEmptyMessage(getString(R.string.txn_mgmt_empty_filter_title),
+                        getString(R.string.txn_mgmt_empty_filter_subtitle), false);
             }
         } else {
             layoutEmpty.setVisibility(View.GONE);
@@ -412,7 +411,7 @@ public class TransactionManagementActivity extends BaseActivity {
         if (txn.userId != null && localUserNamesById.containsKey(txn.userId)) {
             return localUserNamesById.get(txn.userId);
         }
-        return txn.ownerUsername != null ? txn.ownerUsername : "Unknown";
+        return txn.ownerUsername != null ? txn.ownerUsername : getString(R.string.txn_detail_unknown);
     }
 
     private ApiService.TransactionSummaryDto copyTransaction(ApiService.TransactionSummaryDto source) {
@@ -453,7 +452,7 @@ public class TransactionManagementActivity extends BaseActivity {
                     .toLocalDateTime()
                     .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         } catch (Exception e) {
-            return "—";
+            return getString(R.string.txn_mgmt_placeholder_dash);
         }
     }
 
@@ -478,7 +477,7 @@ public class TransactionManagementActivity extends BaseActivity {
 
     private String getSelectedUserFilter() {
         Object selected = spinnerUserFilter.getSelectedItem();
-        return selected != null ? selected.toString() : FILTER_ALL_USERS;
+        return selected != null ? selected.toString() : getString(R.string.txn_mgmt_filter_all_users);
     }
 
     private void applyCurrentFilter() {
@@ -493,8 +492,8 @@ public class TransactionManagementActivity extends BaseActivity {
 
     private void showOfflineState() {
         clearRenderedTransactions();
-        showNonContentState("Internet connection required",
-                "Connect to Wi‑Fi or mobile data to view transaction management.", true);
+        showNonContentState(getString(R.string.txn_mgmt_state_offline_title),
+                getString(R.string.txn_mgmt_state_offline_subtitle), true);
     }
 
     private void showContentChrome() {
@@ -518,7 +517,7 @@ public class TransactionManagementActivity extends BaseActivity {
         userTransactions = new ArrayList<>();
         userIdToName.clear();
         adapter.setData(new ArrayList<>());
-        tvTxnCount.setText("0");
+        tvTxnCount.setText(R.string.common_zero);
         updateStats(new ArrayList<>());
         if (spinnerUserFilter != null) {
             spinnerUserFilter.setAdapter(null);
@@ -649,19 +648,21 @@ public class TransactionManagementActivity extends BaseActivity {
             }
 
             void bind(ApiService.TransactionSummaryDto txn) {
-                tvTrace.setText("#" + (txn.traceNumber != null ? txn.traceNumber : "—"));
-                tvAmount.setText(txn.amount != null ? txn.amount : "—");
+                String trace = txn.traceNumber != null ? txn.traceNumber :
+                        itemView.getContext().getString(R.string.txn_mgmt_placeholder_dash);
+                tvTrace.setText(itemView.getContext().getString(R.string.txn_mgmt_trace_format, trace));
+                tvAmount.setText(txn.amount != null ? txn.amount : itemView.getContext().getString(R.string.txn_mgmt_placeholder_dash));
                 tvCardInfo.setText((txn.maskedPan != null ? txn.maskedPan : "") +
                         (txn.cardScheme != null ? " (" + txn.cardScheme + ")" : ""));
-                tvTerminal.setText(txn.terminalCode != null ? txn.terminalCode : "—");
-                tvTime.setText(txn.txnTimestamp != null ? txn.txnTimestamp : "—");
+                tvTerminal.setText(txn.terminalCode != null ? txn.terminalCode : itemView.getContext().getString(R.string.txn_mgmt_placeholder_dash));
+                tvTime.setText(txn.txnTimestamp != null ? txn.txnTimestamp : itemView.getContext().getString(R.string.txn_mgmt_placeholder_dash));
 
                 if (tvUsername != null) {
-                    tvUsername.setText(txn.username != null ? txn.username : "Unknown");
+                    tvUsername.setText(txn.username != null ? txn.username : itemView.getContext().getString(R.string.txn_detail_unknown));
                 }
 
                 // Status pill with colored background
-                String status = txn.status != null ? txn.status : "UNKNOWN";
+                String status = txn.status != null ? txn.status : itemView.getContext().getString(R.string.txn_mgmt_status_unknown);
                 tvStatus.setText(status);
                 if ("APPROVED".equalsIgnoreCase(status)) {
                     tvStatus.setBackgroundResource(R.drawable.bg_status_approved);

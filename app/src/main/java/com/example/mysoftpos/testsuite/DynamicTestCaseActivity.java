@@ -52,7 +52,11 @@ public class DynamicTestCaseActivity extends BaseActivity {
     }
 
     private void showOptionsDialog(TestCaseEntity testCase) {
-        CharSequence[] options = { "Run", "Edit", "Delete" };
+        CharSequence[] options = {
+                getString(R.string.dynamic_case_option_run),
+                getString(R.string.dynamic_case_option_edit),
+                getString(R.string.dynamic_case_option_delete)
+        };
         new android.app.AlertDialog.Builder(this)
                 .setTitle(testCase.name)
                 .setItems(options, (dialog, which) -> {
@@ -62,10 +66,10 @@ public class DynamicTestCaseActivity extends BaseActivity {
                         showEditCaseDialog(testCase);
                     } else {
                         new android.app.AlertDialog.Builder(this)
-                                .setTitle("Delete Case")
-                                .setMessage("Are you sure you want to delete this test case?")
-                                .setPositiveButton("Delete", (d, w) -> viewModel.deleteCase(testCase))
-                                .setNegativeButton("Cancel", null)
+                                .setTitle(R.string.dynamic_case_delete_title)
+                                .setMessage(R.string.dynamic_case_delete_message)
+                                .setPositiveButton(R.string.dynamic_case_option_delete, (d, w) -> viewModel.deleteCase(testCase))
+                                .setNegativeButton(R.string.common_cancel, null)
                                 .show();
                     }
                 })
@@ -76,27 +80,29 @@ public class DynamicTestCaseActivity extends BaseActivity {
         com.example.mysoftpos.domain.service.TransactionExecutor executor = com.example.mysoftpos.di.ServiceLocator
                 .getInstance(this).getTransactionExecutor();
         viewModel.runCase(this, testCase, executor);
-        android.widget.Toast.makeText(this, "Running " + testCase.name + "...", android.widget.Toast.LENGTH_SHORT)
+        android.widget.Toast.makeText(this,
+                        getString(R.string.dynamic_case_running, testCase.name),
+                        android.widget.Toast.LENGTH_SHORT)
                 .show();
     }
 
     private void showAddCaseDialog() {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle("New Test Case");
+        builder.setTitle(R.string.dynamic_case_new_title);
 
         android.view.View view = android.view.LayoutInflater.from(this).inflate(R.layout.dialog_add_suite, null);
         final android.widget.EditText etName = view.findViewById(R.id.etSuiteName);
         final android.widget.EditText etDesc = view.findViewById(R.id.etSuiteDesc);
-        etName.setHint("Case Name");
-        etDesc.setHint("Transaction Type (PURCHASE/BALANCE)");
+        etName.setHint(R.string.dynamic_case_name_hint);
+        etDesc.setHint(R.string.dynamic_case_type_hint);
 
         builder.setView(view);
 
-        builder.setPositiveButton("Create", (dialog, which) -> {
+        builder.setPositiveButton(R.string.dynamic_case_action_create, (dialog, which) -> {
             String name = etName.getText().toString().trim();
             String type = etDesc.getText().toString().trim().toUpperCase();
             if (name.isEmpty()) {
-                android.widget.Toast.makeText(this, "Name required", android.widget.Toast.LENGTH_SHORT).show();
+                android.widget.Toast.makeText(this, R.string.dynamic_case_name_required, android.widget.Toast.LENGTH_SHORT).show();
                 return;
             }
             if (type.isEmpty())
@@ -109,38 +115,38 @@ public class DynamicTestCaseActivity extends BaseActivity {
             newCase.status = "PENDING";
             viewModel.createCase(newCase);
         });
-        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+        builder.setNegativeButton(R.string.common_cancel, (dialog, which) -> dialog.cancel());
 
         builder.show();
     }
 
     private void showEditCaseDialog(TestCaseEntity testCase) {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle("Edit Test Case");
+        builder.setTitle(R.string.dynamic_case_edit_title);
 
         android.view.View view = android.view.LayoutInflater.from(this).inflate(R.layout.dialog_add_suite, null);
         final android.widget.EditText etName = view.findViewById(R.id.etSuiteName);
         final android.widget.EditText etDesc = view.findViewById(R.id.etSuiteDesc);
-        etName.setHint("Case Name");
-        etDesc.setHint("Transaction Type");
+        etName.setHint(R.string.dynamic_case_name_hint);
+        etDesc.setHint(R.string.dynamic_case_type_simple_hint);
 
         etName.setText(testCase.name);
         etDesc.setText(testCase.transactionType);
 
         builder.setView(view);
 
-        builder.setPositiveButton("Update", (dialog, which) -> {
+        builder.setPositiveButton(R.string.dynamic_case_action_update, (dialog, which) -> {
             String name = etName.getText().toString().trim();
             String type = etDesc.getText().toString().trim().toUpperCase();
             if (name.isEmpty()) {
-                android.widget.Toast.makeText(this, "Name required", android.widget.Toast.LENGTH_SHORT).show();
+                android.widget.Toast.makeText(this, R.string.dynamic_case_name_required, android.widget.Toast.LENGTH_SHORT).show();
                 return;
             }
             testCase.name = name;
             testCase.transactionType = type;
             viewModel.updateCase(testCase);
         });
-        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+        builder.setNegativeButton(R.string.common_cancel, (dialog, which) -> dialog.cancel());
 
         builder.show();
     }

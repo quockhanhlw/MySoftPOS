@@ -51,6 +51,9 @@ public class ConfigSyncManager {
                                     existing.merchantCode = dto.merchantCode;
                                     existing.merchantNameLocation = dto.merchantName;
                                     existing.adminBackendId = dto.adminId;
+                                    existing.ownerUserBackendId = dto.ownerUserId != null ? dto.ownerUserId : 0L;
+                                    existing.businessType = dto.businessType != null ? dto.businessType : "";
+                                    existing.storeAddress = dto.storeAddress != null ? dto.storeAddress : "";
                                     dao.update(existing);
                                 } else {
                                     existing = dao.getByCode(dto.merchantCode);
@@ -58,6 +61,9 @@ public class ConfigSyncManager {
                                         existing.backendId = dto.id;
                                         existing.merchantNameLocation = dto.merchantName;
                                         existing.adminBackendId = dto.adminId;
+                                        existing.ownerUserBackendId = dto.ownerUserId != null ? dto.ownerUserId : 0L;
+                                        existing.businessType = dto.businessType != null ? dto.businessType : "";
+                                        existing.storeAddress = dto.storeAddress != null ? dto.storeAddress : "";
                                         dao.update(existing);
                                     } else {
                                         MerchantEntity entity = new MerchantEntity();
@@ -65,6 +71,9 @@ public class ConfigSyncManager {
                                         entity.merchantCode = dto.merchantCode;
                                         entity.merchantNameLocation = dto.merchantName;
                                         entity.adminBackendId = dto.adminId;
+                                        entity.ownerUserBackendId = dto.ownerUserId != null ? dto.ownerUserId : 0L;
+                                        entity.businessType = dto.businessType != null ? dto.businessType : "";
+                                        entity.storeAddress = dto.storeAddress != null ? dto.storeAddress : "";
                                         dao.insert(entity);
                                     }
                                 }

@@ -50,7 +50,10 @@ public class DynamicTestSuiteActivity extends BaseActivity {
     }
 
     private void showOptionsDialog(TestSuiteEntity suite) {
-        CharSequence[] options = { "Rename", "Delete" };
+        CharSequence[] options = {
+                getString(R.string.dynamic_suite_option_rename),
+                getString(R.string.dynamic_suite_option_delete)
+        };
         new AlertDialog.Builder(this)
                 .setTitle(suite.name)
                 .setItems(options, (dialog, which) -> {
@@ -58,10 +61,10 @@ public class DynamicTestSuiteActivity extends BaseActivity {
                         showEditSuiteDialog(suite);
                     } else {
                         new AlertDialog.Builder(this)
-                                .setTitle("Delete Suite")
-                                .setMessage("Are you sure you want to delete this suite and all its cases?")
-                                .setPositiveButton("Delete", (d, w) -> viewModel.deleteSuite(suite))
-                                .setNegativeButton("Cancel", null)
+                                .setTitle(R.string.dynamic_suite_delete_title)
+                                .setMessage(R.string.dynamic_suite_delete_message)
+                                .setPositiveButton(R.string.dynamic_suite_option_delete, (d, w) -> viewModel.deleteSuite(suite))
+                                .setNegativeButton(R.string.common_cancel, null)
                                 .show();
                     }
                 })
@@ -70,7 +73,7 @@ public class DynamicTestSuiteActivity extends BaseActivity {
 
     private void showEditSuiteDialog(TestSuiteEntity suite) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Edit Test Suite");
+        builder.setTitle(R.string.dynamic_suite_edit_title);
 
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_add_suite, null);
         final EditText etName = view.findViewById(R.id.etSuiteName);
@@ -81,25 +84,25 @@ public class DynamicTestSuiteActivity extends BaseActivity {
 
         builder.setView(view);
 
-        builder.setPositiveButton("Update", (dialog, which) -> {
+        builder.setPositiveButton(R.string.dynamic_suite_action_update, (dialog, which) -> {
             String name = etName.getText().toString().trim();
             String desc = etDesc.getText().toString().trim();
             if (name.isEmpty()) {
-                Toast.makeText(this, "Name required", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.dynamic_suite_name_required, Toast.LENGTH_SHORT).show();
                 return;
             }
             suite.name = name;
             suite.description = desc;
             viewModel.updateSuite(suite);
         });
-        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+        builder.setNegativeButton(R.string.common_cancel, (dialog, which) -> dialog.cancel());
 
         builder.show();
     }
 
     private void showAddSuiteDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("New Test Suite");
+        builder.setTitle(R.string.dynamic_suite_new_title);
 
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_add_suite, null);
         final EditText etName = view.findViewById(R.id.etSuiteName);
@@ -107,16 +110,16 @@ public class DynamicTestSuiteActivity extends BaseActivity {
 
         builder.setView(view);
 
-        builder.setPositiveButton("Create", (dialog, which) -> {
+        builder.setPositiveButton(R.string.dynamic_suite_action_create, (dialog, which) -> {
             String name = etName.getText().toString().trim();
             String desc = etDesc.getText().toString().trim();
             if (name.isEmpty()) {
-                Toast.makeText(this, "Name required", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.dynamic_suite_name_required, Toast.LENGTH_SHORT).show();
                 return;
             }
             viewModel.createSuite(name, desc);
         });
-        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+        builder.setNegativeButton(R.string.common_cancel, (dialog, which) -> dialog.cancel());
 
         builder.show();
     }

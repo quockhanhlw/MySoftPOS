@@ -10,7 +10,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Enter PIN"
+        android:text="@string/dialog_pin_title"
         android:textSize="20sp"
         android:textStyle="bold"
         android:textColor="#1E293B"
@@ -56,23 +56,23 @@
         android:alignmentMode="alignBounds">
 
         <!-- Row 1 -->
-        <TextView android:id="@+id/btn1" style="@style/KeypadButton" android:text="1"/>
-        <TextView android:id="@+id/btn2" style="@style/KeypadButton" android:text="2"/>
-        <TextView android:id="@+id/btn3" style="@style/KeypadButton" android:text="3"/>
+        <TextView android:id="@+id/btn1" style="@style/KeypadButton" android:text="@string/keypad_digit_1"/>
+        <TextView android:id="@+id/btn2" style="@style/KeypadButton" android:text="@string/keypad_digit_2"/>
+        <TextView android:id="@+id/btn3" style="@style/KeypadButton" android:text="@string/keypad_digit_3"/>
 
         <!-- Row 2 -->
-        <TextView android:id="@+id/btn4" style="@style/KeypadButton" android:text="4"/>
-        <TextView android:id="@+id/btn5" style="@style/KeypadButton" android:text="5"/>
-        <TextView android:id="@+id/btn6" style="@style/KeypadButton" android:text="6"/>
+        <TextView android:id="@+id/btn4" style="@style/KeypadButton" android:text="@string/keypad_digit_4"/>
+        <TextView android:id="@+id/btn5" style="@style/KeypadButton" android:text="@string/keypad_digit_5"/>
+        <TextView android:id="@+id/btn6" style="@style/KeypadButton" android:text="@string/keypad_digit_6"/>
 
         <!-- Row 3 -->
-        <TextView android:id="@+id/btn7" style="@style/KeypadButton" android:text="7"/>
-        <TextView android:id="@+id/btn8" style="@style/KeypadButton" android:text="8"/>
-        <TextView android:id="@+id/btn9" style="@style/KeypadButton" android:text="9"/>
+        <TextView android:id="@+id/btn7" style="@style/KeypadButton" android:text="@string/keypad_digit_7"/>
+        <TextView android:id="@+id/btn8" style="@style/KeypadButton" android:text="@string/keypad_digit_8"/>
+        <TextView android:id="@+id/btn9" style="@style/KeypadButton" android:text="@string/keypad_digit_9"/>
 
         <!-- Row 4 -->
         <FrameLayout style="@style/KeypadButton" android:background="@null"/> <!-- Empty -->
-        <TextView android:id="@+id/btn0" style="@style/KeypadButton" android:text="0"/>
+        <TextView android:id="@+id/btn0" style="@style/KeypadButton" android:text="@string/keypad_digit_0"/>
         <ImageButton
             android:id="@+id/btnBackspace"
             style="@style/KeypadButton"
@@ -96,7 +96,7 @@
             android:layout_width="0dp"
             android:layout_height="60dp"
             android:layout_weight="1"
-            android:text="Cancel"
+            android:text="@string/common_cancel"
             android:textColor="#64748B"/>
 
         <com.google.android.material.button.MaterialButton
@@ -104,7 +104,7 @@
             android:layout_width="0dp"
             android:layout_height="60dp"
             android:layout_weight="1"
-            android:text="OK"
+            android:text="@string/common_ok"
             android:backgroundTint="#0F172A"
             android:textAllCaps="false"
             app:cornerRadius="12dp"/>

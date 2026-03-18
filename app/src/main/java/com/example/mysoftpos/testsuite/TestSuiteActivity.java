@@ -1,5 +1,6 @@
 package com.example.mysoftpos.testsuite;
 
+import com.example.mysoftpos.iso8583.emv.EmvTlvCodec;
 import com.example.mysoftpos.iso8583.spec.NapasFieldSpecConfig;
 
 import android.content.Intent;
@@ -16,6 +17,26 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class TestSuiteActivity extends BaseActivity {
+
+    private static final String NFC_071_072_PAN = "9704186870000505297";
+    private static final String NFC_071_072_EXPIRY = "2808";
+    private static final String NFC_071_072_SERVICE_CODE = "601";
+    private static final String NFC_071_072_DISCRETIONARY = "0000000456";
+    private static final String NFC_071_072_TRACK2_FOR_SELECTION =
+            NFC_071_072_PAN + "=" + NFC_071_072_EXPIRY + NFC_071_072_SERVICE_CODE + NFC_071_072_DISCRETIONARY;
+    private static final java.util.List<String> TRACK2_OPTIONS = java.util.Arrays.asList(
+            "9704166606226219923=31016010000000123",
+            "9704306669144645257=31016010000000123",
+            "9704189991010867647=31016010000000123");
+    private static final java.util.List<String> PAN_OPTIONS = java.util.Arrays.asList(
+            "9704166606226219923=3101",
+            "9704306669144645257=3101",
+            "9704189991010867647=3101");
+    private static final String NFC_071_072_DE55 = buildTag57OnlyDe55(
+            NFC_071_072_PAN,
+            NFC_071_072_EXPIRY,
+            NFC_071_072_SERVICE_CODE,
+            NFC_071_072_DISCRETIONARY);
 
     private String channel;
     private String txnType;
@@ -189,7 +210,7 @@ public class TestSuiteActivity extends BaseActivity {
                 adapter.notifyDataSetChanged();
                 refreshSelectionControls();
             } else {
-                Toast.makeText(this, "Cannot delete built-in scenarios", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.testsuite_cannot_delete_builtin, Toast.LENGTH_SHORT).show();
             }
             return;
         }
@@ -213,19 +234,19 @@ public class TestSuiteActivity extends BaseActivity {
 
     private void checkPinAndConfig(TestScenario scenario) {
         String de22 = scenario.getField(22);
-        if ("011".equals(de22) || "021".equals(de22)) {
+        if ("011".equals(de22) || "021".equals(de22) || "071".equals(de22)) {
             showPinDialog(scenario, pin -> {
                 scenario.setUserPin(pin);
                 scenario.setSelected(true);
                 adapter.notifyDataSetChanged();
                 configuringInProgress = false;
                 refreshSelectionControls();
-                Toast.makeText(this, "Configured & Selected!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.testsuite_configured_selected, Toast.LENGTH_SHORT).show();
             });
         } else {
             scenario.setSelected(true);
             adapter.notifyDataSetChanged();
-            Toast.makeText(this, "Configured & Selected!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.testsuite_configured_selected, Toast.LENGTH_SHORT).show();
 
             configuringInProgress = false;
             refreshSelectionControls();
@@ -245,11 +266,11 @@ public class TestSuiteActivity extends BaseActivity {
 
         String label;
         if (deleteMode) {
-            label = "Delete Selected";
+            label = getString(R.string.testsuite_btn_delete_selected);
         } else if ("MULTI".equals(perfMode)) {
-            label = "Run Transaction";
+            label = getString(R.string.testsuite_btn_run_transaction);
         } else {
-            label = "Confirm Selection";
+            label = getString(R.string.testsuite_btn_confirm_selection);
         }
 
         btnRunAll.setText(count > 0 ? label + " (" + count + ")" : label);
@@ -260,7 +281,7 @@ public class TestSuiteActivity extends BaseActivity {
         layoutSelectAll.setVisibility(View.GONE);
         btnRunAll.setVisibility(View.GONE);
 
-        btnRunAll.setText("Run Transaction");
+        btnRunAll.setText(R.string.testsuite_btn_run_transaction);
         btnRunAll.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF0F172A)); // Dark Blue
 
         cbSelectAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -290,7 +311,7 @@ public class TestSuiteActivity extends BaseActivity {
         adapter.setSelectionMode(true);
         layoutSelectAll.setVisibility(View.VISIBLE);
         btnRunAll.setVisibility(View.VISIBLE);
-        btnRunAll.setText("Confirm Selection");
+        btnRunAll.setText(R.string.testsuite_btn_confirm_selection);
         btnRunAll.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF0F172A));
 
         cbSelectAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -311,7 +332,7 @@ public class TestSuiteActivity extends BaseActivity {
                     selected.add(s);
             }
             if (selected.isEmpty()) {
-                Toast.makeText(this, "No test cases selected", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.testsuite_no_case_selected, Toast.LENGTH_SHORT).show();
                 return;
             }
             // Return selected scenarios to caller
@@ -352,7 +373,7 @@ public class TestSuiteActivity extends BaseActivity {
 
             layoutSelectAll.setVisibility(View.VISIBLE);
             btnRunAll.setVisibility(View.VISIBLE);
-            btnRunAll.setText("Delete Selected");
+            btnRunAll.setText(R.string.testsuite_btn_delete_selected);
             btnRunAll.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFEF4444)); // Red button
 
             // IMPORTANT: Set BOTH multiMode and selectionMode to true for checkboxes to
@@ -396,7 +417,7 @@ public class TestSuiteActivity extends BaseActivity {
                 layoutSelectAll.setVisibility(View.VISIBLE);
                 btnRunAll.setVisibility(View.VISIBLE);
                 selectionMode = true;
-                btnRunAll.setText("Confirm Selection");
+                btnRunAll.setText(R.string.testsuite_btn_confirm_selection);
                 btnRunAll.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF0F172A));
                 cbSelectAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
                     if (suppressSelectAllCallback) {
@@ -426,14 +447,14 @@ public class TestSuiteActivity extends BaseActivity {
         }
 
         if (toDelete.isEmpty()) {
-            Toast.makeText(this, "No custom cases selected", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.testsuite_no_custom_case_selected, Toast.LENGTH_SHORT).show();
             return;
         }
 
         new android.app.AlertDialog.Builder(this)
-                .setTitle("Confirm Delete")
-                .setMessage("Delete " + toDelete.size() + " test cases?")
-                .setPositiveButton("Delete", (dialog, which) -> {
+                .setTitle(R.string.testsuite_confirm_delete_title)
+                .setMessage(getString(R.string.testsuite_confirm_delete_message, toDelete.size()))
+                .setPositiveButton(R.string.testsuite_delete_action, (dialog, which) -> {
                     executor.execute(() -> {
                         for (TestScenario s : toDelete) {
                             com.example.mysoftpos.data.local.entity.TestCaseEntity entity = new com.example.mysoftpos.data.local.entity.TestCaseEntity();
@@ -443,7 +464,7 @@ public class TestSuiteActivity extends BaseActivity {
                         runOnUiThread(this::toggleDeleteMode); // Exit mode after delete
                     });
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(R.string.common_cancel, null)
                 .show();
     }
 
@@ -535,6 +556,10 @@ public class TestSuiteActivity extends BaseActivity {
     private boolean configuringInProgress = false;
     private boolean suppressSelectAllCallback = false;
 
+    private interface PinResultCallback {
+        void onPinEntered(String pin);
+    }
+
     private void onScenarioClicked(TestScenario scenario) {
         if (deleteMode) {
             if (scenario.isCustom()) {
@@ -542,7 +567,7 @@ public class TestSuiteActivity extends BaseActivity {
                 adapter.notifyDataSetChanged();
                 refreshSelectionControls();
             } else {
-                Toast.makeText(this, "Cannot delete built-in scenarios", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.testsuite_cannot_delete_builtin, Toast.LENGTH_SHORT).show();
             }
             return;
         }
@@ -566,6 +591,11 @@ public class TestSuiteActivity extends BaseActivity {
             }
 
             String de22 = scenario.getField(22);
+            if (isNfcMode(de22)) {
+                selectDefaultNfcCard(scenario, () -> checkPinAndConfig(scenario));
+                return;
+            }
+
             if ("011".equals(de22) || "012".equals(de22)) {
                 showPanSelectionDialog(scenario, () -> checkPinAndConfig(scenario));
             } else {
@@ -573,7 +603,7 @@ public class TestSuiteActivity extends BaseActivity {
             }
         };
 
-        // Skip Amount Input for Balance Inquiry (check scenario's own txnType)
+        // Skip amount only for Balance Inquiry; NFC purchase (071/072) still requires amount input.
         String scenarioTxnType = scenario.getTxnType() != null ? scenario.getTxnType() : txnType;
         if ("BALANCE".equals(scenarioTxnType)) {
             onAmountConfigured.run();
@@ -600,7 +630,7 @@ public class TestSuiteActivity extends BaseActivity {
             fabAdd.setVisibility(View.GONE);
             btnDeleteMode.setVisibility(View.GONE);
             adapter.notifyDataSetChanged();
-            Toast.makeText(this, "Selection Mode. Tap to select test cases.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.testsuite_selection_mode_hint, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -620,10 +650,10 @@ public class TestSuiteActivity extends BaseActivity {
         // ─── Header ───
         TextView tvTitle = view.findViewById(R.id.tvDialogTitle);
         TextView tvSubtitle = view.findViewById(R.id.tvDialogSubtitle);
-        tvTitle.setText(isBuiltIn ? "Configure Scenario"
-                : isEdit ? "Edit Test Case" : "New Test Case");
+        tvTitle.setText(isBuiltIn ? getString(R.string.testsuite_dialog_title_configure)
+                : isEdit ? getString(R.string.testsuite_dialog_title_edit) : getString(R.string.testsuite_dialog_title_new));
         tvSubtitle.setText(isBuiltIn ? existing.getDescription()
-                : isEdit ? "Modify transaction parameters" : "Configure transaction parameters");
+                : isEdit ? getString(R.string.testsuite_dialog_subtitle_modify) : getString(R.string.testsuite_dialog_subtitle_configure));
 
         // Close button
         view.findViewById(R.id.btnClose).setOnClickListener(v -> dialog.dismiss());
@@ -633,6 +663,9 @@ public class TestSuiteActivity extends BaseActivity {
         android.widget.EditText etName = view.findViewById(R.id.etName);
         android.widget.EditText etDe22 = view.findViewById(R.id.etDe22);
         android.widget.EditText etAmount = view.findViewById(R.id.etAmount);
+        final boolean isBalanceTxn = "BALANCE".equals(isEdit && existing != null && existing.getTxnType() != null
+                ? existing.getTxnType()
+                : txnType);
 
         View layoutManual = view.findViewById(R.id.layoutManual);
         com.google.android.material.textfield.TextInputLayout tilPan = view.findViewById(R.id.tilPan);
@@ -654,12 +687,26 @@ public class TestSuiteActivity extends BaseActivity {
         // Update field visibility and label based on DE22 value
         Runnable updateEntryModeUI = () -> {
             String code = etDe22.getText().toString().trim();
+            boolean isNfcFixedMode = isNfcMode(code);
             boolean isManual = code.startsWith("01");
-            boolean hasTrack2 = code.startsWith("02") || code.startsWith("05")
-                    || code.startsWith("07") || code.startsWith("91");
+            boolean hasTrack2 = !isNfcFixedMode && (code.startsWith("02") || code.startsWith("05")
+                    || code.startsWith("91"));
 
             layoutManual.setVisibility(isManual ? View.VISIBLE : View.GONE);
             layoutTrack2.setVisibility(hasTrack2 ? View.VISIBLE : View.GONE);
+
+            if (isNfcFixedMode) {
+                etPan.setText(NFC_071_072_PAN);
+                etExpiry.setText(NFC_071_072_EXPIRY);
+                etTrack2.setText("");
+                etPan.setEnabled(false);
+                etExpiry.setEnabled(false);
+                etTrack2.setEnabled(false);
+            } else {
+                etPan.setEnabled(true);
+                etExpiry.setEnabled(true);
+                etTrack2.setEnabled(true);
+            }
 
             // Resolve label
             String label;
@@ -670,8 +717,8 @@ public class TestSuiteActivity extends BaseActivity {
                 case "022": label = "Magstripe (Swipe)"; break;
                 case "051": label = "NFC / Chip + PIN"; break;
                 case "052": label = "NFC / Chip"; break;
-                case "071": label = "Contactless + PIN"; break;
-                case "072": label = "Contactless"; break;
+                case "071": label = "Contactless + PIN (071)"; break;
+                case "072": label = "Contactless - No PIN (072)"; break;
                 case "911": label = "Fallback + PIN"; break;
                 case "912": label = "Fallback"; break;
                 default:    label = code.length() == 3 ? "Custom (" + code + ")" : ""; break;
@@ -732,7 +779,7 @@ public class TestSuiteActivity extends BaseActivity {
 
             // "DE" label
             TextView tvDe = new TextView(this);
-            tvDe.setText("DE");
+            tvDe.setText(R.string.testsuite_field_prefix_de);
             tvDe.setTextColor(0xFF92400E);
             tvDe.setTextSize(11);
             tvDe.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD);
@@ -744,7 +791,7 @@ public class TestSuiteActivity extends BaseActivity {
 
             // Field number input
             android.widget.EditText etFieldNum = new android.widget.EditText(this);
-            etFieldNum.setHint("#");
+            etFieldNum.setHint(R.string.testsuite_field_num_hint);
             etFieldNum.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
             etFieldNum.setTextSize(14);
             etFieldNum.setTypeface(android.graphics.Typeface.MONOSPACE);
@@ -771,7 +818,7 @@ public class TestSuiteActivity extends BaseActivity {
 
             // Field value input
             android.widget.EditText etFieldValue = new android.widget.EditText(this);
-            etFieldValue.setHint("Value");
+            etFieldValue.setHint(R.string.testsuite_field_value_hint);
             etFieldValue.setInputType(android.text.InputType.TYPE_CLASS_TEXT);
             etFieldValue.setTextSize(14);
             etFieldValue.setTypeface(android.graphics.Typeface.MONOSPACE);
@@ -825,7 +872,7 @@ public class TestSuiteActivity extends BaseActivity {
             etName.setText(existing.getDescription());
             etName.setEnabled(false);
             etName.setAlpha(0.6f);
-            btnSave.setText("Apply Config");
+            btnSave.setText(R.string.testsuite_apply_config);
             btnSave.setIconResource(R.drawable.ic_check);
         }
 
@@ -842,8 +889,17 @@ public class TestSuiteActivity extends BaseActivity {
             etExpiry.setText(existing.getField(14));
             etTrack2.setText(existing.getField(35));
         } else {
-            etDe22.setText("051");
-            etAmount.setText("100000");
+            etDe22.setText(R.string.testsuite_default_de22);
+            etAmount.setText(R.string.testsuite_default_amount);
+        }
+        if (isBalanceTxn) {
+            etAmount.setText("");
+            etAmount.setEnabled(false);
+            etAmount.setHint(R.string.testsuite_balance_amount_not_required);
+            etAmount.setAlpha(0.6f);
+        } else {
+            etAmount.setEnabled(true);
+            etAmount.setAlpha(1f);
         }
         updateEntryModeUI.run();
 
@@ -853,41 +909,41 @@ public class TestSuiteActivity extends BaseActivity {
 
             // Name
             String name = etName.getText().toString().trim();
-            if (name.isEmpty()) { tilName.setError("Required"); valid = false; }
+            if (name.isEmpty()) { tilName.setError(getString(R.string.testsuite_required)); valid = false; }
             else { tilName.setError(null); }
 
             // DE 22
             String de22 = etDe22.getText().toString().trim();
             NapasFieldSpecConfig.FieldSpec de22Spec = NapasFieldSpecConfig.get(22);
             if (de22Spec != null && de22Spec.pattern != null && !de22Spec.pattern.matcher(de22).matches()) {
-                Toast.makeText(this, "Invalid entry mode: " + de22, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.testsuite_invalid_entry_mode, de22), Toast.LENGTH_SHORT).show();
                 valid = false;
             }
 
             // Amount
             String amount = etAmount.getText().toString().trim();
-            if (!amount.isEmpty()) {
+            if (!isBalanceTxn && !amount.isEmpty()) {
                 try {
                     long amountVal = Long.parseLong(amount);
                     if (amountVal < 10000 || amountVal > 500000000) {
-                        etAmount.setError("10,000 → 500,000,000"); valid = false;
+                        etAmount.setError(getString(R.string.testsuite_amount_range)); valid = false;
                     } else { etAmount.setError(null); }
                 } catch (NumberFormatException e) {
-                    etAmount.setError("Must be numeric"); valid = false;
+                    etAmount.setError(getString(R.string.testsuite_amount_numeric)); valid = false;
                 }
             }
 
             // PAN + Expiry (manual mode)
             if (layoutManual.getVisibility() == View.VISIBLE) {
                 String pan = etPan.getText().toString().trim();
-                if (pan.isEmpty()) { tilPan.setError("Required"); valid = false; }
-                else if (pan.length() < 13 || pan.length() > 19) { tilPan.setError("13-19 digits"); valid = false; }
-                else if (!checkLuhn(pan)) { tilPan.setError("Luhn failed"); valid = false; }
+                if (pan.isEmpty()) { tilPan.setError(getString(R.string.testsuite_required)); valid = false; }
+                else if (pan.length() < 13 || pan.length() > 19) { tilPan.setError(getString(R.string.testsuite_pan_length)); valid = false; }
+                else if (!checkLuhn(pan)) { tilPan.setError(getString(R.string.testsuite_pan_luhn_failed)); valid = false; }
                 else { tilPan.setError(null); }
 
                 String exp = etExpiry.getText().toString().trim();
-                if (exp.isEmpty()) { tilExpiry.setError("Required"); valid = false; }
-                else if (exp.length() != 4) { tilExpiry.setError("YYMM"); valid = false; }
+                if (exp.isEmpty()) { tilExpiry.setError(getString(R.string.testsuite_required)); valid = false; }
+                else if (exp.length() != 4) { tilExpiry.setError(getString(R.string.testsuite_expiry_yymm)); valid = false; }
                 else {
                     try {
                         int yy = Integer.parseInt(exp.substring(0, 2));
@@ -895,17 +951,17 @@ public class TestSuiteActivity extends BaseActivity {
                         java.util.Calendar now = java.util.Calendar.getInstance();
                         int curY = now.get(java.util.Calendar.YEAR) % 100;
                         int curM = now.get(java.util.Calendar.MONTH) + 1;
-                        if (mm < 1 || mm > 12) { tilExpiry.setError("Invalid month"); valid = false; }
-                        else if (yy < curY || (yy == curY && mm < curM)) { tilExpiry.setError("Expired"); valid = false; }
+                        if (mm < 1 || mm > 12) { tilExpiry.setError(getString(R.string.testsuite_expiry_invalid_month)); valid = false; }
+                        else if (yy < curY || (yy == curY && mm < curM)) { tilExpiry.setError(getString(R.string.testsuite_expiry_expired)); valid = false; }
                         else { tilExpiry.setError(null); }
-                    } catch (NumberFormatException e) { tilExpiry.setError("YYMM"); valid = false; }
+                    } catch (NumberFormatException e) { tilExpiry.setError(getString(R.string.testsuite_expiry_yymm)); valid = false; }
                 }
             }
 
             // Track 2
             if (layoutTrack2.getVisibility() == View.VISIBLE) {
                 String t2 = etTrack2.getText().toString().trim();
-                if (t2.isEmpty()) { tilTrack2.setError("Required"); valid = false; }
+                if (t2.isEmpty()) { tilTrack2.setError(getString(R.string.testsuite_required)); valid = false; }
                 else { tilTrack2.setError(null); }
             }
 
@@ -917,13 +973,22 @@ public class TestSuiteActivity extends BaseActivity {
 
             if (isBuiltIn) {
                 existing.setField(22, de22);
-                existing.setField(4, amount);
-                if (layoutManual.getVisibility() == View.VISIBLE) {
+                if (isBalanceTxn) {
+                    existing.getAllFields().remove(4);
+                } else {
+                    existing.setField(4, amount);
+                }
+                if (isNfcMode(de22)) {
+                    applyFixedNfcData(existing);
+                } else {
+                    existing.setField(55, null);
+                }
+                if (!isNfcMode(de22) && layoutManual.getVisibility() == View.VISIBLE) {
                     existing.setField(2, panFinal);
                     existing.setField(14, expiryFinal);
                     existing.setField(35, null);
                 }
-                if (layoutTrack2.getVisibility() == View.VISIBLE) {
+                if (!isNfcMode(de22) && layoutTrack2.getVisibility() == View.VISIBLE) {
                     existing.setField(35, track2Final);
                     if (track2Final.contains("=")) {
                         String[] parts = track2Final.split("=");
@@ -935,7 +1000,7 @@ public class TestSuiteActivity extends BaseActivity {
                 applyCustomFieldsToScenario(existing, containerCustomFields, reservedFields);
                 adapter.notifyDataSetChanged();
                 dialog.dismiss();
-                Toast.makeText(this, "✓ Configuration applied", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.testsuite_configuration_applied, Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -950,15 +1015,23 @@ public class TestSuiteActivity extends BaseActivity {
                 entity.timestamp = System.currentTimeMillis();
                 entity.status = "NEW";
                 entity.de22 = de22;
-                entity.amount = amount;
-                if (layoutManual.getVisibility() == View.VISIBLE) {
+                entity.amount = isBalanceTxn ? null : amount;
+                if (isNfcMode(de22)) {
+                    entity.pan = NFC_071_072_PAN;
+                    entity.expiry = NFC_071_072_EXPIRY;
+                    entity.track2 = null;
+                } else if (layoutManual.getVisibility() == View.VISIBLE) {
                     entity.pan = panFinal;
                     entity.expiry = expiryFinal;
                 }
-                if (layoutTrack2.getVisibility() == View.VISIBLE) {
+                if (!isNfcMode(de22) && layoutTrack2.getVisibility() == View.VISIBLE) {
                     entity.track2 = track2Final;
                 }
-                entity.fieldConfigJson = collectCustomFieldsJson(containerCustomFields, reservedFields);
+                String customFieldJson = collectCustomFieldsJson(containerCustomFields, reservedFields);
+                if (isNfcMode(de22)) {
+                    customFieldJson = putFieldToJson(customFieldJson, 55, NFC_071_072_DE55);
+                }
+                entity.fieldConfigJson = customFieldJson;
                 if (isEdit) repository.update(entity);
                 else repository.insert(entity);
                 runOnUiThread(dialog::dismiss);
@@ -1014,6 +1087,18 @@ public class TestSuiteActivity extends BaseActivity {
         return json.length() > 0 ? json.toString() : null;
     }
 
+    private String putFieldToJson(String sourceJson, int field, String value) {
+        try {
+            org.json.JSONObject json = sourceJson == null || sourceJson.isEmpty()
+                    ? new org.json.JSONObject()
+                    : new org.json.JSONObject(sourceJson);
+            json.put(String.valueOf(field), value);
+            return json.toString();
+        } catch (Exception ignored) {
+            return sourceJson;
+        }
+    }
+
     /**
      * Applies custom field overrides from the advanced section to a TestScenario.
      */
@@ -1059,7 +1144,6 @@ public class TestSuiteActivity extends BaseActivity {
     // ========================
 
     private void openRunnerSingle(TestScenario scenario) {
-        // Skip Amount Input for Balance Inquiry
         if ("BALANCE".equals(txnType)) {
             proceedWithRunner(scenario);
             return;
@@ -1078,13 +1162,17 @@ public class TestSuiteActivity extends BaseActivity {
     }
 
     private void proceedWithRunner(TestScenario scenario) {
-        // Custom test cases with saved card data skip the card selection dialog
         if (scenario.isCustom() && hasCardData(scenario)) {
             checkPinAndLaunch(scenario);
             return;
         }
 
         String de22 = scenario.getField(22);
+        if (isNfcMode(de22)) {
+            selectDefaultNfcCard(scenario, () -> checkPinAndLaunch(scenario));
+            return;
+        }
+
         if ("011".equals(de22) || "012".equals(de22)) {
             showPanSelectionDialog(scenario, () -> checkPinAndLaunch(scenario));
         } else {
@@ -1102,7 +1190,7 @@ public class TestSuiteActivity extends BaseActivity {
         }
 
         android.widget.TextView tvTitle = view.findViewById(R.id.tvDialogTitle);
-        tvTitle.setText("Amount (" + scenario.getDescription() + ")");
+        tvTitle.setText(getString(R.string.testsuite_amount_title, scenario.getDescription()));
 
         com.google.android.material.textfield.TextInputEditText etAmount = view.findViewById(R.id.etAmount);
         com.google.android.material.textfield.TextInputLayout tilAmount = view.findViewById(R.id.tilAmount);
@@ -1118,7 +1206,6 @@ public class TestSuiteActivity extends BaseActivity {
             etAmount.setText("");
         }
 
-        // Pre-select Currency
         String currentCurr = scenario.getField(49);
         if ("840".equals(currentCurr)) {
             rbUsd.setChecked(true);
@@ -1128,7 +1215,6 @@ public class TestSuiteActivity extends BaseActivity {
             tilAmount.setSuffixText("VND");
         }
 
-        // Listener to update Suffix
         rgCurrency.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.rbUsd) {
                 tilAmount.setSuffixText("USD");
@@ -1138,7 +1224,6 @@ public class TestSuiteActivity extends BaseActivity {
         });
 
         etAmount.requestFocus();
-        // Show keyboard?
 
         view.findViewById(R.id.btnCancel).setOnClickListener(v -> {
             configuringInProgress = false;
@@ -1147,30 +1232,28 @@ public class TestSuiteActivity extends BaseActivity {
         view.findViewById(R.id.btnConfirm).setOnClickListener(v -> {
             String val = etAmount.getText().toString().trim();
             if (val.isEmpty()) {
-                etAmount.setError("Required");
+                etAmount.setError(getString(R.string.testsuite_required));
                 return;
             }
             try {
                 long l = Long.parseLong(val);
                 if (l <= 0) {
-                    etAmount.setError("Must be > 0");
+                    etAmount.setError(getString(R.string.testsuite_amount_gt_zero));
                     return;
                 }
             } catch (NumberFormatException e) {
-                etAmount.setError("Invalid number");
+                etAmount.setError(getString(R.string.testsuite_amount_invalid_number));
                 return;
             }
 
-            // Save Amount (DE 4)
             scenario.setField(4, val);
 
-            // Save Currency (DE 49) and Country Code (DE 19)
             if (rbUsd.isChecked()) {
-                scenario.setField(49, "840"); // USD
-                scenario.setField(19, "840"); // USD Country Code
+                scenario.setField(49, "840");
+                scenario.setField(19, "840");
             } else {
-                scenario.setField(49, "704"); // VND
-                scenario.setField(19, "704"); // VND Country Code
+                scenario.setField(49, "704");
+                scenario.setField(19, "704");
             }
 
             dialog.dismiss();
@@ -1180,232 +1263,6 @@ public class TestSuiteActivity extends BaseActivity {
         dialog.show();
     }
 
-    private boolean hasCardData(TestScenario scenario) {
-        String de22 = scenario.getField(22);
-        if (de22 == null)
-            return false;
-
-        // Manual entry (01x): needs PAN
-        if (de22.startsWith("01")) {
-            return scenario.getField(2) != null && !scenario.getField(2).isEmpty();
-        }
-        // Mag/Chip (02x, 05x, 07x, 91x): needs Track2
-        return scenario.getField(35) != null && !scenario.getField(35).isEmpty();
-    }
-
-    private void applyPanData(TestScenario scenario, String pan) {
-        scenario.setField(2, pan);
-        scenario.setField(14, "3101");
-        scenario.setField(35, null);
-    }
-
-    private void showPanSelectionDialog(TestScenario scenario, Runnable onDone) {
-        final java.util.List<String> panOptions = java.util.Arrays.asList(
-                "9704166606226219923",
-                "9704306669144645257",
-                "9704189991010867647");
-
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        View view = getLayoutInflater().inflate(R.layout.dialog_card_selection, null);
-        builder.setView(view);
-        android.app.AlertDialog dialog = builder.create();
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        }
-
-        TextView tvTitle = view.findViewById(R.id.tvDialogTitle);
-        tvTitle.setText("Select Card (PAN)");
-
-        androidx.recyclerview.widget.RecyclerView rv = view.findViewById(R.id.recyclerViewCards);
-        rv.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
-
-        com.example.mysoftpos.testsuite.adapter.CardOptionAdapter adapter = new com.example.mysoftpos.testsuite.adapter.CardOptionAdapter(
-                panOptions, selected -> {
-                    applyPanData(scenario, selected);
-                    dialog.dismiss();
-                    onDone.run();
-                });
-        rv.setAdapter(adapter);
-
-        view.findViewById(R.id.btnCancel).setOnClickListener(v -> {
-            configuringInProgress = false;
-            dialog.dismiss();
-        });
-        dialog.show();
-    }
-
-    private void showCardSelectionDialog(TestScenario scenario, Runnable onDone) {
-        final java.util.List<String> cardOptions = java.util.Arrays.asList(
-                "9704166606226219923=31016010000000123",
-                "9704306669144645257=31016010000000123",
-                "9704189991010867647=31016010000000123");
-
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        View view = getLayoutInflater().inflate(R.layout.dialog_card_selection, null);
-        builder.setView(view);
-        android.app.AlertDialog dialog = builder.create();
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        }
-
-        TextView tvTitle = view.findViewById(R.id.tvDialogTitle);
-        tvTitle.setText("Select Card");
-
-        androidx.recyclerview.widget.RecyclerView rv = view.findViewById(R.id.recyclerViewCards);
-        rv.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
-
-        com.example.mysoftpos.testsuite.adapter.CardOptionAdapter adapter = new com.example.mysoftpos.testsuite.adapter.CardOptionAdapter(
-                cardOptions, selected -> {
-                    applyCardData(scenario, selected);
-                    dialog.dismiss();
-                    onDone.run();
-                });
-        rv.setAdapter(adapter);
-
-        view.findViewById(R.id.btnCancel).setOnClickListener(v -> {
-            configuringInProgress = false;
-            dialog.dismiss();
-        });
-        dialog.show();
-    }
-
-    private void applyCardData(TestScenario scenario, String track2Raw) {
-        if (track2Raw.contains("=")) {
-            String[] parts = track2Raw.split("=");
-            String pan = parts[0];
-            String expiry = "";
-            if (parts.length > 1 && parts[1].length() >= 4) {
-                expiry = parts[1].substring(0, 4);
-            }
-            scenario.setField(2, pan);
-            scenario.setField(35, track2Raw);
-            scenario.setField(14, expiry);
-        }
-    }
-
-    private void checkPinAndLaunch(TestScenario scenario) {
-        String de22 = scenario.getField(22);
-        if ("011".equals(de22) || "021".equals(de22)) {
-            showPinDialog(scenario, pin -> {
-                scenario.setUserPin(pin);
-                launchRunner(scenario);
-            });
-        } else {
-            launchRunner(scenario);
-        }
-    }
-
-    private interface PinCallback {
-        void onPin(String pin);
-    }
-
-    private void showPinDialog(TestScenario scenario, PinCallback callback) {
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_pin_entry, null);
-        builder.setView(dialogView);
-        android.app.AlertDialog dialog = builder.create();
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        }
-
-        android.widget.ImageView[] dots = new android.widget.ImageView[] {
-                dialogView.findViewById(R.id.dot1),
-                dialogView.findViewById(R.id.dot2),
-                dialogView.findViewById(R.id.dot3),
-                dialogView.findViewById(R.id.dot4),
-                dialogView.findViewById(R.id.dot5),
-                dialogView.findViewById(R.id.dot6)
-        };
-        StringBuilder pinBuilder = new StringBuilder();
-
-        View.OnClickListener numListener = v -> {
-            if (pinBuilder.length() < 6) {
-                pinBuilder.append(((TextView) v).getText());
-                updateDots(dots, pinBuilder.length());
-            }
-        };
-
-        int[] btnIds = {
-                R.id.btn0, R.id.btn1, R.id.btn2, R.id.btn3, R.id.btn4,
-                R.id.btn5, R.id.btn6, R.id.btn7, R.id.btn8, R.id.btn9
-        };
-        for (int id : btnIds) {
-            dialogView.findViewById(id).setOnClickListener(numListener);
-        }
-
-        dialogView.findViewById(R.id.btnBackspace).setOnClickListener(v -> {
-            if (pinBuilder.length() > 0) {
-                pinBuilder.deleteCharAt(pinBuilder.length() - 1);
-                updateDots(dots, pinBuilder.length());
-            }
-        });
-
-        dialogView.findViewById(R.id.btnOk).setOnClickListener(v -> {
-            dialog.dismiss();
-            callback.onPin(pinBuilder.toString());
-        });
-
-        dialogView.findViewById(R.id.btnCancel).setOnClickListener(v -> {
-            configuringInProgress = false;
-            dialog.dismiss();
-        });
-
-        dialog.show();
-    }
-
-    private void updateDots(android.widget.ImageView[] dots, int length) {
-        for (int i = 0; i < dots.length; i++) {
-            if (i < length) {
-                dots[i].setImageResource(R.drawable.bg_pin_dot_filled);
-            } else {
-                dots[i].setImageResource(R.drawable.bg_pin_dot_empty);
-            }
-        }
-    }
-
-    private void launchRunner(TestScenario scenario) {
-        String pinBlock = null;
-        if ("PIN_BLOCK_PRESENT".equals(scenario.getField(52))) {
-            // Check if we have a specific user entered PIN
-            if (scenario.getUserPin() != null) {
-                pinBlock = scenario.getUserPin(); // This is raw PIN, RunnerViewModel generates block
-            } else {
-                pinBlock = "123456"; // Default
-            }
-        }
-
-        android.content.Intent i = new android.content.Intent(this, RunnerActivity.class);
-        i.putExtra(com.example.mysoftpos.utils.IntentKeys.DESC, scenario.getDescription());
-        i.putExtra(com.example.mysoftpos.utils.IntentKeys.DE22, scenario.getField(22));
-        i.putExtra(com.example.mysoftpos.utils.IntentKeys.PAN, scenario.getField(2));
-        i.putExtra(com.example.mysoftpos.utils.IntentKeys.EXPIRY, scenario.getField(14));
-        i.putExtra(com.example.mysoftpos.utils.IntentKeys.TRACK2, scenario.getField(35));
-        i.putExtra(com.example.mysoftpos.utils.IntentKeys.PIN_BLOCK, pinBlock);
-        i.putExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE,
-                scenario.getTxnType() != null ? scenario.getTxnType() : "PURCHASE");
-
-        // Pass the amount (DE 4)
-        i.putExtra(com.example.mysoftpos.utils.IntentKeys.AMOUNT, scenario.getField(4));
-
-        // Pass scheme for per-scheme connection config
-        i.putExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME, scheme);
-
-        // Pass custom field overrides as JSON
-        java.util.Set<Integer> reserved = new java.util.HashSet<>(java.util.Arrays.asList(2, 4, 14, 22, 35, 52));
-        org.json.JSONObject fieldJson = new org.json.JSONObject();
-        try {
-            for (java.util.Map.Entry<Integer, String> entry : scenario.getAllFields().entrySet()) {
-                if (!reserved.contains(entry.getKey()) && entry.getValue() != null) {
-                    fieldJson.put(String.valueOf(entry.getKey()), entry.getValue());
-                }
-            }
-        } catch (Exception ignored) {}
-        if (fieldJson.length() > 0) {
-            i.putExtra(com.example.mysoftpos.utils.IntentKeys.FIELD_CONFIG_JSON, fieldJson.toString());
-        }
-
-        startActivity(i);
-    }
 
     // ========================
     // MULTI-THREAD FLOW
@@ -1423,7 +1280,7 @@ public class TestSuiteActivity extends BaseActivity {
         String de22 = scenario.getField(22);
 
         Runnable afterCard = () -> {
-            if ("011".equals(de22) || "021".equals(de22)) {
+            if ("011".equals(de22) || "021".equals(de22) || "071".equals(de22)) {
                 showPinDialog(scenario, pin -> {
                     scenario.setUserPin(pin);
                     scenario.setSelected(true);
@@ -1447,6 +1304,11 @@ public class TestSuiteActivity extends BaseActivity {
             }
         };
 
+        if (isNfcMode(de22)) {
+            selectDefaultNfcCard(scenario, afterCard);
+            return;
+        }
+
         if ("011".equals(de22) || "012".equals(de22)) {
             showPanSelectionDialog(scenario, afterCard);
         } else {
@@ -1466,6 +1328,169 @@ public class TestSuiteActivity extends BaseActivity {
             return;
         }
         configureForMultiMode(next);
+    }
+
+    private boolean hasCardData(TestScenario scenario) {
+        String pan = scenario.getField(2);
+        String track2 = scenario.getField(35);
+        return (pan != null && !pan.trim().isEmpty()) || (track2 != null && !track2.trim().isEmpty());
+    }
+
+    private void checkPinAndLaunch(TestScenario scenario) {
+        checkPinAndConfig(scenario);
+    }
+
+    private void showPanSelectionDialog(TestScenario scenario, Runnable onSelected) {
+        showCardLikeDialog(getString(R.string.dialog_select_pan_title), PAN_OPTIONS, selected -> {
+            String[] parts = selected.split("=");
+            if (parts.length >= 2) {
+                scenario.setField(2, parts[0]);
+                scenario.setField(14, parts[1]);
+                scenario.setField(35, null);
+            }
+            onSelected.run();
+        });
+    }
+
+    private void showCardSelectionDialog(TestScenario scenario, Runnable onSelected) {
+        showCardLikeDialog(getString(R.string.dialog_select_card_title), TRACK2_OPTIONS, selected -> {
+            applyTrack2ToScenario(scenario, selected);
+            onSelected.run();
+        });
+    }
+
+    private void showCardLikeDialog(String title, java.util.List<String> options,
+                                    java.util.function.Consumer<String> onPicked) {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_card_selection, null);
+        builder.setView(view);
+        android.app.AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        TextView tvDialogTitle = view.findViewById(R.id.tvDialogTitle);
+        androidx.recyclerview.widget.RecyclerView recyclerView = view.findViewById(R.id.recyclerViewCards);
+        tvDialogTitle.setText(title);
+
+        recyclerView.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
+        recyclerView.setAdapter(new com.example.mysoftpos.testsuite.adapter.CardOptionAdapter(options, selected -> {
+            onPicked.accept(selected);
+            dialog.dismiss();
+        }));
+
+        view.findViewById(R.id.btnCancel).setOnClickListener(v -> {
+            configuringInProgress = false;
+            if (selectAllIndex >= 0) {
+                selectAllIndex = -1;
+            }
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    private void applyTrack2ToScenario(TestScenario scenario, String track2) {
+        scenario.setField(35, track2);
+        if (track2 == null) {
+            return;
+        }
+        String normalized = track2.trim();
+        String[] parts;
+        if (normalized.contains("=")) {
+            parts = normalized.split("=");
+        } else if (normalized.contains("D")) {
+            parts = normalized.split("D");
+        } else {
+            parts = new String[]{normalized};
+        }
+
+        if (parts.length > 0 && !parts[0].isEmpty()) {
+            scenario.setField(2, parts[0]);
+        }
+        if (parts.length > 1 && parts[1] != null && parts[1].length() >= 4) {
+            scenario.setField(14, parts[1].substring(0, 4));
+        }
+    }
+
+    private void selectDefaultNfcCard(TestScenario scenario, Runnable onSelected) {
+        showCardLikeDialog(getString(R.string.dialog_select_nfc_card_title), java.util.Collections.singletonList(NFC_071_072_TRACK2_FOR_SELECTION), selected -> {
+            applyFixedNfcData(scenario);
+            onSelected.run();
+        });
+    }
+
+    private void showPinDialog(TestScenario scenario, PinResultCallback callback) {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_pin_entry, null);
+        builder.setView(view);
+        android.app.AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        android.widget.ImageView[] dots = new android.widget.ImageView[]{
+                view.findViewById(R.id.dot1),
+                view.findViewById(R.id.dot2),
+                view.findViewById(R.id.dot3),
+                view.findViewById(R.id.dot4),
+                view.findViewById(R.id.dot5),
+                view.findViewById(R.id.dot6)
+        };
+        TextView tvPinError = view.findViewById(R.id.tvPinError);
+        final StringBuilder pin = new StringBuilder();
+
+        Runnable updateDots = () -> {
+            for (int i = 0; i < dots.length; i++) {
+                dots[i].setAlpha(i < pin.length() ? 1f : 0.25f);
+            }
+        };
+
+        View.OnClickListener digitListener = v -> {
+            if (!(v instanceof TextView) || pin.length() >= 6) {
+                return;
+            }
+            pin.append(((TextView) v).getText());
+            tvPinError.setVisibility(View.GONE);
+            updateDots.run();
+        };
+
+        int[] digitIds = new int[]{
+                R.id.btn0, R.id.btn1, R.id.btn2, R.id.btn3, R.id.btn4,
+                R.id.btn5, R.id.btn6, R.id.btn7, R.id.btn8, R.id.btn9
+        };
+        for (int id : digitIds) {
+            view.findViewById(id).setOnClickListener(digitListener);
+        }
+
+        view.findViewById(R.id.btnBackspace).setOnClickListener(v -> {
+            if (pin.length() > 0) {
+                pin.deleteCharAt(pin.length() - 1);
+                tvPinError.setVisibility(View.GONE);
+                updateDots.run();
+            }
+        });
+
+        view.findViewById(R.id.btnCancel).setOnClickListener(v -> {
+            configuringInProgress = false;
+            if (selectAllIndex >= 0) {
+                selectAllIndex = -1;
+            }
+            dialog.dismiss();
+        });
+
+        view.findViewById(R.id.btnOk).setOnClickListener(v -> {
+            if (pin.length() < 4) {
+                tvPinError.setText(R.string.dialog_pin_length_error);
+                tvPinError.setVisibility(View.VISIBLE);
+                return;
+            }
+            dialog.dismiss();
+            callback.onPinEntered(pin.toString());
+        });
+
+        updateDots.run();
+        dialog.show();
     }
 
     private void refreshSelectionControls() {
@@ -1528,5 +1553,24 @@ public class TestSuiteActivity extends BaseActivity {
         data.putExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE, txnType);
         setResult(RESULT_OK, data);
         finish();
+    }
+
+    private static boolean isNfcMode(String de22) {
+        return "071".equals(de22) || "072".equals(de22);
+    }
+
+    private static String buildTag57OnlyDe55(String pan, String expiryYymm, String serviceCode, String discretionary) {
+        java.util.Map<Integer, byte[]> tags = new java.util.LinkedHashMap<>();
+        tags.put(
+                EmvTlvCodec.TAG_TRACK2_EQUIVALENT,
+                EmvTlvCodec.encodeTag57(pan, expiryYymm, serviceCode, discretionary));
+        return EmvTlvCodec.buildDE55(tags);
+    }
+
+    private void applyFixedNfcData(TestScenario scenario) {
+        scenario.setField(2, NFC_071_072_PAN);
+        scenario.setField(14, NFC_071_072_EXPIRY);
+        scenario.setField(35, null);
+        scenario.setField(55, NFC_071_072_DE55);
     }
 }

@@ -9,13 +9,13 @@
         android:id="@+id/etSuiteName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Suite Name (e.g. 'Napas UAT')" />
+        android:hint="@string/dialog_suite_name_hint" />
 
     <EditText
         android:id="@+id/etSuiteDesc"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:hint="Description (Optional)" />
+        android:hint="@string/dialog_suite_desc_hint" />
 
 </LinearLayout>

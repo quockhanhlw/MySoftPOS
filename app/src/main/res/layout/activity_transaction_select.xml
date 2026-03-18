@@ -44,7 +44,7 @@
                     android:id="@+id/tvTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Transaction Type"
+                    android:text="@string/txn_select_title"
                     android:textColor="#0F172A"
                     android:textSize="18sp"
                     android:textStyle="bold"
@@ -61,14 +61,14 @@
                         android:id="@+id/tvBreadcrumbScheme"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Napas"
+                        android:text="@string/txn_select_default_scheme"
                         android:textColor="#94A3B8"
                         android:textSize="12sp"/>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text=" › "
+                        android:text="@string/txn_select_breadcrumb_sep"
                         android:textColor="#CBD5E1"
                         android:textSize="12sp"/>
 
@@ -76,7 +76,7 @@
                         android:id="@+id/tvBreadcrumbChannel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="POS"
+                        android:text="@string/txn_select_default_channel"
                         android:textColor="#94A3B8"
                         android:textSize="12sp"/>
                 </LinearLayout>
@@ -141,7 +141,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="Purchase"
+                    android:text="@string/dashboard_purchase"
                     android:textColor="#0F172A"
                     android:textSize="18sp"
                     android:textStyle="bold"
@@ -152,7 +152,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Payment transaction test"
+                    android:text="@string/txn_select_purchase_subtitle"
                     android:textColor="#94A3B8"
                     android:textSize="14sp"/>
 
@@ -211,7 +211,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="Balance Inquiry"
+                    android:text="@string/dashboard_balance"
                     android:textColor="#0F172A"
                     android:textSize="18sp"
                     android:textStyle="bold"
@@ -222,7 +222,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Balance check test"
+                    android:text="@string/txn_select_balance_subtitle"
                     android:textColor="#94A3B8"
                     android:textSize="14sp"/>
 
@@ -251,7 +251,7 @@
         android:layout_marginHorizontal="20dp"
         android:layout_marginBottom="20dp"
         android:backgroundTint="#0F172A"
-        android:text="Run Selected"
+        android:text="@string/txn_select_run_selected"
         android:textAllCaps="false"
         android:textColor="#FFFFFF"
         android:textSize="15sp"

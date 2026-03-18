@@ -41,7 +41,7 @@
                     android:padding="10dp"
                     android:src="@drawable/ic_edit_note"
                     app:tint="#60A5FA"
-                    android:contentDescription="Test Case Icon" />
+                    android:contentDescription="@string/testcase_dialog_icon_desc" />
 
                 <ImageButton
                     android:id="@+id/btnClose"
@@ -52,7 +52,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_close"
                     app:tint="#94A3B8"
-                    android:contentDescription="Close" />
+                    android:contentDescription="@string/common_close" />
             </RelativeLayout>
 
             <TextView
@@ -60,7 +60,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-bold"
-                android:text="New Test Case"
+                android:text="@string/testcase_dialog_default_title"
                 android:textColor="#FFFFFF"
                 android:textSize="22sp" />
 
@@ -69,7 +69,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Configure transaction parameters"
+                android:text="@string/testcase_dialog_default_subtitle"
                 android:textColor="#94A3B8"
                 android:textSize="13sp" />
 
@@ -93,7 +93,7 @@
                 android:layout_marginBottom="12dp"
                 android:drawablePadding="6dp"
                 android:fontFamily="sans-serif-medium"
-                android:text="Basic Information"
+                android:text="@string/testcase_dialog_basic_info"
                 android:textColor="#0F172A"
                 android:textSize="14sp" />
 
@@ -104,7 +104,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:hint="Scenario Name"
+                android:hint="@string/testcase_dialog_scenario_name_hint"
                 app:startIconDrawable="@drawable/ic_edit_note"
                 app:startIconTint="#64748B"
                 app:boxStrokeColor="#6366F1"
@@ -125,7 +125,7 @@
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="10dp"
                 android:fontFamily="sans-serif-medium"
-                android:text="Entry Mode (DE 22)"
+                android:text="@string/testcase_dialog_entry_mode_title"
                 android:textColor="#0F172A"
                 android:textSize="14sp" />
 
@@ -136,13 +136,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="4dp"
-                android:hint="POS Entry Mode (3 digits)"
+                android:hint="@string/testcase_dialog_de22_hint"
                 app:startIconDrawable="@drawable/ic_sim_card"
                 app:startIconTint="#64748B"
                 app:boxStrokeColor="#6366F1"
                 app:hintTextColor="#6366F1"
                 app:helperTextEnabled="true"
-                app:helperText="e.g. 011, 012, 021, 022, 051, 052, 071, 072">
+                app:helperText="@string/testcase_dialog_de22_helper">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etDe22"
@@ -168,7 +168,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Mode:"
+                    android:text="@string/testcase_dialog_mode_label"
                     android:textColor="#64748B"
                     android:textSize="12sp"
                     android:fontFamily="monospace" />
@@ -193,7 +193,7 @@
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="10dp"
                 android:fontFamily="sans-serif-medium"
-                android:text="Transaction Amount"
+                android:text="@string/testcase_dialog_amount_title"
                 android:textColor="#0F172A"
                 android:textSize="14sp" />
 
@@ -203,8 +203,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:hint="Amount (VND)"
-                app:suffixText="VND"
+                android:hint="@string/testcase_dialog_amount_hint"
+                app:suffixText="@string/currency_vnd"
                 app:startIconDrawable="@drawable/ic_money"
                 app:startIconTint="#64748B"
                 app:boxStrokeColor="#6366F1"
@@ -241,12 +241,12 @@
                         android:layout_marginEnd="8dp"
                         android:src="@drawable/ic_credit_card"
                         app:tint="#475569"
-                        android:contentDescription="Card" />
+                        android:contentDescription="@string/testcase_dialog_card_desc" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Card Details"
+                        android:text="@string/testcase_dialog_card_details"
                         android:textColor="#334155"
                         android:textSize="13sp"
                         android:fontFamily="sans-serif-medium" />
@@ -258,7 +258,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="10dp"
-                    android:hint="Card Number (PAN)"
+                    android:hint="@string/testcase_dialog_pan_hint"
                     app:boxStrokeColor="#6366F1"
                     app:hintTextColor="#6366F1"
                     app:boxBackgroundColor="#FFFFFF">
@@ -278,7 +278,7 @@
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Expiry (YYMM)"
+                    android:hint="@string/testcase_dialog_expiry_hint"
                     app:boxStrokeColor="#6366F1"
                     app:hintTextColor="#6366F1"
                     app:boxBackgroundColor="#FFFFFF">
@@ -317,12 +317,12 @@
                         android:layout_marginEnd="8dp"
                         android:src="@drawable/ic_sim_card"
                         app:tint="#475569"
-                        android:contentDescription="Track" />
+                        android:contentDescription="@string/testcase_dialog_track_desc" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Track 2 Data"
+                        android:text="@string/testcase_dialog_track2_title"
                         android:textColor="#334155"
                         android:textSize="13sp"
                         android:fontFamily="sans-serif-medium" />
@@ -333,7 +333,7 @@
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="e.g. 9704xxxx=3101xxxx"
+                    android:hint="@string/testcase_dialog_track2_hint"
                     app:boxStrokeColor="#6366F1"
                     app:hintTextColor="#6366F1"
                     app:boxBackgroundColor="#FFFFFF">
@@ -369,7 +369,7 @@
                     android:layout_marginEnd="10dp"
                     android:src="@android:drawable/arrow_down_float"
                     app:tint="#F59E0B"
-                    android:contentDescription="Toggle" />
+                    android:contentDescription="@string/testcase_dialog_toggle_desc" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -380,7 +380,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Advanced Fields"
+                        android:text="@string/testcase_dialog_advanced_title"
                         android:textColor="#0F172A"
                         android:textSize="13sp"
                         android:fontFamily="sans-serif-medium" />
@@ -388,7 +388,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Custom ISO8583 field overrides"
+                        android:text="@string/testcase_dialog_advanced_subtitle"
                         android:textColor="#94A3B8"
                         android:textSize="11sp" />
                 </LinearLayout>
@@ -403,7 +403,7 @@
                     android:textColor="#64748B"
                     android:textSize="11sp"
                     android:fontFamily="sans-serif-medium"
-                    android:text="0" />
+                    android:text="@string/common_zero" />
             </LinearLayout>
 
             <LinearLayout
@@ -419,7 +419,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Override ISO8583 fields: DE 3, DE 18, DE 25, DE 49, etc."
+                    android:text="@string/testcase_dialog_advanced_note"
                     android:textColor="#92400E"
                     android:textSize="11sp"
                     android:layout_marginBottom="10dp"
@@ -437,7 +437,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="40dp"
                     android:layout_marginTop="6dp"
-                    android:text="+ Add Field"
+                    android:text="@string/testcase_dialog_add_field"
                     android:textSize="12sp"
                     android:textAllCaps="false"
                     app:strokeColor="#FDBA74"
@@ -463,7 +463,7 @@
                     android:layout_height="52dp"
                     android:layout_weight="1"
                     android:layout_marginEnd="8dp"
-                    android:text="Cancel"
+                    android:text="@string/common_cancel"
                     android:textColor="#64748B"
                     android:textSize="15sp"
                     android:textAllCaps="false"
@@ -476,7 +476,7 @@
                     android:layout_width="0dp"
                     android:layout_height="52dp"
                     android:layout_weight="1.5"
-                    android:text="Save Test Case"
+                    android:text="@string/testcase_dialog_save"
                     android:textSize="15sp"
                     android:textAllCaps="false"
                     app:backgroundTint="#6366F1"

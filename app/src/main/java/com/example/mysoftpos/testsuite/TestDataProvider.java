@@ -1,8 +1,11 @@
 package com.example.mysoftpos.testsuite;
 
+import com.example.mysoftpos.iso8583.emv.EmvTlvCodec;
 import com.example.mysoftpos.testsuite.model.TestScenario;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Generates ISO 8583 Test Cases based on strict Napas & OpenWay specifications.
@@ -50,13 +53,20 @@ public class TestDataProvider {
         List<TestScenario> list = new ArrayList<>();
 
         String[] codes = {
-                "022", "011", "012", "021"
+                "022", "011", "012", "021", "071", "072"
         };
 
         for (String code : codes) {
             String modeStr = getModeName(code);
             boolean isPin = code.endsWith("1") && !"021".equals(code);
-            String desc = String.format("%s (%s)", modeStr, code);
+            String desc;
+            if ("071".equals(code)) {
+                desc = "Contactless + PIN (071)";
+            } else if ("072".equals(code)) {
+                desc = "Contactless - No PIN (072)";
+            } else {
+                desc = String.format("%s (%s)", modeStr, code);
+            }
 
             TestScenario s = new TestScenario("0200", desc);
 
@@ -91,6 +101,18 @@ public class TestDataProvider {
                 s.setField(35, TRACK2_1);
                 s.setField(14, EXP_1);
                 break;
+            case "071": // Contactless with PIN
+                s.setField(2, PAN_2);
+                s.setField(14, EXP_2);
+                s.setField(35, null);
+                s.setField(55, buildTag57OnlyDe55(PAN_2, EXP_2, "601", "0000000456"));
+                break;
+            case "072": // Contactless without PIN
+                s.setField(2, PAN_2);
+                s.setField(14, EXP_2);
+                s.setField(35, null);
+                s.setField(55, buildTag57OnlyDe55(PAN_2, EXP_2, "601", "0000000456"));
+                break;
             default:
                 s.setField(35, TRACK2_1);
                 s.setField(14, EXP_1);
@@ -103,11 +125,21 @@ public class TestDataProvider {
         }
     }
 
+    private static String buildTag57OnlyDe55(String pan, String expiryYymm, String serviceCode, String discretionary) {
+        Map<Integer, byte[]> tags = new LinkedHashMap<>();
+        tags.put(
+                EmvTlvCodec.TAG_TRACK2_EQUIVALENT,
+                EmvTlvCodec.encodeTag57(pan, expiryYymm, serviceCode, discretionary));
+        return EmvTlvCodec.buildDE55(tags);
+    }
+
     private static String getModeName(String code) {
         if (code.startsWith("02"))
             return "Magstripe (Swipe)";
         if (code.startsWith("01"))
             return "Manual Key-in";
+        if (code.startsWith("07"))
+            return "Contactless";
         if (code.startsWith("03"))
             return "QR Code";
         return "Unknown";

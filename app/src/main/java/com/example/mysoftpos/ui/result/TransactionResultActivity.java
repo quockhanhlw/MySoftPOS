@@ -70,10 +70,10 @@ public class TransactionResultActivity extends BaseActivity {
             type = ResultType.SYSTEM_ERROR;
 
         // Set Common Data
-        tvTxnId.setText(txnId != null ? txnId : "---");
-        tvDate.setText(txnDate != null ? txnDate : "---");
-        tvCardNum.setText(maskedPan != null ? maskedPan : "**** ----");
-        tvType.setText(txnTypeStr != null ? txnTypeStr : "Transaction");
+        tvTxnId.setText(txnId != null ? txnId : getString(R.string.txn_detail_placeholder_dash));
+        tvDate.setText(txnDate != null ? txnDate : getString(R.string.txn_detail_placeholder_dash));
+        tvCardNum.setText(maskedPan != null ? maskedPan : getString(R.string.txn_result_masked_pan_placeholder));
+        tvType.setText(txnTypeStr != null ? txnTypeStr : getString(R.string.txn_result_type_default));
 
         // Format Amount
         if (amount != null && !"OVERFLOW".equals(amount)) {
@@ -94,9 +94,9 @@ public class TransactionResultActivity extends BaseActivity {
                 tvAmount.setText(amount);
             }
         } else if ("OVERFLOW".equals(amount)) {
-            tvAmount.setText("> 10,000,000,000");
+            tvAmount.setText(R.string.txn_result_amount_overflow);
         } else {
-            tvAmount.setText("---");
+            tvAmount.setText(R.string.txn_detail_placeholder_dash);
         }
 
         // Stylize based on Result
@@ -117,9 +117,9 @@ public class TransactionResultActivity extends BaseActivity {
                 String balanceType = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.BALANCE_TYPE);
                 if (tvAmountLabel != null) {
                     if (balanceType != null) {
-                        tvAmountLabel.setText(balanceType + " Balance");
+                        tvAmountLabel.setText(getString(R.string.txn_result_balance_type_format, balanceType));
                     } else {
-                        tvAmountLabel.setText("Available Balance");
+                        tvAmountLabel.setText(R.string.txn_result_available_balance);
                     }
                 }
             }

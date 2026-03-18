@@ -100,6 +100,19 @@ public class RegisterActivity extends BaseActivity {
                 finish();
             });
         }
+
+        // Language toggle
+        View btnLanguageToggle = findViewById(R.id.btnLanguageToggle);
+        if (btnLanguageToggle != null) {
+            btnLanguageToggle.setOnClickListener(v -> {
+                String current = com.example.mysoftpos.utils.LocaleHelper.getLanguage(this);
+                String next = "vi".equals(current) ? "en" : "vi";
+                com.example.mysoftpos.utils.LocaleHelper.setLocale(getApplicationContext(), next);
+                recreate();
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+
         btnRegister.setOnClickListener(v -> handleRegister());
     }
 
@@ -136,7 +149,7 @@ public class RegisterActivity extends BaseActivity {
     private void setupBusinessTypeDropdown() {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_1,
-                BusinessTypeMccMapper.getDisplayOptions());
+                BusinessTypeMccMapper.getDisplayOptions(this));
         etBusinessType.setAdapter(adapter);
         etBusinessType.setOnClickListener(v -> etBusinessType.showDropDown());
         etBusinessType.setOnFocusChangeListener((v, hasFocus) -> {
@@ -163,6 +176,15 @@ public class RegisterActivity extends BaseActivity {
         attachBlurValidation(etEmail, this::validateEmailField);
         attachBlurValidation(etPassword, this::validatePasswordField);
         attachBlurValidation(etConfirmPassword, this::validateConfirmPasswordField);
+        attachRealtimeErrorClear(etStoreName);
+        attachRealtimeErrorClear(etStoreAddress);
+        attachRealtimeErrorClear(etFullName);
+        attachRealtimeErrorClear(etPhone);
+        attachRealtimeErrorClear(etEmail);
+        attachRealtimeErrorClear(etPassword);
+        attachRealtimeErrorClear(etConfirmPassword);
+        attachRealtimeErrorClear(etBusinessType);
+        attachRealtimeErrorClear(etGender);
 
         etPassword.addTextChangedListener(new SimpleAfterTextChangedWatcher() {
             @Override
@@ -190,6 +212,24 @@ public class RegisterActivity extends BaseActivity {
         view.setOnFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus) {
                 validation.run();
+            }
+        });
+    }
+
+    private void attachRealtimeErrorClear(EditText view) {
+        view.addTextChangedListener(new SimpleAfterTextChangedWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
+                clearFieldError(view);
+            }
+        });
+    }
+
+    private void attachRealtimeErrorClear(AutoCompleteTextView view) {
+        view.addTextChangedListener(new SimpleAfterTextChangedWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
+                clearFieldError(view);
             }
         });
     }
@@ -238,7 +278,6 @@ public class RegisterActivity extends BaseActivity {
 
         setRegisterLoading(true);
         ApiService.RegisterRequest request = new ApiService.RegisterRequest(
-                form.phone,
                 form.password,
                 form.fullName,
                 form.phone,
@@ -247,8 +286,7 @@ public class RegisterActivity extends BaseActivity {
                 form.gender,
                 form.storeName,
                 form.businessType,
-                form.storeAddress,
-                REGISTERED_USER_ROLE);
+                form.storeAddress);
 
         ApiClient.getAuthService(this).register(request).enqueue(new Callback<>() {
             @Override
@@ -330,7 +368,7 @@ public class RegisterActivity extends BaseActivity {
             etBusinessType.requestFocus();
             return false;
         }
-        etBusinessType.setText(BusinessTypeMccMapper.toDisplay(value), false);
+        etBusinessType.setText(BusinessTypeMccMapper.toDisplay(this, value), false);
         clearFieldError(etBusinessType);
         return true;
     }
@@ -592,10 +630,24 @@ public class RegisterActivity extends BaseActivity {
     }
 
     private void setRegisterLoading(boolean loading) {
-        btnRegister.setEnabled(!loading);
+        setFormEnabled(!loading);
         btnRegister.setText(loading ? R.string.processing : R.string.register_button);
     }
 
+    private void setFormEnabled(boolean enabled) {
+        etStoreName.setEnabled(enabled);
+        etBusinessType.setEnabled(enabled);
+        etStoreAddress.setEnabled(enabled);
+        etFullName.setEnabled(enabled);
+        etDob.setEnabled(enabled);
+        etGender.setEnabled(enabled);
+        etPhone.setEnabled(enabled);
+        etEmail.setEnabled(enabled);
+        etPassword.setEnabled(enabled);
+        etConfirmPassword.setEnabled(enabled);
+        cbTerms.setEnabled(enabled);
+        btnRegister.setEnabled(enabled);
+    }
 
     private void setupTermsText() {
         if (tvTermsText == null)
@@ -660,9 +712,12 @@ public class RegisterActivity extends BaseActivity {
         TextView tvContent = dialog.findViewById(R.id.tvDialogContent);
         View btnClose = dialog.findViewById(R.id.btnCloseTerms);
 
-        if (tvTitle != null) tvTitle.setText(title);
-        if (tvContent != null) tvContent.setText(readRawTextFile(rawResId));
-        if (btnClose != null) btnClose.setOnClickListener(v -> dialog.dismiss());
+        if (tvTitle != null)
+            tvTitle.setText(title);
+        if (tvContent != null)
+            tvContent.setText(readRawTextFile(rawResId));
+        if (btnClose != null)
+            btnClose.setOnClickListener(v -> dialog.dismiss());
 
         dialog.show();
     }

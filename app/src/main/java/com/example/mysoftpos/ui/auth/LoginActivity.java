@@ -3,6 +3,7 @@ package com.example.mysoftpos.ui.auth;
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.utils.mcc.BusinessTypeMccMapper;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -29,6 +30,7 @@ public class LoginActivity extends BaseActivity {
     private View loadingOverlay;
 
     @Override
+    @SuppressLint("ClickableViewAccessibility")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
@@ -87,6 +89,18 @@ public class LoginActivity extends BaseActivity {
             });
         }
 
+        // Language toggle
+        View btnLanguageToggle = findViewById(R.id.btnLanguageToggle);
+        if (btnLanguageToggle != null) {
+            btnLanguageToggle.setOnClickListener(v -> {
+                String current = com.example.mysoftpos.utils.LocaleHelper.getLanguage(this);
+                String next = "vi".equals(current) ? "en" : "vi";
+                com.example.mysoftpos.utils.LocaleHelper.setLocale(getApplicationContext(), next);
+                recreate();
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+
         if (getIntent().getBooleanExtra(EXTRA_PASSWORD_CHANGED_RELOGIN, false)) {
             Toast.makeText(this, R.string.settings_password_relogin_required, Toast.LENGTH_SHORT).show();
             getIntent().removeExtra(EXTRA_PASSWORD_CHANGED_RELOGIN);
@@ -112,18 +126,18 @@ public class LoginActivity extends BaseActivity {
         String password = etPassword.getText().toString().trim();
 
         if (username.isEmpty()) {
-            etUsername.setError("Please enter email or phone");
+            etUsername.setError(getString(R.string.login_error_enter_email_or_phone));
             etUsername.requestFocus();
             return;
         }
         if (password.isEmpty()) {
-            etPassword.setError("Please enter your password");
+            etPassword.setError(getString(R.string.login_error_enter_password));
             etPassword.requestFocus();
             return;
         }
 
         if (getIntent().getBooleanExtra("SESSION_TIMEOUT", false)) {
-            Toast.makeText(this, "Session expired. Please login again.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.login_session_expired, Toast.LENGTH_SHORT).show();
             getIntent().removeExtra("SESSION_TIMEOUT");
         }
 
@@ -257,17 +271,18 @@ public class LoginActivity extends BaseActivity {
                                             if (isDestroyed() || isFinishing())
                                                 return;
                                             navigateToDashboard(localUserId, resp.user.role,
-                                                    resp.user.fullName != null ? resp.user.fullName : "User",
+                                                    resp.user.fullName != null ? resp.user.fullName
+                                                            : getString(R.string.common_user),
                                                     resp.user.phone, resp.user.email);
                                         });
                                     });
                         } else {
-                            String errorMsg = "Invalid username or password!";
+                            String errorMsg = getString(R.string.login_invalid_credentials);
                             try (okhttp3.ResponseBody errorBody = response.errorBody()) {
                                 if (errorBody != null) {
                                     String body = errorBody.string();
                                     if (body.contains("locked")) {
-                                        errorMsg = "Account locked. Try again later.";
+                                        errorMsg = getString(R.string.login_account_locked);
                                     }
                                 }
                             } catch (Exception ignored) {
@@ -321,13 +336,29 @@ public class LoginActivity extends BaseActivity {
                         }
 
                         if (user != null) {
+                            if (requiresFirstLoginOnline(user)) {
+                                if (allowApiFallback) {
+                                    runOnUiThread(() -> loginViaApi(username, password));
+                                } else {
+                                    runOnUiThread(() -> {
+                                        hideLoading();
+                                        if (!isDestroyed() && !isFinishing()) {
+                                            Toast.makeText(LoginActivity.this,
+                                                    R.string.login_first_online_required,
+                                                    Toast.LENGTH_LONG).show();
+                                        }
+                                    });
+                                }
+                                return;
+                            }
+
                             if (user.lockedUntil > System.currentTimeMillis()) {
                                 int min = (int) ((user.lockedUntil - System.currentTimeMillis()) / 60000) + 1;
                                 runOnUiThread(() -> {
                                     hideLoading();
                                     if (!isDestroyed() && !isFinishing())
                                         Toast.makeText(LoginActivity.this,
-                                                "Account locked. Try again in " + min + " minutes.",
+                                                getString(R.string.login_account_locked_try_again, min),
                                                 Toast.LENGTH_LONG).show();
                                 });
                                 return;
@@ -345,7 +376,8 @@ public class LoginActivity extends BaseActivity {
 
                                 userDao.update(user);
 
-                                String displayName = user.displayName != null ? user.displayName : "User";
+                                String displayName = user.displayName != null ? user.displayName
+                                        : getString(R.string.common_user);
                                 config.resetServerConfig();
                                 if (user.serverIp != null && !user.serverIp.isEmpty() && user.serverPort > 0) {
                                     config.setServerIp(user.serverIp);
@@ -366,7 +398,7 @@ public class LoginActivity extends BaseActivity {
                                     hideLoading();
                                     if (!isDestroyed() && !isFinishing()) {
                                         Toast.makeText(LoginActivity.this,
-                                                "Login Successful!", Toast.LENGTH_SHORT).show();
+                                                R.string.login_success, Toast.LENGTH_SHORT).show();
                                         navigateToDashboard(finalUser.id, finalUser.role, displayName,
                                                 finalUser.phone, finalUser.email);
                                     }
@@ -395,7 +427,7 @@ public class LoginActivity extends BaseActivity {
                             hideLoading();
                             if (!isDestroyed() && !isFinishing()) {
                                 Toast.makeText(LoginActivity.this,
-                                        "Server không khả dụng và không tìm thấy tài khoản offline.",
+                                        R.string.login_server_unavailable_offline_not_found,
                                         Toast.LENGTH_LONG).show();
                                 etPassword.setText("");
                             }
@@ -409,14 +441,27 @@ public class LoginActivity extends BaseActivity {
                             hideLoading();
                             if (!isDestroyed() && !isFinishing())
                                 Toast.makeText(LoginActivity.this,
-                                        "Login Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                        getString(R.string.login_error_with_reason, e.getMessage()), Toast.LENGTH_SHORT)
+                                        .show();
                         });
                     }
                 });
     }
 
+    /**
+     * Admin-created users are cached locally without a usable password hash,
+     * so their first successful login must go through backend authentication.
+     */
+    private boolean requiresFirstLoginOnline(com.example.mysoftpos.data.local.entity.UserEntity user) {
+        if (user == null) {
+            return false;
+        }
+        boolean hasLocalPassword = user.passwordHash != null && !user.passwordHash.trim().isEmpty();
+        return !hasLocalPassword && user.backendId > 0 && "USER".equalsIgnoreCase(user.role);
+    }
+
     private void navigateToDashboard(long userId, String role, String displayName, String phone, String email) {
-        Toast.makeText(this, "Login Successful!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.login_success, Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(LoginActivity.this, com.example.mysoftpos.ui.dashboard.MainDashboardActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USER_ROLE, role);

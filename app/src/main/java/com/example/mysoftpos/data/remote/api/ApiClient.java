@@ -42,11 +42,17 @@ public final class ApiClient {
     private static final long AUTH_READ_TIMEOUT_SECONDS = 12;
     private static final long AUTH_WRITE_TIMEOUT_SECONDS = 12;
     private static final long AUTH_CALL_TIMEOUT_SECONDS = 15;
+    private static final long FORGOT_CONNECT_TIMEOUT_SECONDS = 25;
+    private static final long FORGOT_READ_TIMEOUT_SECONDS = 110;
+    private static final long FORGOT_WRITE_TIMEOUT_SECONDS = 30;
+    private static final long FORGOT_CALL_TIMEOUT_SECONDS = 120;
 
     private static volatile ApiService apiService;
     private static volatile ApiService authApiService;
+    private static volatile ApiService forgotPasswordApiService;
     private static volatile Retrofit retrofit;
     private static volatile Retrofit authRetrofit;
+    private static volatile Retrofit forgotPasswordRetrofit;
 
     private ApiClient() {
     }
@@ -99,6 +105,32 @@ public final class ApiClient {
         return authApiService;
     }
 
+    /**
+     * Forgot-password request can include SMTP latency on backend side,
+     * so use a longer call timeout than regular API calls.
+     */
+    public static ApiService getForgotPasswordService(Context context) {
+        if (forgotPasswordApiService == null) {
+            synchronized (ApiClient.class) {
+                if (forgotPasswordApiService == null) {
+                    String baseUrl = getBaseUrl(context);
+                    forgotPasswordRetrofit = new Retrofit.Builder()
+                            .baseUrl(baseUrl)
+                            .client(buildClient(
+                                    FORGOT_CONNECT_TIMEOUT_SECONDS,
+                                    FORGOT_READ_TIMEOUT_SECONDS,
+                                    FORGOT_WRITE_TIMEOUT_SECONDS,
+                                    FORGOT_CALL_TIMEOUT_SECONDS))
+                            .addConverterFactory(GsonConverterFactory.create())
+                            .build();
+
+                    forgotPasswordApiService = forgotPasswordRetrofit.create(ApiService.class);
+                }
+            }
+        }
+        return forgotPasswordApiService;
+    }
+
     /** Force re-create the Retrofit instance (e.g. when base URL changed) */
     public static void reset() {
         synchronized (ApiClient.class) {
@@ -106,6 +138,8 @@ public final class ApiClient {
             retrofit = null;
             authApiService = null;
             authRetrofit = null;
+            forgotPasswordApiService = null;
+            forgotPasswordRetrofit = null;
         }
     }
 
@@ -159,7 +193,13 @@ public final class ApiClient {
     }
 
     public static void clearSession(Context ctx) {
-        getPrefs(ctx).edit().clear().apply();
+        getPrefs(ctx).edit()
+                .remove(KEY_ACCESS_TOKEN)
+                .remove(KEY_REFRESH_TOKEN)
+                .remove(KEY_USER_ID)
+                .remove(KEY_ROLE)
+                .remove(KEY_USERNAME)
+                .apply();
     }
 
     public static boolean isLoggedIn(Context ctx) {

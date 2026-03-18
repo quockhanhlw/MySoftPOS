@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,6 +23,7 @@ import com.example.mysoftpos.data.local.entity.UserEntity;
 import com.example.mysoftpos.data.remote.api.ApiClient;
 import com.example.mysoftpos.data.remote.api.ApiService;
 import com.example.mysoftpos.ui.BaseActivity;
+import com.example.mysoftpos.utils.mcc.BusinessTypeMccMapper;
 import com.example.mysoftpos.utils.security.PasswordUtils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -279,6 +282,11 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         EditText etName = dialogView.findViewById(R.id.etName);
         EditText etPhone = dialogView.findViewById(R.id.etPhone);
         EditText etEmail = dialogView.findViewById(R.id.etEmail);
+        EditText etDob = dialogView.findViewById(R.id.etDob);
+        AutoCompleteTextView etGender = dialogView.findViewById(R.id.etGender);
+        EditText etStoreName = dialogView.findViewById(R.id.etStoreName);
+        AutoCompleteTextView etBusinessType = dialogView.findViewById(R.id.etBusinessType);
+        EditText etStoreAddress = dialogView.findViewById(R.id.etStoreAddress);
         EditText etPassword = dialogView.findViewById(R.id.etPassword);
         EditText etTerminalId = dialogView.findViewById(R.id.etTerminalId);
         EditText etServerIp = dialogView.findViewById(R.id.etServerIp);
@@ -287,21 +295,43 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         TextView tvTitle = dialogView.findViewById(R.id.tvDialogTitle);
         TextView tvSubtitle = dialogView.findViewById(R.id.tvDialogSubtitle);
 
+        if (etGender != null) {
+            ArrayAdapter<CharSequence> genderAdapter = ArrayAdapter.createFromResource(this,
+                    R.array.register_gender_options,
+                    android.R.layout.simple_list_item_1);
+            etGender.setAdapter(genderAdapter);
+            etGender.setOnClickListener(v -> etGender.showDropDown());
+        }
+        if (etBusinessType != null) {
+            ArrayAdapter<String> businessTypeAdapter = new ArrayAdapter<>(this,
+                    android.R.layout.simple_list_item_1,
+                    BusinessTypeMccMapper.getDisplayOptions(this));
+            etBusinessType.setAdapter(businessTypeAdapter);
+            etBusinessType.setOnClickListener(v -> etBusinessType.showDropDown());
+        }
+
         if (isEdit) {
             if (tvTitle != null)
-                tvTitle.setText("Edit User");
+                tvTitle.setText(R.string.user_mgmt_edit_user_title);
             if (tvSubtitle != null)
-                tvSubtitle.setText("Update user details");
+                tvSubtitle.setText(R.string.user_mgmt_edit_user_subtitle);
             etName.setText(existing.fullName);
             etPhone.setText(existing.phone);
             etEmail.setText(existing.email);
+            if (etDob != null) etDob.setText(existing.dob);
+            if (etGender != null) etGender.setText(existing.gender);
+            if (etStoreName != null) etStoreName.setText(existing.storeName);
+            if (etBusinessType != null) {
+                etBusinessType.setText(BusinessTypeMccMapper.toDisplay(this, existing.businessType), false);
+            }
+            if (etStoreAddress != null) etStoreAddress.setText(existing.storeAddress);
             if (etTerminalId != null)
                 etTerminalId.setText(existing.terminalId);
             if (etServerIp != null && existing.serverIp != null)
                 etServerIp.setText(existing.serverIp);
             if (etServerPort != null && existing.serverPort != null)
                 etServerPort.setText(String.valueOf(existing.serverPort));
-            etPassword.setHint("New password (leave blank to keep)");
+            etPassword.setHint(R.string.user_mgmt_new_password_optional_hint);
         }
 
         AlertDialog dialog = new AlertDialog.Builder(this)
@@ -320,7 +350,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                 if (ip.isEmpty() || portStr.isEmpty()) {
                     if (tvStatus != null) {
                         tvStatus.setVisibility(View.VISIBLE);
-                        tvStatus.setText("Enter IP and Port first");
+                        tvStatus.setText(R.string.user_mgmt_enter_ip_port_first);
                         tvStatus.setTextColor(0xFFEF4444);
                     }
                     return;
@@ -331,14 +361,14 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                 } catch (NumberFormatException e) {
                     if (tvStatus != null) {
                         tvStatus.setVisibility(View.VISIBLE);
-                        tvStatus.setText("Invalid port number");
+                        tvStatus.setText(R.string.user_mgmt_invalid_port_number);
                         tvStatus.setTextColor(0xFFEF4444);
                     }
                     return;
                 }
                 if (tvStatus != null) {
                     tvStatus.setVisibility(View.VISIBLE);
-                    tvStatus.setText("Testing...");
+                    tvStatus.setText(R.string.user_mgmt_testing_connection);
                     tvStatus.setTextColor(0xFF64748B);
                 }
                 final int finalPort = port;
@@ -356,10 +386,10 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                         if (tvStatus != null) {
                             tvStatus.setVisibility(View.VISIBLE);
                             if (result) {
-                                tvStatus.setText("✓ Connected");
+                                tvStatus.setText(R.string.user_mgmt_connected);
                                 tvStatus.setTextColor(0xFF16A34A);
                             } else {
-                                tvStatus.setText("✗ Connection failed");
+                                tvStatus.setText(R.string.user_mgmt_connection_failed);
                                 tvStatus.setTextColor(0xFFEF4444);
                             }
                         }
@@ -375,6 +405,14 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                 String fullName = etName.getText().toString().trim();
                 String phone = etPhone.getText().toString().trim();
                 String email = etEmail.getText().toString().trim();
+                String dob = etDob != null ? etDob.getText().toString().trim() : "";
+                String gender = etGender != null ? etGender.getText().toString().trim() : "";
+                String storeName = etStoreName != null ? etStoreName.getText().toString().trim() : "";
+                String businessTypeSelection = etBusinessType != null
+                        ? etBusinessType.getText().toString().trim()
+                        : "";
+                String businessType = BusinessTypeMccMapper.toMcc(businessTypeSelection);
+                String storeAddress = etStoreAddress != null ? etStoreAddress.getText().toString().trim() : "";
                 String password = etPassword.getText().toString().trim();
                 String terminalId = etTerminalId != null ? etTerminalId.getText().toString().trim() : "";
                 String serverIp = etServerIp != null ? etServerIp.getText().toString().trim() : "";
@@ -386,11 +424,11 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                 }
 
                 if (!isEdit && phone.isEmpty()) {
-                    Toast.makeText(this, "Phone number is required", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.user_mgmt_phone_required, Toast.LENGTH_SHORT).show();
                     return;
                 }
                 if (!isEdit && password.isEmpty()) {
-                    Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.user_mgmt_password_required, Toast.LENGTH_SHORT).show();
                     return;
                 }
 
@@ -402,15 +440,19 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                 if (isEdit) {
                     ApiService.CreateUserRequest req = new ApiService.CreateUserRequest(
                             password.isEmpty() ? null : password,
-                            fullName, phone, email, terminalId, serverIp, serverPort > 0 ? serverPort : null);
+                            fullName, phone, email,
+                            dob, gender, storeName, businessType, storeAddress,
+                            terminalId, serverIp, serverPort > 0 ? serverPort : null);
                     ApiClient.getService(this).updateUser(token, existing.id, req)
-                            .enqueue(new SimpleCallbackWithLocalSync("User updated", existing.id, fServerIp,
+                            .enqueue(new SimpleCallbackWithLocalSync(getString(R.string.user_mgmt_user_updated), existing.id, fServerIp,
                                     fServerPort, fTerminalId));
                 } else {
                     ApiService.CreateUserRequest req = new ApiService.CreateUserRequest(
-                            password, fullName, phone, email, terminalId, serverIp, serverPort > 0 ? serverPort : null);
+                            password, fullName, phone, email,
+                            dob, gender, storeName, businessType, storeAddress,
+                            terminalId, serverIp, serverPort > 0 ? serverPort : null);
                     ApiClient.getService(this).createUser(token, req)
-                            .enqueue(new SimpleCallbackWithLocalSync("User created", -1, fServerIp, fServerPort,
+                            .enqueue(new SimpleCallbackWithLocalSync(getString(R.string.user_mgmt_user_created), -1, fServerIp, fServerPort,
                                     fTerminalId));
                 }
                 dialog.dismiss();
@@ -443,27 +485,28 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
     // ====== Delete ======
     private void confirmDelete(ApiService.UserDto user) {
         new AlertDialog.Builder(this)
-                .setTitle("Delete User")
-                .setMessage("Delete " + (user.fullName != null ? user.fullName : user.phone) + "?")
-                .setPositiveButton("Delete", (d, w) -> {
+                .setTitle(R.string.user_mgmt_delete_user_title)
+                .setMessage(getString(R.string.user_mgmt_delete_user_message,
+                        user.fullName != null ? user.fullName : user.phone))
+                .setPositiveButton(R.string.user_mgmt_delete_action, (d, w) -> {
                     String token = ApiClient.bearerToken(this);
                     ApiClient.getService(this).deleteUser(token, user.id)
                             .enqueue(new Callback<Map<String, String>>() {
                                 @Override
                                 public void onResponse(Call<Map<String, String>> c, Response<Map<String, String>> r) {
-                                    Toast.makeText(UserManagementActivity.this, "User deleted", Toast.LENGTH_SHORT)
+                                    Toast.makeText(UserManagementActivity.this, R.string.user_mgmt_user_deleted, Toast.LENGTH_SHORT)
                                             .show();
                                     loadUsers();
                                 }
 
                                 @Override
                                 public void onFailure(Call<Map<String, String>> c, Throwable t) {
-                                    Toast.makeText(UserManagementActivity.this, "Error: " + t.getMessage(),
+                                    Toast.makeText(UserManagementActivity.this, getString(R.string.common_error_with_reason, t.getMessage()),
                                             Toast.LENGTH_SHORT).show();
                                 }
                             });
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(R.string.common_cancel, null)
                 .show();
     }
 
@@ -513,6 +556,16 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                             localUser.role = savedUser.role;
                             localUser.email = savedUser.email;
                             localUser.phone = savedUser.phone;
+                            localUser.dob = savedUser.dob;
+                            localUser.gender = savedUser.gender;
+                            localUser.storeName = savedUser.storeName;
+                            localUser.businessType = savedUser.businessType;
+                            localUser.storeAddress = savedUser.storeAddress;
+                            localUser.dob = savedUser.dob;
+                            localUser.gender = savedUser.gender;
+                            localUser.storeName = savedUser.storeName;
+                            localUser.businessType = savedUser.businessType;
+                            localUser.storeAddress = savedUser.storeAddress;
                             localUser.backendId = savedUser.id;
                             localUser.terminalId = terminalId;
                             localUser.serverIp = serverIp;
@@ -528,13 +581,15 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
 
                 loadUsers();
             } else {
-                Toast.makeText(UserManagementActivity.this, "Error: " + resp.code(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(UserManagementActivity.this,
+                        getString(R.string.user_mgmt_error_code, resp.code()), Toast.LENGTH_SHORT).show();
             }
         }
 
         @Override
         public void onFailure(Call<ApiService.UserDto> call, Throwable t) {
-            Toast.makeText(UserManagementActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(UserManagementActivity.this,
+                    getString(R.string.user_mgmt_network_error, t.getMessage()), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -572,6 +627,11 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                     localUser.role = remoteUser.role;
                     localUser.email = remoteUser.email;
                     localUser.phone = remoteUser.phone;
+                    localUser.dob = remoteUser.dob;
+                    localUser.gender = remoteUser.gender;
+                    localUser.storeName = remoteUser.storeName;
+                    localUser.businessType = remoteUser.businessType;
+                    localUser.storeAddress = remoteUser.storeAddress;
                     localUser.backendId = remoteUser.id;
                     localUser.terminalId = remoteUser.terminalId;
                     localUser.serverIp = remoteUser.serverIp;
@@ -597,6 +657,11 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         dto.fullName = entity.displayName;
         dto.phone = entity.phone;
         dto.email = entity.email;
+        dto.dob = entity.dob;
+        dto.gender = entity.gender;
+        dto.storeName = entity.storeName;
+        dto.businessType = entity.businessType;
+        dto.storeAddress = entity.storeAddress;
         dto.terminalId = entity.terminalId;
         dto.serverIp = entity.serverIp;
         dto.serverPort = entity.serverPort > 0 ? entity.serverPort : null;

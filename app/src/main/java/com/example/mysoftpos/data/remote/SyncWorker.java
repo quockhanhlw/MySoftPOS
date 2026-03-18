@@ -54,9 +54,16 @@ public class SyncWorker extends Worker {
             return Result.success();
         }
 
+        String ownerUsername = ApiClient.getUsername(context).trim();
+        if (ownerUsername.isEmpty()) {
+            Log.w(TAG, "Missing owner username in session, skipping sync to avoid cross-user upload");
+            return Result.success();
+        }
+
         try {
             AppDatabase db = AppDatabase.getInstance(context);
-            List<TransactionEntity> allTxns = db.transactionDao().getAllTransactions();
+            List<TransactionEntity> allTxns = db.transactionDao()
+                    .getCompletedTransactionsByOwnerSync(ownerUsername);
 
             if (allTxns == null || allTxns.isEmpty()) {
                 Log.d(TAG, "No transactions to sync");
@@ -65,7 +72,6 @@ public class SyncWorker extends Worker {
 
             List<ApiService.TxnItem> items = new ArrayList<>();
             for (TransactionEntity txn : allTxns) {
-                if (txn.status == null || "PENDING".equals(txn.status)) continue;
 
                 ApiService.TxnItem item = new ApiService.TxnItem();
                 item.traceNumber = txn.traceNumber;

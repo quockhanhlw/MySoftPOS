@@ -1,5 +1,6 @@
 package com.example.mysoftpos.ui;
 
+import com.example.mysoftpos.R;
 import android.os.Bundle;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -51,12 +52,12 @@ public class BaseActivity extends AppCompatActivity {
         networkMonitor = new NetworkMonitor(this, new NetworkMonitor.NetworkCallbackListener() {
             @Override
             public void onNetworkAvailable() {
-                showNetworkToast("Đã khôi phục kết nối mạng");
+                showNetworkToast(getString(R.string.network_restored));
             }
 
             @Override
             public void onNetworkLost() {
-                showNetworkToast("Mất kết nối mạng. Ứng dụng đang ở chế độ offline.");
+                showNetworkToast(getString(R.string.network_lost));
             }
         });
     }

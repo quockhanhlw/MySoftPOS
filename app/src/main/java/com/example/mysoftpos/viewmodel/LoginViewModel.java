@@ -58,6 +58,11 @@ public class LoginViewModel extends BaseViewModel {
                 UserEntity user = userRepository.findUser(username);
 
                 if (user != null) {
+                    if (requiresFirstLoginOnline(user)) {
+                        launchUi(() -> loginViaApi(username, password));
+                        return;
+                    }
+
                     // Check account lockout
                     long lockRemaining = userRepository.getLockRemainingMillis(user);
                     if (lockRemaining > 0) {
@@ -157,6 +162,12 @@ public class LoginViewModel extends BaseViewModel {
                 UserEntity user = userRepository.findUser(username);
 
                 if (user != null) {
+                    if (requiresFirstLoginOnline(user)) {
+                        launchUi(() -> loginState.setValue(LoginState.error(
+                                "Tai khoan do admin tao can dang nhap online lan dau.")));
+                        return;
+                    }
+
                     long lockRemaining = userRepository.getLockRemainingMillis(user);
                     if (lockRemaining > 0) {
                         int min = (int) (lockRemaining / 60000) + 1;
@@ -252,5 +263,13 @@ public class LoginViewModel extends BaseViewModel {
 
         final String finalMsg = errorMsg;
         loginState.setValue(LoginState.error(finalMsg));
+    }
+
+    private boolean requiresFirstLoginOnline(UserEntity user) {
+        if (user == null) {
+            return false;
+        }
+        boolean hasLocalPassword = user.passwordHash != null && !user.passwordHash.trim().isEmpty();
+        return !hasLocalPassword && user.backendId > 0 && "USER".equalsIgnoreCase(user.role);
     }
 }

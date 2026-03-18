@@ -1,27 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="register_business_type_options">
-        <item>Nông nghiệp / Thuốc thú y / Dịch vụ thú y / Sản xuất rượu mạnh / Sản xuất rượu vang</item>
-        <item>Vận tải / Đường sắt / Taxi / limousine / Thuê tàu / cho thuê thuyền / Sân bay / bãi đáp / nhà ga hàng không</item>
-        <item>Vận tải hành khách chung</item>
-        <item>Đường sắt chở khách</item>
-        <item>Tuyến xe buýt</item>
-        <item>Dịch vụ vận tải khác</item>
-        <item>Thu phí cầu và đường</item>
-        <item>Dịch vụ tiện ích</item>
-        <item>Viễn thông</item>
-        <item>Dịch vụ mạng máy tính / thông tin</item>
-        <item>Truyền hình cáp / truyền hình trả tiền</item>
-        <item>Điện / Gas / Nước / Vệ sinh môi trường</item>
-        <item>Bán lẻ / Nhà sách / báo / tạp chí / Cửa hàng xì gà / thuốc lá xì gà / Văn phòng phẩm / Thiết bị máy tính / Cửa hàng vật liệu xây dựng / Nội thất văn phòng / thương mại / Thiết bị gia dụng / Đồ ăn và đồ uống / Hoa / vật tư làm vườn / Cửa hàng điện thoại di động / Cửa hàng miễn thuế / Cửa hàng bánh</item>
-        <item>Tạp hóa / siêu thị / Ô tô và phương tiện</item>
-        <item>Đại lý ô tô / xe tải mới và cũ / Dịch vụ sửa chữa ô tô / Phụ tùng ô tô / Cho thuê / leasing ô tô xe tải / Cửa hàng lốp xe / Cửa hàng phụ kiện ô tô / Trạm dịch vụ / Trạm xăng / Đại lý thuyền / Đại lý motor home</item>
+        <item>Agriculture / Veterinary medicine / Veterinary services / Distilled spirits / Wine production</item>
+        <item>Transportation / Rail / Taxi-limousine / Boat charter-rental / Airports-air terminals</item>
+        <item>Commuter passenger transport</item>
+        <item>Passenger railway</item>
+        <item>Bus lines</item>
+        <item>Other transportation services</item>
+        <item>Bridge and road tolls</item>
+        <item>Utility services</item>
+        <item>Telecommunication services</item>
+        <item>Computer network and information services</item>
+        <item>Cable and paid television</item>
+        <item>Electricity / Gas / Water / Sanitation</item>
+        <item>Retail services (bookstore, tobacco, stationery, computer equipment, building materials, office furniture, home appliances, food-beverage, florist-gardening, mobile phones, duty free, bakery)</item>
+        <item>Grocery and supermarket</item>
+        <item>Auto and truck dealers-services-parts-leasing-gas stations and related</item>
     </string-array>
 
     <string-array name="register_gender_options">
         <item>Male</item>
         <item>Female</item>
         <item>Other</item>
-        <item>Prefer not to say</item>
     </string-array>
 </resources>

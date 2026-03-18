@@ -8,7 +8,6 @@ import android.net.NetworkCapabilities;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -43,12 +42,9 @@ public class SettingsActivity extends BaseActivity {
         bindBackButton();
 
         LinearLayout btnIdentitySettings = findViewById(R.id.btnIdentitySettings);
-        LinearLayout btnSecuritySettings = findViewById(R.id.btnSecuritySettings);
 
         if (btnIdentitySettings != null)
             btnIdentitySettings.setOnClickListener(v -> showIdentityDialog());
-        if (btnSecuritySettings != null)
-            btnSecuritySettings.setOnClickListener(v -> showSecurityDialog());
 
         // Backend URL Settings
         LinearLayout btnBackendUrlSettings = findViewById(R.id.btnBackendUrlSettings);
@@ -109,36 +105,6 @@ public class SettingsActivity extends BaseActivity {
         }
     }
 
-    private void showSecurityDialog() {
-        try {
-            com.google.android.material.dialog.MaterialAlertDialogBuilder builder = new com.google.android.material.dialog.MaterialAlertDialogBuilder(
-                    this);
-            View view = getLayoutInflater().inflate(R.layout.dialog_admin_security, null);
-            builder.setView(view);
-            androidx.appcompat.app.AlertDialog dialog = builder.create();
-            view.setBackgroundColor(android.graphics.Color.WHITE);
-
-            CheckBox cbEncryptPin = view.findViewById(R.id.cbEncryptPin);
-            MaterialButton btnCancel = view.findViewById(R.id.btnCancel);
-            MaterialButton btnSave = view.findViewById(R.id.btnSave);
-
-            com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
-                    .getInstance(this);
-            cbEncryptPin.setChecked(config.isPinEncryptionEnabled());
-
-            btnCancel.setOnClickListener(v -> dialog.dismiss());
-
-            btnSave.setOnClickListener(v -> {
-                config.setPinEncryptionEnabled(cbEncryptPin.isChecked());
-                showToast(R.string.settings_security_saved);
-                dialog.dismiss();
-            });
-
-            dialog.show();
-        } catch (Exception e) {
-            showDialogError("showSecurityDialog failed", e);
-        }
-    }
 
     private void showBackendUrlDialog() {
         try {
@@ -412,48 +378,14 @@ public class SettingsActivity extends BaseActivity {
                         }
 
                         if (response.code() == 404 || response.code() == 405) {
-                            fallbackChangePasswordViaReset(token, userId, newPassword, dialog, tvStatus, btnSave, btnCancel);
+                            setPasswordDialogLoading(tvStatus, btnSave, btnCancel, false);
+                            showPasswordStatus(tvStatus, false, getString(R.string.settings_password_backend_unavailable));
                             return;
                         }
 
                         setPasswordDialogLoading(tvStatus, btnSave, btnCancel, false);
                         showPasswordStatus(tvStatus, false, extractBackendError(response,
                                 getString(R.string.settings_password_backend_unavailable)));
-                    }
-
-                    @Override
-                    public void onFailure(retrofit2.Call<java.util.Map<String, String>> call, Throwable t) {
-                        setPasswordDialogLoading(tvStatus, btnSave, btnCancel, false);
-                        showPasswordStatus(tvStatus, false,
-                                getString(R.string.common_error_with_reason, t.getMessage()));
-                    }
-                });
-    }
-
-    private void fallbackChangePasswordViaReset(String token,
-                                                long userId,
-                                                String newPassword,
-                                                androidx.appcompat.app.AlertDialog dialog,
-                                                TextView tvStatus,
-                                                MaterialButton btnSave,
-                                                MaterialButton btnCancel) {
-        java.util.Map<String, String> body = new java.util.HashMap<>();
-        body.put("newPassword", newPassword);
-        body.put("password", newPassword);
-
-        com.example.mysoftpos.data.remote.api.ApiClient.getService(this)
-                .resetPassword(token, userId, body)
-                .enqueue(new retrofit2.Callback<java.util.Map<String, String>>() {
-                    @Override
-                    public void onResponse(retrofit2.Call<java.util.Map<String, String>> call,
-                                           retrofit2.Response<java.util.Map<String, String>> response) {
-                        setPasswordDialogLoading(tvStatus, btnSave, btnCancel, false);
-                        if (response.isSuccessful()) {
-                            onPasswordChangedSuccessfully(dialog, tvStatus, newPassword);
-                        } else {
-                            showPasswordStatus(tvStatus, false, extractBackendError(response,
-                                    getString(R.string.settings_password_backend_unavailable)));
-                        }
                     }
 
                     @Override

@@ -197,7 +197,7 @@ public class PurchaseAmountActivity extends BaseActivity {
 
     private void updateAmountDisplay() {
         if (amountBuilder.length() == 0) {
-            tvAmountDisplay.setText("0");
+            tvAmountDisplay.setText(R.string.common_zero);
         } else {
             // Format with thousand separators
             try {
@@ -214,7 +214,7 @@ public class PurchaseAmountActivity extends BaseActivity {
 
     private void onChargeClick() {
         if (amountBuilder.length() == 0) {
-            Toast.makeText(this, "Please enter an amount", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.purchase_enter_amount, Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -224,11 +224,11 @@ public class PurchaseAmountActivity extends BaseActivity {
         // Validation based on Currency
         if ("704".equals(currencyCode)) { // VND
             if (amount < 10000) {
-                Toast.makeText(this, "Minimum amount is 10,000 VND", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.purchase_min_amount_vnd, Toast.LENGTH_SHORT).show();
                 return;
             }
             if (amount > 500000000) {
-                Toast.makeText(this, "Maximum amount is 500,000,000 VND", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.purchase_max_amount_vnd, Toast.LENGTH_SHORT).show();
                 return;
             }
         } else if ("840".equals(currencyCode)) { // USD
@@ -250,17 +250,17 @@ public class PurchaseAmountActivity extends BaseActivity {
             // $100.
 
             if (amount < 1) { // Min $1
-                Toast.makeText(this, "Minimum amount is 1 USD", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.purchase_min_amount_usd, Toast.LENGTH_SHORT).show();
                 return;
             }
             if (amount > 50000) { // Max $50,000
-                Toast.makeText(this, "Maximum amount is 50,000 USD", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.purchase_max_amount_usd, Toast.LENGTH_SHORT).show();
                 return;
             }
         } else {
             // Fallback for generic
             if (amount <= 0) {
-                Toast.makeText(this, "Amount must be greater than 0", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.purchase_amount_must_be_positive, Toast.LENGTH_SHORT).show();
                 return;
             }
         }

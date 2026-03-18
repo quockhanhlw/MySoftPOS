@@ -41,9 +41,9 @@ public class RunnerActivity extends BaseActivity {
         tvTitle.setText(desc);
 
         findViewById(R.id.btnRun).setOnClickListener(v -> {
-            tvLog.setText("Starting Transaction...\nMode: " + de22 + "\nAmount: "
-                    + (amount != null ? amount : "Default") + "\nCurrency: "
-                    + (currencyCode != null ? currencyCode : "Default (704)") + "\n");
+            String safeAmount = amount != null ? amount : getString(R.string.testsuite_default_value);
+            String safeCurrency = currencyCode != null ? currencyCode : getString(R.string.testsuite_default_currency_code);
+            tvLog.setText(getString(R.string.runner_starting_log, de22, safeAmount, safeCurrency));
             viewModel.runTransaction(de22, track2, pan, expiry, pinBlock, txnType, amount, currencyCode, countryCode,
                     scheme, fieldConfigJson);
         });

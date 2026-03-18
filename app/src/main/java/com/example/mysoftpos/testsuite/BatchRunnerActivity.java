@@ -17,9 +17,6 @@ import com.example.mysoftpos.R;
 import com.example.mysoftpos.domain.service.TransactionExecutor;
 import com.example.mysoftpos.domain.service.TransactionResult;
 import com.example.mysoftpos.domain.model.CardInputData;
-import com.example.mysoftpos.iso8583.builder.Iso8583Builder;
-import com.example.mysoftpos.iso8583.message.IsoMessage;
-import com.example.mysoftpos.iso8583.util.StandardIsoPacker;
 import com.example.mysoftpos.iso8583.TransactionContext;
 import com.example.mysoftpos.testsuite.model.TestScenario;
 import com.example.mysoftpos.testsuite.storage.SchemeRepository;
@@ -74,7 +71,7 @@ public class BatchRunnerActivity extends BaseActivity {
                 .getSerializableExtra(IntentKeys.SELECTED_SCENARIOS);
 
         if (scenarios == null || scenarios.isEmpty()) {
-            Toast.makeText(this, "No test cases provided", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.batch_runner_no_cases, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -87,14 +84,14 @@ public class BatchRunnerActivity extends BaseActivity {
         adapter = new ResultAdapter(results);
         recyclerView.setAdapter(adapter);
 
-        tvProgress.setText("0/" + results.size());
+        tvProgress.setText(getString(R.string.batch_runner_progress, 0, results.size()));
         progressBar.setMax(results.size());
         progressBar.setProgress(0);
 
         TextView tvTitle = findViewById(R.id.tvTitle);
-        tvTitle.setText("Batch Runner (" + results.size() + " cases)");
+        tvTitle.setText(getString(R.string.batch_runner_title, results.size()));
 
-        btnRunAll.setText("Run All (" + results.size() + ")");
+        btnRunAll.setText(getString(R.string.batch_runner_run_all, results.size()));
         btnRunAll.setOnClickListener(v -> runAll());
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
@@ -105,7 +102,7 @@ public class BatchRunnerActivity extends BaseActivity {
             return;
         isRunning = true;
         btnRunAll.setEnabled(false);
-        btnRunAll.setText("Preparing...");
+        btnRunAll.setText(R.string.batch_runner_preparing);
         completedCount.set(0);
 
         // Reset all to PENDING
@@ -125,6 +122,7 @@ public class BatchRunnerActivity extends BaseActivity {
             TransactionContext[] contexts = new TransactionContext[total];
             CardInputData[] cards = new CardInputData[total];
             String[] txnTypes = new String[total];
+            String[] fieldOverrides = new String[total];
 
             for (int i = 0; i < total; i++) {
                 CaseResult cr = results.get(i);
@@ -150,16 +148,17 @@ public class BatchRunnerActivity extends BaseActivity {
                     cards[i] = TransactionExecutor.prepareCard(
                             getApplication(), de22, pan, expiry, track2, pinBlock,
                             contexts[i], msg -> {});
+                    fieldOverrides[i] = buildFieldOverridesJson(scenario);
                 } catch (Exception e) {
                     cr.status = CaseStatus.FAIL;
                     cr.rc = "BUILD_ERR";
-                    cr.detail = "Build error: " + e.getMessage();
+                        cr.detail = getString(R.string.batch_runner_build_error, e.getMessage());
                 }
             }
 
             // Phase 2: Fire ALL network calls simultaneously
             runOnUiThread(() -> {
-                btnRunAll.setText("Sending " + total + " transactions...");
+                btnRunAll.setText(getString(R.string.batch_runner_sending, total));
                 for (CaseResult r : results) {
                     if (r.status != CaseStatus.FAIL) {
                         r.status = CaseStatus.RUNNING;
@@ -182,7 +181,7 @@ public class BatchRunnerActivity extends BaseActivity {
                     runOnUiThread(() -> {
                         adapter.notifyItemChanged(index);
                         progressBar.setProgress(done);
-                        tvProgress.setText(done + "/" + total);
+                        tvProgress.setText(getString(R.string.batch_runner_progress, done, total));
                     });
                     latch.countDown();
                     continue;
@@ -191,6 +190,7 @@ public class BatchRunnerActivity extends BaseActivity {
                 final TransactionContext ctx = contexts[index];
                 final CardInputData card = cards[index];
                 final String txnType = txnTypes[index];
+                final String fieldConfigJson = fieldOverrides[index];
 
                 executor.execute(() -> {
                     try {
@@ -198,16 +198,16 @@ public class BatchRunnerActivity extends BaseActivity {
                         TransactionExecutor.LogCallback logger = msg -> sb.append(msg).append("\n");
 
                         TransactionResult result = transactionExecutor.execute(
-                                getApplication(), ctx, card, txnType, logger, "");
+                                getApplication(), ctx, card, txnType, logger, "", fieldConfigJson);
 
                         cr.rc = result.rc;
                         String reason = ResponseCodeHelper.getMessage(result.rc);
                         if (result.approved) {
                             cr.status = CaseStatus.PASS;
-                            cr.detail = "RC: " + result.rc + " (" + reason + ")\n" + sb;
+                            cr.detail = getString(R.string.batch_runner_detail_pass, result.rc, reason) + "\n" + sb;
                         } else {
                             cr.status = CaseStatus.FAIL;
-                            cr.detail = "RC: " + result.rc + " - " + reason + "\n" + sb;
+                            cr.detail = getString(R.string.batch_runner_detail_fail, result.rc, reason) + "\n" + sb;
                         }
 
                         // Save to DB for history
@@ -215,31 +215,55 @@ public class BatchRunnerActivity extends BaseActivity {
                     } catch (java.net.SocketTimeoutException e) {
                         cr.status = CaseStatus.FAIL;
                         cr.rc = "TIMEOUT";
-                        cr.detail = "Error: Timeout waiting for response.";
+                        cr.detail = getString(R.string.batch_runner_error_timeout);
                     } catch (Exception e) {
                         cr.status = CaseStatus.FAIL;
                         cr.rc = "ERROR";
-                        cr.detail = "Error: " + e.getMessage();
+                        cr.detail = getString(R.string.common_error_with_reason, e.getMessage());
                     }
 
                     int done = completedCount.incrementAndGet();
                     runOnUiThread(() -> {
                         adapter.notifyItemChanged(index);
                         progressBar.setProgress(done);
-                        tvProgress.setText(done + "/" + total);
+                        tvProgress.setText(getString(R.string.batch_runner_progress, done, total));
 
                         if (done == total) {
                             isRunning = false;
                             btnRunAll.setEnabled(true);
                             long passed = results.stream().filter(r -> r.status == CaseStatus.PASS).count();
                             long failed = results.stream().filter(r -> r.status == CaseStatus.FAIL).count();
-                            btnRunAll.setText("Done: " + passed + " Pass, " + failed + " Fail — Run Again?");
+                            btnRunAll.setText(getString(R.string.batch_runner_done_summary, passed, failed));
                         }
                     });
                     latch.countDown();
                 });
             }
         });
+    }
+
+    private String buildFieldOverridesJson(TestScenario scenario) {
+        if (scenario == null || scenario.getAllFields() == null || scenario.getAllFields().isEmpty()) {
+            return null;
+        }
+
+        org.json.JSONObject json = new org.json.JSONObject();
+        java.util.Set<Integer> reserved = new java.util.HashSet<>(
+                java.util.Arrays.asList(2, 4, 14, 22, 35, 52));
+
+        for (java.util.Map.Entry<Integer, String> entry : scenario.getAllFields().entrySet()) {
+            Integer field = entry.getKey();
+            String value = entry.getValue();
+            if (field == null || reserved.contains(field) || value == null || value.trim().isEmpty()) {
+                continue;
+            }
+            try {
+                json.put(String.valueOf(field), value);
+            } catch (Exception ignored) {
+            }
+        }
+
+        return json.length() > 0 ? json.toString() : null;
     }
 
 
@@ -343,32 +367,38 @@ public class BatchRunnerActivity extends BaseActivity {
             CaseResult cr = items.get(position);
             h.tvCaseName.setText(cr.scenario.getDescription());
 
-            String type = cr.scenario.getTxnType() != null ? cr.scenario.getTxnType() : "PURCHASE";
-            h.tvCaseType.setText(
-                    type + " | DE22: " + (cr.scenario.getField(22) != null ? cr.scenario.getField(22) : "---"));
+            String type = cr.scenario.getTxnType() != null
+                    ? cr.scenario.getTxnType()
+                    : h.itemView.getContext().getString(R.string.batch_runner_default_type_purchase);
+            String de22 = cr.scenario.getField(22) != null
+                    ? cr.scenario.getField(22)
+                    : h.itemView.getContext().getString(R.string.txn_detail_placeholder_dash);
+            h.tvCaseType.setText(h.itemView.getContext().getString(R.string.batch_runner_case_type_format, type, de22));
 
             switch (cr.status) {
                 case PENDING:
                     h.ivStatus.setImageResource(R.drawable.ic_pending);
-                    h.tvRcBadge.setText("PENDING");
+                    h.tvRcBadge.setText(R.string.batch_runner_status_pending);
                     h.tvRcBadge.setTextColor(0xFF64748B);
                     h.tvRcBadge.setBackgroundResource(R.drawable.bg_badge_default);
                     break;
                 case RUNNING:
                     h.ivStatus.setImageResource(R.drawable.ic_pending);
-                    h.tvRcBadge.setText("RUNNING...");
+                    h.tvRcBadge.setText(R.string.batch_runner_status_running);
                     h.tvRcBadge.setTextColor(0xFF0369A1);
                     h.tvRcBadge.setBackgroundResource(R.drawable.bg_badge_default);
                     break;
                 case PASS:
                     h.ivStatus.setImageResource(R.drawable.ic_check_circle);
-                    h.tvRcBadge.setText("RC: " + cr.rc);
+                    h.tvRcBadge.setText(h.itemView.getContext().getString(R.string.batch_runner_rc_badge, cr.rc));
                     h.tvRcBadge.setTextColor(0xFF16A34A);
                     h.tvRcBadge.setBackgroundResource(R.drawable.bg_badge_custom);
                     break;
                 case FAIL:
                     h.ivStatus.setImageResource(R.drawable.ic_error);
-                    h.tvRcBadge.setText(cr.rc != null ? "RC: " + cr.rc : "FAIL");
+                    h.tvRcBadge.setText(cr.rc != null
+                            ? h.itemView.getContext().getString(R.string.batch_runner_rc_badge, cr.rc)
+                            : h.itemView.getContext().getString(R.string.batch_runner_status_fail));
                     h.tvRcBadge.setTextColor(0xFFDC2626);
                     h.tvRcBadge.setBackgroundResource(R.drawable.bg_badge_default);
                     break;

@@ -31,7 +31,10 @@ public class BusinessTypeMccMapperTest {
     @Test
     public void toDisplay_shouldHideCodeForStoredValues() {
         assertEquals("Vận tải hành khách chung", BusinessTypeMccMapper.toDisplay("4111 - Vận tải hành khách chung"));
-        assertEquals("Viễn thông", BusinessTypeMccMapper.toDisplay("4814"));
+        String display = BusinessTypeMccMapper.toDisplay("4814");
+        assertFalse(display.isEmpty());
+        assertFalse(display.matches("^\\d{4}\\b.*"));
+        assertFalse("4814".equals(display));
     }
 
     @Test

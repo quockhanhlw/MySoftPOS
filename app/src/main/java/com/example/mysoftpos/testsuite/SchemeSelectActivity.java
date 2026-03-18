@@ -14,7 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
+
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -76,9 +76,23 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
 
     @Override
     public void onSchemeClick(Scheme scheme) {
+        if (isComingSoonScheme(scheme)) {
+            Toast.makeText(this, getString(R.string.settings_feature_coming_soon), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         Intent intent = new Intent(this, ChannelSelectActivity.class);
         intent.putExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME, scheme.getName());
         startActivity(intent);
+    }
+
+    private boolean isComingSoonScheme(Scheme scheme) {
+        if (scheme == null || scheme.getName() == null) {
+            return false;
+        }
+        String schemeName = scheme.getName().trim();
+        return "visa".equalsIgnoreCase(schemeName)
+                || "mastercard".equalsIgnoreCase(schemeName);
     }
 
     @Override
@@ -242,7 +256,7 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
             String icon = etIcon.getText().toString().trim().toUpperCase();
 
             if (name.isEmpty()) {
-                etName.setError("Required");
+                etName.setError(getString(R.string.common_required));
                 return;
             }
             if (icon.isEmpty()) {
@@ -278,7 +292,8 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
 
             loadSchemes();
             dialog.dismiss();
-            Toast.makeText(this, isEdit ? "Updated" : "Added", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, isEdit ? R.string.scheme_select_updated : R.string.scheme_select_added,
+                    Toast.LENGTH_SHORT).show();
         });
 
         dialog.show();
@@ -301,9 +316,9 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
 
         // IP: validate format if not empty
         if (!ip.isEmpty() && !ip.matches("^\\d{1,3}(\\.\\d{1,3}){3}$") && !ip.matches("^[a-zA-Z0-9.-]+$")) {
-            etIp.setError("IP không hợp lệ");
+            etIp.setError(getString(R.string.scheme_select_invalid_ip));
             etIp.requestFocus();
-            return "IP không hợp lệ";
+            return getString(R.string.scheme_select_invalid_ip);
         }
         scheme.setServerIp(ip);
 
@@ -312,15 +327,15 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
             try {
                 int port = Integer.parseInt(portStr);
                 if (port < 1 || port > 65535) {
-                    etPort.setError("1 – 65535");
+                    etPort.setError(getString(R.string.scheme_select_port_range_hint));
                     etPort.requestFocus();
-                    return "Port phải từ 1 đến 65535";
+                    return getString(R.string.scheme_select_invalid_port_range);
                 }
                 scheme.setServerPort(port);
             } catch (NumberFormatException e) {
-                etPort.setError("Số không hợp lệ");
+                etPort.setError(getString(R.string.scheme_select_invalid_number));
                 etPort.requestFocus();
-                return "Port không hợp lệ";
+                return getString(R.string.scheme_select_invalid_port);
             }
         } else {
             scheme.setServerPort(0);
@@ -342,9 +357,9 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
 
         // If IP is set, port is required
         if (!ip.isEmpty() && scheme.getServerPort() == 0) {
-            etPort.setError("Bắt buộc khi có IP");
+            etPort.setError(getString(R.string.scheme_select_port_required_when_ip));
             etPort.requestFocus();
-            return "Cần nhập Port khi đã nhập IP";
+            return getString(R.string.scheme_select_port_required_message);
         }
 
         // ═══ Terminal / Merchant — auto-format to ISO 8583 ═══
@@ -362,9 +377,9 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
         // Terminal ID: max 8, only alphanumeric
         if (!tid.isEmpty()) {
             if (!tid.matches("[A-Z0-9]+")) {
-                etTid.setError("Chỉ chữ và số");
+                etTid.setError(getString(R.string.scheme_select_alnum_only));
                 etTid.requestFocus();
-                return "Terminal ID chỉ được chứa chữ cái và số";
+                return getString(R.string.scheme_select_tid_alnum_only);
             }
             if (tid.length() > 8) tid = tid.substring(0, 8);
         }
@@ -373,9 +388,9 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
         // Merchant ID: max 15, only alphanumeric
         if (!mid.isEmpty()) {
             if (!mid.matches("[A-Z0-9]+")) {
-                etMid.setError("Chỉ chữ và số");
+                etMid.setError(getString(R.string.scheme_select_alnum_only));
                 etMid.requestFocus();
-                return "Merchant ID chỉ được chứa chữ cái và số";
+                return getString(R.string.scheme_select_mid_alnum_only);
             }
             if (mid.length() > 15) mid = mid.substring(0, 15);
         }
@@ -384,9 +399,9 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
         // MCC: 4 digits
         if (!mcc.isEmpty()) {
             if (!mcc.matches("\\d+")) {
-                etMcc.setError("Chỉ nhập số");
+                etMcc.setError(getString(R.string.scheme_select_digits_only));
                 etMcc.requestFocus();
-                return "MCC chỉ được chứa số";
+                return getString(R.string.scheme_select_mcc_digits_only);
             }
             if (mcc.length() > 4) mcc = mcc.substring(0, 4);
             mcc = padLeft(mcc, 4);  // "12" → "0012"
@@ -396,9 +411,9 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
         // POS Condition: 2 digits
         if (!posCond.isEmpty()) {
             if (!posCond.matches("\\d+")) {
-                etPosCond.setError("Chỉ nhập số");
+                etPosCond.setError(getString(R.string.scheme_select_digits_only));
                 etPosCond.requestFocus();
-                return "POS Condition chỉ được chứa số";
+                return getString(R.string.scheme_select_pos_condition_digits_only);
             }
             if (posCond.length() > 2) posCond = posCond.substring(0, 2);
             posCond = padLeft(posCond, 2);  // "0" → "00"
@@ -407,9 +422,9 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
 
         // Acquirer ID: only digits
         if (!acq.isEmpty() && !acq.matches("\\d+")) {
-            etAcq.setError("Chỉ nhập số");
+            etAcq.setError(getString(R.string.scheme_select_digits_only));
             etAcq.requestFocus();
-            return "Acquirer ID chỉ được chứa số";
+            return getString(R.string.scheme_select_acquirer_digits_only);
         }
         scheme.setAcquirerId(acq);
 
@@ -417,9 +432,9 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
         // Currency Code: 3 digits
         if (!currency.isEmpty()) {
             if (!currency.matches("\\d+")) {
-                etCurrency.setError("Chỉ nhập số");
+                etCurrency.setError(getString(R.string.scheme_select_digits_only));
                 etCurrency.requestFocus();
-                return "Currency Code chỉ được chứa số";
+                return getString(R.string.scheme_select_currency_digits_only);
             }
             currency = padLeft(currency, 3);  // "4" → "004"
         }
@@ -428,9 +443,9 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
         // Country Code: 3 digits
         if (!country.isEmpty()) {
             if (!country.matches("\\d+")) {
-                etCountry.setError("Chỉ nhập số");
+                etCountry.setError(getString(R.string.scheme_select_digits_only));
                 etCountry.requestFocus();
-                return "Country Code chỉ được chứa số";
+                return getString(R.string.scheme_select_country_digits_only);
             }
             country = padLeft(country, 3);
         }
@@ -447,9 +462,9 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
         // Merchant Country: 3 alpha chars (e.g. VNM, USA)
         if (!mCountry.isEmpty()) {
             if (!mCountry.matches("[A-Z]+")) {
-                etMCountry.setError("Chỉ nhập chữ cái");
+                etMCountry.setError(getString(R.string.scheme_select_letters_only));
                 etMCountry.requestFocus();
-                return "Country chỉ được chứa chữ cái (VNM, USA...)";
+                return getString(R.string.scheme_select_merchant_country_letters_only);
             }
             if (mCountry.length() > 3) mCountry = mCountry.substring(0, 3);
         }
@@ -467,14 +482,14 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
 
     private void confirmDelete(Scheme scheme) {
         new AlertDialog.Builder(this)
-                .setTitle("Delete " + scheme.getName() + "?")
-                .setMessage("This will permanently remove this scheme.")
-                .setPositiveButton("Delete", (d, w) -> {
+                .setTitle(getString(R.string.scheme_select_delete_title, scheme.getName()))
+                .setMessage(R.string.scheme_select_delete_message)
+                .setPositiveButton(R.string.scheme_select_delete_action, (d, w) -> {
                     repository.delete(scheme.getId());
                     loadSchemes();
-                    Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.scheme_select_deleted, Toast.LENGTH_SHORT).show();
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(R.string.common_cancel, null)
                 .show();
     }
 
@@ -505,7 +520,7 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
         if (serverIp.isEmpty() || portStr.isEmpty()) {
             tvStatus.setVisibility(View.VISIBLE);
             tvStatus.setTextColor(Color.parseColor("#EF4444"));
-            tvStatus.setText("⚠️ Please enter IP and Port first");
+            tvStatus.setText(R.string.scheme_select_enter_ip_port_first);
             return;
         }
 
@@ -515,25 +530,25 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
         } catch (NumberFormatException e) {
             tvStatus.setVisibility(View.VISIBLE);
             tvStatus.setTextColor(Color.parseColor("#EF4444"));
-            tvStatus.setText("⚠️ Invalid Port");
+            tvStatus.setText(R.string.scheme_select_invalid_port_short);
             return;
         }
 
         tvStatus.setVisibility(View.VISIBLE);
         tvStatus.setTextColor(Color.parseColor("#94A3B8"));
-        tvStatus.setText("⏳ Connecting to " + serverIp + ":" + port + "...");
+        tvStatus.setText(getString(R.string.scheme_select_connecting_to, serverIp, port));
 
         new Thread(() -> {
             try (java.net.Socket socket = new java.net.Socket()) {
                 socket.connect(new java.net.InetSocketAddress(serverIp, port), 5000);
                 runOnUiThread(() -> {
                     tvStatus.setTextColor(Color.parseColor("#10B981"));
-                    tvStatus.setText("✅ Connection Successful!");
+                    tvStatus.setText(R.string.scheme_select_connection_successful);
                 });
             } catch (java.io.IOException e) {
                 runOnUiThread(() -> {
                     tvStatus.setTextColor(Color.parseColor("#EF4444"));
-                    tvStatus.setText("❌ Failed: " + e.getMessage());
+                    tvStatus.setText(getString(R.string.scheme_select_connection_failed_with_reason, e.getMessage()));
                 });
             }
         }).start();

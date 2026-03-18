@@ -7,6 +7,11 @@
     <string name="welcome_button">Log In</string>
     <string name="welcome_footer">Don\'t have an account?</string>
     <string name="welcome_register">Sign Up</string>
+    <string name="welcome_hero_line_1">Accept payments.</string>
+    <string name="welcome_hero_line_2">Anywhere.</string>
+    <string name="welcome_hero_subtitle">Turn your phone into a secure payment terminal in seconds.</string>
+    <string name="welcome_get_started">Get Started</string>
+    <string name="welcome_have_account">I have already an account</string>
 
     <!-- Login Screen -->
     <string name="login_title">Welcome Back</string>
@@ -58,6 +63,10 @@
     <string name="forgot_password_hint">········</string>
     <string name="forgot_password_button">Reset Password</string>
     <string name="forgot_password_subtitle">Enter your registered email or phone to receive a code</string>
+    <string name="forgot_verify_subtitle" translatable="false">Enter the 6-digit code we sent to your email</string>
+    <string name="forgot_new_password_title" translatable="false">New Password</string>
+    <string name="forgot_timeout" translatable="false">Server response timed out. Please try again.</string>
+    <string name="forgot_retrying" translatable="false">Server is waking up, retrying...</string>
 
     <!-- Missing Register Strings -->
     <string name="register_subtitle">Please fill in your details</string>
@@ -108,6 +117,7 @@
     <string name="login_email_label">Email or Phone</string>
     <string name="login_no_account">Don\'t have an account?</string>
     <string name="login_sign_up">Sign Up</string>
+    <string name="login_or_divider">or</string>
 
     <!-- Forgot Password Extras -->
     <string name="forgot_email_label">Email or Phone</string>
@@ -117,6 +127,16 @@
     <string name="forgot_resend_code">Resend Code</string>
     <string name="forgot_remember_password">Remember your password?</string>
     <string name="forgot_back_to_login">Log In</string>
+    <string name="forgot_invalid_email">Please enter a valid email address</string>
+    <string name="forgot_network_required">Internet connection is required for password reset</string>
+    <string name="forgot_code_sent">Verification code sent to your email</string>
+    <string name="forgot_send_code_failed">Unable to send verification code</string>
+    <string name="forgot_email_missing">Please enter your email again</string>
+    <string name="forgot_code_verified">Verification code accepted</string>
+    <string name="forgot_invalid_code">Invalid or expired verification code</string>
+    <string name="forgot_password_reset_success">Password reset successfully</string>
+    <string name="forgot_reset_failed">Unable to reset password</string>
+    <string name="forgot_resend_in_seconds">Resend code in %1$s</string>
 
     <!-- Welcome Features -->
     <string name="feature_contactless">Contactless</string>
@@ -125,6 +145,9 @@
 
     <!-- Common -->
     <string name="back">Back</string>
+    <string name="network_restored">Network connection restored</string>
+    <string name="network_lost">Network connection lost. App is in offline mode.</string>
+    <string name="language_toggle">🌐 EN | VI</string>
 
     <!-- SoftPOS - Settings Screen -->
     <string name="settings_title">Settings</string>
@@ -311,6 +334,20 @@
     <string name="settings_service_group">Service Settings</string>
     <string name="settings_change_password">Change Password</string>
     <string name="settings_logout">Log Out</string>
+    <string name="user_mgmt_title">User Management</string>
+    <string name="user_mgmt_subtitle">Manage user accounts</string>
+    <string name="user_mgmt_search_hint">Search name or phone...</string>
+    <string name="user_mgmt_empty_title">No users yet</string>
+    <string name="user_mgmt_empty_subtitle">Tap + to create a new user</string>
+    <string name="user_mgmt_retry">Try Again</string>
+
+    <string name="txn_select_title">Transaction Type</string>
+    <string name="txn_select_default_scheme">Napas</string>
+    <string name="txn_select_default_channel">POS</string>
+    <string name="txn_select_breadcrumb_sep"> › </string>
+    <string name="txn_select_purchase_subtitle">Payment transaction test</string>
+    <string name="txn_select_balance_subtitle">Balance check test</string>
+    <string name="txn_select_run_selected">Run Selected</string>
 
     <!-- UI Improvements -->
     <string name="txn_detail_title">Transaction Details</string>
@@ -353,9 +390,32 @@
     <string name="settings_backend_helper">• Local/QA gateway: https://your-gateway.example&#10;• Corporate backend: https://api.example.com&#10;• Production: https://your-domain.com</string>
     <string name="common_test">Test</string>
     <string name="common_cancel">Cancel</string>
+    <string name="common_confirm">Confirm</string>
+    <string name="common_ok">OK</string>
     <string name="common_save">Save</string>
+    <string name="common_user">User</string>
     <string name="err_server_not_configured">Server IP/Port chưa được cấu hình. Hãy dùng IP/Port nhập động trước khi giao dịch.</string>
     <string name="common_preview_unknown">\?</string>
+
+    <!-- Login -->
+    <string name="login_error_enter_email_or_phone">Please enter email or phone</string>
+    <string name="login_error_enter_password">Please enter your password</string>
+    <string name="login_session_expired">Session expired. Please login again.</string>
+    <string name="login_invalid_credentials">Invalid username or password!</string>
+    <string name="login_account_locked">Account locked. Try again later.</string>
+    <string name="login_account_locked_try_again">Account locked. Try again in %1$d minutes.</string>
+    <string name="login_success">Login successful!</string>
+    <string name="login_first_online_required">Admin-created account requires first-time online login.</string>
+    <string name="login_server_unavailable_offline_not_found">Server is unavailable and no offline account was found.</string>
+    <string name="login_error_with_reason">Login error: %1$s</string>
+
+    <!-- Purchase Amount -->
+    <string name="purchase_enter_amount">Please enter an amount</string>
+    <string name="purchase_min_amount_vnd">Minimum amount is 10,000 VND</string>
+    <string name="purchase_max_amount_vnd">Maximum amount is 500,000,000 VND</string>
+    <string name="purchase_min_amount_usd">Minimum amount is 1 USD</string>
+    <string name="purchase_max_amount_usd">Maximum amount is 50,000 USD</string>
+    <string name="purchase_amount_must_be_positive">Amount must be greater than 0</string>
 
     <!-- Change Password -->
     <string name="settings_password_dialog_title">Change Password</string>
@@ -371,4 +431,305 @@
     <string name="settings_password_local_sync_failed">Password changed, but local cache could not be updated.</string>
     <string name="settings_password_backend_unavailable">Could not change password on backend. Please try again.</string>
     <string name="settings_password_relogin_required">Password changed. Please sign in again.</string>
+
+    <!-- Dialog i18n cleanup -->
+    <string name="dialog_pin_title">Enter PIN</string>
+    <string name="dialog_pin_length_error">PIN must be 4-6 digits</string>
+    <string name="dialog_select_card_title">Select Card</string>
+    <string name="dialog_select_pan_title">Select PAN</string>
+    <string name="dialog_select_nfc_card_title">Select NFC Card (071/072)</string>
+    <string name="dialog_amount_title">Enter Amount</string>
+    <string name="dialog_amount_hint">Amount</string>
+    <string name="dialog_admin_connection_title">Connection Settings</string>
+    <string name="dialog_admin_security_title">Security Settings</string>
+    <string name="dialog_suite_name_hint">Suite Name (e.g. Napas UAT)</string>
+    <string name="dialog_suite_desc_hint">Description (Optional)</string>
+
+    <!-- Test Suite UI -->
+    <string name="testsuite_cannot_delete_builtin">Cannot delete built-in scenarios</string>
+    <string name="testsuite_configured_selected">Configured and selected</string>
+    <string name="testsuite_btn_delete_selected">Delete Selected</string>
+    <string name="testsuite_btn_run_transaction">Run Transaction</string>
+    <string name="testsuite_btn_confirm_selection">Confirm Selection</string>
+    <string name="testsuite_no_case_selected">No test cases selected</string>
+    <string name="testsuite_no_custom_case_selected">No custom cases selected</string>
+    <string name="testsuite_confirm_delete_title">Confirm Delete</string>
+    <string name="testsuite_confirm_delete_message">Delete %1$d test cases?</string>
+    <string name="testsuite_delete_action">Delete</string>
+    <string name="testsuite_selection_mode_hint">Selection Mode. Tap to select test cases.</string>
+    <string name="testsuite_dialog_title_configure">Configure Scenario</string>
+    <string name="testsuite_dialog_title_edit">Edit Test Case</string>
+    <string name="testsuite_dialog_title_new">New Test Case</string>
+    <string name="testsuite_dialog_subtitle_modify">Modify transaction parameters</string>
+    <string name="testsuite_dialog_subtitle_configure">Configure transaction parameters</string>
+    <string name="testsuite_amount_title">Amount (%1$s)</string>
+    <string name="testsuite_required">Required</string>
+    <string name="testsuite_amount_gt_zero">Must be greater than 0</string>
+    <string name="testsuite_amount_invalid_number">Invalid number</string>
+    <string name="testsuite_pin_4_6_digits">PIN must be 4-6 digits</string>
+    <string name="testsuite_field_prefix_de">DE</string>
+    <string name="testsuite_field_num_hint">#</string>
+    <string name="testsuite_field_value_hint">Value</string>
+    <string name="testsuite_apply_config">Apply Config</string>
+    <string name="testsuite_default_de22">051</string>
+    <string name="testsuite_default_amount">100000</string>
+    <string name="testsuite_balance_amount_not_required">Not required for balance inquiry</string>
+    <string name="testsuite_invalid_entry_mode">Invalid entry mode: %1$s</string>
+    <string name="testsuite_amount_range">10,000 -> 500,000,000</string>
+    <string name="testsuite_amount_numeric">Must be numeric</string>
+    <string name="testsuite_pan_length">13-19 digits</string>
+    <string name="testsuite_pan_luhn_failed">Luhn failed</string>
+    <string name="testsuite_expiry_yymm">YYMM</string>
+    <string name="testsuite_expiry_invalid_month">Invalid month</string>
+    <string name="testsuite_expiry_expired">Expired</string>
+    <string name="testsuite_configuration_applied">Configuration applied</string>
+
+    <!-- Shared labels -->
+    <string name="common_close">Close</string>
+
+    <!-- Test case dialog -->
+    <string name="testcase_dialog_icon_desc">Test case icon</string>
+    <string name="testcase_dialog_default_title">New Test Case</string>
+    <string name="testcase_dialog_default_subtitle">Configure transaction parameters</string>
+    <string name="testcase_dialog_basic_info">Basic Information</string>
+    <string name="testcase_dialog_scenario_name_hint">Scenario Name</string>
+    <string name="testcase_dialog_entry_mode_title">Entry Mode (DE 22)</string>
+    <string name="testcase_dialog_de22_hint">POS Entry Mode (3 digits)</string>
+    <string name="testcase_dialog_de22_helper">e.g. 011, 012, 021, 022, 051, 052, 071, 072</string>
+    <string name="testcase_dialog_mode_label">Mode:</string>
+    <string name="testcase_dialog_amount_title">Transaction Amount</string>
+    <string name="testcase_dialog_amount_hint">Amount (VND)</string>
+    <string name="testcase_dialog_card_desc">Card</string>
+    <string name="testcase_dialog_card_details">Card Details</string>
+    <string name="testcase_dialog_pan_hint">Card Number (PAN)</string>
+    <string name="testcase_dialog_expiry_hint">Expiry (YYMM)</string>
+    <string name="testcase_dialog_track_desc">Track</string>
+    <string name="testcase_dialog_track2_title">Track 2 Data</string>
+    <string name="testcase_dialog_track2_hint">e.g. 9704xxxx=3101xxxx</string>
+    <string name="testcase_dialog_toggle_desc">Toggle advanced section</string>
+    <string name="testcase_dialog_advanced_title">Advanced Fields</string>
+    <string name="testcase_dialog_advanced_subtitle">Custom ISO8583 field overrides</string>
+    <string name="testcase_dialog_advanced_note">Override ISO8583 fields: DE 3, DE 18, DE 25, DE 49, etc.</string>
+    <string name="testcase_dialog_add_field">+ Add Field</string>
+    <string name="testcase_dialog_save">Save Test Case</string>
+
+    <!-- Scheme dialog -->
+    <string name="scheme_dialog_title_add">Add Scheme</string>
+    <string name="scheme_dialog_subtitle_add">Configure a new card network</string>
+    <string name="scheme_dialog_preview_new">New Scheme</string>
+    <string name="scheme_dialog_name_hint">Scheme Name</string>
+    <string name="scheme_dialog_bin_hint">BIN Prefix (e.g. 9704, 4, 5)</string>
+    <string name="scheme_dialog_icon_letter_hint">Icon Letter</string>
+    <string name="scheme_dialog_icon_color">Icon Color</string>
+    <string name="scheme_dialog_connection_title">Connection Config</string>
+    <string name="scheme_dialog_server_ip_hint">Server IP (e.g. 192.168.1.100)</string>
+    <string name="scheme_dialog_port_hint">Port</string>
+    <string name="scheme_dialog_timeout_hint">Timeout (ms)</string>
+    <string name="scheme_dialog_test_connection">Test Connection</string>
+    <string name="scheme_dialog_terminal_desc">Terminal</string>
+    <string name="scheme_dialog_terminal_merchant_title">Terminal / Merchant</string>
+    <string name="scheme_dialog_terminal_id_hint">Terminal ID (e.g. AUTO0001)</string>
+    <string name="scheme_dialog_merchant_id_hint">Merchant ID</string>
+    <string name="scheme_dialog_mcc_hint">MCC (e.g. 5411)</string>
+    <string name="scheme_dialog_pos_condition_hint">POS Condition (e.g. 00)</string>
+    <string name="scheme_dialog_acquirer_hint">Acquirer ID (e.g. 970488)</string>
+    <string name="scheme_dialog_currency_hint">Currency (e.g. 704)</string>
+    <string name="scheme_dialog_country_numeric_hint">Country (e.g. 704)</string>
+    <string name="scheme_dialog_merchant_name_hint">Merchant Name (e.g. MYSOFTPOS BANK)</string>
+    <string name="scheme_dialog_location_hint">Location (e.g. HA NOI)</string>
+    <string name="scheme_dialog_country_alpha_hint">Country (e.g. VNM)</string>
+
+    <!-- User dialog -->
+    <string name="user_dialog_title_add">Add User</string>
+    <string name="user_dialog_subtitle_add">Create a new user account</string>
+    <string name="user_dialog_personal_info">Personal Info</string>
+    <string name="user_dialog_full_name_hint">Full Name *</string>
+    <string name="user_dialog_phone_helper">Used for login</string>
+    <string name="user_dialog_phone_hint">Phone Number *</string>
+    <string name="user_dialog_password_hint">Password *</string>
+    <string name="user_dialog_email_hint">Email (Optional)</string>
+    <string name="user_dialog_dob_hint">Date of birth (dd/MM/yyyy)</string>
+    <string name="user_dialog_gender_hint">Gender</string>
+    <string name="user_dialog_store_name_hint">Store name</string>
+    <string name="user_dialog_business_type_hint">Business type (MCC)</string>
+    <string name="user_dialog_store_address_hint">Store address</string>
+    <string name="user_dialog_account_terminal">Account &amp; Terminal</string>
+    <string name="user_dialog_terminal_id_hint">Terminal ID (TID)</string>
+    <string name="user_dialog_server_connection">Server Connection</string>
+    <string name="user_dialog_server_connection_desc">IP and port for this user\'s transactions</string>
+    <string name="user_dialog_server_ip_hint">Server IP</string>
+    <string name="user_dialog_server_port_hint">Port</string>
+    <string name="user_dialog_test_connection">Test Connection</string>
+    <string name="user_dialog_delete_user">Delete User</string>
+
+    <!-- Transaction detail -->
+    <string name="txn_detail_invalid_id">Invalid transaction ID</string>
+    <string name="txn_detail_label_date_time">Date / Time</string>
+    <string name="txn_detail_label_card_number">Card Number</string>
+    <string name="txn_detail_label_bank_issuer">Bank / Issuer</string>
+    <string name="txn_detail_label_mid">Merchant ID</string>
+    <string name="txn_detail_label_tid">Terminal ID</string>
+    <string name="txn_detail_label_trace">Trace Number</string>
+    <string name="txn_detail_label_rrn">RRN</string>
+    <string name="txn_detail_unknown">Unknown</string>
+    <string name="txn_detail_placeholder_dash">---</string>
+
+    <!-- User management -->
+    <string name="user_mgmt_edit_user_title">Edit User</string>
+    <string name="user_mgmt_edit_user_subtitle">Update user details</string>
+    <string name="user_mgmt_new_password_optional_hint">New password (leave blank to keep)</string>
+    <string name="user_mgmt_enter_ip_port_first">Enter IP and Port first</string>
+    <string name="user_mgmt_invalid_port_number">Invalid port number</string>
+    <string name="user_mgmt_testing_connection">Testing...</string>
+    <string name="user_mgmt_connected">✓ Connected</string>
+    <string name="user_mgmt_connection_failed">✗ Connection failed</string>
+    <string name="user_mgmt_phone_required">Phone number is required</string>
+    <string name="user_mgmt_password_required">Password is required</string>
+    <string name="user_mgmt_user_updated">User updated</string>
+    <string name="user_mgmt_user_created">User created</string>
+    <string name="user_mgmt_delete_user_title">Delete User</string>
+    <string name="user_mgmt_delete_user_message">Delete %1$s?</string>
+    <string name="user_mgmt_delete_action">Delete</string>
+    <string name="user_mgmt_user_deleted">User deleted</string>
+    <string name="user_mgmt_error_code">Error: %1$d</string>
+    <string name="user_mgmt_network_error">Network error: %1$s</string>
+
+    <!-- Scheme select -->
+    <string name="scheme_select_updated">Updated</string>
+    <string name="scheme_select_added">Added</string>
+    <string name="scheme_select_invalid_ip">Invalid IP</string>
+    <string name="scheme_select_port_range_hint">1 - 65535</string>
+    <string name="scheme_select_invalid_port_range">Port must be between 1 and 65535</string>
+    <string name="scheme_select_invalid_number">Invalid number</string>
+    <string name="scheme_select_invalid_port">Invalid port</string>
+    <string name="scheme_select_port_required_when_ip">Required when IP is set</string>
+    <string name="scheme_select_port_required_message">Port is required when IP is provided</string>
+    <string name="scheme_select_alnum_only">Letters and numbers only</string>
+    <string name="scheme_select_tid_alnum_only">Terminal ID must contain letters and numbers only</string>
+    <string name="scheme_select_mid_alnum_only">Merchant ID must contain letters and numbers only</string>
+    <string name="scheme_select_digits_only">Digits only</string>
+    <string name="scheme_select_mcc_digits_only">MCC must contain digits only</string>
+    <string name="scheme_select_pos_condition_digits_only">POS Condition must contain digits only</string>
+    <string name="scheme_select_acquirer_digits_only">Acquirer ID must contain digits only</string>
+    <string name="scheme_select_currency_digits_only">Currency code must contain digits only</string>
+    <string name="scheme_select_country_digits_only">Country code must contain digits only</string>
+    <string name="scheme_select_letters_only">Letters only</string>
+    <string name="scheme_select_merchant_country_letters_only">Country must contain letters only (e.g., VNM, USA)</string>
+    <string name="scheme_select_delete_title">Delete %1$s?</string>
+    <string name="scheme_select_delete_message">This will permanently remove this scheme.</string>
+    <string name="scheme_select_delete_action">Delete</string>
+    <string name="scheme_select_deleted">Deleted</string>
+    <string name="scheme_select_enter_ip_port_first">Please enter IP and Port first</string>
+    <string name="scheme_select_invalid_port_short">Invalid Port</string>
+    <string name="scheme_select_connecting_to">Connecting to %1$s:%2$d...</string>
+    <string name="scheme_select_connection_successful">Connection Successful!</string>
+    <string name="scheme_select_connection_failed_with_reason">Failed: %1$s</string>
+
+    <!-- Transaction management -->
+    <string name="txn_mgmt_state_preparing_session_title">Preparing backend session</string>
+    <string name="txn_mgmt_state_preparing_session_subtitle">Please wait while your admin session is restored.</string>
+    <string name="txn_mgmt_state_backend_session_unavailable_title">Backend session unavailable</string>
+    <string name="txn_mgmt_state_backend_session_unavailable_subtitle">Please sign in again or try again.</string>
+    <string name="txn_mgmt_state_loading_title">Loading transactions</string>
+    <string name="txn_mgmt_state_loading_subtitle">Fetching the latest transaction data from backend...</string>
+    <string name="txn_mgmt_state_backend_unavailable_title">Backend unavailable</string>
+    <string name="txn_mgmt_state_load_users_failed_subtitle">Could not load users from backend. Please try again.</string>
+    <string name="txn_mgmt_state_load_users_network_subtitle">Could not load users from backend. Please check your connection and try again.</string>
+    <string name="txn_mgmt_state_load_txn_failed_subtitle">Could not load transactions from backend. Please try again.</string>
+    <string name="txn_mgmt_state_load_txn_network_subtitle">Could not load transactions from backend. Please check your connection and try again.</string>
+    <string name="txn_mgmt_state_offline_title">Internet connection required</string>
+    <string name="txn_mgmt_state_offline_subtitle">Connect to Wi-Fi or mobile data to view transaction management.</string>
+    <string name="txn_mgmt_toast_load_users_failed">Failed to load users</string>
+    <string name="txn_mgmt_toast_load_txn_failed">Failed to load transactions</string>
+    <string name="txn_mgmt_filter_all_users">All Users</string>
+    <string name="txn_mgmt_empty_no_transactions_title">No transactions found</string>
+    <string name="txn_mgmt_empty_no_transactions_subtitle">Transactions from user accounts will appear here when available.</string>
+    <string name="txn_mgmt_empty_filter_title">No transactions match the filter</string>
+    <string name="txn_mgmt_empty_filter_subtitle">Try selecting a different user.</string>
+    <string name="txn_mgmt_placeholder_dash">—</string>
+    <string name="txn_mgmt_trace_format">#%1$s</string>
+    <string name="txn_mgmt_status_unknown">UNKNOWN</string>
+    <string name="user_mgmt_tid_format">TID: %1$s</string>
+
+    <!-- Transaction result -->
+    <string name="txn_result_masked_pan_placeholder">**** ----</string>
+    <string name="txn_result_type_default">Transaction</string>
+    <string name="txn_result_amount_overflow">&gt; 10,000,000,000</string>
+    <string name="txn_result_balance_type_format">%1$s Balance</string>
+    <string name="txn_result_available_balance">Available Balance</string>
+
+    <!-- Transaction select -->
+    <string name="txn_select_run_selected_prefix">Run Selected (</string>
+    <string name="txn_select_run_selected_purchase_part">%1$d Purchase</string>
+    <string name="txn_select_run_selected_separator"> + </string>
+    <string name="txn_select_run_selected_balance_part">%1$d Balance</string>
+    <string name="txn_select_run_selected_suffix">)</string>
+
+    <!-- Dynamic test suite/case -->
+    <string name="dynamic_suite_option_rename">Rename</string>
+    <string name="dynamic_suite_option_delete">Delete</string>
+    <string name="dynamic_suite_delete_title">Delete Suite</string>
+    <string name="dynamic_suite_delete_message">Are you sure you want to delete this suite and all its cases?</string>
+    <string name="dynamic_suite_edit_title">Edit Test Suite</string>
+    <string name="dynamic_suite_new_title">New Test Suite</string>
+    <string name="dynamic_suite_action_update">Update</string>
+    <string name="dynamic_suite_action_create">Create</string>
+    <string name="dynamic_suite_name_required">Name required</string>
+
+    <string name="dynamic_case_option_run">Run</string>
+    <string name="dynamic_case_option_edit">Edit</string>
+    <string name="dynamic_case_option_delete">Delete</string>
+    <string name="dynamic_case_delete_title">Delete Case</string>
+    <string name="dynamic_case_delete_message">Are you sure you want to delete this test case?</string>
+    <string name="dynamic_case_running">Running %1$s...</string>
+    <string name="dynamic_case_new_title">New Test Case</string>
+    <string name="dynamic_case_edit_title">Edit Test Case</string>
+    <string name="dynamic_case_name_hint">Case Name</string>
+    <string name="dynamic_case_type_hint">Transaction Type (PURCHASE/BALANCE)</string>
+    <string name="dynamic_case_type_simple_hint">Transaction Type</string>
+    <string name="dynamic_case_action_create">Create</string>
+    <string name="dynamic_case_action_update">Update</string>
+    <string name="dynamic_case_name_required">Name required</string>
+
+    <!-- Runner / scheme history -->
+    <string name="testsuite_default_value">Default</string>
+    <string name="testsuite_default_currency_code">Default (704)</string>
+    <string name="runner_starting_log">Starting Transaction...\nMode: %1$s\nAmount: %2$s\nCurrency: %3$s\n</string>
+    <string name="scheme_history_title">Transaction History</string>
+    <string name="scheme_history_count">%1$d transactions</string>
+    <string name="scheme_history_trace_format">Trace: %1$s</string>
+
+    <!-- Batch runner -->
+    <string name="batch_runner_no_cases">No test cases provided</string>
+    <string name="batch_runner_progress">%1$d/%2$d</string>
+    <string name="batch_runner_title">Batch Runner (%1$d cases)</string>
+    <string name="batch_runner_run_all">Run All (%1$d)</string>
+    <string name="batch_runner_preparing">Preparing...</string>
+    <string name="batch_runner_build_error">Build error: %1$s</string>
+    <string name="batch_runner_sending">Sending %1$d transactions...</string>
+    <string name="batch_runner_detail_pass">RC: %1$s (%2$s)</string>
+    <string name="batch_runner_detail_fail">RC: %1$s - %2$s</string>
+    <string name="batch_runner_error_timeout">Error: Timeout waiting for response.</string>
+    <string name="batch_runner_done_summary">Done: %1$d Pass, %2$d Fail - Run Again?</string>
+    <string name="batch_runner_default_type_purchase">PURCHASE</string>
+    <string name="batch_runner_case_type_format">%1$s | DE22: %2$s</string>
+    <string name="batch_runner_status_pending">PENDING</string>
+    <string name="batch_runner_status_running">RUNNING...</string>
+    <string name="batch_runner_status_fail">FAIL</string>
+    <string name="batch_runner_rc_badge">RC: %1$s</string>
+
+    <!-- Generic numeric/currency labels -->
+    <string name="common_zero">0</string>
+    <string name="keypad_digit_0">0</string>
+    <string name="keypad_digit_1">1</string>
+    <string name="keypad_digit_2">2</string>
+    <string name="keypad_digit_3">3</string>
+    <string name="keypad_digit_4">4</string>
+    <string name="keypad_digit_5">5</string>
+    <string name="keypad_digit_6">6</string>
+    <string name="keypad_digit_7">7</string>
+    <string name="keypad_digit_8">8</string>
+    <string name="keypad_digit_9">9</string>
+    <string name="currency_vnd">VND</string>
+    <string name="currency_usd">USD</string>
 </resources>

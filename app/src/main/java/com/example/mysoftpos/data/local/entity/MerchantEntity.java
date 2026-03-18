@@ -19,6 +19,16 @@ public class MerchantEntity {
     @ColumnInfo(name = "admin_backend_id")
     public long adminBackendId;
 
+    /** Backend user.id that owns this merchant profile */
+    @ColumnInfo(name = "owner_user_backend_id")
+    public long ownerUserBackendId;
+
+    @ColumnInfo(name = "business_type")
+    public String businessType;
+
+    @ColumnInfo(name = "store_address")
+    public String storeAddress;
+
     @ColumnInfo(name = "merchant_code")
     public String merchantCode; // DE 42
 
@@ -32,5 +42,7 @@ public class MerchantEntity {
     public MerchantEntity(String merchantCode, String merchantNameLocation) {
         this.merchantCode = merchantCode;
         this.merchantNameLocation = merchantNameLocation;
+        this.businessType = "";
+        this.storeAddress = "";
     }
 }

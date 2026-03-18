@@ -68,7 +68,7 @@ public class SchemeHistoryActivity extends BaseActivity {
         tvEmpty = findViewById(R.id.tvEmpty);
         tvCount = findViewById(R.id.tvCount);
 
-        tvTitle.setText("Transaction History");
+        tvTitle.setText(R.string.scheme_history_title);
         tvSubtitle.setText(schemeName);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
@@ -121,7 +121,7 @@ public class SchemeHistoryActivity extends BaseActivity {
                     }
                     adapter.notifyDataSetChanged();
                     tvEmpty.setVisibility(transactions.isEmpty() ? View.VISIBLE : View.GONE);
-                    tvCount.setText(transactions.size() + " transactions");
+                    tvCount.setText(getString(R.string.scheme_history_count, transactions.size()));
                 });
     }
 
@@ -184,7 +184,8 @@ public class SchemeHistoryActivity extends BaseActivity {
         public void onBindViewHolder(@NonNull VH h, int position) {
             TransactionEntity txn = transactions.get(position);
 
-            h.tvTrace.setText("Trace: " + (txn.traceNumber != null ? txn.traceNumber : "---"));
+            String trace = txn.traceNumber != null ? txn.traceNumber : getString(R.string.txn_detail_placeholder_dash);
+            h.tvTrace.setText(getString(R.string.scheme_history_trace_format, trace));
             h.tvDateTime.setText(dateFmt.format(new Date(txn.timestamp)));
 
             String status = txn.status != null ? txn.status.toUpperCase(Locale.ROOT) : "UNKNOWN";
@@ -208,7 +209,7 @@ public class SchemeHistoryActivity extends BaseActivity {
             h.statusDot.setBackground(dot);
 
             // Amount — parse DE 4 from request hex, divide by 100 for VND
-            String amountDisplay = "---";
+            String amountDisplay = getString(R.string.txn_detail_placeholder_dash);
             try {
                 if (txn.requestHex != null) {
                     com.example.mysoftpos.iso8583.message.IsoMessage reqMsg = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
@@ -221,21 +222,24 @@ public class SchemeHistoryActivity extends BaseActivity {
                         if ("704".equals(currency)) {
                             rawAmt = rawAmt / 100;
                         }
-                        amountDisplay = amountFmt.format(rawAmt) + ("704".equals(currency) ? " VND" : " USD");
+                        amountDisplay = amountFmt.format(rawAmt)
+                                + ("704".equals(currency)
+                                ? " " + getString(R.string.currency_vnd)
+                                : " " + getString(R.string.currency_usd));
                     }
                 }
             } catch (Exception e) {
                 // Fallback: try amount field directly
                 try {
                     long amt = Long.parseLong(txn.amount);
-                    amountDisplay = amountFmt.format(amt) + " VND";
+                    amountDisplay = amountFmt.format(amt) + " " + getString(R.string.currency_vnd);
                 } catch (Exception ignored) {
                 }
             }
             h.tvAmount.setText(amountDisplay);
 
             // Card (masked PAN from request DE 2)
-            String cardText = "---";
+            String cardText = getString(R.string.txn_detail_placeholder_dash);
             try {
                 if (txn.requestHex != null) {
                     com.example.mysoftpos.iso8583.message.IsoMessage req = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()

@@ -38,6 +38,9 @@ public interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
     List<TransactionEntity> getAllTransactions();
 
+    @Query("SELECT * FROM transactions WHERE owner_username = :username AND status IS NOT NULL AND status != 'PENDING' ORDER BY timestamp DESC")
+    List<TransactionEntity> getCompletedTransactionsByOwnerSync(String username);
+
     @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
     androidx.lifecycle.LiveData<List<TransactionEntity>> getAllTransactionsLive();
 

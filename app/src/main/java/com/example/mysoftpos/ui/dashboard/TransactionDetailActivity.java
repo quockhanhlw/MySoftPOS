@@ -51,7 +51,7 @@ public class TransactionDetailActivity extends BaseActivity {
 
         transactionId = getIntent().getLongExtra(EXTRA_TRANSACTION_ID, -1);
         if (transactionId == -1) {
-            Toast.makeText(this, "Invalid Transaction ID", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.txn_detail_invalid_id, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -80,43 +80,43 @@ public class TransactionDetailActivity extends BaseActivity {
         View rowDate = findViewById(R.id.rowDate);
         if (rowDate != null) {
             valDate = rowDate.findViewById(R.id.tvValue);
-            ((TextView) rowDate.findViewById(R.id.tvLabel)).setText("Date / Time");
+            ((TextView) rowDate.findViewById(R.id.tvLabel)).setText(R.string.txn_detail_label_date_time);
         }
 
         View rowCard = findViewById(R.id.rowCard);
         if (rowCard != null) {
             valCard = rowCard.findViewById(R.id.tvValue);
-            ((TextView) rowCard.findViewById(R.id.tvLabel)).setText("Card Number");
+            ((TextView) rowCard.findViewById(R.id.tvLabel)).setText(R.string.txn_detail_label_card_number);
         }
 
         View rowBank = findViewById(R.id.rowBank);
         if (rowBank != null) {
             valBank = rowBank.findViewById(R.id.tvValue);
-            ((TextView) rowBank.findViewById(R.id.tvLabel)).setText("Bank / Issuer");
+            ((TextView) rowBank.findViewById(R.id.tvLabel)).setText(R.string.txn_detail_label_bank_issuer);
         }
 
         View rowMid = findViewById(R.id.rowMid);
         if (rowMid != null) {
             valMid = rowMid.findViewById(R.id.tvValue);
-            ((TextView) rowMid.findViewById(R.id.tvLabel)).setText("Merchant ID");
+            ((TextView) rowMid.findViewById(R.id.tvLabel)).setText(R.string.txn_detail_label_mid);
         }
 
         View rowTid = findViewById(R.id.rowTid);
         if (rowTid != null) {
             valTid = rowTid.findViewById(R.id.tvValue);
-            ((TextView) rowTid.findViewById(R.id.tvLabel)).setText("Terminal ID");
+            ((TextView) rowTid.findViewById(R.id.tvLabel)).setText(R.string.txn_detail_label_tid);
         }
 
         View rowTrace = findViewById(R.id.rowTrace);
         if (rowTrace != null) {
             valTrace = rowTrace.findViewById(R.id.tvValue);
-            ((TextView) rowTrace.findViewById(R.id.tvLabel)).setText("Trace Number");
+            ((TextView) rowTrace.findViewById(R.id.tvLabel)).setText(R.string.txn_detail_label_trace);
         }
 
         View rowRrn = findViewById(R.id.rowRrn);
         if (rowRrn != null) {
             valRrn = rowRrn.findViewById(R.id.tvValue);
-            ((TextView) rowRrn.findViewById(R.id.tvLabel)).setText("RRN");
+            ((TextView) rowRrn.findViewById(R.id.tvLabel)).setText(R.string.txn_detail_label_rrn);
         }
 
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
@@ -180,7 +180,7 @@ public class TransactionDetailActivity extends BaseActivity {
         if (cachedTxnDetails != null && cachedTxnDetails.transaction != null) {
             // Parse currency from requestHex DE 49
             String currencyCode = "704";
-            String currencyLabel = "VND";
+            String currencyLabel = getString(R.string.currency_vnd);
             String realAmount = cachedTxnDetails.transaction.amount;
             try {
                 if (cachedTxnDetails.transaction.requestHex != null) {
@@ -190,7 +190,7 @@ public class TransactionDetailActivity extends BaseActivity {
                     if (req.hasField(49)) {
                         currencyCode = req.getField(49).trim();
                         if ("840".equals(currencyCode))
-                            currencyLabel = "USD";
+                            currencyLabel = getString(R.string.currency_usd);
                     }
                     // Use DE 4 for accurate amount, convert to real value
                     if (req.hasField(4)) {
@@ -282,23 +282,23 @@ public class TransactionDetailActivity extends BaseActivity {
 
         // Card Details from Relation
         if (txnDetails.card != null) {
-            valCard.setText(txnDetails.card.panMasked != null ? txnDetails.card.panMasked : "Unknown");
-            valBank.setText(txnDetails.card.scheme != null ? txnDetails.card.scheme : "Unknown");
+            valCard.setText(txnDetails.card.panMasked != null ? txnDetails.card.panMasked : getString(R.string.txn_detail_unknown));
+            valBank.setText(txnDetails.card.scheme != null ? txnDetails.card.scheme : getString(R.string.txn_detail_unknown));
         } else {
-            valCard.setText("---");
-            valBank.setText("---");
+            valCard.setText(R.string.txn_detail_placeholder_dash);
+            valBank.setText(R.string.txn_detail_placeholder_dash);
         }
 
         // Terminal Details from Relation
         // Note: TransactionWithDetails has `terminal` relation
         if (txnDetails.terminal != null) {
-            valTid.setText(txnDetails.terminal.terminalCode != null ? txnDetails.terminal.terminalCode : "---");
+            valTid.setText(txnDetails.terminal.terminalCode != null ? txnDetails.terminal.terminalCode : getString(R.string.txn_detail_placeholder_dash));
         } else {
-            valTid.setText("---");
+            valTid.setText(R.string.txn_detail_placeholder_dash);
         }
 
         // Merchant ID (DE 42) from Request Hex or Terminal
-        String mid = "---";
+        String mid = getString(R.string.txn_detail_placeholder_dash);
         try {
             if (txn.requestHex != null) {
                 com.example.mysoftpos.iso8583.message.IsoMessage req = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
@@ -315,7 +315,7 @@ public class TransactionDetailActivity extends BaseActivity {
         valTrace.setText(txn.traceNumber);
 
         // RRN (DE 37) from Response Hex
-        String rrn = "---";
+        String rrn = getString(R.string.txn_detail_placeholder_dash);
         try {
             if (txn.responseHex != null) {
                 com.example.mysoftpos.iso8583.message.IsoMessage resp = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()

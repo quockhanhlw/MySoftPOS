@@ -7,6 +7,11 @@
     <string name="welcome_button">Đăng nhập</string>
     <string name="welcome_footer">Chưa có tài khoản?</string>
     <string name="welcome_register">Đăng ký</string>
+    <string name="welcome_hero_line_1">Chấp nhận thanh toán.</string>
+    <string name="welcome_hero_line_2">Mọi nơi.</string>
+    <string name="welcome_hero_subtitle">Biến điện thoại của bạn thành thiết bị thanh toán bảo mật chỉ trong vài giây.</string>
+    <string name="welcome_get_started">Bắt đầu</string>
+    <string name="welcome_have_account">Tôi đã có tài khoản</string>
 
     <!-- Login Screen -->
     <string name="login_title">Chào mừng trở lại</string>
@@ -20,6 +25,7 @@
     <string name="login_email_label">Email hoặc số điện thoại</string>
     <string name="login_no_account">Chưa có tài khoản?</string>
     <string name="login_sign_up">Đăng ký</string>
+    <string name="login_or_divider">hoặc</string>
 
     <!-- Register Screen -->
     <string name="register_title">Tạo tài khoản người dùng</string>
@@ -68,6 +74,20 @@
     <string name="forgot_resend_code">Gửi lại mã</string>
     <string name="forgot_remember_password">Đã nhớ mật khẩu?</string>
     <string name="forgot_back_to_login">Đăng nhập</string>
+    <string name="forgot_invalid_email">Vui lòng nhập địa chỉ email hợp lệ</string>
+    <string name="forgot_network_required">Cần kết nối Internet để đặt lại mật khẩu</string>
+    <string name="forgot_code_sent">Đã gửi mã xác thực về email</string>
+    <string name="forgot_send_code_failed">Không thể gửi mã xác thực</string>
+    <string name="forgot_email_missing">Vui lòng nhập lại email</string>
+    <string name="forgot_code_verified">Mã xác thực hợp lệ</string>
+    <string name="forgot_invalid_code">Mã xác thực không đúng hoặc đã hết hạn</string>
+    <string name="forgot_password_reset_success">Đặt lại mật khẩu thành công</string>
+    <string name="forgot_reset_failed">Không thể đặt lại mật khẩu</string>
+    <string name="forgot_resend_in_seconds">Gửi lại mã sau %1$s</string>
+    <string name="forgot_verify_subtitle">Nhập mã 6 số đã gửi đến email của bạn</string>
+    <string name="forgot_new_password_title">Mật khẩu mới</string>
+    <string name="forgot_timeout">Kết nối máy chủ quá thời gian chờ. Vui lòng thử lại.</string>
+    <string name="forgot_retrying">Máy chủ đang khởi động, đang thử lại...</string>
 
     <!-- Missing Register Strings -->
     <string name="register_subtitle">Vui lòng điền thông tin của bạn</string>
@@ -116,6 +136,9 @@
 
     <!-- Common -->
     <string name="back">Quay lại</string>
+    <string name="network_restored">Đã khôi phục kết nối mạng</string>
+    <string name="network_lost">Mất kết nối mạng. Ứng dụng đang ở chế độ offline.</string>
+    <string name="language_toggle">🌐 VI | EN</string>
 
     <!-- SoftPOS - Settings Screen -->
     <string name="settings_title">Cài đặt</string>
@@ -302,6 +325,20 @@
     <string name="settings_service_group">Cài đặt dịch vụ</string>
     <string name="settings_change_password">Đổi mật khẩu</string>
     <string name="settings_logout">Đăng xuất</string>
+    <string name="user_mgmt_title">Quản lý người dùng</string>
+    <string name="user_mgmt_subtitle">Quản lý các tài khoản người dùng</string>
+    <string name="user_mgmt_search_hint">Tìm theo tên hoặc số điện thoại...</string>
+    <string name="user_mgmt_empty_title">Chưa có người dùng</string>
+    <string name="user_mgmt_empty_subtitle">Nhấn + để tạo người dùng mới</string>
+    <string name="user_mgmt_retry">Thử lại</string>
+
+    <string name="txn_select_title">Loại giao dịch</string>
+    <string name="txn_select_default_scheme">Napas</string>
+    <string name="txn_select_default_channel">POS</string>
+    <string name="txn_select_breadcrumb_sep"> › </string>
+    <string name="txn_select_purchase_subtitle">Kiểm thử giao dịch thanh toán</string>
+    <string name="txn_select_balance_subtitle">Kiểm thử vấn tin số dư</string>
+    <string name="txn_select_run_selected">Chạy mục đã chọn</string>
 
     <!-- UI Improvements -->
     <string name="txn_detail_title">Chi tiết giao dịch</string>
@@ -346,6 +383,8 @@
     <string name="settings_backend_helper">• Cổng local/QA: https://your-gateway.example&#10;• Backend nội bộ: https://api.example.com&#10;• Production: https://your-domain.com</string>
     <string name="common_test">Kiểm tra</string>
     <string name="common_cancel">Huỷ</string>
+    <string name="common_confirm">Xác nhận</string>
+    <string name="common_ok">OK</string>
     <string name="common_save">Lưu</string>
     <string name="err_server_not_configured">Server IP/Port chưa được cấu hình. Hãy dùng IP/Port nhập động trước khi giao dịch.</string>
 
@@ -353,7 +392,28 @@
     <string name="feature_contactless">Không tiếp xúc</string>
     <string name="feature_secure">Bảo mật</string>
     <string name="feature_fast">Nhanh chóng</string>
+    <string name="common_user">Người dùng</string>
     <string name="common_preview_unknown">\?</string>
+
+    <!-- Login -->
+    <string name="login_error_enter_email_or_phone">Vui lòng nhập email hoặc số điện thoại</string>
+    <string name="login_error_enter_password">Vui lòng nhập mật khẩu</string>
+    <string name="login_session_expired">Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.</string>
+    <string name="login_invalid_credentials">Sai tài khoản hoặc mật khẩu!</string>
+    <string name="login_account_locked">Tài khoản đang bị khóa. Vui lòng thử lại sau.</string>
+    <string name="login_account_locked_try_again">Tài khoản đang bị khóa. Thử lại sau %1$d phút.</string>
+    <string name="login_success">Đăng nhập thành công!</string>
+    <string name="login_first_online_required">Tài khoản do admin tạo cần đăng nhập online lần đầu.</string>
+    <string name="login_server_unavailable_offline_not_found">Server không khả dụng và không tìm thấy tài khoản offline.</string>
+    <string name="login_error_with_reason">Lỗi đăng nhập: %1$s</string>
+
+    <!-- Purchase Amount -->
+    <string name="purchase_enter_amount">Vui lòng nhập số tiền</string>
+    <string name="purchase_min_amount_vnd">Số tiền tối thiểu là 10,000 VND</string>
+    <string name="purchase_max_amount_vnd">Số tiền tối đa là 500,000,000 VND</string>
+    <string name="purchase_min_amount_usd">Số tiền tối thiểu là 1 USD</string>
+    <string name="purchase_max_amount_usd">Số tiền tối đa là 50,000 USD</string>
+    <string name="purchase_amount_must_be_positive">Số tiền phải lớn hơn 0</string>
 
     <!-- Change Password Strings -->
     <string name="settings_password_dialog_title">Đổi mật khẩu</string>
@@ -369,4 +429,305 @@
     <string name="settings_password_local_sync_failed">Đã đổi mật khẩu, nhưng chưa cập nhật được cache local.</string>
     <string name="settings_password_backend_unavailable">Không thể đổi mật khẩu trên backend. Vui lòng thử lại.</string>
     <string name="settings_password_relogin_required">Đã đổi mật khẩu. Vui lòng đăng nhập lại.</string>
+
+    <!-- Dialog i18n cleanup -->
+    <string name="dialog_pin_title">Nhập PIN</string>
+    <string name="dialog_pin_length_error">PIN phải gồm 4-6 chữ số</string>
+    <string name="dialog_select_card_title">Chọn thẻ</string>
+    <string name="dialog_select_pan_title">Chọn PAN</string>
+    <string name="dialog_select_nfc_card_title">Chọn thẻ NFC (071/072)</string>
+    <string name="dialog_amount_title">Nhập số tiền</string>
+    <string name="dialog_amount_hint">Số tiền</string>
+    <string name="dialog_admin_connection_title">Cài đặt kết nối</string>
+    <string name="dialog_admin_security_title">Cài đặt bảo mật</string>
+    <string name="dialog_suite_name_hint">Tên suite (ví dụ: Napas UAT)</string>
+    <string name="dialog_suite_desc_hint">Mô tả (tuỳ chọn)</string>
+
+    <!-- Test Suite UI -->
+    <string name="testsuite_cannot_delete_builtin">Không thể xoá các kịch bản mặc định</string>
+    <string name="testsuite_configured_selected">Đã cấu hình và chọn</string>
+    <string name="testsuite_btn_delete_selected">Xoá mục đã chọn</string>
+    <string name="testsuite_btn_run_transaction">Chạy giao dịch</string>
+    <string name="testsuite_btn_confirm_selection">Xác nhận lựa chọn</string>
+    <string name="testsuite_no_case_selected">Chưa chọn test case nào</string>
+    <string name="testsuite_no_custom_case_selected">Chưa chọn test case tuỳ chỉnh nào</string>
+    <string name="testsuite_confirm_delete_title">Xác nhận xoá</string>
+    <string name="testsuite_confirm_delete_message">Xoá %1$d test case?</string>
+    <string name="testsuite_delete_action">Xoá</string>
+    <string name="testsuite_selection_mode_hint">Chế độ chọn. Nhấn để chọn test case.</string>
+    <string name="testsuite_dialog_title_configure">Cấu hình kịch bản</string>
+    <string name="testsuite_dialog_title_edit">Sửa test case</string>
+    <string name="testsuite_dialog_title_new">Tạo test case</string>
+    <string name="testsuite_dialog_subtitle_modify">Chỉnh sửa tham số giao dịch</string>
+    <string name="testsuite_dialog_subtitle_configure">Cấu hình tham số giao dịch</string>
+    <string name="testsuite_amount_title">Số tiền (%1$s)</string>
+    <string name="testsuite_required">Bắt buộc</string>
+    <string name="testsuite_amount_gt_zero">Số tiền phải lớn hơn 0</string>
+    <string name="testsuite_amount_invalid_number">Số không hợp lệ</string>
+    <string name="testsuite_pin_4_6_digits">PIN phải gồm 4-6 chữ số</string>
+    <string name="testsuite_field_prefix_de">DE</string>
+    <string name="testsuite_field_num_hint">#</string>
+    <string name="testsuite_field_value_hint">Giá trị</string>
+    <string name="testsuite_apply_config">Áp dụng cấu hình</string>
+    <string name="testsuite_default_de22">051</string>
+    <string name="testsuite_default_amount">100000</string>
+    <string name="testsuite_balance_amount_not_required">Không bắt buộc với vấn tin số dư</string>
+    <string name="testsuite_invalid_entry_mode">Phương thức nhập không hợp lệ: %1$s</string>
+    <string name="testsuite_amount_range">10,000 -> 500,000,000</string>
+    <string name="testsuite_amount_numeric">Phải là số</string>
+    <string name="testsuite_pan_length">13-19 chữ số</string>
+    <string name="testsuite_pan_luhn_failed">Sai kiểm tra Luhn</string>
+    <string name="testsuite_expiry_yymm">YYMM</string>
+    <string name="testsuite_expiry_invalid_month">Tháng không hợp lệ</string>
+    <string name="testsuite_expiry_expired">Thẻ đã hết hạn</string>
+    <string name="testsuite_configuration_applied">Đã áp dụng cấu hình</string>
+
+    <!-- Shared labels -->
+    <string name="common_close">Đóng</string>
+
+    <!-- Test case dialog -->
+    <string name="testcase_dialog_icon_desc">Biểu tượng test case</string>
+    <string name="testcase_dialog_default_title">Tạo test case</string>
+    <string name="testcase_dialog_default_subtitle">Cấu hình tham số giao dịch</string>
+    <string name="testcase_dialog_basic_info">Thông tin cơ bản</string>
+    <string name="testcase_dialog_scenario_name_hint">Tên kịch bản</string>
+    <string name="testcase_dialog_entry_mode_title">Phương thức nhập (DE 22)</string>
+    <string name="testcase_dialog_de22_hint">POS Entry Mode (3 số)</string>
+    <string name="testcase_dialog_de22_helper">vd: 011, 012, 021, 022, 051, 052, 071, 072</string>
+    <string name="testcase_dialog_mode_label">Chế độ:</string>
+    <string name="testcase_dialog_amount_title">Số tiền giao dịch</string>
+    <string name="testcase_dialog_amount_hint">Số tiền (VND)</string>
+    <string name="testcase_dialog_card_desc">Thẻ</string>
+    <string name="testcase_dialog_card_details">Thông tin thẻ</string>
+    <string name="testcase_dialog_pan_hint">Số thẻ (PAN)</string>
+    <string name="testcase_dialog_expiry_hint">Ngày hết hạn (YYMM)</string>
+    <string name="testcase_dialog_track_desc">Track</string>
+    <string name="testcase_dialog_track2_title">Dữ liệu Track 2</string>
+    <string name="testcase_dialog_track2_hint">vd: 9704xxxx=3101xxxx</string>
+    <string name="testcase_dialog_toggle_desc">Mở/đóng phần nâng cao</string>
+    <string name="testcase_dialog_advanced_title">Trường nâng cao</string>
+    <string name="testcase_dialog_advanced_subtitle">Ghi đè trường ISO8583 tùy chỉnh</string>
+    <string name="testcase_dialog_advanced_note">Ghi đè các trường ISO8583: DE 3, DE 18, DE 25, DE 49, v.v.</string>
+    <string name="testcase_dialog_add_field">+ Thêm trường</string>
+    <string name="testcase_dialog_save">Lưu test case</string>
+
+    <!-- Scheme dialog -->
+    <string name="scheme_dialog_title_add">Thêm scheme</string>
+    <string name="scheme_dialog_subtitle_add">Cấu hình một mạng thẻ mới</string>
+    <string name="scheme_dialog_preview_new">Scheme mới</string>
+    <string name="scheme_dialog_name_hint">Tên scheme</string>
+    <string name="scheme_dialog_bin_hint">BIN prefix (vd: 9704, 4, 5)</string>
+    <string name="scheme_dialog_icon_letter_hint">Chữ cái biểu tượng</string>
+    <string name="scheme_dialog_icon_color">Màu biểu tượng</string>
+    <string name="scheme_dialog_connection_title">Cấu hình kết nối</string>
+    <string name="scheme_dialog_server_ip_hint">Server IP (vd: 192.168.1.100)</string>
+    <string name="scheme_dialog_port_hint">Cổng</string>
+    <string name="scheme_dialog_timeout_hint">Thời gian chờ (ms)</string>
+    <string name="scheme_dialog_test_connection">Kiểm tra kết nối</string>
+    <string name="scheme_dialog_terminal_desc">Thiết bị</string>
+    <string name="scheme_dialog_terminal_merchant_title">Thiết bị / Đơn vị chấp nhận</string>
+    <string name="scheme_dialog_terminal_id_hint">Terminal ID (vd: AUTO0001)</string>
+    <string name="scheme_dialog_merchant_id_hint">Merchant ID</string>
+    <string name="scheme_dialog_mcc_hint">MCC (vd: 5411)</string>
+    <string name="scheme_dialog_pos_condition_hint">POS Condition (vd: 00)</string>
+    <string name="scheme_dialog_acquirer_hint">Acquirer ID (vd: 970488)</string>
+    <string name="scheme_dialog_currency_hint">Tiền tệ (vd: 704)</string>
+    <string name="scheme_dialog_country_numeric_hint">Quốc gia (vd: 704)</string>
+    <string name="scheme_dialog_merchant_name_hint">Tên đơn vị (vd: MYSOFTPOS BANK)</string>
+    <string name="scheme_dialog_location_hint">Địa điểm (vd: HA NOI)</string>
+    <string name="scheme_dialog_country_alpha_hint">Quốc gia (vd: VNM)</string>
+
+    <!-- User dialog -->
+    <string name="user_dialog_title_add">Thêm người dùng</string>
+    <string name="user_dialog_subtitle_add">Tạo tài khoản người dùng mới</string>
+    <string name="user_dialog_personal_info">Thông tin cá nhân</string>
+    <string name="user_dialog_full_name_hint">Họ và tên *</string>
+    <string name="user_dialog_phone_helper">Dùng để đăng nhập</string>
+    <string name="user_dialog_phone_hint">Số điện thoại *</string>
+    <string name="user_dialog_password_hint">Mật khẩu *</string>
+    <string name="user_dialog_email_hint">Email (tuỳ chọn)</string>
+    <string name="user_dialog_dob_hint">Ngày sinh (dd/MM/yyyy)</string>
+    <string name="user_dialog_gender_hint">Giới tính</string>
+    <string name="user_dialog_store_name_hint">Tên cửa hàng</string>
+    <string name="user_dialog_business_type_hint">Loại hình kinh doanh (MCC)</string>
+    <string name="user_dialog_store_address_hint">Địa chỉ cửa hàng</string>
+    <string name="user_dialog_account_terminal">Tài khoản &amp; Thiết bị</string>
+    <string name="user_dialog_terminal_id_hint">Terminal ID (TID)</string>
+    <string name="user_dialog_server_connection">Kết nối máy chủ</string>
+    <string name="user_dialog_server_connection_desc">IP và cổng dùng cho giao dịch của người dùng này</string>
+    <string name="user_dialog_server_ip_hint">Server IP</string>
+    <string name="user_dialog_server_port_hint">Cổng</string>
+    <string name="user_dialog_test_connection">Kiểm tra kết nối</string>
+    <string name="user_dialog_delete_user">Xoá người dùng</string>
+
+    <!-- Transaction detail -->
+    <string name="txn_detail_invalid_id">ID giao dịch không hợp lệ</string>
+    <string name="txn_detail_label_date_time">Ngày / Giờ</string>
+    <string name="txn_detail_label_card_number">Số thẻ</string>
+    <string name="txn_detail_label_bank_issuer">Ngân hàng / Tổ chức phát hành</string>
+    <string name="txn_detail_label_mid">Merchant ID</string>
+    <string name="txn_detail_label_tid">Terminal ID</string>
+    <string name="txn_detail_label_trace">Số trace</string>
+    <string name="txn_detail_label_rrn">RRN</string>
+    <string name="txn_detail_unknown">Không xác định</string>
+    <string name="txn_detail_placeholder_dash">---</string>
+
+    <!-- User management -->
+    <string name="user_mgmt_edit_user_title">Sửa người dùng</string>
+    <string name="user_mgmt_edit_user_subtitle">Cập nhật thông tin người dùng</string>
+    <string name="user_mgmt_new_password_optional_hint">Mật khẩu mới (để trống nếu không đổi)</string>
+    <string name="user_mgmt_enter_ip_port_first">Nhập IP và cổng trước</string>
+    <string name="user_mgmt_invalid_port_number">Số cổng không hợp lệ</string>
+    <string name="user_mgmt_testing_connection">Đang kiểm tra...</string>
+    <string name="user_mgmt_connected">✓ Đã kết nối</string>
+    <string name="user_mgmt_connection_failed">✗ Kết nối thất bại</string>
+    <string name="user_mgmt_phone_required">Bắt buộc nhập số điện thoại</string>
+    <string name="user_mgmt_password_required">Bắt buộc nhập mật khẩu</string>
+    <string name="user_mgmt_user_updated">Đã cập nhật người dùng</string>
+    <string name="user_mgmt_user_created">Đã tạo người dùng</string>
+    <string name="user_mgmt_delete_user_title">Xoá người dùng</string>
+    <string name="user_mgmt_delete_user_message">Xoá %1$s?</string>
+    <string name="user_mgmt_delete_action">Xoá</string>
+    <string name="user_mgmt_user_deleted">Đã xoá người dùng</string>
+    <string name="user_mgmt_error_code">Lỗi: %1$d</string>
+    <string name="user_mgmt_network_error">Lỗi mạng: %1$s</string>
+
+    <!-- Scheme select -->
+    <string name="scheme_select_updated">Đã cập nhật</string>
+    <string name="scheme_select_added">Đã thêm</string>
+    <string name="scheme_select_invalid_ip">IP không hợp lệ</string>
+    <string name="scheme_select_port_range_hint">1 - 65535</string>
+    <string name="scheme_select_invalid_port_range">Port phải từ 1 đến 65535</string>
+    <string name="scheme_select_invalid_number">Số không hợp lệ</string>
+    <string name="scheme_select_invalid_port">Port không hợp lệ</string>
+    <string name="scheme_select_port_required_when_ip">Bắt buộc khi có IP</string>
+    <string name="scheme_select_port_required_message">Cần nhập Port khi đã nhập IP</string>
+    <string name="scheme_select_alnum_only">Chỉ chữ và số</string>
+    <string name="scheme_select_tid_alnum_only">Terminal ID chỉ được chứa chữ cái và số</string>
+    <string name="scheme_select_mid_alnum_only">Merchant ID chỉ được chứa chữ cái và số</string>
+    <string name="scheme_select_digits_only">Chỉ nhập số</string>
+    <string name="scheme_select_mcc_digits_only">MCC chỉ được chứa số</string>
+    <string name="scheme_select_pos_condition_digits_only">POS Condition chỉ được chứa số</string>
+    <string name="scheme_select_acquirer_digits_only">Acquirer ID chỉ được chứa số</string>
+    <string name="scheme_select_currency_digits_only">Currency Code chỉ được chứa số</string>
+    <string name="scheme_select_country_digits_only">Country Code chỉ được chứa số</string>
+    <string name="scheme_select_letters_only">Chỉ nhập chữ cái</string>
+    <string name="scheme_select_merchant_country_letters_only">Country chỉ được chứa chữ cái (VNM, USA...)</string>
+    <string name="scheme_select_delete_title">Xoá %1$s?</string>
+    <string name="scheme_select_delete_message">Thao tác này sẽ xoá vĩnh viễn scheme này.</string>
+    <string name="scheme_select_delete_action">Xoá</string>
+    <string name="scheme_select_deleted">Đã xoá</string>
+    <string name="scheme_select_enter_ip_port_first">Vui lòng nhập IP và Port trước</string>
+    <string name="scheme_select_invalid_port_short">Port không hợp lệ</string>
+    <string name="scheme_select_connecting_to">Đang kết nối tới %1$s:%2$d...</string>
+    <string name="scheme_select_connection_successful">Kết nối thành công!</string>
+    <string name="scheme_select_connection_failed_with_reason">Thất bại: %1$s</string>
+
+    <!-- Transaction management -->
+    <string name="txn_mgmt_state_preparing_session_title">Đang chuẩn bị phiên backend</string>
+    <string name="txn_mgmt_state_preparing_session_subtitle">Vui lòng chờ trong khi khôi phục phiên admin.</string>
+    <string name="txn_mgmt_state_backend_session_unavailable_title">Phiên backend không khả dụng</string>
+    <string name="txn_mgmt_state_backend_session_unavailable_subtitle">Vui lòng đăng nhập lại hoặc thử lại.</string>
+    <string name="txn_mgmt_state_loading_title">Đang tải giao dịch</string>
+    <string name="txn_mgmt_state_loading_subtitle">Đang lấy dữ liệu giao dịch mới nhất từ backend...</string>
+    <string name="txn_mgmt_state_backend_unavailable_title">Backend không khả dụng</string>
+    <string name="txn_mgmt_state_load_users_failed_subtitle">Không thể tải danh sách người dùng từ backend. Vui lòng thử lại.</string>
+    <string name="txn_mgmt_state_load_users_network_subtitle">Không thể tải danh sách người dùng từ backend. Vui lòng kiểm tra kết nối và thử lại.</string>
+    <string name="txn_mgmt_state_load_txn_failed_subtitle">Không thể tải giao dịch từ backend. Vui lòng thử lại.</string>
+    <string name="txn_mgmt_state_load_txn_network_subtitle">Không thể tải giao dịch từ backend. Vui lòng kiểm tra kết nối và thử lại.</string>
+    <string name="txn_mgmt_state_offline_title">Cần kết nối Internet</string>
+    <string name="txn_mgmt_state_offline_subtitle">Kết nối Wi-Fi hoặc dữ liệu di động để xem quản lý giao dịch.</string>
+    <string name="txn_mgmt_toast_load_users_failed">Tải danh sách người dùng thất bại</string>
+    <string name="txn_mgmt_toast_load_txn_failed">Tải giao dịch thất bại</string>
+    <string name="txn_mgmt_filter_all_users">Tất cả người dùng</string>
+    <string name="txn_mgmt_empty_no_transactions_title">Không có giao dịch</string>
+    <string name="txn_mgmt_empty_no_transactions_subtitle">Giao dịch từ tài khoản người dùng sẽ hiển thị tại đây khi có dữ liệu.</string>
+    <string name="txn_mgmt_empty_filter_title">Không có giao dịch phù hợp bộ lọc</string>
+    <string name="txn_mgmt_empty_filter_subtitle">Hãy thử chọn người dùng khác.</string>
+    <string name="txn_mgmt_placeholder_dash">—</string>
+    <string name="txn_mgmt_trace_format">#%1$s</string>
+    <string name="txn_mgmt_status_unknown">KHÔNG XÁC ĐỊNH</string>
+    <string name="user_mgmt_tid_format">TID: %1$s</string>
+
+    <!-- Transaction result -->
+    <string name="txn_result_masked_pan_placeholder">**** ----</string>
+    <string name="txn_result_type_default">Giao dịch</string>
+    <string name="txn_result_amount_overflow">&gt; 10,000,000,000</string>
+    <string name="txn_result_balance_type_format">Số dư %1$s</string>
+    <string name="txn_result_available_balance">Số dư khả dụng</string>
+
+    <!-- Transaction select -->
+    <string name="txn_select_run_selected_prefix">Chạy mục đã chọn (</string>
+    <string name="txn_select_run_selected_purchase_part">%1$d Thanh toán</string>
+    <string name="txn_select_run_selected_separator"> + </string>
+    <string name="txn_select_run_selected_balance_part">%1$d Vấn tin số dư</string>
+    <string name="txn_select_run_selected_suffix">)</string>
+
+    <!-- Dynamic test suite/case -->
+    <string name="dynamic_suite_option_rename">Đổi tên</string>
+    <string name="dynamic_suite_option_delete">Xóa</string>
+    <string name="dynamic_suite_delete_title">Xóa bộ test</string>
+    <string name="dynamic_suite_delete_message">Bạn có chắc muốn xóa bộ test này và toàn bộ test case bên trong?</string>
+    <string name="dynamic_suite_edit_title">Sửa bộ test</string>
+    <string name="dynamic_suite_new_title">Bộ test mới</string>
+    <string name="dynamic_suite_action_update">Cập nhật</string>
+    <string name="dynamic_suite_action_create">Tạo</string>
+    <string name="dynamic_suite_name_required">Tên là bắt buộc</string>
+
+    <string name="dynamic_case_option_run">Chạy</string>
+    <string name="dynamic_case_option_edit">Sửa</string>
+    <string name="dynamic_case_option_delete">Xóa</string>
+    <string name="dynamic_case_delete_title">Xóa test case</string>
+    <string name="dynamic_case_delete_message">Bạn có chắc muốn xóa test case này?</string>
+    <string name="dynamic_case_running">Đang chạy %1$s...</string>
+    <string name="dynamic_case_new_title">Test case mới</string>
+    <string name="dynamic_case_edit_title">Sửa test case</string>
+    <string name="dynamic_case_name_hint">Tên test case</string>
+    <string name="dynamic_case_type_hint">Loại giao dịch (PURCHASE/BALANCE)</string>
+    <string name="dynamic_case_type_simple_hint">Loại giao dịch</string>
+    <string name="dynamic_case_action_create">Tạo</string>
+    <string name="dynamic_case_action_update">Cập nhật</string>
+    <string name="dynamic_case_name_required">Tên là bắt buộc</string>
+
+    <!-- Runner / scheme history -->
+    <string name="testsuite_default_value">Mặc định</string>
+    <string name="testsuite_default_currency_code">Mặc định (704)</string>
+    <string name="runner_starting_log">Bắt đầu giao dịch...\nMode: %1$s\nSố tiền: %2$s\nTiền tệ: %3$s\n</string>
+    <string name="scheme_history_title">Lịch sử giao dịch</string>
+    <string name="scheme_history_count">%1$d giao dịch</string>
+    <string name="scheme_history_trace_format">Trace: %1$s</string>
+
+    <!-- Batch runner -->
+    <string name="batch_runner_no_cases">Không có test case nào được truyền vào</string>
+    <string name="batch_runner_progress">%1$d/%2$d</string>
+    <string name="batch_runner_title">Chạy hàng loạt (%1$d case)</string>
+    <string name="batch_runner_run_all">Chạy tất cả (%1$d)</string>
+    <string name="batch_runner_preparing">Đang chuẩn bị...</string>
+    <string name="batch_runner_build_error">Lỗi dựng bản tin: %1$s</string>
+    <string name="batch_runner_sending">Đang gửi %1$d giao dịch...</string>
+    <string name="batch_runner_detail_pass">RC: %1$s (%2$s)</string>
+    <string name="batch_runner_detail_fail">RC: %1$s - %2$s</string>
+    <string name="batch_runner_error_timeout">Lỗi: Quá thời gian chờ phản hồi.</string>
+    <string name="batch_runner_done_summary">Xong: %1$d Pass, %2$d Fail - Chạy lại?</string>
+    <string name="batch_runner_default_type_purchase">PURCHASE</string>
+    <string name="batch_runner_case_type_format">%1$s | DE22: %2$s</string>
+    <string name="batch_runner_status_pending">PENDING</string>
+    <string name="batch_runner_status_running">RUNNING...</string>
+    <string name="batch_runner_status_fail">FAIL</string>
+    <string name="batch_runner_rc_badge">RC: %1$s</string>
+
+    <!-- Generic numeric/currency labels -->
+    <string name="common_zero">0</string>
+    <string name="keypad_digit_0">0</string>
+    <string name="keypad_digit_1">1</string>
+    <string name="keypad_digit_2">2</string>
+    <string name="keypad_digit_3">3</string>
+    <string name="keypad_digit_4">4</string>
+    <string name="keypad_digit_5">5</string>
+    <string name="keypad_digit_6">6</string>
+    <string name="keypad_digit_7">7</string>
+    <string name="keypad_digit_8">8</string>
+    <string name="keypad_digit_9">9</string>
+    <string name="currency_vnd">VND</string>
+    <string name="currency_usd">USD</string>
 </resources>
