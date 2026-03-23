@@ -26,7 +26,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:fontFamily="sans-serif-black"
-        android:text="Multi-thread Runner"
+        android:text="@string/multi_thread_runner_title"
         android:textColor="#1E293B"
         android:textSize="20sp"
         android:textStyle="bold"
@@ -41,7 +41,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:layout_marginHorizontal="16dp"
-        android:text="Preparing..."
+        android:text="@string/multi_thread_runner_preparing"
         android:textColor="#64748B"
         android:textSize="14sp"
         app:layout_constraintTop_toBottomOf="@id/btnBack" />

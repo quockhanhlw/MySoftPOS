@@ -111,7 +111,7 @@ public class PurchaseAmountActivity extends BaseActivity {
 
     private String getUsername() {
         String u = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME);
-        return u != null ? u : "Guest";
+        return u != null ? u : getString(R.string.guest_user);
     }
 
     private void switchCurrency(int direction) {

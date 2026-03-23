@@ -104,7 +104,7 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
             tvTitle.setText(desc);
 
             if (item.isCustom()) {
-                chipBadge.setText("CUSTOM");
+                chipBadge.setText(R.string.test_scenario_badge_custom);
             } else {
                 chipBadge.setText(code);
             }
@@ -134,9 +134,9 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
                 cbSelect.setChecked(item.isSelected());
 
                 if (item.isSelected()) {
-                    tvDetail.setText("Selected");
+                    tvDetail.setText(R.string.test_scenario_detail_selected);
                 } else {
-                    tvDetail.setText("Tap to select");
+                    tvDetail.setText(R.string.test_scenario_detail_tap_select);
                 }
                 ivEdit.setVisibility(View.GONE);
             } else {
@@ -145,9 +145,9 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
                 // In multi-thread mode (but selection OFF), show "Long press to select" or
                 // standard text
                 if (multiMode) {
-                    tvDetail.setText("Long press to select");
+                    tvDetail.setText(R.string.test_scenario_detail_long_press_select);
                 } else {
-                    tvDetail.setText("Tap to run test case");
+                    tvDetail.setText(R.string.test_scenario_detail_tap_run);
                 }
                 // Show Edit button only for custom cases
                 ivEdit.setVisibility(item.isCustom() ? View.VISIBLE : View.GONE);

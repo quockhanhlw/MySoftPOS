@@ -385,7 +385,7 @@ public class MainDashboardActivity extends BaseActivity {
             } else if (statusUpper.startsWith("TIMEOUT")) {
                 displayStatus = getString(R.string.status_timeout);
             } else if ("REVERSED".equals(statusUpper)) {
-                displayStatus = "REVERSED";
+                displayStatus = getString(R.string.status_reversed);
             }
             tvStatus.setText(displayStatus);
             tvStatus.setTextSize(12f);

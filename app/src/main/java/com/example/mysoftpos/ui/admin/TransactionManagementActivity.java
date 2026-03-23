@@ -185,7 +185,8 @@ public class TransactionManagementActivity extends BaseActivity {
                             showNonContentState(getString(R.string.txn_mgmt_state_backend_unavailable_title),
                                     getString(R.string.txn_mgmt_state_load_users_failed_subtitle), true);
                             Toast.makeText(TransactionManagementActivity.this,
-                                    R.string.txn_mgmt_toast_load_users_failed, Toast.LENGTH_SHORT).show();
+                                    extractBackendError(resp, getString(R.string.txn_mgmt_toast_load_users_failed)),
+                                    Toast.LENGTH_SHORT).show();
                         }
                     }
 
@@ -226,7 +227,8 @@ public class TransactionManagementActivity extends BaseActivity {
                             showNonContentState(getString(R.string.txn_mgmt_state_backend_unavailable_title),
                                     getString(R.string.txn_mgmt_state_load_txn_failed_subtitle), true);
                             Toast.makeText(TransactionManagementActivity.this,
-                                    R.string.txn_mgmt_toast_load_txn_failed, Toast.LENGTH_SHORT).show();
+                                    extractBackendError(resp, getString(R.string.txn_mgmt_toast_load_txn_failed)),
+                                    Toast.LENGTH_SHORT).show();
                         }
                     }
 
@@ -550,6 +552,37 @@ public class TransactionManagementActivity extends BaseActivity {
         }
         if (btnRetryConnection != null) {
             btnRetryConnection.setVisibility(showRetry ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private String extractBackendError(Response<?> response, String fallback) {
+        if (response == null) {
+            return fallback;
+        }
+        try (okhttp3.ResponseBody body = response.errorBody()) {
+            if (body == null) {
+                return fallback;
+            }
+            String raw = body.string();
+            if (raw == null || raw.trim().isEmpty()) {
+                return fallback;
+            }
+            try {
+                org.json.JSONObject json = new org.json.JSONObject(raw);
+                String error = json.optString("error", "").trim();
+                if (!error.isEmpty()) {
+                    return error;
+                }
+                String message = json.optString("message", "").trim();
+                if (!message.isEmpty()) {
+                    return message;
+                }
+            } catch (Exception ignored) {
+                // Non-JSON error body.
+            }
+            return raw.trim();
+        } catch (Exception ignored) {
+            return fallback;
         }
     }
 

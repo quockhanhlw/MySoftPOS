@@ -20,9 +20,12 @@ import android.net.NetworkCapabilities;
 import androidx.appcompat.content.res.AppCompatResources;
 import com.example.mysoftpos.ui.BaseActivity;
 
+import java.util.Locale;
+
 public class LoginActivity extends BaseActivity {
 
     private static final String EXTRA_PASSWORD_CHANGED_RELOGIN = "PASSWORD_CHANGED_RELOGIN";
+    public static final String EXTRA_PREFILL_IDENTIFIER = "PREFILL_IDENTIFIER";
 
     private EditText etUsername;
     private EditText etPassword;
@@ -38,6 +41,12 @@ public class LoginActivity extends BaseActivity {
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
         loadingOverlay = findViewById(R.id.loadingOverlay);
+
+        String prefillIdentifier = getIntent().getStringExtra(EXTRA_PREFILL_IDENTIFIER);
+        if (prefillIdentifier != null && !prefillIdentifier.trim().isEmpty()) {
+            etUsername.setText(prefillIdentifier.trim());
+            etPassword.requestFocus();
+        }
 
         // Password toggle
         etPassword.setCompoundDrawablesRelativeWithIntrinsicBounds(
@@ -124,8 +133,9 @@ public class LoginActivity extends BaseActivity {
     private void handleLogin() {
         String username = etUsername.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
+        String normalizedIdentifier = normalizeIdentifierForLogin(username);
 
-        if (username.isEmpty()) {
+        if (normalizedIdentifier.isEmpty()) {
             etUsername.setError(getString(R.string.login_error_enter_email_or_phone));
             etUsername.requestFocus();
             return;
@@ -143,7 +153,7 @@ public class LoginActivity extends BaseActivity {
 
         showLoading();
         boolean networkAvailable = isNetworkAvailable();
-        loginViaLocalRoom(username, password, networkAvailable);
+        loginViaLocalRoom(normalizedIdentifier, password, networkAvailable);
     }
 
     private boolean isNetworkAvailable() {
@@ -163,12 +173,12 @@ public class LoginActivity extends BaseActivity {
      * Background sync with backend API after successful local login.
      * Refreshes JWT token, updates local cache, syncs transactions.
      */
-    private void syncWithBackendInBackground(String username, String password) {
+    private void syncWithBackendInBackground(String identifier, String password) {
         try {
             com.example.mysoftpos.data.remote.api.ApiService api = com.example.mysoftpos.data.remote.api.ApiClient
                     .getAuthService(this);
 
-            api.login(new com.example.mysoftpos.data.remote.api.ApiService.LoginRequest(username, password))
+            api.login(new com.example.mysoftpos.data.remote.api.ApiService.LoginRequest(identifier, password))
                     .enqueue(new retrofit2.Callback<>() {
                         @Override
                         public void onResponse(
@@ -183,7 +193,7 @@ public class LoginActivity extends BaseActivity {
                                         .setMcc18(resp.user != null ? resp.user.businessType : null);
                                 com.example.mysoftpos.di.ServiceLocator.getInstance(LoginActivity.this)
                                         .getDispatcherProvider().io().execute(() -> {
-                                            cacheUserLocallySync(username, password, resp.user);
+                                            cacheUserLocallySync(identifier, password, resp.user);
                                             if ("ADMIN".equals(resp.user.role)) {
                                                 new com.example.mysoftpos.data.remote.ConfigSyncManager(
                                                         LoginActivity.this).sync();
@@ -211,11 +221,11 @@ public class LoginActivity extends BaseActivity {
     // ====================================================================
     // PRIMARY: Backend API login via Retrofit
     // ====================================================================
-    private void loginViaApi(String username, String password) {
+    private void loginViaApi(String identifier, String password) {
         com.example.mysoftpos.data.remote.api.ApiService api = com.example.mysoftpos.data.remote.api.ApiClient
                 .getAuthService(this);
 
-        api.login(new com.example.mysoftpos.data.remote.api.ApiService.LoginRequest(username, password))
+        api.login(new com.example.mysoftpos.data.remote.api.ApiService.LoginRequest(identifier, password))
                 .enqueue(new retrofit2.Callback<>() {
                     @Override
                     public void onResponse(
@@ -229,7 +239,7 @@ public class LoginActivity extends BaseActivity {
                             com.example.mysoftpos.data.remote.api.ApiClient.saveUserSession(LoginActivity.this, resp);
                             com.example.mysoftpos.utils.security.SessionManager.startSession();
                             com.example.mysoftpos.utils.security.AuditLogger.log(
-                                    LoginActivity.this, username, "LOGIN",
+                                    LoginActivity.this, identifier, "LOGIN",
                                     true, "LoginActivity", "API login: " + resp.user.role);
 
                             // Set ConfigManager IP/Port/TID for NAPAS connection
@@ -251,10 +261,10 @@ public class LoginActivity extends BaseActivity {
                             com.example.mysoftpos.di.ServiceLocator.getInstance(LoginActivity.this)
                                     .getDispatcherProvider().io().execute(() -> {
                                         // Cache user to local Room DB
-                                        cacheUserLocallySync(username, password, resp.user);
+                                        cacheUserLocallySync(identifier, password, resp.user);
 
                                         // Resolve local Room user ID (not backend ID)
-                                        long localUserId = resolveLocalUserId(username, resp.user.id);
+                                        long localUserId = resolveLocalUserId(identifier, resp.user.id);
 
                                         // Sync config & transactions from backend (non-blocking)
                                         if ("ADMIN".equals(resp.user.role)) {
@@ -289,7 +299,7 @@ public class LoginActivity extends BaseActivity {
                             }
 
                             com.example.mysoftpos.utils.security.AuditLogger.log(
-                                    LoginActivity.this, username, "LOGIN_FAILED",
+                                    LoginActivity.this, identifier, "LOGIN_FAILED",
                                     false, "LoginActivity", "API: " + response.code());
 
                             String finalMsg = errorMsg;
@@ -309,7 +319,7 @@ public class LoginActivity extends BaseActivity {
                             return;
                         android.util.Log.w("LoginActivity",
                                 "API unreachable, falling back to offline login: " + t.getMessage());
-                        loginViaLocalRoom(username, password, false);
+                        loginViaLocalRoom(identifier, password, false);
                     }
                 });
     }
@@ -317,7 +327,7 @@ public class LoginActivity extends BaseActivity {
     // ====================================================================
     // LOCAL-FIRST: cached Room login with optional API fallback
     // ====================================================================
-    private void loginViaLocalRoom(String username, String password, boolean allowApiFallback) {
+    private void loginViaLocalRoom(String identifier, String password, boolean allowApiFallback) {
         com.example.mysoftpos.di.ServiceLocator.getInstance(this)
                 .getDispatcherProvider().io().execute(() -> {
                     try {
@@ -327,18 +337,12 @@ public class LoginActivity extends BaseActivity {
                                 .getInstance(LoginActivity.this);
                         com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
 
-                        com.example.mysoftpos.data.local.entity.UserEntity user = userDao.findByPhone(username);
-                        if (user == null)
-                            user = userDao.findByEmail(username);
-                        if (user == null) {
-                            String hash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
-                            user = userDao.findByUsernameHash(hash);
-                        }
+                        com.example.mysoftpos.data.local.entity.UserEntity user = findLocalUser(userDao, identifier);
 
                         if (user != null) {
                             if (requiresFirstLoginOnline(user)) {
                                 if (allowApiFallback) {
-                                    runOnUiThread(() -> loginViaApi(username, password));
+                                    runOnUiThread(() -> loginViaApi(identifier, password));
                                 } else {
                                     runOnUiThread(() -> {
                                         hideLoading();
@@ -390,7 +394,7 @@ public class LoginActivity extends BaseActivity {
 
                                 com.example.mysoftpos.utils.security.SessionManager.startSession();
                                 com.example.mysoftpos.utils.security.AuditLogger.log(
-                                        LoginActivity.this, username, "LOGIN",
+                                        LoginActivity.this, identifier, "LOGIN",
                                         true, "LoginActivity", "Local login: " + user.role);
 
                                 final com.example.mysoftpos.data.local.entity.UserEntity finalUser = user;
@@ -405,7 +409,7 @@ public class LoginActivity extends BaseActivity {
                                 });
 
                                 if (allowApiFallback) {
-                                    syncWithBackendInBackground(username, password);
+                                    syncWithBackendInBackground(identifier, password);
                                 }
                                 return;
                             } else {
@@ -419,7 +423,7 @@ public class LoginActivity extends BaseActivity {
                         }
 
                         if (allowApiFallback) {
-                            runOnUiThread(() -> loginViaApi(username, password));
+                            runOnUiThread(() -> loginViaApi(identifier, password));
                             return;
                         }
 
@@ -434,7 +438,7 @@ public class LoginActivity extends BaseActivity {
                         });
                     } catch (Exception e) {
                         if (allowApiFallback) {
-                            runOnUiThread(() -> loginViaApi(username, password));
+                            runOnUiThread(() -> loginViaApi(identifier, password));
                             return;
                         }
                         runOnUiThread(() -> {
@@ -548,6 +552,35 @@ public class LoginActivity extends BaseActivity {
         return value != null ? value : "";
     }
 
+    private com.example.mysoftpos.data.local.entity.UserEntity findLocalUser(
+            com.example.mysoftpos.data.local.dao.UserDao userDao,
+            String identifier) {
+        String normalized = normalizeIdentifierForLogin(identifier);
+        com.example.mysoftpos.data.local.entity.UserEntity user = null;
+
+        if (normalized.contains("@")) {
+            user = userDao.findByEmail(normalized);
+            if (user == null && !normalized.equals(identifier)) {
+                user = userDao.findByEmail(identifier);
+            }
+        } else {
+            user = userDao.findByPhone(normalized);
+            if (user == null && !normalized.equals(identifier)) {
+                user = userDao.findByPhone(identifier);
+            }
+        }
+
+        if (user == null) {
+            String normalizedHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(normalized);
+            user = userDao.findByUsernameHash(normalizedHash);
+            if (user == null && !normalized.equals(identifier)) {
+                String legacyHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(identifier);
+                user = userDao.findByUsernameHash(legacyHash);
+            }
+        }
+        return user;
+    }
+
     /**
      * Resolve the local Room user ID for a given username.
      * Falls back to backend ID if local user not found.
@@ -559,14 +592,7 @@ public class LoginActivity extends BaseActivity {
                     .getInstance(LoginActivity.this);
             com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
 
-            // Try phone first
-            com.example.mysoftpos.data.local.entity.UserEntity user = userDao.findByPhone(username);
-            if (user == null)
-                user = userDao.findByEmail(username);
-            if (user == null) {
-                String hash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
-                user = userDao.findByUsernameHash(hash);
-            }
+            com.example.mysoftpos.data.local.entity.UserEntity user = findLocalUser(userDao, username);
             // Last resort: find by backendId
             if (user == null)
                 user = userDao.findByBackendId(backendId);
@@ -577,6 +603,24 @@ public class LoginActivity extends BaseActivity {
             android.util.Log.w("LoginActivity", "Failed to resolve local user ID: " + e.getMessage());
         }
         return backendId; // fallback
+    }
+
+    private String normalizeIdentifierForLogin(String value) {
+        String normalized = value == null ? "" : value.trim();
+        if (normalized.isEmpty()) {
+            return "";
+        }
+        if (normalized.contains("@")) {
+            return normalized.toLowerCase(Locale.ROOT);
+        }
+        normalized = normalized.replaceAll("[\\s()-]", "");
+        if (normalized.startsWith("00")) {
+            normalized = "+" + normalized.substring(2);
+        }
+        if (normalized.indexOf('+') > 0) {
+            normalized = normalized.replace("+", "");
+        }
+        return normalized;
     }
 
     private Drawable getPasswordToggleDrawable(int drawableResId) {

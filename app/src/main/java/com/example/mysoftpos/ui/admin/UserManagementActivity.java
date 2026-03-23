@@ -166,19 +166,19 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
             clearRenderedUsers();
             if (tokenWaitRetryCount < MAX_TOKEN_WAIT_RETRIES) {
                 tokenWaitRetryCount++;
-                showNonContentState("Preparing backend session",
-                        "Please wait while your admin session is restored", false);
+                showNonContentState(getString(R.string.user_mgmt_state_preparing_session_title),
+                        getString(R.string.user_mgmt_state_preparing_session_subtitle), false);
                 mainHandler.postDelayed(retryLoadRunnable, TOKEN_WAIT_RETRY_DELAY_MS);
             } else {
-                showNonContentState("Backend session unavailable",
-                        "Please sign in again or pull to retry.", true);
+                showNonContentState(getString(R.string.user_mgmt_state_backend_session_unavailable_title),
+                        getString(R.string.user_mgmt_state_backend_session_unavailable_subtitle), true);
             }
             return;
         }
 
         tokenWaitRetryCount = 0;
-        showNonContentState("Loading users",
-                "Fetching the latest users from backend…", false);
+        showNonContentState(getString(R.string.user_mgmt_state_loading_title),
+                getString(R.string.user_mgmt_state_loading_subtitle), false);
 
         ApiClient.getService(this).getUsers(token).enqueue(new Callback<List<ApiService.UserDto>>() {
             @Override
@@ -203,19 +203,20 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                 }
                 android.util.Log.w("UserMgmt", errMsg);
                 clearRenderedUsers();
-                showNonContentState("Backend unavailable",
-                        "Could not load users from backend. Please try again.", true);
-                Toast.makeText(UserManagementActivity.this, errMsg, Toast.LENGTH_LONG).show();
+                showNonContentState(getString(R.string.user_mgmt_state_backend_unavailable_title),
+                        getString(R.string.user_mgmt_state_load_users_failed_subtitle), true);
+                Toast.makeText(UserManagementActivity.this,
+                        getString(R.string.user_mgmt_error_code, resp.code()), Toast.LENGTH_LONG).show();
             }
 
             @Override
             public void onFailure(Call<List<ApiService.UserDto>> call, Throwable t) {
                 android.util.Log.e("UserMgmt", "getUsers failed: " + t.getMessage());
                 clearRenderedUsers();
-                showNonContentState("Backend unavailable",
-                        "Could not load users from backend. Please check your connection and try again.", true);
+                showNonContentState(getString(R.string.user_mgmt_state_backend_unavailable_title),
+                        getString(R.string.user_mgmt_state_load_users_network_subtitle), true);
                 Toast.makeText(UserManagementActivity.this,
-                        "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                        getString(R.string.user_mgmt_network_error, t.getMessage()), Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -242,14 +243,16 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
 
         adapter.setUsers(displayUsers);
         int count = displayUsers.size();
-        tvUserCount.setText(count + " user(s)");
+        tvUserCount.setText(getString(R.string.user_mgmt_count_format, count));
         showContentChrome();
 
         if (count == 0) {
             if (allUsers.isEmpty()) {
-                showEmptyStateText("No users yet", "Tap + to create a new user", false);
+                showEmptyStateText(getString(R.string.user_mgmt_empty_title),
+                        getString(R.string.user_mgmt_empty_subtitle), false);
             } else {
-                showEmptyStateText("No matching users", "Try another name, phone, or terminal ID", false);
+                showEmptyStateText(getString(R.string.user_mgmt_empty_filter_title),
+                        getString(R.string.user_mgmt_empty_filter_subtitle), false);
             }
         } else {
             layoutEmpty.setVisibility(View.GONE);
@@ -494,9 +497,15 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                             .enqueue(new Callback<Map<String, String>>() {
                                 @Override
                                 public void onResponse(Call<Map<String, String>> c, Response<Map<String, String>> r) {
-                                    Toast.makeText(UserManagementActivity.this, R.string.user_mgmt_user_deleted, Toast.LENGTH_SHORT)
-                                            .show();
-                                    loadUsers();
+                                    if (r.isSuccessful()) {
+                                        Toast.makeText(UserManagementActivity.this, R.string.user_mgmt_user_deleted,
+                                                Toast.LENGTH_SHORT).show();
+                                        loadUsers();
+                                    } else {
+                                        Toast.makeText(UserManagementActivity.this,
+                                                extractBackendError(r, getString(R.string.user_mgmt_error_code, r.code())),
+                                                Toast.LENGTH_SHORT).show();
+                                    }
                                 }
 
                                 @Override
@@ -582,7 +591,8 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                 loadUsers();
             } else {
                 Toast.makeText(UserManagementActivity.this,
-                        getString(R.string.user_mgmt_error_code, resp.code()), Toast.LENGTH_SHORT).show();
+                        extractBackendError(resp, getString(R.string.user_mgmt_error_code, resp.code())),
+                        Toast.LENGTH_SHORT).show();
             }
         }
 
@@ -691,8 +701,8 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
 
     private void showOfflineState() {
         clearRenderedUsers();
-        showNonContentState("Internet connection required",
-                "Connect to Wi‑Fi or mobile data to view user management.", true);
+        showNonContentState(getString(R.string.user_mgmt_offline_title),
+                getString(R.string.user_mgmt_offline_subtitle), true);
     }
 
     private void showContentChrome() {
@@ -720,7 +730,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         backendListAvailable = false;
         allUsers = new ArrayList<>();
         adapter.setUsers(new ArrayList<>());
-        tvUserCount.setText("0 user(s)");
+        tvUserCount.setText(getString(R.string.user_mgmt_count_format, 0));
         if (swipeRefresh != null) {
             swipeRefresh.setRefreshing(false);
         }
@@ -758,6 +768,37 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         }
         if (btnRetryConnection != null) {
             btnRetryConnection.setVisibility(showRetry ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private String extractBackendError(Response<?> response, String fallback) {
+        if (response == null) {
+            return fallback;
+        }
+        try (okhttp3.ResponseBody body = response.errorBody()) {
+            if (body == null) {
+                return fallback;
+            }
+            String raw = body.string();
+            if (raw == null || raw.trim().isEmpty()) {
+                return fallback;
+            }
+            try {
+                org.json.JSONObject json = new org.json.JSONObject(raw);
+                String error = json.optString("error", "").trim();
+                if (!error.isEmpty()) {
+                    return error;
+                }
+                String message = json.optString("message", "").trim();
+                if (!message.isEmpty()) {
+                    return message;
+                }
+            } catch (Exception ignored) {
+                // Non-JSON error body; return as-is for easier debugging.
+            }
+            return raw.trim();
+        } catch (Exception ignored) {
+            return fallback;
         }
     }
 

@@ -97,7 +97,7 @@ public class ReadCardDataUseCase {
 
         if (selectedAid == null) {
             Log.e(TAG, "No AID matched after trying all candidates");
-            throw new IOException("Thẻ không được hỗ trợ. Vui lòng thử lại.");
+            throw new IOException("read_card_error_unsupported");
         }
 
         emvTags.put(0x84, selectedAid);
@@ -115,7 +115,7 @@ public class ReadCardDataUseCase {
         }
 
         if (gpo == null || !isOk(gpo)) {
-            throw new IOException("Thẻ từ chối (GPO)");
+            throw new IOException("read_card_error_gpo_rejected");
         }
         collectTags(gpo, emvTags);
 
@@ -140,12 +140,12 @@ public class ReadCardDataUseCase {
         // ── Verify Tag 57 ────────────────────────────────────────────────
         byte[] tag57 = emvTags.get(0x57);
         if (tag57 == null) {
-            throw new IOException("Không đọc được dữ liệu thẻ");
+            throw new IOException("read_card_error_no_track2");
         }
 
         EmvTlvCodec.Track2Data t2 = EmvTlvCodec.decodeTag57(tag57);
         if (t2 == null) {
-            throw new IOException("Dữ liệu thẻ không hợp lệ");
+            throw new IOException("read_card_error_invalid_data");
         }
 
         // ── Build terminal EMV tags (cho DE 55 sau này) ──────────────────

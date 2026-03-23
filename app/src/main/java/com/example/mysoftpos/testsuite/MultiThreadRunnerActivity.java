@@ -59,16 +59,16 @@ public class MultiThreadRunnerActivity extends BaseActivity {
         schemeName = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME);
 
         if (scenarios == null || scenarios.isEmpty()) {
-            appendLog("No scenarios selected.");
-            tvStatus.setText("Error: No scenarios");
+            appendLog(getString(R.string.multi_runner_no_scenarios_selected));
+            tvStatus.setText(R.string.multi_runner_status_no_scenarios);
             return;
         }
 
         int threadCount = scenarios.size();
-        tvStatus.setText("Preparing " + threadCount + " tests...");
-        appendLog("=== Multi-thread Runner ===\n");
-        appendLog("Total tests: " + threadCount + "\n");
-        appendLog("Mode: Concurrent (Thread Pool)\n\n");
+        tvStatus.setText(getString(R.string.multi_runner_status_preparing, threadCount));
+        appendLog(getString(R.string.multi_runner_log_header));
+        appendLog(getString(R.string.multi_runner_log_total_tests, threadCount));
+        appendLog(getString(R.string.multi_runner_log_mode_concurrent));
 
         ExecutorService pool = Executors.newCachedThreadPool();
         AtomicInteger completed = new AtomicInteger(0);
@@ -116,12 +116,12 @@ public class MultiThreadRunnerActivity extends BaseActivity {
                             contexts[i], noop);
                     fieldOverrides[i] = buildFieldOverridesJson(scenario);
                 } catch (Exception e) {
-                    appendLog(tags[i] + " Build error: " + e.getMessage() + "\n");
+                    appendLog(getString(R.string.multi_runner_log_build_error, tags[i], e.getMessage()));
                 }
             }
 
             // Phase 2: Fire ALL network calls simultaneously
-            mainHandler.post(() -> tvStatus.setText("Sending " + threadCount + " transactions..."));
+            mainHandler.post(() -> tvStatus.setText(getString(R.string.multi_runner_status_sending, threadCount)));
 
             for (int i = 0; i < threadCount; i++) {
                 final int idx = i;
@@ -134,18 +134,19 @@ public class MultiThreadRunnerActivity extends BaseActivity {
                 if (ctx == null || card == null) {
                     failed.incrementAndGet();
                     int done = completed.incrementAndGet();
-                    appendLog(tag + " *** SKIPPED (build error) ***\n");
+                    appendLog(getString(R.string.multi_runner_log_skipped, tag));
                     if (done == threadCount) {
-                        appendLog("\n=== ALL TESTS COMPLETE ===\n");
-                        appendLog("Pass: " + passed.get() + " / Fail: " + failed.get() + "\n");
+                        appendLog(getString(R.string.multi_runner_log_all_complete));
+                        appendLog(getString(R.string.multi_runner_log_pass_fail, passed.get(), failed.get()));
                         pool.shutdown();
                     }
-                    mainHandler.post(() -> tvStatus.setText("Completed " + done + "/" + threadCount));
+                    mainHandler.post(() -> tvStatus.setText(
+                            getString(R.string.multi_runner_status_completed_simple, done, threadCount)));
                     continue;
                 }
 
                 pool.execute(() -> {
-                    appendLog(tag + " Starting...\n");
+                    appendLog(getString(R.string.multi_runner_log_starting, tag));
                     try {
                         TransactionExecutor.LogCallback logger = msg -> appendLog(tag + " " + msg + "\n");
 
@@ -158,33 +159,34 @@ public class MultiThreadRunnerActivity extends BaseActivity {
                         String reason = ResponseCodeHelper.getMessage(result.rc);
                         if (result.approved) {
                             passed.incrementAndGet();
-                            appendLog(tag + " *** STATUS: PASS ***\n");
-                            appendLog(tag + " RC: " + result.rc + " (" + reason + ")\n");
+                            appendLog(getString(R.string.multi_runner_log_status_pass, tag));
+                            appendLog(getString(R.string.multi_runner_log_rc_reason, tag, result.rc, reason));
                         } else {
                             failed.incrementAndGet();
-                            appendLog(tag + " *** STATUS: FAIL ***\n");
-                            appendLog(tag + " RC: " + result.rc + " - Reason: " + reason + "\n");
+                            appendLog(getString(R.string.multi_runner_log_status_fail, tag));
+                            appendLog(getString(R.string.multi_runner_log_rc_fail_reason, tag, result.rc, reason));
                         }
 
                         // Save to DB for history
                         saveTransactionToDb(ctx, card, result);
                     } catch (java.net.SocketTimeoutException e) {
                         failed.incrementAndGet();
-                        appendLog(tag + " *** STATUS: FAIL ***\n");
-                        appendLog(tag + " Error: Timeout waiting for response.\n");
+                        appendLog(getString(R.string.multi_runner_log_status_fail, tag));
+                        appendLog(getString(R.string.multi_runner_log_timeout, tag));
                     } catch (Exception e) {
                         failed.incrementAndGet();
-                        appendLog(tag + " *** STATUS: FAIL ***\n");
-                        appendLog(tag + " Error: " + e.getMessage() + "\n");
+                        appendLog(getString(R.string.multi_runner_log_status_fail, tag));
+                        appendLog(getString(R.string.multi_runner_log_error, tag, e.getMessage()));
                     }
 
                     int done = completed.incrementAndGet();
-                    mainHandler.post(() -> tvStatus.setText("Completed " + done + "/" + threadCount
-                            + " (Pass: " + passed.get() + " / Fail: " + failed.get() + ")"));
+                    mainHandler.post(() -> tvStatus.setText(getString(
+                            R.string.multi_runner_status_completed_with_result,
+                            done, threadCount, passed.get(), failed.get())));
 
                     if (done == threadCount) {
-                        appendLog("\n=== ALL TESTS COMPLETE ===\n");
-                        appendLog("Pass: " + passed.get() + " / Fail: " + failed.get() + "\n");
+                        appendLog(getString(R.string.multi_runner_log_all_complete));
+                        appendLog(getString(R.string.multi_runner_log_pass_fail, passed.get(), failed.get()));
                         pool.shutdown();
                     }
                 });

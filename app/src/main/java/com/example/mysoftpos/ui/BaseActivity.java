@@ -21,6 +21,7 @@ public class BaseActivity extends AppCompatActivity {
 
     private NetworkMonitor networkMonitor;
     private android.widget.Toast networkToast;
+    private String appliedLanguage;
 
     @Override
     protected void attachBaseContext(android.content.Context newBase) {
@@ -30,6 +31,7 @@ public class BaseActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        appliedLanguage = LocaleHelper.getLanguage(this);
 
         // PA-DSS 10.x: Prevent screenshots and screen recording on all screens
         getWindow().setFlags(
@@ -42,7 +44,7 @@ public class BaseActivity extends AppCompatActivity {
                     this, "ROOT_DETECTED", false, "BaseActivity",
                     "App blocked on rooted device");
             Toast.makeText(this,
-                    "This app cannot run on rooted devices for security reasons.",
+                    getString(R.string.base_rooted_blocked_message),
                     Toast.LENGTH_LONG).show();
             finishAffinity();
             return;
@@ -73,6 +75,14 @@ public class BaseActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
+        String currentLanguage = LocaleHelper.getLanguage(this);
+        if (appliedLanguage != null && !appliedLanguage.equals(currentLanguage)) {
+            appliedLanguage = currentLanguage;
+            recreate();
+            return;
+        }
+
         if (networkMonitor != null) {
             networkMonitor.register();
         }

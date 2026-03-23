@@ -45,7 +45,7 @@
                     android:id="@+id/tvTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Test Scenarios"
+                    android:text="@string/testsuite_title"
                     android:textColor="#0F172A"
                     android:textSize="18sp"
                     android:textStyle="bold"
@@ -63,14 +63,14 @@
                         android:id="@+id/tvSummaryScheme"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Napas"
+                        android:text="@string/txn_select_default_scheme"
                         android:textColor="#94A3B8"
                         android:textSize="12sp"/>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text=" › "
+                        android:text="@string/txn_select_breadcrumb_sep"
                         android:textColor="#CBD5E1"
                         android:textSize="12sp"/>
 
@@ -78,14 +78,14 @@
                         android:id="@+id/tvSummaryChannel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="POS"
+                        android:text="@string/txn_select_default_channel"
                         android:textColor="#94A3B8"
                         android:textSize="12sp"/>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text=" › "
+                        android:text="@string/txn_select_breadcrumb_sep"
                         android:textColor="#CBD5E1"
                         android:textSize="12sp"/>
 
@@ -93,7 +93,7 @@
                         android:id="@+id/tvSummaryType"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Purchase"
+                        android:text="@string/batch_runner_default_type_purchase"
                         android:textColor="#64748B"
                         android:textSize="12sp"
                         android:textStyle="bold"/>
@@ -165,7 +165,7 @@
             android:layout_width="0dp"
             android:layout_height="50dp"
             android:layout_weight="1"
-            android:text="Confirm Selection"
+            android:text="@string/testsuite_btn_confirm_selection"
             android:textSize="15sp"
             android:textStyle="bold"
             android:textAllCaps="false"
@@ -179,7 +179,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
-            android:contentDescription="Add Custom Case"
+            android:contentDescription="@string/testsuite_fab_add_custom_case_desc"
             android:src="@drawable/ic_add"
             app:backgroundTint="#0F172A"
             app:tint="#FFFFFF"

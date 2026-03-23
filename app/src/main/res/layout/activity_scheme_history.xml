@@ -33,7 +33,7 @@
                 android:id="@+id/tvTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Transaction History"
+                android:text="@string/scheme_history_title"
                 android:textColor="#0F172A"
                 android:textSize="18sp"
                 android:textStyle="bold" />
@@ -41,7 +41,7 @@
                 android:id="@+id/tvSubtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Scheme"
+                android:text="@string/label_select_scheme"
                 android:textColor="#94A3B8"
                 android:textSize="12sp"
                 android:layout_marginTop="2dp" />
@@ -50,7 +50,7 @@
             android:id="@+id/tvCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="0 transactions"
+            android:text="@string/scheme_history_count_placeholder"
             android:textColor="#94A3B8"
             android:textSize="12sp" />
     </LinearLayout>
@@ -58,7 +58,7 @@
         android:id="@+id/tvEmpty"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="No transactions found"
+        android:text="@string/scheme_history_empty"
         android:gravity="center"
         android:padding="48dp"
         android:textColor="#94A3B8"

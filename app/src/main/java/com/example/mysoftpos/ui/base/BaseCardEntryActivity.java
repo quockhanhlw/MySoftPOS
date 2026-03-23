@@ -260,7 +260,7 @@ public abstract class BaseCardEntryActivity extends BaseActivity implements NfcA
         if (transceiver == null) {
             nfcCardProcessing = false;
             runOnUiThread(() -> Toast.makeText(this,
-                    getString(R.string.nfc_reading_error, "Thẻ không hỗ trợ"),
+                    getString(R.string.nfc_reading_error, getString(R.string.nfc_error_card_not_supported)),
                     Toast.LENGTH_SHORT).show());
             return;
         }
@@ -277,7 +277,9 @@ public abstract class BaseCardEntryActivity extends BaseActivity implements NfcA
                     } catch (Throwable e) {
                         // Catch Throwable, not just Exception — prevents app crash
                         Log.e(TAG, "NFC read failed", e);
-                        final String errMsg = e.getMessage() != null ? e.getMessage() : "Lỗi đọc thẻ";
+                        final String errMsg = e.getMessage() != null
+                                ? resolveNfcErrorMessage(e.getMessage())
+                                : getString(R.string.nfc_error_read_failed_default);
                         runOnUiThread(() -> {
                             if (isDestroyed() || isFinishing())
                                 return;
@@ -306,12 +308,31 @@ public abstract class BaseCardEntryActivity extends BaseActivity implements NfcA
                             } catch (Exception e) {
                                 Log.e(TAG, "onCardDataReady failed", e);
                                 Toast.makeText(this,
-                                        getString(R.string.nfc_reading_error, "Lỗi xử lý: " + e.getMessage()),
+                                        getString(R.string.nfc_reading_error,
+                                                getString(R.string.nfc_error_processing, e.getMessage())),
                                         Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
                 });
+    }
+
+    private String resolveNfcErrorMessage(String rawMessage) {
+        if (rawMessage == null || rawMessage.trim().isEmpty()) {
+            return getString(R.string.nfc_error_read_failed_default);
+        }
+        switch (rawMessage.trim()) {
+            case "read_card_error_unsupported":
+                return getString(R.string.read_card_error_unsupported);
+            case "read_card_error_gpo_rejected":
+                return getString(R.string.read_card_error_gpo_rejected);
+            case "read_card_error_no_track2":
+                return getString(R.string.read_card_error_no_track2);
+            case "read_card_error_invalid_data":
+                return getString(R.string.read_card_error_invalid_data);
+            default:
+                return rawMessage;
+        }
     }
 
     // ==================== View Visibility ====================

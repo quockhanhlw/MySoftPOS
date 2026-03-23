@@ -54,55 +54,55 @@
         <activity
             android:name=".ui.dashboard.TransactionDetailActivity"
             android:exported="false"
-            android:label="Transaction Details" />
+            android:label="@string/txn_detail_title" />
 
         <!-- Test Suite Activities -->
-        <activity android:name=".testsuite.RunnerActivity" android:label="Test Runner" />
-        <activity android:name=".testsuite.BatchRunnerActivity" android:label="Batch Runner" />
-        <activity android:name=".testsuite.ChannelSelectActivity" android:label="Select Channel" />
-        <activity android:name=".testsuite.PerformanceSelectActivity" android:label="Select Performance" />
-        <activity android:name=".testsuite.TransactionSelectActivity" android:label="Select Transaction" />
-        <activity android:name=".testsuite.SchemeSelectActivity" android:label="Select Scheme" />
-        <activity android:name=".testsuite.SchemeHistoryActivity" android:label="Scheme History" />
-        <activity android:name=".testsuite.TestSuiteActivity" android:label="Test Suite" />
-        <activity android:name=".testsuite.MultiThreadRunnerActivity" android:label="Multi-thread Runner" />
-        <activity android:name=".testsuite.DynamicTestSuiteActivity" android:label="Test Suites" />
-        <activity android:name=".testsuite.DynamicTestCaseActivity" android:label="Test Cases" />
+        <activity android:name=".testsuite.RunnerActivity" android:label="@string/label_test_runner" />
+        <activity android:name=".testsuite.BatchRunnerActivity" android:label="@string/label_batch_runner" />
+        <activity android:name=".testsuite.ChannelSelectActivity" android:label="@string/label_select_channel" />
+        <activity android:name=".testsuite.PerformanceSelectActivity" android:label="@string/label_select_performance" />
+        <activity android:name=".testsuite.TransactionSelectActivity" android:label="@string/label_select_transaction" />
+        <activity android:name=".testsuite.SchemeSelectActivity" android:label="@string/label_select_scheme" />
+        <activity android:name=".testsuite.SchemeHistoryActivity" android:label="@string/label_scheme_history" />
+        <activity android:name=".testsuite.TestSuiteActivity" android:label="@string/test_suite" />
+        <activity android:name=".testsuite.MultiThreadRunnerActivity" android:label="@string/label_multi_thread_runner" />
+        <activity android:name=".testsuite.DynamicTestSuiteActivity" android:label="@string/label_test_suites" />
+        <activity android:name=".testsuite.DynamicTestCaseActivity" android:label="@string/label_test_cases" />
 
         <!-- Admin Activities -->
         <activity
             android:name=".ui.admin.UserManagementActivity"
             android:exported="false"
-            android:label="User Management" />
+            android:label="@string/user_mgmt_title" />
 
         <activity
             android:name=".ui.admin.TransactionManagementActivity"
             android:exported="false"
-            android:label="Transaction Management" />
+            android:label="@string/dashboard_transaction_management" />
 
         <!-- Purchase Activities -->
         <activity
             android:name=".ui.purchase.PurchaseAmountActivity"
             android:exported="false"
-            android:label="Purchase" />
+            android:label="@string/dashboard_purchase" />
 
         <activity
             android:name=".ui.purchase.PurchaseCardActivity"
             android:exported="false"
-            android:label="Card" />
+            android:label="@string/payment_title" />
 
 
         <!-- Balance Inquiry Activity -->
         <activity
             android:name=".ui.balance.BalanceInquiryActivity"
             android:exported="false"
-            android:label="Balance Inquiry" />
+            android:label="@string/balance_inquiry_title" />
 
         <!-- Result Activity -->
         <activity
             android:name=".ui.result.TransactionResultActivity"
             android:exported="false"
-            android:label="Kết quả" />
+            android:label="@string/label_transaction_result" />
 
     </application>
 

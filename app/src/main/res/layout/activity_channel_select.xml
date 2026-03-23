@@ -44,7 +44,7 @@
                     android:id="@+id/tvTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Select Channel"
+                    android:text="@string/channel_select_title"
                     android:textColor="#0F172A"
                     android:textSize="18sp"
                     android:textStyle="bold"
@@ -54,7 +54,7 @@
                     android:id="@+id/tvBreadcrumbScheme"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Napas"
+                    android:text="@string/txn_select_default_scheme"
                     android:textColor="#94A3B8"
                     android:textSize="12sp"
                     android:layout_marginTop="2dp"/>
@@ -120,7 +120,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="POS"
+                    android:text="@string/txn_select_default_channel"
                     android:textColor="#0F172A"
                     android:textSize="18sp"
                     android:textStyle="bold"
@@ -130,7 +130,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Point of Sale"
+                    android:text="@string/channel_select_pos_subtitle"
                     android:textColor="#94A3B8"
                     android:textSize="14sp"/>
 
@@ -183,7 +183,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="ATM"
+                    android:text="@string/channel_select_atm_title"
                     android:textColor="#0F172A"
                     android:textSize="18sp"
                     android:textStyle="bold"
@@ -193,7 +193,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Automated Teller Machine"
+                    android:text="@string/channel_select_atm_subtitle"
                     android:textColor="#94A3B8"
                     android:textSize="14sp"/>
 
@@ -245,7 +245,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="History"
+                    android:text="@string/dashboard_history"
                     android:textColor="#0F172A"
                     android:textSize="18sp"
                     android:textStyle="bold"
@@ -255,7 +255,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Transaction History &amp; Void"
+                    android:text="@string/channel_select_history_subtitle"
                     android:textColor="#94A3B8"
                     android:textSize="14sp"/>
 

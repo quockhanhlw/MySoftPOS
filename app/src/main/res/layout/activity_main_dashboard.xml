@@ -74,7 +74,7 @@
                     android:id="@+id/tvMerchantName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Guest"
+                    android:text="@string/guest_user"
                     android:textSize="36sp"
                     android:textColor="@android:color/white"
                     android:fontFamily="sans-serif-bold"
@@ -292,7 +292,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="User Management"
+                    android:text="@string/dashboard_user_management"
                     android:textSize="18sp"
                     android:textColor="@color/neo_primary_dark"
                     android:fontFamily="sans-serif-medium"
@@ -332,7 +332,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Transaction Management"
+                    android:text="@string/dashboard_transaction_management"
                     android:textSize="18sp"
                     android:textColor="@color/neo_primary_dark"
                     android:fontFamily="sans-serif-medium"

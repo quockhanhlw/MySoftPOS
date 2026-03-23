@@ -24,7 +24,7 @@ public class WelcomeActivity extends BaseActivity {
         if (SKIP_LOGIN) {
             Intent intent = new Intent(this, MainDashboardActivity.class);
             intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USER_ROLE, "USER");
-            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, "Guest");
+            intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME, getString(R.string.guest_user));
             startActivity(intent);
             finish();
             return;

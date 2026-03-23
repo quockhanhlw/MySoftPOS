@@ -36,7 +36,7 @@
                 android:id="@+id/tvNotificationTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Notification"
+                android:text="@string/notification_title_default"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="#333333"/>
@@ -45,7 +45,7 @@
                 android:id="@+id/tvNotificationMessage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Message body goes here"
+                android:text="@string/notification_message_placeholder"
                 android:textSize="14sp"
                 android:textColor="#666666"
                 android:layout_marginTop="4dp"/>

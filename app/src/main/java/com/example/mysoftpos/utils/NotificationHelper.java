@@ -81,6 +81,9 @@ public class NotificationHelper {
         // Guess type only by iconRes is flaky, default to Success (false error)
         // or strictly 'Info'.
         boolean isError = (iconRes == R.drawable.ic_error); // Heuristic
-        showNotification(activity, isError ? "Error" : "Success", message, isError);
+        showNotification(activity,
+                activity.getString(isError ? R.string.notification_title_error : R.string.notification_title_success),
+                message,
+                isError);
     }
 }

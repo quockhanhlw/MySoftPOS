@@ -107,7 +107,7 @@
                 android:id="@+id/tvAmount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="đ4.568"
+                android:text="@string/common_zero"
                 android:textColor="#1E293B"
                 android:textSize="32sp"
                 android:textStyle="bold"
@@ -148,7 +148,7 @@
                         android:layout_height="wrap_content"/>
                     <TextView
                         android:id="@+id/tvTxnId"
-                        android:text="TXN64532143"
+                        android:text="@string/txn_detail_placeholder_dash"
                         android:textColor="#1E293B"
                         android:textSize="14sp"
                         android:textStyle="bold"
@@ -170,7 +170,7 @@
                         android:layout_height="wrap_content"/>
                     <TextView
                         android:id="@+id/tvDate"
-                        android:text="14:55:32 6/2/2026"
+                        android:text="@string/txn_detail_placeholder_dash"
                         android:textColor="#1E293B"
                         android:textSize="14sp"
                         android:textStyle="bold"
@@ -192,7 +192,7 @@
                         android:layout_height="wrap_content"/>
                     <TextView
                         android:id="@+id/tvType"
-                        android:text="Purchase"
+                        android:text="@string/txn_result_type_default"
                         android:textColor="#1E293B"
                         android:textSize="14sp"
                         android:textStyle="bold"
@@ -214,7 +214,7 @@
                         android:layout_height="wrap_content"/>
                     <TextView
                         android:id="@+id/tvCardNum"
-                        android:text="**** 4242"
+                        android:text="@string/txn_result_masked_pan_placeholder"
                         android:textColor="#1E293B"
                         android:textSize="14sp"
                         android:textStyle="bold"

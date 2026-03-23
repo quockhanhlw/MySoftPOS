@@ -95,7 +95,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Email"
+        android:text="@string/register_email"
         android:textSize="13sp"
         android:textStyle="bold"
         android:textColor="@color/text_primary"

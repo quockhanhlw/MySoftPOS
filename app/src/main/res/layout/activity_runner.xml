@@ -23,14 +23,14 @@
             android:layout_height="48dp"
             android:src="@drawable/ic_back"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Back"
+            android:contentDescription="@string/back"
             app:tint="@color/neo_primary_dark"/>
 
         <TextView
             android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Execute Transaction"
+            android:text="@string/runner_execute_transaction"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@color/neo_primary_dark"
@@ -65,7 +65,7 @@
                     android:textColor="#000000"
                     android:textSize="12sp"
                     android:lineSpacingExtra="4dp"
-                    android:text="Waiting for execution..."/>
+                    android:text="@string/runner_waiting_for_execution"/>
             </androidx.cardview.widget.CardView>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
@@ -83,7 +83,7 @@
             style="@style/Widget.MaterialComponents.Button"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="Run Transaction"
+            android:text="@string/runner_run_transaction"
             android:textSize="16sp"
             android:textStyle="bold"
             app:cornerRadius="28dp"

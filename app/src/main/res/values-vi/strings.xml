@@ -169,6 +169,8 @@
     <string name="dashboard_logon">Đăng nhập</string>
     <string name="dashboard_settings">Cài đặt</string>
     <string name="dashboard_balance">Vấn tin số dư</string>
+    <string name="dashboard_user_management">Quản lý người dùng</string>
+    <string name="dashboard_transaction_management">Quản lý giao dịch</string>
     <string name="dashboard_welcome">Chào</string>
     <string name="history_title">Lịch sử giao dịch</string>
     <string name="history_empty">Không có giao dịch gần đây</string>
@@ -206,6 +208,13 @@
     <string name="tab_manual_entry">Nhập tay</string>
     <string name="tab_nfc">NFC</string>
     <string name="tab_magstripe">Quẹt thẻ</string>
+    <string name="card_brand_napas">NAPAS</string>
+    <string name="card_valid_thru">HIỆU LỰC ĐẾN</string>
+    <string name="card_type_debit">GHI NỢ</string>
+    <string name="card_contactless_symbol" translatable="false">&#10687;</string>
+    <string name="magstripe_bank_acb">ACB</string>
+    <string name="magstripe_bank_pgbank">PGBANK</string>
+    <string name="magstripe_bank_bidv">BIDV</string>
     <string name="magstripe_select_card">Chọn thẻ để giao dịch</string>
     <string name="magstripe_card_1_label">Thẻ thử nghiệm 1</string>
     <string name="magstripe_card_2_label">Thẻ thử nghiệm 2</string>
@@ -244,6 +253,7 @@
     <string name="status_declined">TỪ CHỐI</string>
     <string name="status_pending">ĐANG XỬ LÝ</string>
     <string name="status_timeout">HẾT GIỜ</string>
+    <string name="status_reversed">ĐẢO GIAO DỊCH</string>
 
     <!-- Card Fields -->
     <string name="card_pan">Số thẻ</string>
@@ -330,11 +340,27 @@
     <string name="user_mgmt_search_hint">Tìm theo tên hoặc số điện thoại...</string>
     <string name="user_mgmt_empty_title">Chưa có người dùng</string>
     <string name="user_mgmt_empty_subtitle">Nhấn + để tạo người dùng mới</string>
+    <string name="user_mgmt_empty_filter_title">Không có người dùng phù hợp</string>
+    <string name="user_mgmt_empty_filter_subtitle">Hãy thử tên, số điện thoại hoặc terminal ID khác</string>
     <string name="user_mgmt_retry">Thử lại</string>
+    <string name="user_mgmt_state_preparing_session_title">Đang chuẩn bị phiên backend</string>
+    <string name="user_mgmt_state_preparing_session_subtitle">Vui lòng chờ trong khi khôi phục phiên admin.</string>
+    <string name="user_mgmt_state_backend_session_unavailable_title">Phiên backend không khả dụng</string>
+    <string name="user_mgmt_state_backend_session_unavailable_subtitle">Vui lòng đăng nhập lại hoặc kéo để thử lại.</string>
+    <string name="user_mgmt_state_loading_title">Đang tải người dùng</string>
+    <string name="user_mgmt_state_loading_subtitle">Đang lấy dữ liệu người dùng mới nhất từ backend...</string>
+    <string name="user_mgmt_state_backend_unavailable_title">Backend không khả dụng</string>
+    <string name="user_mgmt_state_load_users_failed_subtitle">Không thể tải danh sách người dùng từ backend. Vui lòng thử lại.</string>
+    <string name="user_mgmt_state_load_users_network_subtitle">Không thể tải danh sách người dùng từ backend. Vui lòng kiểm tra kết nối và thử lại.</string>
 
     <string name="txn_select_title">Loại giao dịch</string>
     <string name="txn_select_default_scheme">Napas</string>
     <string name="txn_select_default_channel">POS</string>
+    <string name="channel_select_title">Chọn kênh giao dịch</string>
+    <string name="channel_select_pos_subtitle">Điểm bán hàng</string>
+    <string name="channel_select_atm_title">ATM</string>
+    <string name="channel_select_atm_subtitle">Máy rút tiền tự động</string>
+    <string name="channel_select_history_subtitle">Lịch sử giao dịch &amp; đảo giao dịch</string>
     <string name="txn_select_breadcrumb_sep"> › </string>
     <string name="txn_select_purchase_subtitle">Kiểm thử giao dịch thanh toán</string>
     <string name="txn_select_balance_subtitle">Kiểm thử vấn tin số dư</string>
@@ -357,6 +383,24 @@
     <string name="settings_identity_saved">Đã lưu cài đặt định danh</string>
     <string name="settings_security_saved">Đã lưu cài đặt bảo mật</string>
     <string name="settings_backend_current">Hiện tại: %s</string>
+    <string name="runner_execute_transaction">Thực thi giao dịch</string>
+    <string name="runner_waiting_for_execution">Đang chờ thực thi...</string>
+    <string name="runner_run_transaction">Chạy giao dịch</string>
+    <string name="batch_runner_progress_default" translatable="false">0/0</string>
+    <string name="batch_runner_run_all_plain">Chạy tất cả</string>
+    <string name="multi_thread_runner_title">Chạy đa luồng</string>
+    <string name="multi_thread_runner_preparing">Đang chuẩn bị...</string>
+    <string name="dynamic_test_cases_title">Danh sách ca kiểm thử</string>
+    <string name="numpad_digit_1" translatable="false">1</string>
+    <string name="numpad_digit_2" translatable="false">2</string>
+    <string name="numpad_digit_3" translatable="false">3</string>
+    <string name="numpad_digit_4" translatable="false">4</string>
+    <string name="numpad_digit_5" translatable="false">5</string>
+    <string name="numpad_digit_6" translatable="false">6</string>
+    <string name="numpad_digit_7" translatable="false">7</string>
+    <string name="numpad_digit_8" translatable="false">8</string>
+    <string name="numpad_digit_9" translatable="false">9</string>
+    <string name="common_currency_vnd" translatable="false">VND</string>
     <string name="settings_backend_testing">Đang kiểm tra kết nối…</string>
     <string name="settings_backend_connected">✓ Đã kết nối — %s</string>
     <string name="settings_backend_failed">✗ Thất bại — %s</string>
@@ -637,6 +681,10 @@
     <string name="txn_mgmt_state_load_txn_network_subtitle">Không thể tải giao dịch từ backend. Vui lòng kiểm tra kết nối và thử lại.</string>
     <string name="txn_mgmt_state_offline_title">Cần kết nối Internet</string>
     <string name="txn_mgmt_state_offline_subtitle">Kết nối Wi-Fi hoặc dữ liệu di động để xem quản lý giao dịch.</string>
+    <string name="txn_mgmt_header_title">Giao dịch</string>
+    <string name="txn_mgmt_label_approved">Thành công</string>
+    <string name="txn_mgmt_label_declined">Từ chối</string>
+    <string name="txn_mgmt_label_other">Khác</string>
     <string name="txn_mgmt_toast_load_users_failed">Tải danh sách người dùng thất bại</string>
     <string name="txn_mgmt_toast_load_txn_failed">Tải giao dịch thất bại</string>
     <string name="txn_mgmt_filter_all_users">Tất cả người dùng</string>
@@ -730,4 +778,74 @@
     <string name="keypad_digit_9">9</string>
     <string name="currency_vnd">VND</string>
     <string name="currency_usd">USD</string>
+    <string name="notification_title_error">Lỗi</string>
+    <string name="notification_title_success">Thành công</string>
+    <string name="label_transaction_result">Kết quả giao dịch</string>
+    <string name="label_test_runner">Trình chạy kiểm thử</string>
+    <string name="label_batch_runner">Chạy hàng loạt</string>
+    <string name="label_select_channel">Chọn kênh</string>
+    <string name="label_select_performance">Chọn hiệu năng</string>
+    <string name="label_select_transaction">Chọn giao dịch</string>
+    <string name="label_select_scheme">Chọn scheme</string>
+    <string name="label_scheme_history">Lịch sử scheme</string>
+    <string name="label_multi_thread_runner">Trình chạy đa luồng</string>
+    <string name="label_test_suites">Bộ test</string>
+    <string name="label_test_cases">Test case</string>
+    <string name="testsuite_title">Kịch bản kiểm thử</string>
+    <string name="testsuite_fab_add_custom_case_desc">Thêm test case tùy chỉnh</string>
+    <string name="scheme_select_title">Scheme kiểm thử</string>
+    <string name="scheme_select_subtitle">Nhấn để test · Nhấn giữ để chỉnh sửa</string>
+    <string name="scheme_select_add_scheme_desc">Thêm scheme</string>
+    <string name="scheme_history_count_placeholder">0 giao dịch</string>
+    <string name="scheme_history_empty">Không tìm thấy giao dịch</string>
+    <string name="item_batch_status_icon_desc">Trạng thái</string>
+    <string name="detail_row_label_placeholder">Nhãn</string>
+    <string name="detail_row_value_placeholder">Giá trị</string>
+    <string name="txn_detail_amount_placeholder">0 VND</string>
+    <string name="notification_title_default">Thông báo</string>
+    <string name="notification_message_placeholder">Nội dung thông báo</string>
+
+    <!-- i18n: remove hardcoded runtime texts -->
+    <string name="base_rooted_blocked_message">Ứng dụng không thể chạy trên thiết bị đã root vì lý do bảo mật.</string>
+
+    <string name="user_mgmt_offline_title">Cần kết nối Internet</string>
+    <string name="user_mgmt_offline_subtitle">Kết nối Wi-Fi hoặc dữ liệu di động để xem quản lý người dùng.</string>
+    <string name="user_mgmt_count_format">%1$d người dùng</string>
+
+    <string name="test_scenario_badge_custom">TÙY CHỈNH</string>
+    <string name="test_scenario_detail_selected">Đã chọn</string>
+    <string name="test_scenario_detail_tap_select">Nhấn để chọn</string>
+    <string name="test_scenario_detail_long_press_select">Nhấn giữ để chọn</string>
+    <string name="test_scenario_detail_tap_run">Nhấn để chạy test case</string>
+
+    <string name="multi_runner_no_scenarios_selected">Chưa chọn kịch bản nào.</string>
+    <string name="multi_runner_status_no_scenarios">Lỗi: Không có kịch bản</string>
+    <string name="multi_runner_status_preparing">Đang chuẩn bị %1$d bài test...</string>
+    <string name="multi_runner_log_header">=== Trình chạy đa luồng ===\n</string>
+    <string name="multi_runner_log_total_tests">Tổng số bài test: %1$d\n</string>
+    <string name="multi_runner_log_mode_concurrent">Chế độ: Đồng thời (Thread Pool)\n\n</string>
+    <string name="multi_runner_log_build_error">%1$s Lỗi dựng bản tin: %2$s\n</string>
+    <string name="multi_runner_status_sending">Đang gửi %1$d giao dịch...</string>
+    <string name="multi_runner_log_skipped">%1$s *** BỎ QUA (lỗi dựng bản tin) ***\n</string>
+    <string name="multi_runner_status_completed_simple">Hoàn tất %1$d/%2$d</string>
+    <string name="multi_runner_log_starting">%1$s Bắt đầu...\n</string>
+    <string name="multi_runner_log_status_pass">%1$s *** KẾT QUẢ: PASS ***\n</string>
+    <string name="multi_runner_log_status_fail">%1$s *** KẾT QUẢ: FAIL ***\n</string>
+    <string name="multi_runner_log_rc_reason">%1$s RC: %2$s (%3$s)\n</string>
+    <string name="multi_runner_log_rc_fail_reason">%1$s RC: %2$s - Lý do: %3$s\n</string>
+    <string name="multi_runner_log_timeout">%1$s Lỗi: Quá thời gian chờ phản hồi.\n</string>
+    <string name="multi_runner_log_error">%1$s Lỗi: %2$s\n</string>
+    <string name="multi_runner_status_completed_with_result">Hoàn tất %1$d/%2$d (Pass: %3$d / Fail: %4$d)</string>
+    <string name="multi_runner_log_all_complete">\n=== HOÀN TẤT TẤT CẢ BÀI TEST ===\n</string>
+    <string name="multi_runner_log_pass_fail">Pass: %1$d / Fail: %2$d\n</string>
+
+    <string name="nfc_error_card_not_supported">Thẻ không được hỗ trợ</string>
+    <string name="nfc_error_read_failed_default">Không đọc được thẻ</string>
+    <string name="nfc_error_processing">Lỗi xử lý: %1$s</string>
+
+    <string name="read_card_error_unsupported">Thẻ không được hỗ trợ. Vui lòng thử lại.</string>
+    <string name="read_card_error_gpo_rejected">Thẻ từ chối (GPO)</string>
+    <string name="read_card_error_no_track2">Không đọc được dữ liệu thẻ</string>
+    <string name="read_card_error_invalid_data">Dữ liệu thẻ không hợp lệ</string>
+
 </resources>

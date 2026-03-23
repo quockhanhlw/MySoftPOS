@@ -74,7 +74,7 @@
             android:background="@drawable/bg_count_badge"
             android:paddingHorizontal="8dp"
             android:paddingVertical="3dp"
-            android:text="Default"
+            android:text="@string/testsuite_default_value"
             android:textColor="#0D9488"
             android:textSize="10sp"
             android:textStyle="bold"

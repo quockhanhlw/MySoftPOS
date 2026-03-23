@@ -90,7 +90,7 @@
                 android:id="@+id/tvCurrency"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="VND"
+                android:text="@string/common_currency_vnd"
                 android:textSize="22sp"
                 android:textColor="@color/neo_primary_dark"
                 android:fontFamily="sans-serif-bold"
@@ -110,7 +110,7 @@
             android:id="@+id/tvAmountDisplay"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="0"
+            android:text="@string/common_zero"
             android:textSize="56sp"
             android:textColor="@color/neo_primary_dark"
             android:fontFamily="sans-serif-bold"
@@ -160,9 +160,9 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center">
-            <Button android:id="@+id/btn1" style="@style/NumpadCircleButton" android:text="1" />
-            <Button android:id="@+id/btn2" style="@style/NumpadCircleButton" android:text="2" />
-            <Button android:id="@+id/btn3" style="@style/NumpadCircleButton" android:text="3" />
+            <Button android:id="@+id/btn1" style="@style/NumpadCircleButton" android:text="@string/numpad_digit_1" />
+            <Button android:id="@+id/btn2" style="@style/NumpadCircleButton" android:text="@string/numpad_digit_2" />
+            <Button android:id="@+id/btn3" style="@style/NumpadCircleButton" android:text="@string/numpad_digit_3" />
         </LinearLayout>
 
         <!-- Row 2: 4, 5, 6 -->
@@ -171,9 +171,9 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center">
-            <Button android:id="@+id/btn4" style="@style/NumpadCircleButton" android:text="4" />
-            <Button android:id="@+id/btn5" style="@style/NumpadCircleButton" android:text="5" />
-            <Button android:id="@+id/btn6" style="@style/NumpadCircleButton" android:text="6" />
+            <Button android:id="@+id/btn4" style="@style/NumpadCircleButton" android:text="@string/numpad_digit_4" />
+            <Button android:id="@+id/btn5" style="@style/NumpadCircleButton" android:text="@string/numpad_digit_5" />
+            <Button android:id="@+id/btn6" style="@style/NumpadCircleButton" android:text="@string/numpad_digit_6" />
         </LinearLayout>
 
         <!-- Row 3: 7, 8, 9 -->
@@ -182,9 +182,9 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center">
-            <Button android:id="@+id/btn7" style="@style/NumpadCircleButton" android:text="7" />
-            <Button android:id="@+id/btn8" style="@style/NumpadCircleButton" android:text="8" />
-            <Button android:id="@+id/btn9" style="@style/NumpadCircleButton" android:text="9" />
+            <Button android:id="@+id/btn7" style="@style/NumpadCircleButton" android:text="@string/numpad_digit_7" />
+            <Button android:id="@+id/btn8" style="@style/NumpadCircleButton" android:text="@string/numpad_digit_8" />
+            <Button android:id="@+id/btn9" style="@style/NumpadCircleButton" android:text="@string/numpad_digit_9" />
         </LinearLayout>
 
         <!-- Row 4: Backspace, 0, Empty -->
@@ -200,7 +200,7 @@
                 android:scaleType="centerInside"
                 android:contentDescription="Delete"
                 app:tint="@color/neo_primary_dark" />
-            <Button android:id="@+id/btn0" style="@style/NumpadCircleButton" android:text="0" />
+            <Button android:id="@+id/btn0" style="@style/NumpadCircleButton" android:text="@string/common_zero" />
             <View
                 android:layout_width="72dp"
                 android:layout_height="72dp"

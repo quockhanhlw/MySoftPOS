@@ -28,7 +28,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="Test Cases"
+            android:text="@string/dynamic_test_cases_title"
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="#333333" />

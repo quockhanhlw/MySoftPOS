@@ -38,7 +38,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="16dp"
-            android:text="Notification Message"
+            android:text="@string/notification_message_placeholder"
             android:textSize="14sp"
             android:textColor="#1F2937"
             android:fontFamily="sans-serif-medium"

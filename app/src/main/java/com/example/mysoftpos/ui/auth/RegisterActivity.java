@@ -2,6 +2,7 @@ package com.example.mysoftpos.ui.auth;
 
 import android.app.DatePickerDialog;
 import android.app.Dialog;
+import android.content.Intent;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
@@ -299,7 +300,7 @@ public class RegisterActivity extends BaseActivity {
                             .setMcc18(form.businessType);
                     cacheUserLocally(form, response.body() != null ? response.body().user : null);
                     showToast(R.string.register_success);
-                    finish();
+                    navigateToLogin(form.phone);
                     return;
                 }
                 handleRegisterError(response);
@@ -815,6 +816,14 @@ public class RegisterActivity extends BaseActivity {
 
     private void showToast(int stringResId, int duration) {
         Toast.makeText(this, stringResId, duration).show();
+    }
+
+    private void navigateToLogin(String prefillIdentifier) {
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.putExtra(LoginActivity.EXTRA_PREFILL_IDENTIFIER, prefillIdentifier);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
+        finish();
     }
 
     private static class RegistrationForm {
