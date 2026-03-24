@@ -142,10 +142,12 @@ public class BalanceInquiryActivity extends BaseCardEntryActivity {
 
             if (availableBalance != null) {
                 intent.putExtra(com.example.mysoftpos.utils.IntentKeys.AMOUNT, availableBalance);
-                intent.putExtra(com.example.mysoftpos.utils.IntentKeys.BALANCE_TYPE, "Available");
+                intent.putExtra(com.example.mysoftpos.utils.IntentKeys.BALANCE_TYPE,
+                        getString(R.string.txn_balance_type_available));
             } else if (ledgerBalance != null) {
                 intent.putExtra(com.example.mysoftpos.utils.IntentKeys.AMOUNT, ledgerBalance);
-                intent.putExtra(com.example.mysoftpos.utils.IntentKeys.BALANCE_TYPE, "Ledger");
+                intent.putExtra(com.example.mysoftpos.utils.IntentKeys.BALANCE_TYPE,
+                        getString(R.string.txn_balance_type_ledger));
             }
             if (currency != null)
                 intent.putExtra(com.example.mysoftpos.utils.IntentKeys.CURRENCY, currency);

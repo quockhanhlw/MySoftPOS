@@ -1,6 +1,7 @@
 package com.example.mysoftpos.testsuite;
 
 import com.example.mysoftpos.iso8583.emv.EmvTlvCodec;
+import com.example.mysoftpos.R;
 import com.example.mysoftpos.testsuite.model.TestScenario;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -57,21 +58,23 @@ public class TestDataProvider {
         };
 
         for (String code : codes) {
-            String modeStr = getModeName(code);
+            String modeStr = getModeName(context, code);
             boolean isPin = code.endsWith("1") && !"021".equals(code);
             String desc;
             if ("071".equals(code)) {
-                desc = "Contactless + PIN (071)";
+                desc = context.getString(R.string.testsuite_desc_contactless_pin_071);
             } else if ("072".equals(code)) {
-                desc = "Contactless - No PIN (072)";
+                desc = context.getString(R.string.testsuite_desc_contactless_no_pin_072);
             } else {
-                desc = String.format("%s (%s)", modeStr, code);
+                desc = context.getString(R.string.testsuite_desc_mode_de22_format, modeStr, code);
             }
 
             TestScenario s = new TestScenario("0200", desc);
 
             // Common Fields
-            s.setField(3, "000000");
+            // Do not hardcode DE3 here.
+            // Processing code must be set by runtime txn type mapping
+            // (PURCHASE -> 000000, BALANCE -> 300000).
             s.setField(22, code);
 
             // Configure fields based on code
@@ -133,15 +136,15 @@ public class TestDataProvider {
         return EmvTlvCodec.buildDE55(tags);
     }
 
-    private static String getModeName(String code) {
+    private static String getModeName(android.content.Context context, String code) {
         if (code.startsWith("02"))
-            return "Magstripe (Swipe)";
+            return context.getString(R.string.testsuite_mode_magstripe_swipe);
         if (code.startsWith("01"))
-            return "Manual Key-in";
+            return context.getString(R.string.testsuite_mode_manual_keyin);
         if (code.startsWith("07"))
-            return "Contactless";
+            return context.getString(R.string.testsuite_mode_contactless);
         if (code.startsWith("03"))
-            return "QR Code";
-        return "Unknown";
+            return context.getString(R.string.testsuite_mode_qr_code);
+        return context.getString(R.string.testsuite_mode_unknown);
     }
 }

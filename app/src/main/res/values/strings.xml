@@ -79,6 +79,12 @@
     <string name="register_hint_username">Username</string>
     <string name="register_hint_password">Password</string>
     <string name="register_hint_confirm_password">Confirm Password</string>
+    <string name="register_hint_fullname_example">John Doe</string>
+    <string name="register_hint_phone_example">+84 901 234 567</string>
+    <string name="register_hint_email_example">user@example.com</string>
+    <string name="register_hint_address_example">123 Street, City</string>
+    <string name="register_hint_username_example">cooluser123</string>
+    <string name="register_hint_password_example">********</string>
     <string name="register_step1_title">Personal Information</string>
     <string name="register_step2_title">Account Security</string>
     <string name="register_next_step">Next Step</string>
@@ -117,7 +123,6 @@
     <string name="login_email_label">Email or Phone</string>
     <string name="login_no_account">Don\'t have an account?</string>
     <string name="login_sign_up">Sign Up</string>
-    <string name="login_or_divider">or</string>
 
     <!-- Forgot Password Extras -->
     <string name="forgot_email_label">Email or Phone</string>
@@ -378,6 +383,7 @@
     <string name="txn_select_breadcrumb_sep"> › </string>
     <string name="txn_select_purchase_subtitle">Payment transaction test</string>
     <string name="txn_select_balance_subtitle">Balance check test</string>
+    <string name="txn_select_cases_selected_format">%1$d case(s) selected</string>
     <string name="txn_select_run_selected">Run Selected</string>
 
     <!-- UI Improvements -->
@@ -597,6 +603,7 @@
     <string name="user_dialog_phone_helper">Used for login</string>
     <string name="user_dialog_phone_hint">Phone Number *</string>
     <string name="user_dialog_password_hint">Password *</string>
+    <string name="user_dialog_password_new_hint">New password</string>
     <string name="user_dialog_email_hint">Email (Optional)</string>
     <string name="user_dialog_dob_hint">Date of birth (dd/MM/yyyy)</string>
     <string name="user_dialog_gender_hint">Gender</string>
@@ -637,6 +644,7 @@
     <string name="user_mgmt_password_required">Password is required</string>
     <string name="user_mgmt_user_updated">User updated</string>
     <string name="user_mgmt_user_created">User created</string>
+    <string name="user_mgmt_business_type_must_select">Please choose a business type from the list</string>
     <string name="user_mgmt_delete_user_title">Delete User</string>
     <string name="user_mgmt_delete_user_message">Delete %1$s?</string>
     <string name="user_mgmt_delete_action">Delete</string>
@@ -711,6 +719,8 @@
     <string name="txn_result_amount_overflow">&gt; 10,000,000,000</string>
     <string name="txn_result_balance_type_format">%1$s Balance</string>
     <string name="txn_result_available_balance">Available Balance</string>
+    <string name="txn_balance_type_available">Available</string>
+    <string name="txn_balance_type_ledger">Ledger</string>
 
     <!-- Transaction select -->
     <string name="txn_select_run_selected_prefix">Run Selected (</string>
@@ -801,9 +811,43 @@
     <string name="label_test_cases">Test Cases</string>
     <string name="testsuite_title">Test Scenarios</string>
     <string name="testsuite_fab_add_custom_case_desc">Add Custom Case</string>
+    <string name="testsuite_add_suite_desc">Add test suite</string>
+    <string name="testsuite_add_case_desc">Add test case</string>
+    <string name="content_desc_delete">Delete</string>
+    <string name="testsuite_mode_magstripe_swipe">Magstripe (Swipe)</string>
+    <string name="testsuite_mode_manual_keyin">Manual Key-in</string>
+    <string name="testsuite_mode_contactless">Contactless</string>
+    <string name="testsuite_mode_qr_code">QR Code</string>
+    <string name="testsuite_mode_unknown">Unknown</string>
+    <string name="testsuite_desc_mode_de22_format">%1$s (%2$s)</string>
+    <string name="testsuite_entry_mode_011">Manual Key-in + PIN</string>
+    <string name="testsuite_entry_mode_012">Manual Key-in</string>
+    <string name="testsuite_entry_mode_021">Magstripe (Swipe) + PIN</string>
+    <string name="testsuite_entry_mode_022">Magstripe (Swipe)</string>
+    <string name="testsuite_entry_mode_051">NFC / Chip + PIN</string>
+    <string name="testsuite_entry_mode_052">NFC / Chip</string>
+    <string name="testsuite_entry_mode_071">Contactless + PIN (071)</string>
+    <string name="testsuite_entry_mode_072">Contactless - No PIN (072)</string>
+    <string name="testsuite_entry_mode_911">Fallback + PIN</string>
+    <string name="testsuite_entry_mode_912">Fallback</string>
+    <string name="testsuite_entry_mode_custom_format">Custom (%1$s)</string>
+    <string name="testsuite_desc_contactless_pin_071">Contactless + PIN (071)</string>
+    <string name="testsuite_desc_contactless_no_pin_072">Contactless - No PIN (072)</string>
+    <string name="scheme_select_add_scheme_desc">Add Scheme</string>
+    <string name="scheme_select_count_format">%1$d schemes</string>
+    <string name="scheme_dialog_add_title">Add Scheme</string>
+    <string name="scheme_dialog_edit_title">Edit Scheme</string>
+    <string name="scheme_dialog_add_subtitle">Configure a new card network</string>
+    <string name="scheme_dialog_edit_subtitle">Modify card network settings</string>
+    <string name="scheme_dialog_preview_name_default">New Scheme</string>
+    <string name="scheme_dialog_preview_icon_default" translatable="false">?</string>
+
+    <!-- i18n runtime texts -->
+    <string name="base_rooted_blocked_message">This app cannot run on rooted devices for security reasons.</string>
+
+    <!-- Restored default (values) string keys required by layouts and runtime -->
     <string name="scheme_select_title">Test Schemes</string>
     <string name="scheme_select_subtitle">Tap to test · Hold to edit</string>
-    <string name="scheme_select_add_scheme_desc">Add Scheme</string>
     <string name="scheme_history_count_placeholder">0 transactions</string>
     <string name="scheme_history_empty">No transactions found</string>
     <string name="item_batch_status_icon_desc">Status</string>
@@ -812,9 +856,13 @@
     <string name="txn_detail_amount_placeholder">0 VND</string>
     <string name="notification_title_default">Notification</string>
     <string name="notification_message_placeholder">Message</string>
-
-    <!-- i18n runtime texts -->
-    <string name="base_rooted_blocked_message">This app cannot run on rooted devices for security reasons.</string>
+    <string name="nfc_error_card_not_supported">Card not supported</string>
+    <string name="nfc_error_read_failed_default">Failed to read card</string>
+    <string name="nfc_error_processing">Processing error: %1$s</string>
+    <string name="read_card_error_unsupported">Card is not supported. Please try again.</string>
+    <string name="read_card_error_gpo_rejected">Card rejected (GPO)</string>
+    <string name="read_card_error_no_track2">Could not read card data</string>
+    <string name="read_card_error_invalid_data">Invalid card data</string>
 
     <string name="user_mgmt_offline_title">Internet connection required</string>
     <string name="user_mgmt_offline_subtitle">Connect to Wi-Fi or mobile data to view user management.</string>
@@ -846,13 +894,21 @@
     <string name="multi_runner_status_completed_with_result">Completed %1$d/%2$d (Pass: %3$d / Fail: %4$d)</string>
     <string name="multi_runner_log_all_complete">\n=== ALL TESTS COMPLETE ===\n</string>
     <string name="multi_runner_log_pass_fail">Pass: %1$d / Fail: %2$d\n</string>
-
-    <string name="nfc_error_card_not_supported">Card not supported</string>
-    <string name="nfc_error_read_failed_default">Failed to read card</string>
-    <string name="nfc_error_processing">Processing error: %1$s</string>
-
-    <string name="read_card_error_unsupported">Card is not supported. Please try again.</string>
-    <string name="read_card_error_gpo_rejected">Card rejected (GPO)</string>
-    <string name="read_card_error_no_track2">Could not read card data</string>
-    <string name="read_card_error_invalid_data">Invalid card data</string>
+    <string name="runner_preview_header">=== ISO MESSAGE PREVIEW ===</string>
+    <string name="runner_preview_server_format">Server: %1$s:%2$d</string>
+    <string name="runner_packed_hex_bytes_format">Packed Hex (%1$d bytes):</string>
+    <string name="runner_preview_footer">===========================</string>
+    <string name="runner_preview_error_format">Preview Error: %1$s</string>
+    <string name="runner_txn_balance">Balance Inquiry</string>
+    <string name="runner_txn_purchase">Purchase</string>
+    <string name="runner_building_format">Building %1$s -&gt; %2$s:%3$d...\n</string>
+    <string name="runner_response_hex_label">Response Hex:</string>
+    <string name="runner_status_pass_banner">*** STATUS: PASS ***</string>
+    <string name="runner_status_fail_banner">*** STATUS: FAIL ***</string>
+    <string name="runner_rc_success_format">RC: %1$s (%2$s)</string>
+    <string name="runner_rc_fail_format">RC: %1$s - Reason: %2$s</string>
+    <string name="runner_error_timeout">Error: Timeout waiting for response.</string>
+    <string name="runner_error_with_reason">Error: %1$s</string>
+    <string name="runner_saved_to_history_format">Transaction saved to History (Trace: %1$s)</string>
+    <string name="runner_save_db_error_format">Error saving to DB: %1$s</string>
 </resources>

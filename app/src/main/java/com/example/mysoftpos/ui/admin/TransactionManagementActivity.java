@@ -570,17 +570,13 @@ public class TransactionManagementActivity extends BaseActivity {
             try {
                 org.json.JSONObject json = new org.json.JSONObject(raw);
                 String error = json.optString("error", "").trim();
-                if (!error.isEmpty()) {
-                    return error;
-                }
                 String message = json.optString("message", "").trim();
-                if (!message.isEmpty()) {
-                    return message;
-                }
+                android.util.Log.w("TxnMgmt", "Backend error payload: " + (!error.isEmpty() ? error : message));
             } catch (Exception ignored) {
-                // Non-JSON error body.
+                android.util.Log.w("TxnMgmt", "Backend error payload(raw): " + raw.trim());
             }
-            return raw.trim();
+            // Keep UI fully localized by showing app-side fallback text.
+            return fallback;
         } catch (Exception ignored) {
             return fallback;
         }
@@ -694,13 +690,27 @@ public class TransactionManagementActivity extends BaseActivity {
                     tvUsername.setText(txn.username != null ? txn.username : itemView.getContext().getString(R.string.txn_detail_unknown));
                 }
 
-                // Status pill with colored background
-                String status = txn.status != null ? txn.status : itemView.getContext().getString(R.string.txn_mgmt_status_unknown);
-                tvStatus.setText(status);
-                if ("APPROVED".equalsIgnoreCase(status)) {
+                // Status pill with localized text while keeping backend code matching.
+                String rawStatus = txn.status != null ? txn.status : itemView.getContext().getString(R.string.txn_mgmt_status_unknown);
+                String upper = rawStatus.toUpperCase(java.util.Locale.ROOT);
+                String displayStatus = rawStatus;
+                if ("APPROVED".equals(upper) || "SUCCESS".equals(upper)) {
+                    displayStatus = itemView.getContext().getString(R.string.status_approved);
+                } else if (upper.startsWith("DECLINED")) {
+                    String suffix = rawStatus.length() > 8 ? rawStatus.substring(8).trim() : "";
+                    displayStatus = suffix.isEmpty()
+                            ? itemView.getContext().getString(R.string.status_declined)
+                            : itemView.getContext().getString(R.string.status_declined) + " " + suffix;
+                } else if ("PENDING".equals(upper)) {
+                    displayStatus = itemView.getContext().getString(R.string.status_pending);
+                } else if ("REVERSED".equals(upper)) {
+                    displayStatus = itemView.getContext().getString(R.string.status_reversed);
+                }
+                tvStatus.setText(displayStatus);
+                if ("APPROVED".equals(upper) || "SUCCESS".equals(upper)) {
                     tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
                     tvStatus.setTextColor(0xFFFFFFFF);
-                } else if (status.toUpperCase().startsWith("DECLINED")) {
+                } else if (upper.startsWith("DECLINED")) {
                     tvStatus.setBackgroundResource(R.drawable.bg_status_declined);
                     tvStatus.setTextColor(0xFFFFFFFF);
                 } else {

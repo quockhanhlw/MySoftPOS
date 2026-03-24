@@ -71,7 +71,7 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
         schemes.clear();
         schemes.addAll(repository.getAll());
         adapter.notifyDataSetChanged();
-        tvSchemeCount.setText(schemes.size() + " schemes");
+        tvSchemeCount.setText(getString(R.string.scheme_select_count_format, schemes.size()));
     }
 
     @Override
@@ -132,8 +132,8 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
         TextView tvPreviewLetter = dialogView.findViewById(R.id.tvPreviewLetter);
         TextView tvPreviewName = dialogView.findViewById(R.id.tvPreviewName);
 
-        tvTitle.setText(isEdit ? "Edit Scheme" : "Add Scheme");
-        tvSubtitle.setText(isEdit ? "Modify card network settings" : "Configure a new card network");
+        tvTitle.setText(isEdit ? R.string.scheme_dialog_edit_title : R.string.scheme_dialog_add_title);
+        tvSubtitle.setText(isEdit ? R.string.scheme_dialog_edit_subtitle : R.string.scheme_dialog_add_subtitle);
 
         final String[] selectedColor = { isEdit ? existing.getColor() : "#1565C0" };
         applyPreviewColor(previewContainer, selectedColor[0]);
@@ -160,7 +160,7 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
             @Override
             public void afterTextChanged(Editable s) {
                 String name = s.toString().trim();
-                tvPreviewName.setText(name.isEmpty() ? "New Scheme" : name);
+                tvPreviewName.setText(name.isEmpty() ? getString(R.string.scheme_dialog_preview_name_default) : name);
             }
         });
 
@@ -168,7 +168,7 @@ public class SchemeSelectActivity extends BaseActivity implements SchemeAdapter.
             @Override
             public void afterTextChanged(Editable s) {
                 String letter = s.toString().trim().toUpperCase();
-                tvPreviewLetter.setText(letter.isEmpty() ? "?" : letter);
+                tvPreviewLetter.setText(letter.isEmpty() ? getString(R.string.scheme_dialog_preview_icon_default) : letter);
             }
         });
 

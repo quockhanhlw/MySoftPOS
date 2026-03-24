@@ -711,17 +711,17 @@ public class TestSuiteActivity extends BaseActivity {
             // Resolve label
             String label;
             switch (code) {
-                case "011": label = "Manual Key-in + PIN"; break;
-                case "012": label = "Manual Key-in"; break;
-                case "021": label = "Magstripe (Swipe) + PIN"; break;
-                case "022": label = "Magstripe (Swipe)"; break;
-                case "051": label = "NFC / Chip + PIN"; break;
-                case "052": label = "NFC / Chip"; break;
-                case "071": label = "Contactless + PIN (071)"; break;
-                case "072": label = "Contactless - No PIN (072)"; break;
-                case "911": label = "Fallback + PIN"; break;
-                case "912": label = "Fallback"; break;
-                default:    label = code.length() == 3 ? "Custom (" + code + ")" : ""; break;
+                case "011": label = getString(R.string.testsuite_entry_mode_011); break;
+                case "012": label = getString(R.string.testsuite_entry_mode_012); break;
+                case "021": label = getString(R.string.testsuite_entry_mode_021); break;
+                case "022": label = getString(R.string.testsuite_entry_mode_022); break;
+                case "051": label = getString(R.string.testsuite_entry_mode_051); break;
+                case "052": label = getString(R.string.testsuite_entry_mode_052); break;
+                case "071": label = getString(R.string.testsuite_entry_mode_071); break;
+                case "072": label = getString(R.string.testsuite_entry_mode_072); break;
+                case "911": label = getString(R.string.testsuite_entry_mode_911); break;
+                case "912": label = getString(R.string.testsuite_entry_mode_912); break;
+                default:    label = code.length() == 3 ? getString(R.string.testsuite_entry_mode_custom_format, code) : ""; break;
             }
 
             if (!label.isEmpty()) {

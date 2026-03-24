@@ -2,7 +2,8 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -100,6 +101,7 @@
                 android:id="@+id/etName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:minHeight="56dp"
                 android:hint="@string/user_dialog_full_name_hint"
                 android:inputType="textPersonName" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -109,7 +111,7 @@
             android:id="@+id/tilPhone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             app:boxBackgroundMode="outline"
             app:boxCornerRadiusBottomEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
@@ -123,6 +125,7 @@
                 android:id="@+id/etPhone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:minHeight="56dp"
                 android:hint="@string/user_dialog_phone_hint"
                 android:inputType="phone" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -132,7 +135,7 @@
             android:id="@+id/tilPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             app:boxBackgroundMode="outline"
             app:boxCornerRadiusBottomEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
@@ -145,7 +148,8 @@
                 android:id="@+id/etPassword"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/user_dialog_password_hint"
+                android:minHeight="56dp"
+                android:hint="@string/settings_change_password"
                 android:inputType="textPassword" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -154,7 +158,7 @@
             android:id="@+id/tilEmail"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             app:boxBackgroundMode="outline"
             app:boxCornerRadiusBottomEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
@@ -166,6 +170,7 @@
                 android:id="@+id/etEmail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:minHeight="56dp"
                 android:hint="@string/user_dialog_email_hint"
                 android:inputType="textEmailAddress" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -175,7 +180,7 @@
             android:id="@+id/tilDob"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             app:boxBackgroundMode="outline"
             app:boxCornerRadiusBottomEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
@@ -187,6 +192,7 @@
                 android:id="@+id/etDob"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:minHeight="56dp"
                 android:hint="@string/user_dialog_dob_hint"
                 android:inputType="text" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -196,7 +202,7 @@
             android:id="@+id/tilGender"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             app:boxBackgroundMode="outline"
             app:boxCornerRadiusBottomEnd="12dp"
@@ -209,6 +215,7 @@
                 android:id="@+id/etGender"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:minHeight="56dp"
                 android:hint="@string/user_dialog_gender_hint"
                 android:inputType="text" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -218,7 +225,7 @@
             android:id="@+id/tilStoreName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             app:boxBackgroundMode="outline"
             app:boxCornerRadiusBottomEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
@@ -230,6 +237,7 @@
                 android:id="@+id/etStoreName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:minHeight="56dp"
                 android:hint="@string/user_dialog_store_name_hint"
                 android:inputType="textCapWords" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -239,7 +247,7 @@
             android:id="@+id/tilBusinessType"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             app:boxBackgroundMode="outline"
             app:boxCornerRadiusBottomEnd="12dp"
@@ -252,8 +260,11 @@
                 android:id="@+id/etBusinessType"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:minHeight="56dp"
+                android:focusable="false"
+                android:cursorVisible="false"
                 android:hint="@string/user_dialog_business_type_hint"
-                android:inputType="text" />
+                android:inputType="none" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Store Address -->
@@ -261,7 +272,7 @@
             android:id="@+id/tilStoreAddress"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             app:boxBackgroundMode="outline"
             app:boxCornerRadiusBottomEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
@@ -273,6 +284,7 @@
                 android:id="@+id/etStoreAddress"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:minHeight="56dp"
                 android:hint="@string/user_dialog_store_address_hint"
                 android:inputType="textPostalAddress" />
         </com.google.android.material.textfield.TextInputLayout>

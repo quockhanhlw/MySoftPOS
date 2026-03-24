@@ -121,13 +121,13 @@ public class TransactionSelectActivity extends BaseActivity {
         // Update subtitles
         if (tvPurchaseSubtitle != null) {
             tvPurchaseSubtitle.setText(purchaseSelected.isEmpty()
-                    ? "Payment transaction test"
-                    : purchaseSelected.size() + " case(s) selected");
+                    ? getString(R.string.txn_select_purchase_subtitle)
+                    : getString(R.string.txn_select_cases_selected_format, purchaseSelected.size()));
         }
         if (tvBalanceSubtitle != null) {
             tvBalanceSubtitle.setText(balanceSelected.isEmpty()
-                    ? "Balance check test"
-                    : balanceSelected.size() + " case(s) selected");
+                    ? getString(R.string.txn_select_balance_subtitle)
+                    : getString(R.string.txn_select_cases_selected_format, balanceSelected.size()));
         }
 
         // Update count badges

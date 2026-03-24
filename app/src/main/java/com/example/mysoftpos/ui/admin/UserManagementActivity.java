@@ -26,6 +26,7 @@ import com.example.mysoftpos.ui.BaseActivity;
 import com.example.mysoftpos.utils.mcc.BusinessTypeMccMapper;
 import com.example.mysoftpos.utils.security.PasswordUtils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -289,8 +290,10 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         AutoCompleteTextView etGender = dialogView.findViewById(R.id.etGender);
         EditText etStoreName = dialogView.findViewById(R.id.etStoreName);
         AutoCompleteTextView etBusinessType = dialogView.findViewById(R.id.etBusinessType);
+        TextInputLayout tilBusinessType = dialogView.findViewById(R.id.tilBusinessType);
         EditText etStoreAddress = dialogView.findViewById(R.id.etStoreAddress);
         EditText etPassword = dialogView.findViewById(R.id.etPassword);
+        TextInputLayout tilPassword = dialogView.findViewById(R.id.tilPassword);
         EditText etTerminalId = dialogView.findViewById(R.id.etTerminalId);
         EditText etServerIp = dialogView.findViewById(R.id.etServerIp);
         EditText etServerPort = dialogView.findViewById(R.id.etServerPort);
@@ -310,7 +313,17 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                     android.R.layout.simple_list_item_1,
                     BusinessTypeMccMapper.getDisplayOptions(this));
             etBusinessType.setAdapter(businessTypeAdapter);
+            // Business type is selection-only to keep MCC mapping valid.
+            etBusinessType.setKeyListener(null);
+            etBusinessType.setInputType(android.text.InputType.TYPE_NULL);
+            etBusinessType.setFocusable(false);
+            etBusinessType.setCursorVisible(false);
             etBusinessType.setOnClickListener(v -> etBusinessType.showDropDown());
+            etBusinessType.setOnDismissListener(() -> {
+                if (tilBusinessType != null) {
+                    tilBusinessType.setError(null);
+                }
+            });
         }
 
         if (isEdit) {
@@ -334,7 +347,13 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                 etServerIp.setText(existing.serverIp);
             if (etServerPort != null && existing.serverPort != null)
                 etServerPort.setText(String.valueOf(existing.serverPort));
-            etPassword.setHint(R.string.user_mgmt_new_password_optional_hint);
+            etPassword.setText("");
+            etPassword.setHint(R.string.settings_change_password);
+            if (tilPassword != null) {
+                tilPassword.setHelperText(getString(R.string.user_mgmt_new_password_optional_hint));
+            }
+        } else if (tilPassword != null) {
+            tilPassword.setHelperText(null);
         }
 
         AlertDialog dialog = new AlertDialog.Builder(this)
@@ -433,6 +452,19 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                 if (!isEdit && password.isEmpty()) {
                     Toast.makeText(this, R.string.user_mgmt_password_required, Toast.LENGTH_SHORT).show();
                     return;
+                }
+                if (!businessTypeSelection.isEmpty() && !BusinessTypeMccMapper.isSupportedSelection(businessTypeSelection)) {
+                    if (tilBusinessType != null) {
+                        tilBusinessType.setError(getString(R.string.register_invalid_business_type));
+                    }
+                    if (etBusinessType != null) {
+                        etBusinessType.requestFocus();
+                        etBusinessType.showDropDown();
+                    }
+                    return;
+                }
+                if (tilBusinessType != null) {
+                    tilBusinessType.setError(null);
                 }
 
                 String token = ApiClient.bearerToken(this);
@@ -786,17 +818,13 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
             try {
                 org.json.JSONObject json = new org.json.JSONObject(raw);
                 String error = json.optString("error", "").trim();
-                if (!error.isEmpty()) {
-                    return error;
-                }
                 String message = json.optString("message", "").trim();
-                if (!message.isEmpty()) {
-                    return message;
-                }
+                android.util.Log.w("UserMgmt", "Backend error payload: " + (!error.isEmpty() ? error : message));
             } catch (Exception ignored) {
-                // Non-JSON error body; return as-is for easier debugging.
+                android.util.Log.w("UserMgmt", "Backend error payload(raw): " + raw.trim());
             }
-            return raw.trim();
+            // UI should stay language-consistent with current app locale.
+            return fallback;
         } catch (Exception ignored) {
             return fallback;
         }

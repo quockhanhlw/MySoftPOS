@@ -27,7 +27,7 @@
             android:scaleType="centerInside"
             android:padding="8dp"
             app:tint="@color/neo_primary_dark"
-            android:contentDescription="Back" />
+            android:contentDescription="@string/back" />
 
         <TextView
             android:id="@+id/tvTitle"

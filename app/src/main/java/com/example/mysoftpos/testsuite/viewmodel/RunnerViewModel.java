@@ -2,6 +2,7 @@ package com.example.mysoftpos.testsuite.viewmodel;
 
 import android.app.Application;
 import android.util.Log;
+import com.example.mysoftpos.R;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -52,6 +53,7 @@ public class RunnerViewModel extends AndroidViewModel {
             String schemeName, String fieldConfigJson) {
         executor.execute(() -> {
             try {
+                Application app = getApplication();
                 StringBuilder sb = new StringBuilder();
                 TransactionExecutor.LogCallback logger = msg -> sb.append(msg).append("\n");
 
@@ -72,19 +74,19 @@ public class RunnerViewModel extends AndroidViewModel {
                 // Apply custom field overrides
                 applyCustomFieldOverrides(msg, fieldConfigJson);
 
-                sb.append("=== ISO MESSAGE PREVIEW ===").append("\n");
-                sb.append("Server: ").append(ctx.ip).append(":").append(ctx.port).append("\n");
+                sb.append(app.getString(R.string.runner_preview_header)).append("\n");
+                sb.append(app.getString(R.string.runner_preview_server_format, ctx.ip, ctx.port)).append("\n");
                 sb.append(StandardIsoPacker.logIsoMessage(msg));
 
                 byte[] packed = StandardIsoPacker.pack(msg);
                 String reqHex = StandardIsoPacker.bytesToHex(packed);
-                sb.append("\nPacked Hex (").append(reqHex.length() / 2).append(" bytes):\n");
+                sb.append("\n").append(app.getString(R.string.runner_packed_hex_bytes_format, reqHex.length() / 2)).append("\n");
                 sb.append(reqHex).append("\n");
-                sb.append("===========================").append("\n");
+                sb.append(app.getString(R.string.runner_preview_footer)).append("\n");
 
                 previewMessage.postValue(sb.toString());
             } catch (Exception e) {
-                previewMessage.postValue("Preview Error: " + e.getMessage());
+                previewMessage.postValue(getApplication().getString(R.string.runner_preview_error_format, e.getMessage()));
             }
         });
     }
@@ -94,6 +96,7 @@ public class RunnerViewModel extends AndroidViewModel {
             String schemeName, String fieldConfigJson) {
         executor.execute(() -> {
             try {
+                Application app = getApplication();
                 StringBuilder sb = new StringBuilder();
 
                 TransactionExecutor.LogCallback logger = msg -> sb.append(msg).append("\n");
@@ -105,24 +108,26 @@ public class RunnerViewModel extends AndroidViewModel {
                 CardInputData card = TransactionExecutor.prepareCard(
                         getApplication(), de22, panData, expiryData, track2Data, pinBlockData, ctx, logger);
 
-                sb.append("Building ").append("BALANCE".equals(txnType) ? "Balance Inquiry" : "Purchase")
-                        .append(" → ").append(ctx.ip).append(":").append(ctx.port)
-                        .append("...\n");
+                String txnLabel = "BALANCE".equals(txnType)
+                        ? app.getString(R.string.runner_txn_balance)
+                        : app.getString(R.string.runner_txn_purchase);
+                sb.append(app.getString(R.string.runner_building_format, txnLabel, ctx.ip, ctx.port));
 
                 TransactionResult result = transactionExecutor.execute(
                         getApplication(), ctx, card, txnType, logger, "", fieldConfigJson);
 
-                sb.append("\nPacked Hex (").append(result.reqHex.length() / 2).append(" bytes):\n")
+                sb.append("\n").append(app.getString(R.string.runner_packed_hex_bytes_format, result.reqHex.length() / 2)).append("\n")
                         .append(result.reqHex).append("\n");
-                sb.append("\nResponse Hex:\n").append(result.respHex).append("\n");
+                sb.append("\n").append(app.getString(R.string.runner_response_hex_label)).append("\n")
+                        .append(result.respHex).append("\n");
 
                 String reason = ResponseCodeHelper.getMessage(result.rc);
                 if (result.approved) {
-                    sb.append("\n*** STATUS: PASS ***\n");
-                    sb.append("RC: ").append(result.rc).append(" (").append(reason).append(")\n");
+                    sb.append("\n").append(app.getString(R.string.runner_status_pass_banner)).append("\n");
+                    sb.append(app.getString(R.string.runner_rc_success_format, result.rc, reason)).append("\n");
                 } else {
-                    sb.append("\n*** STATUS: FAIL ***\n");
-                    sb.append("RC: ").append(result.rc).append(" - Reason: ").append(reason).append("\n");
+                    sb.append("\n").append(app.getString(R.string.runner_status_fail_banner)).append("\n");
+                    sb.append(app.getString(R.string.runner_rc_fail_format, result.rc, reason)).append("\n");
                 }
 
                 logMessage.postValue(sb.toString());
@@ -130,9 +135,13 @@ public class RunnerViewModel extends AndroidViewModel {
                 saveTransactionToDb(ctx, card, result);
 
             } catch (java.net.SocketTimeoutException e) {
-                logMessage.postValue("\n*** STATUS: FAIL ***\nError: Timeout waiting for response.");
+                Application app = getApplication();
+                logMessage.postValue("\n" + app.getString(R.string.runner_status_fail_banner) + "\n"
+                        + app.getString(R.string.runner_error_timeout));
             } catch (Exception e) {
-                logMessage.postValue("\n*** STATUS: FAIL ***\nError: " + e.getMessage());
+                Application app = getApplication();
+                logMessage.postValue("\n" + app.getString(R.string.runner_status_fail_banner) + "\n"
+                        + app.getString(R.string.runner_error_with_reason, e.getMessage()));
                 Log.e("RunnerVM", "Run transaction", e);
             }
         });
@@ -228,9 +237,9 @@ public class RunnerViewModel extends AndroidViewModel {
             // Sync to backend via WorkManager
             com.example.mysoftpos.data.remote.SyncWorker.enqueueOneTime(getApplication());
 
-            logMessage.postValue("Transaction saved to History (Trace: " + ctx.stan11 + ")");
+            logMessage.postValue(getApplication().getString(R.string.runner_saved_to_history_format, ctx.stan11));
         } catch (Exception e) {
-            logMessage.postValue("Error saving to DB: " + e.getMessage());
+            logMessage.postValue(getApplication().getString(R.string.runner_save_db_error_format, e.getMessage()));
             Log.e("RunnerVM", "Save to DB", e);
         }
     }
