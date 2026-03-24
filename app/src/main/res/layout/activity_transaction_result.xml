@@ -266,7 +266,7 @@
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="48dp"
-            android:text="@string/txn_print"
+            android:text="@string/txn_save_image"
             android:textAllCaps="false"
             android:textColor="#1E293B"
             android:textSize="14sp"

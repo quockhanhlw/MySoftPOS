@@ -229,6 +229,7 @@
 
     <string name="msg_printing_receipt">Đang in hóa đơn…</string>
     <string name="msg_sharing_receipt">Đang chia sẻ hóa đơn…</string>
+    <string name="msg_coming_soon">Coming soon</string>
     <string name="txn_approved_subtitle">Thanh toán hoàn tất thành công</string>
     <string name="txn_failed_title">Giao dịch thất bại</string>
     <string name="txn_failed_status">Thất bại</string>
@@ -325,7 +326,11 @@
     <string name="txn_status_label">Trạng thái</string>
     <string name="txn_approved_status">Đã duyệt</string>
     <string name="txn_print">In</string>
+    <string name="txn_save_image">Lưu hình ảnh</string>
     <string name="txn_share">Chia sẻ</string>
+    <string name="txn_save_receipt_success">Đã lưu hình ảnh vào thư viện</string>
+    <string name="txn_save_receipt_failed">Không thể lưu hình ảnh</string>
+    <string name="txn_save_receipt_permission_denied">Cần cấp quyền bộ nhớ để lưu hình ảnh</string>
     <string name="txn_back_dashboard">Về trang chủ</string>
     
     <!-- User Settings -->
@@ -417,6 +422,7 @@
     <string name="register_failed">Đăng ký thất bại</string>
     <string name="register_admin_exists">Đã tồn tại tài khoản với thông tin này</string>
     <string name="register_backend_required">Cần kết nối backend để hoàn tất đăng ký.</string>
+    <string name="register_local_cache_failed">Đã đăng ký trên backend nhưng lưu dữ liệu trên máy thất bại. Vui lòng thử lại.</string>
     <string name="register_agree_terms">Vui lòng đồng ý với điều khoản</string>
     <string name="register_error_exists_email">Email đã được đăng ký</string>
     <string name="register_passwords_do_not_match">Mật khẩu không khớp</string>

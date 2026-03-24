@@ -1,20 +1,27 @@
 package com.example.mysoftpos.ui.result;
 
 import com.example.mysoftpos.R;
-import com.example.mysoftpos.iso8583.util.StandardIsoPacker;
+import com.example.mysoftpos.iso8583.TxnType;
 import com.example.mysoftpos.ui.dashboard.MainDashboardActivity;
 
 import android.content.Intent;
+import android.content.ContentValues;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.media.MediaScannerConnection;
+import android.provider.MediaStore;
 import android.widget.ImageView;
 import android.widget.TextView;
 import com.google.android.material.button.MaterialButton;
-import androidx.appcompat.app.AppCompatActivity;
-
-import androidx.constraintlayout.widget.ConstraintLayout;
-import com.example.mysoftpos.iso8583.TxnType;
-
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
 import com.example.mysoftpos.ui.BaseActivity;
 
 public class TransactionResultActivity extends BaseActivity {
@@ -32,6 +39,20 @@ public class TransactionResultActivity extends BaseActivity {
         SYSTEM_ERROR, // Network/Exception
         TRANSACTION_FAILED // Server Rejection (DE 39 != 00)
     }
+
+    private boolean enableSaveReceiptAction;
+    private android.view.View receiptCardView;
+    private String currentTxnId;
+    private final ActivityResultLauncher<String> storagePermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(),
+            isGranted -> {
+                if (isGranted) {
+                    saveResultImageToGallery();
+                } else {
+                    android.widget.Toast.makeText(this, getString(R.string.txn_save_receipt_permission_denied),
+                            android.widget.Toast.LENGTH_SHORT).show();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +76,8 @@ public class TransactionResultActivity extends BaseActivity {
         MaterialButton btnClose = findViewById(R.id.btnClose);
         android.widget.Button btnPrint = findViewById(R.id.btnPrint);
         android.widget.Button btnShare = findViewById(R.id.btnShare);
+        android.widget.LinearLayout layoutActions = findViewById(R.id.layoutActions);
+        receiptCardView = findViewById(R.id.cardReceipt);
 
         // Get Data
         ResultType type = (ResultType) getIntent().getSerializableExtra(EXTRA_RESULT_TYPE);
@@ -64,10 +87,12 @@ public class TransactionResultActivity extends BaseActivity {
         String txnDate = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.TXN_DATE);
         String txnId = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.TXN_ID);
         String txnTypeStr = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE);
-        boolean success = getIntent().getBooleanExtra(com.example.mysoftpos.utils.IntentKeys.SUCCESS, false);
+        currentTxnId = txnId;
 
         if (type == null)
             type = ResultType.SYSTEM_ERROR;
+
+        enableSaveReceiptAction = type == ResultType.SUCCESS;
 
         // Set Common Data
         tvTxnId.setText(txnId != null ? txnId : getString(R.string.txn_detail_placeholder_dash));
@@ -149,6 +174,10 @@ public class TransactionResultActivity extends BaseActivity {
 
             if (bgHeader != null)
                 bgHeader.setBackgroundColor(Color.parseColor("#FEE2E2")); // Light Red
+
+            if (layoutActions != null) {
+                layoutActions.setVisibility(android.view.View.GONE);
+            }
         }
 
         // Actions
@@ -160,14 +189,120 @@ public class TransactionResultActivity extends BaseActivity {
         });
 
         btnPrint.setOnClickListener(v -> {
-            android.widget.Toast
-                    .makeText(this, getString(R.string.msg_printing_receipt), android.widget.Toast.LENGTH_SHORT).show();
+            if (enableSaveReceiptAction) {
+                requestPermissionAndSaveImage();
+                return;
+            }
+            android.widget.Toast.makeText(this, getString(R.string.msg_printing_receipt), android.widget.Toast.LENGTH_SHORT)
+                    .show();
         });
 
         btnShare.setOnClickListener(v -> {
-            android.widget.Toast
-                    .makeText(this, getString(R.string.msg_sharing_receipt), android.widget.Toast.LENGTH_SHORT).show();
+            android.widget.Toast.makeText(this, getString(R.string.msg_coming_soon), android.widget.Toast.LENGTH_SHORT)
+                    .show();
         });
+
+        if (enableSaveReceiptAction) {
+            btnPrint.setText(R.string.txn_save_image);
+        }
+    }
+
+
+    private void requestPermissionAndSaveImage() {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            if (ContextCompat.checkSelfPermission(this,
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                storagePermissionLauncher.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                return;
+            }
+        }
+        saveResultImageToGallery();
+    }
+
+    private void saveResultImageToGallery() {
+        if (receiptCardView == null || receiptCardView.getWidth() == 0 || receiptCardView.getHeight() == 0) {
+            android.widget.Toast.makeText(this, getString(R.string.txn_save_receipt_failed), android.widget.Toast.LENGTH_SHORT)
+                    .show();
+            return;
+        }
+
+        Bitmap bitmap = Bitmap.createBitmap(receiptCardView.getWidth(), receiptCardView.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        receiptCardView.draw(canvas);
+
+        String txnPart = currentTxnId == null || currentTxnId.trim().isEmpty() ? "txn" : currentTxnId.trim();
+        String fileName = "MySoftPOS_" + txnPart + "_" + System.currentTimeMillis() + ".png";
+
+        if (!saveWithMediaStore(bitmap, fileName)) {
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P && saveWithLegacyFile(bitmap, fileName)) {
+                android.widget.Toast.makeText(this, getString(R.string.txn_save_receipt_success), android.widget.Toast.LENGTH_SHORT)
+                        .show();
+            } else {
+                android.widget.Toast.makeText(this, getString(R.string.txn_save_receipt_failed), android.widget.Toast.LENGTH_SHORT)
+                        .show();
+            }
+            return;
+        }
+
+        android.widget.Toast.makeText(this, getString(R.string.txn_save_receipt_success), android.widget.Toast.LENGTH_SHORT)
+                .show();
+    }
+
+    private boolean saveWithMediaStore(Bitmap bitmap, String fileName) {
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName);
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Save under DCIM so common gallery apps index and show the image quickly.
+            values.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_DCIM + "/MySoftPOS");
+            values.put(MediaStore.Images.Media.IS_PENDING, 1);
+        }
+
+        android.content.ContentResolver resolver = getContentResolver();
+        Uri imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+        if (imageUri == null) {
+            return false;
+        }
+
+        try (java.io.OutputStream outputStream = resolver.openOutputStream(imageUri)) {
+            if (outputStream == null || !bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)) {
+                throw new java.io.IOException("Cannot write image");
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContentValues finalizeValues = new ContentValues();
+                finalizeValues.put(MediaStore.Images.Media.IS_PENDING, 0);
+                resolver.update(imageUri, finalizeValues, null, null);
+            }
+            return true;
+        } catch (Exception e) {
+            resolver.delete(imageUri, null, null);
+            return false;
+        }
+    }
+
+    private boolean saveWithLegacyFile(Bitmap bitmap, String fileName) {
+        try {
+            java.io.File dir = new java.io.File(
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
+                    "MySoftPOS");
+            if (!dir.exists() && !dir.mkdirs()) {
+                return false;
+            }
+
+            java.io.File outFile = new java.io.File(dir, fileName);
+            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(outFile)) {
+                if (!bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)) {
+                    return false;
+                }
+            }
+
+            MediaScannerConnection.scanFile(this, new String[] { outFile.getAbsolutePath() },
+                    new String[] { "image/png" }, null);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // Helper removed as logic is inline for custom layout styling

@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">MySoftPOS App</string>
 
     <!-- Welcome Screen -->
@@ -238,6 +238,7 @@
 
     <string name="msg_printing_receipt">Printing Receipt…</string>
     <string name="msg_sharing_receipt">Sharing Receipt…</string>
+    <string name="msg_coming_soon" tools:ignore="MissingTranslation">Coming soon</string>
     <string name="txn_approved_subtitle">Payment completed successfully</string>
     <string name="txn_failed_title">Transaction Failed</string>
     <string name="txn_failed_status">Failed</string>
@@ -334,7 +335,11 @@
     <string name="txn_status_label">Status</string>
     <string name="txn_approved_status">Approved</string>
     <string name="txn_print">Print</string>
+    <string name="txn_save_image" tools:ignore="MissingTranslation">Save Image</string>
     <string name="txn_share">Share</string>
+    <string name="txn_save_receipt_success" tools:ignore="MissingTranslation">Saved image to Photos</string>
+    <string name="txn_save_receipt_failed" tools:ignore="MissingTranslation">Unable to save image</string>
+    <string name="txn_save_receipt_permission_denied" tools:ignore="MissingTranslation">Storage permission is required to save image</string>
     <string name="txn_back_dashboard">Back to Dashboard</string>
 
     <!-- User Settings -->
@@ -424,6 +429,7 @@
     <string name="register_failed">Registration failed</string>
     <string name="register_admin_exists">An account with this information already exists</string>
     <string name="register_backend_required">Backend connection is required to complete registration.</string>
+    <string name="register_local_cache_failed" tools:ignore="MissingTranslation">Registered on backend but failed to save on this device. Please try again.</string>
     <string name="register_agree_terms">Please agree to Terms</string>
     <string name="register_error_exists_email">Email already registered</string>
     <string name="register_passwords_do_not_match">Passwords do not match</string>

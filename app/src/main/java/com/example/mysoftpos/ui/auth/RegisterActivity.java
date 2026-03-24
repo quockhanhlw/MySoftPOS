@@ -293,16 +293,22 @@ public class RegisterActivity extends BaseActivity {
             @Override
             public void onResponse(@NonNull Call<ApiService.LoginResponse> call,
                     @NonNull Response<ApiService.LoginResponse> response) {
-                setRegisterLoading(false);
                 if (response.isSuccessful()) {
                     com.example.mysoftpos.utils.config.ConfigManager
                             .getInstance(RegisterActivity.this)
                             .setMcc18(form.businessType);
-                    cacheUserLocally(form, response.body() != null ? response.body().user : null);
-                    showToast(R.string.register_success);
-                    navigateToLogin(form.phone);
+                    cacheUserLocally(form, response.body() != null ? response.body().user : null, saved -> {
+                        setRegisterLoading(false);
+                        if (saved) {
+                            showToast(R.string.register_success);
+                            navigateToLogin(form.phone);
+                        } else {
+                            showToast(R.string.register_local_cache_failed, Toast.LENGTH_LONG);
+                        }
+                    });
                     return;
                 }
+                setRegisterLoading(false);
                 handleRegisterError(response);
             }
 
@@ -561,7 +567,12 @@ public class RegisterActivity extends BaseActivity {
     }
 
     private void cacheUserLocally(RegistrationForm form, ApiService.UserDto userDto) {
+        cacheUserLocally(form, userDto, null);
+    }
+
+    private void cacheUserLocally(RegistrationForm form, ApiService.UserDto userDto, LocalCacheCallback callback) {
         new Thread(() -> {
+            boolean saved = false;
             try {
                 AppDatabase db = AppDatabase.getInstance(this);
                 UserDao userDao = db.userDao();
@@ -624,8 +635,14 @@ public class RegisterActivity extends BaseActivity {
                 } else {
                     userDao.insert(user);
                 }
+                saved = true;
             } catch (Exception e) {
                 Log.w(TAG, "Failed to cache user locally", e);
+            } finally {
+                if (callback != null) {
+                    boolean result = saved;
+                    runOnUiThread(() -> callback.onComplete(result));
+                }
             }
         }).start();
     }
@@ -848,5 +865,9 @@ public class RegisterActivity extends BaseActivity {
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
         }
+    }
+
+    private interface LocalCacheCallback {
+        void onComplete(boolean saved);
     }
 }
