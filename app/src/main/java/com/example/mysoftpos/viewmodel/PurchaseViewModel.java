@@ -88,11 +88,8 @@ public class PurchaseViewModel extends BaseViewModel {
                 // DE 43 customization for USD
                 String usdCode = configManager.getUsdCurrencyCode();
                 if (usdCode.equals(ctx.currency49)) {
-                    String base43 = configManager.getMerchantName();
                     String suffix = configManager.getUsdCountrySuffix();
-                    ctx.merchantNameLocation43 = base43.length() >= 3
-                            ? base43.substring(0, base43.length() - 3) + suffix
-                            : base43;
+                    ctx.merchantNameLocation43 = configManager.getMerchantNameForCountry(suffix);
                 } else {
                     ctx.merchantNameLocation43 = configManager.getMerchantName();
                 }

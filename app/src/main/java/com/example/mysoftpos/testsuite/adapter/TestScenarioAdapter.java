@@ -4,7 +4,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -20,8 +19,12 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
     private final OnItemClickListener listener;
     private final OnItemLongClickListener longListener;
     private final OnItemToggleListener toggleListener;
+    private final OnItemEditClickListener editClickListener;
+    private final OnItemDeleteClickListener deleteClickListener;
     private boolean multiMode = false;
     private boolean selectionMode = false;
+    private boolean deleteMode = false;
+    private int openedSwipePosition = RecyclerView.NO_POSITION;
 
     public interface OnItemClickListener {
         void onItemClick(TestScenario scenario);
@@ -35,11 +38,23 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
         void onItemToggle(TestScenario scenario);
     }
 
+    public interface OnItemEditClickListener {
+        void onItemEditClick(TestScenario scenario);
+    }
+
+    public interface OnItemDeleteClickListener {
+        void onItemDeleteClick(TestScenario scenario);
+    }
+
     public TestScenarioAdapter(OnItemClickListener listener, OnItemLongClickListener longListener,
-            OnItemToggleListener toggleListener) {
+            OnItemToggleListener toggleListener,
+            OnItemEditClickListener editClickListener,
+            OnItemDeleteClickListener deleteClickListener) {
         this.listener = listener;
         this.longListener = longListener;
         this.toggleListener = toggleListener;
+        this.editClickListener = editClickListener;
+        this.deleteClickListener = deleteClickListener;
     }
 
     public void setScenarios(List<TestScenario> scenarios) {
@@ -57,6 +72,16 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
         notifyDataSetChanged();
     }
 
+    public void setDeleteMode(boolean deleteMode) {
+        this.deleteMode = deleteMode;
+        notifyDataSetChanged();
+    }
+
+    public void setOpenedSwipePosition(int openedSwipePosition) {
+        this.openedSwipePosition = openedSwipePosition;
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -68,7 +93,9 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         TestScenario item = scenarios.get(position);
-        holder.bind(item, listener, longListener, toggleListener, multiMode, selectionMode);
+        holder.bind(item, listener, longListener, toggleListener, editClickListener,
+                deleteClickListener,
+                multiMode, selectionMode, deleteMode, openedSwipePosition == position);
     }
 
     @Override
@@ -82,6 +109,9 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
         final TextView chipBadge;
         final CheckBox cbSelect;
         final ImageView ivEdit;
+        final View foregroundCard;
+        final View btnSwipeEdit;
+        final View btnSwipeDelete;
         final View viewAccent;
 
         ViewHolder(View view) {
@@ -91,11 +121,20 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
             chipBadge = view.findViewById(R.id.chipBadge);
             cbSelect = view.findViewById(R.id.cbSelect);
             ivEdit = view.findViewById(R.id.ivEdit);
+            foregroundCard = view.findViewById(R.id.cardForeground);
+            btnSwipeEdit = view.findViewById(R.id.btnSwipeEdit);
+            btnSwipeDelete = view.findViewById(R.id.btnSwipeDelete);
             viewAccent = view.findViewById(R.id.viewAccent);
         }
 
         void bind(TestScenario item, OnItemClickListener listener, OnItemLongClickListener longListener,
-                OnItemToggleListener toggleListener, boolean multiMode, boolean selectionMode) {
+                OnItemToggleListener toggleListener,
+                OnItemEditClickListener editClickListener,
+                OnItemDeleteClickListener deleteClickListener,
+                boolean multiMode,
+                boolean selectionMode,
+                boolean deleteMode,
+                boolean isSwipeOpened) {
             String code = item.getField(22);
             if (code == null)
                 code = "---";
@@ -107,6 +146,15 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
                 chipBadge.setText(R.string.test_scenario_badge_custom);
             } else {
                 chipBadge.setText(code);
+            }
+
+            boolean swipeEnabled = item.isCustom() && !selectionMode && !deleteMode;
+            btnSwipeEdit.setVisibility(swipeEnabled ? View.VISIBLE : View.GONE);
+            btnSwipeDelete.setVisibility(swipeEnabled ? View.VISIBLE : View.GONE);
+            if (foregroundCard != null) {
+                foregroundCard.setTranslationX(isSwipeOpened && swipeEnabled
+                        ? -itemView.getResources().getDisplayMetrics().density * 112f
+                        : 0f);
             }
 
             // Color-code accent strip by DE22 entry mode
@@ -149,11 +197,11 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
                 } else {
                     tvDetail.setText(R.string.test_scenario_detail_tap_run);
                 }
-                // Show Edit button only for custom cases
-                ivEdit.setVisibility(item.isCustom() ? View.VISIBLE : View.GONE);
+                ivEdit.setVisibility(View.GONE);
             }
 
-            itemView.setOnClickListener(v -> listener.onItemClick(item));
+            View clickTarget = foregroundCard != null ? foregroundCard : itemView;
+            clickTarget.setOnClickListener(v -> listener.onItemClick(item));
 
             // Separate listener for Checkbox — use onClickListener
             // and prevent itemView from also receiving the click
@@ -168,7 +216,8 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
                 return false;
             });
 
-            itemView.setOnLongClickListener(v -> {
+            clickTarget.setLongClickable(true);
+            clickTarget.setOnLongClickListener(v -> {
                 if (longListener != null) {
                     longListener.onItemLongClick(item);
                     return true;
@@ -178,8 +227,29 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
 
             // Edit Button Click
             ivEdit.setOnClickListener(v -> {
-                if (longListener != null)
-                    longListener.onItemLongClick(item);
+                if (editClickListener != null) {
+                    editClickListener.onItemEditClick(item);
+                }
+            });
+
+            btnSwipeEdit.setOnClickListener(v -> {
+                if (editClickListener != null) {
+                    editClickListener.onItemEditClick(item);
+                }
+            });
+            btnSwipeEdit.setOnTouchListener((v, event) -> {
+                v.getParent().requestDisallowInterceptTouchEvent(true);
+                return false;
+            });
+
+            btnSwipeDelete.setOnClickListener(v -> {
+                if (deleteClickListener != null) {
+                    deleteClickListener.onItemDeleteClick(item);
+                }
+            });
+            btnSwipeDelete.setOnTouchListener((v, event) -> {
+                v.getParent().requestDisallowInterceptTouchEvent(true);
+                return false;
             });
         }
     }

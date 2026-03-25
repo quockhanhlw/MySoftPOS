@@ -195,7 +195,8 @@
                 android:fontFamily="sans-serif-medium"
                 android:text="@string/testcase_dialog_amount_title"
                 android:textColor="#0F172A"
-                android:textSize="14sp" />
+                android:textSize="14sp"
+                android:visibility="gone" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilAmount"
@@ -208,7 +209,8 @@
                 app:startIconDrawable="@drawable/ic_money"
                 app:startIconTint="#64748B"
                 app:boxStrokeColor="#6366F1"
-                app:hintTextColor="#6366F1">
+                app:hintTextColor="#6366F1"
+                android:visibility="gone">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etAmount"

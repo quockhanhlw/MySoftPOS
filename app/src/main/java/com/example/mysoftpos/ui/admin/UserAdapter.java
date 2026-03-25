@@ -15,29 +15,39 @@ import com.example.mysoftpos.R;
 import com.example.mysoftpos.data.remote.api.ApiService;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
-    private List<ApiService.UserDto> users = new ArrayList<>();
-    private final OnUserListener listener;
+    private List<ApiService.MerchantDto> merchants = new ArrayList<>();
+    private Map<Long, Integer> missingTidCountByMerchantId = new HashMap<>();
+    private final OnMerchantListener listener;
 
     private static final String[] COLORS = {
             "#0D9488", "#1565C0", "#7C3AED", "#C2410C", "#059669", "#DB2777", "#0369A1", "#B45309"
     };
 
-    public interface OnUserListener {
-        void onUserClick(ApiService.UserDto user);
+    public interface OnMerchantListener {
+        void onMerchantClick(ApiService.MerchantDto merchant);
 
-        void onUserLongClick(ApiService.UserDto user);
+        void onMerchantLongClick(ApiService.MerchantDto merchant);
     }
 
-    public UserAdapter(OnUserListener listener) {
+    public UserAdapter(OnMerchantListener listener) {
         this.listener = listener;
     }
 
-    public void setUsers(List<ApiService.UserDto> users) {
-        this.users = users != null ? users : new ArrayList<>();
+    public void setMerchants(List<ApiService.MerchantDto> merchants) {
+        this.merchants = merchants != null ? merchants : new ArrayList<>();
+        notifyDataSetChanged();
+    }
+
+    public void setMissingTidCounts(Map<Long, Integer> missingTidCounts) {
+        this.missingTidCountByMerchantId = missingTidCounts != null
+                ? new HashMap<>(missingTidCounts)
+                : new HashMap<>();
         notifyDataSetChanged();
     }
 
@@ -51,12 +61,12 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.bind(users.get(position), position, listener);
+        holder.bind(merchants.get(position), position, listener, missingTidCountByMerchantId);
     }
 
     @Override
     public int getItemCount() {
-        return users.size();
+        return merchants.size();
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
@@ -65,6 +75,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         final TextView tvName;
         final TextView tvPhone;
         final TextView tvServerInfo;
+        final TextView tvTidAlertBadge;
 
         ViewHolder(View view) {
             super(view);
@@ -73,14 +84,21 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
             tvName = view.findViewById(R.id.tvName);
             tvPhone = view.findViewById(R.id.tvPhone);
             tvServerInfo = view.findViewById(R.id.tvServerInfo);
+            tvTidAlertBadge = view.findViewById(R.id.tvTidAlertBadge);
         }
 
-        void bind(ApiService.UserDto user, int position, OnUserListener listener) {
-            String name = user.fullName != null
-                    ? user.fullName
-                    : itemView.getContext().getString(R.string.common_user);
+        void bind(ApiService.MerchantDto merchant,
+                int position,
+                OnMerchantListener listener,
+                Map<Long, Integer> missingTidCountByMerchantId) {
+            String name = merchant.merchantName != null && !merchant.merchantName.trim().isEmpty()
+                    ? merchant.merchantName
+                    : merchant.merchantCode;
             tvName.setText(name);
-            tvPhone.setText(user.phone != null ? user.phone : itemView.getContext().getString(R.string.txn_detail_placeholder_dash));
+            String mid = merchant.merchantCode != null && !merchant.merchantCode.trim().isEmpty()
+                    ? merchant.merchantCode
+                    : itemView.getContext().getString(R.string.txn_detail_placeholder_dash);
+            tvPhone.setText(itemView.getContext().getString(R.string.user_mgmt_mid_format, mid));
 
             // Avatar
             String letter = name.substring(0, 1).toUpperCase();
@@ -91,26 +109,41 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
             avatarContainer.setBackground(circle);
 
             // TID badge
-            if (user.terminalId != null && !user.terminalId.isEmpty()) {
-                tvServerInfo.setText(itemView.getContext().getString(R.string.user_mgmt_tid_format, user.terminalId));
+            int branchCount = merchant.branchCount != null ? merchant.branchCount : 0;
+            int accountCount = merchant.accountCount != null ? merchant.accountCount : 0;
+            if (branchCount > 0 || accountCount > 0) {
+                tvServerInfo.setText(itemView.getContext().getString(
+                        R.string.user_mgmt_branch_count_format,
+                        branchCount,
+                        accountCount));
                 tvServerInfo.setVisibility(View.VISIBLE);
             } else {
                 tvServerInfo.setVisibility(View.GONE);
             }
 
+            int missingTidCount = 0;
+            if (missingTidCountByMerchantId != null) {
+                Integer count = missingTidCountByMerchantId.get(merchant.id);
+                missingTidCount = count != null ? count : 0;
+            }
+            if (missingTidCount > 0) {
+                tvTidAlertBadge.setText(itemView.getContext().getString(
+                        R.string.user_mgmt_missing_tid_badge,
+                        missingTidCount));
+                tvTidAlertBadge.setVisibility(View.VISIBLE);
+            } else {
+                tvTidAlertBadge.setVisibility(View.GONE);
+            }
+
             // Online status indicator
             View vOnlineStatus = itemView.findViewById(R.id.vOnlineStatus);
             if (vOnlineStatus != null) {
-                if (user.online) {
-                    vOnlineStatus.setBackgroundResource(R.drawable.bg_user_online);
-                } else {
-                    vOnlineStatus.setBackgroundResource(R.drawable.bg_user_offline);
-                }
+                vOnlineStatus.setVisibility(View.GONE);
             }
 
-            itemView.setOnClickListener(v -> listener.onUserClick(user));
+            itemView.setOnClickListener(v -> listener.onMerchantClick(merchant));
             itemView.setOnLongClickListener(v -> {
-                listener.onUserLongClick(user);
+                listener.onMerchantLongClick(merchant);
                 return true;
             });
         }

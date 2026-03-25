@@ -49,6 +49,15 @@ public class UserEntity {
     @ColumnInfo(name = "store_address")
     public String storeAddress;
 
+    @ColumnInfo(name = "branch_count", defaultValue = "0")
+    public int branchCount;
+
+    @ColumnInfo(name = "branch_addresses")
+    public String branchAddresses;
+
+    @ColumnInfo(name = "account_count", defaultValue = "1")
+    public int accountCount;
+
     @ColumnInfo(name = "phone_verified", defaultValue = "0")
     public boolean phoneVerified;
 
@@ -99,6 +108,9 @@ public class UserEntity {
         this.storeName = "";
         this.businessType = "";
         this.storeAddress = "";
+        this.branchCount = 0;
+        this.branchAddresses = "";
+        this.accountCount = 1;
         this.phoneVerified = false;
         this.createdAt = System.currentTimeMillis();
         this.terminalId = "";

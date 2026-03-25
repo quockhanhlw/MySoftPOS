@@ -26,6 +26,7 @@ public class ConfigManager {
     private static final String KEY_TIMEOUT = "timeout";
     private static final String KEY_TID = "terminal_id";
     private static final String KEY_MID = "merchant_id";
+    private static final String KEY_BANK_NAME = "merchant_bank_name";
     private static final String KEY_ENCRYPT_PIN = "encrypt_pin";
     private static final String KEY_MCC18 = "merchant_type";
 
@@ -249,6 +250,14 @@ public class ConfigManager {
         prefs.edit().putString(KEY_MID, mid).apply();
     }
 
+    public String getBankName() {
+        return normalizeAscii(prefs.getString(KEY_BANK_NAME, bankName));
+    }
+
+    public void setBankName(String value) {
+        prefs.edit().putString(KEY_BANK_NAME, normalizeAscii(value)).apply();
+    }
+
     public String getMcc18() {
         String override = prefs.getString(KEY_MCC18, "");
         String normalizedOverride = BusinessTypeMccMapper.toMcc(override);
@@ -265,7 +274,46 @@ public class ConfigManager {
     }
 
     public String getMerchantName() {
-        return String.format(Locale.ROOT, "%-22s %-13s %s", bankName, location, countryCode);
+        return formatDe43(getBankName(), location, countryCode);
+    }
+
+    public String getMerchantNameForCountry(String countryOverride) {
+        String normalizedCountry = sanitizeCountryCode(countryOverride);
+        return formatDe43(getBankName(), location, normalizedCountry);
+    }
+
+    private String formatDe43(String bank, String merchantLocation, String country) {
+        String partBank = fixedWidth(bank, 22);
+        String partLocation = fixedWidth(merchantLocation, 13);
+        String partCountry = sanitizeCountryCode(country);
+        return partBank + " " + partLocation + " " + partCountry;
+    }
+
+    private String sanitizeCountryCode(String value) {
+        String normalized = normalizeAscii(value).toUpperCase(Locale.ROOT);
+        if (!normalized.matches("^[A-Z0-9]{3}$")) {
+            normalized = normalizeAscii(countryCode).toUpperCase(Locale.ROOT);
+        }
+        if (!normalized.matches("^[A-Z0-9]{3}$")) {
+            normalized = "VNM";
+        }
+        return normalized;
+    }
+
+    private String fixedWidth(String value, int length) {
+        String normalized = normalizeAscii(value).toUpperCase(Locale.ROOT);
+        if (normalized.length() > length) {
+            return normalized.substring(0, length);
+        }
+        return String.format(Locale.ROOT, "%-" + length + "s", normalized);
+    }
+
+    private String normalizeAscii(String value) {
+        if (value == null) {
+            return "";
+        }
+        String compact = value.trim().replaceAll("\\s+", " ");
+        return compact.replaceAll("[^\\x20-\\x7E]", "");
     }
 
     // ==================== ISO FIELDS ====================

@@ -36,10 +36,12 @@ import com.example.mysoftpos.data.remote.api.ApiService;
 import com.example.mysoftpos.ui.BaseActivity;
 import com.example.mysoftpos.utils.mcc.BusinessTypeMccMapper;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -56,6 +58,8 @@ public class RegisterActivity extends BaseActivity {
     private static final String REGISTERED_USER_ROLE = "USER";
     private static final int MIN_STORE_NAME_LENGTH = 3;
     private static final int MAX_STORE_NAME_LENGTH = 80;
+    private static final int MIN_BANK_NAME_LENGTH = 2;
+    private static final int MAX_BANK_NAME_LENGTH = 22;
     private static final int MIN_STORE_ADDRESS_LENGTH = 8;
     private static final int MAX_STORE_ADDRESS_LENGTH = 160;
     private static final int MIN_FULL_NAME_LENGTH = 2;
@@ -63,10 +67,19 @@ public class RegisterActivity extends BaseActivity {
     private static final int MAX_EMAIL_LENGTH = 100;
     private static final int MIN_PASSWORD_LENGTH = 8;
     private static final int MIN_REGISTER_AGE = 18;
+    private static final int MAX_BRANCH_COUNT = 50;
+    private static final int MIN_ACCOUNT_COUNT = 1;
+    private static final int MAX_ACCOUNT_COUNT = 500;
 
     private EditText etStoreName;
+    private EditText etBankName;
     private AutoCompleteTextView etBusinessType;
     private EditText etStoreAddress;
+    private EditText etBranchCount;
+    private EditText etBranchAddresses;
+    private TextView tvBranchAddressesLabel;
+    private TextInputLayout tilBranchAddresses;
+    private EditText etAccountCount;
     private EditText etFullName;
     private EditText etDob;
     private AutoCompleteTextView etGender;
@@ -77,6 +90,7 @@ public class RegisterActivity extends BaseActivity {
     private CheckBox cbTerms;
     private TextView tvTermsText;
     private MaterialButton btnRegister;
+    private boolean forceFocusOnValidationError;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +103,7 @@ public class RegisterActivity extends BaseActivity {
         setupDobPicker();
         setupTermsText();
         setupValidationListeners();
+        setupBranchAddressVisibility();
 
         View btnBack = findViewById(R.id.btnBack);
         TextView tvLogin = findViewById(R.id.tvLogin);
@@ -119,8 +134,14 @@ public class RegisterActivity extends BaseActivity {
 
     private void bindViews() {
         etStoreName = findViewById(R.id.etStoreName);
+        etBankName = findViewById(R.id.etBankName);
         etBusinessType = findViewById(R.id.etBusinessType);
         etStoreAddress = findViewById(R.id.etStoreAddress);
+        etBranchCount = findViewById(R.id.etBranchCount);
+        etBranchAddresses = findViewById(R.id.etBranchAddresses);
+        tvBranchAddressesLabel = findViewById(R.id.tvBranchAddressesLabel);
+        tilBranchAddresses = findViewById(R.id.tilBranchAddresses);
+        etAccountCount = findViewById(R.id.etAccountCount);
         etFullName = findViewById(R.id.etFullName);
         etDob = findViewById(R.id.etDob);
         etGender = findViewById(R.id.etGender);
@@ -141,8 +162,6 @@ public class RegisterActivity extends BaseActivity {
         view.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) {
                 view.showDropDown();
-            } else if (view == etGender) {
-                validateGenderField();
             }
         });
     }
@@ -156,8 +175,6 @@ public class RegisterActivity extends BaseActivity {
         etBusinessType.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) {
                 etBusinessType.showDropDown();
-            } else {
-                validateBusinessTypeField();
             }
         });
     }
@@ -170,15 +187,12 @@ public class RegisterActivity extends BaseActivity {
     }
 
     private void setupValidationListeners() {
-        attachBlurValidation(etStoreName, this::validateStoreNameField);
-        attachBlurValidation(etStoreAddress, this::validateStoreAddressField);
-        attachBlurValidation(etFullName, this::validateFullNameField);
-        attachBlurValidation(etPhone, this::validatePhoneField);
-        attachBlurValidation(etEmail, this::validateEmailField);
-        attachBlurValidation(etPassword, this::validatePasswordField);
-        attachBlurValidation(etConfirmPassword, this::validateConfirmPasswordField);
         attachRealtimeErrorClear(etStoreName);
+        attachRealtimeErrorClear(etBankName);
         attachRealtimeErrorClear(etStoreAddress);
+        attachRealtimeErrorClear(etBranchCount);
+        attachRealtimeErrorClear(etBranchAddresses);
+        attachRealtimeErrorClear(etAccountCount);
         attachRealtimeErrorClear(etFullName);
         attachRealtimeErrorClear(etPhone);
         attachRealtimeErrorClear(etEmail);
@@ -190,31 +204,38 @@ public class RegisterActivity extends BaseActivity {
         etPassword.addTextChangedListener(new SimpleAfterTextChangedWatcher() {
             @Override
             public void afterTextChanged(Editable s) {
-                clearFieldError(etPassword);
-                if (!getTrimmedText(etConfirmPassword).isEmpty()) {
-                    validateConfirmPasswordField();
-                }
-            }
-        });
-
-        etConfirmPassword.addTextChangedListener(new SimpleAfterTextChangedWatcher() {
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (!getTrimmedText(etConfirmPassword).isEmpty()) {
-                    validateConfirmPasswordField();
-                } else {
-                    clearFieldError(etConfirmPassword);
-                }
+                // Clear confirm-password error when password changes; validation stays submit-only.
+                clearFieldError(etConfirmPassword);
             }
         });
     }
 
-    private void attachBlurValidation(EditText view, Runnable validation) {
-        view.setOnFocusChangeListener((v, hasFocus) -> {
-            if (!hasFocus) {
-                validation.run();
+    private void setupBranchAddressVisibility() {
+        updateBranchAddressVisibility();
+        etBranchCount.addTextChangedListener(new SimpleAfterTextChangedWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
+                updateBranchAddressVisibility();
             }
         });
+    }
+
+    private void updateBranchAddressVisibility() {
+        int branchCount = parsePositiveIntOrZero(getTrimmedText(etBranchCount));
+        boolean showBranchAddress = branchCount > 0;
+        int visibility = showBranchAddress ? View.VISIBLE : View.GONE;
+
+        if (tvBranchAddressesLabel != null) {
+            tvBranchAddressesLabel.setVisibility(visibility);
+        }
+        if (tilBranchAddresses != null) {
+            tilBranchAddresses.setVisibility(visibility);
+        }
+
+        if (!showBranchAddress) {
+            applyNormalizedText(etBranchAddresses, "");
+            clearFieldError(etBranchAddresses);
+        }
     }
 
     private void attachRealtimeErrorClear(EditText view) {
@@ -254,7 +275,6 @@ public class RegisterActivity extends BaseActivity {
                 (view, year, month, dayOfMonth) -> {
                     etDob.setText(String.format(Locale.getDefault(), "%02d/%02d/%04d",
                             dayOfMonth, month + 1, year));
-                    validateDobField();
                 },
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
@@ -287,21 +307,36 @@ public class RegisterActivity extends BaseActivity {
                 form.gender,
                 form.storeName,
                 form.businessType,
-                form.storeAddress);
+                form.storeAddress,
+                form.branchCount > 0 ? form.branchCount : null,
+                form.branchAddresses.isEmpty() ? null : form.branchAddresses,
+                form.accountCount,
+                form.bankName);
 
-        ApiClient.getAuthService(this).register(request).enqueue(new Callback<>() {
+        ApiClient.getRegisterService(this).register(request).enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<ApiService.LoginResponse> call,
                     @NonNull Response<ApiService.LoginResponse> response) {
-                if (response.isSuccessful()) {
+                 if (response.isSuccessful()) {
+                     ApiService.LoginResponse payload = response.body();
+                    if (payload != null && payload.user != null
+                            && payload.user.merchantCode != null
+                            && payload.user.merchantCode.matches("^[A-Z0-9]{15}$")) {
+                        com.example.mysoftpos.utils.config.ConfigManager
+                                .getInstance(RegisterActivity.this)
+                                .setMerchantId(payload.user.merchantCode);
+                    }
                     com.example.mysoftpos.utils.config.ConfigManager
                             .getInstance(RegisterActivity.this)
                             .setMcc18(form.businessType);
-                    cacheUserLocally(form, response.body() != null ? response.body().user : null, saved -> {
+                    com.example.mysoftpos.utils.config.ConfigManager
+                            .getInstance(RegisterActivity.this)
+                            .setBankName(form.bankName);
+                    cacheUserLocally(form, payload != null ? payload.user : null, saved -> {
                         setRegisterLoading(false);
                         if (saved) {
                             showToast(R.string.register_success);
-                            navigateToLogin(form.phone);
+                            navigateToLogin(buildAccountPhoneIdentifier(form.phone, 1));
                         } else {
                             showToast(R.string.register_local_cache_failed, Toast.LENGTH_LONG);
                         }
@@ -316,29 +351,55 @@ public class RegisterActivity extends BaseActivity {
             public void onFailure(@NonNull Call<ApiService.LoginResponse> call, @NonNull Throwable t) {
                 Log.w(TAG, "User registration requires backend connectivity", t);
                 setRegisterLoading(false);
-                showToast(R.string.register_backend_required, Toast.LENGTH_LONG);
+                if (t instanceof SocketTimeoutException) {
+                    showToast(R.string.register_backend_required, Toast.LENGTH_LONG);
+                    return;
+                }
+                String reason = t.getMessage() == null ? "" : t.getMessage();
+                if (reason.isEmpty()) {
+                    showToast(R.string.register_backend_required, Toast.LENGTH_LONG);
+                } else {
+                    Toast.makeText(RegisterActivity.this,
+                            getString(R.string.common_error_with_reason, reason),
+                            Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
 
     private RegistrationForm validateForm() {
-        if (!validateStoreNameField()
-                || !validateBusinessTypeField()
-                || !validateStoreAddressField()
-                || !validateFullNameField()
-                || !validateDobField()
-                || !validateGenderField()
-                || !validatePhoneField()
-                || !validateEmailField()
-                || !validatePasswordField()
-                || !validateConfirmPasswordField()) {
-            return null;
+        boolean previousFocusMode = forceFocusOnValidationError;
+        forceFocusOnValidationError = true;
+        try {
+            if (!validateStoreNameField()
+                    || !validateBankNameField()
+                    || !validateBusinessTypeField()
+                    || !validateStoreAddressField()
+                    || !validateBranchCountField()
+                    || !validateBranchAddressesField()
+                    || !validateAccountCountField()
+                    || !validateFullNameField()
+                    || !validateDobField()
+                    || !validateGenderField()
+                    || !validatePhoneField()
+                    || !validateEmailField()
+                    || !validatePasswordField()
+                    || !validateConfirmPasswordField()) {
+                return null;
+            }
+        } finally {
+            forceFocusOnValidationError = previousFocusMode;
         }
 
         RegistrationForm form = new RegistrationForm();
         form.storeName = getTrimmedText(etStoreName);
+        form.bankName = getTrimmedText(etBankName);
         form.businessTypeSelection = getTrimmedText(etBusinessType);
         form.storeAddress = getTrimmedText(etStoreAddress);
+        String branchCountValue = getTrimmedText(etBranchCount);
+        form.branchCount = branchCountValue.isEmpty() ? 0 : parsePositiveIntOrZero(branchCountValue);
+        form.branchAddresses = sanitizeBranchAddresses(getTrimmedText(etBranchAddresses));
+        form.accountCount = parsePositiveIntOrZero(getTrimmedText(etAccountCount));
         form.fullName = getTrimmedText(etFullName);
         form.dob = getTrimmedText(etDob);
         form.gender = getTrimmedText(etGender);
@@ -357,8 +418,7 @@ public class RegisterActivity extends BaseActivity {
         }
         if (value.length() < MIN_STORE_NAME_LENGTH || value.length() > MAX_STORE_NAME_LENGTH
                 || !value.matches(".*[\\p{L}\\p{N}].*")) {
-            etStoreName.setError(getString(R.string.register_invalid_store_name));
-            etStoreName.requestFocus();
+            setFieldError(etStoreName, R.string.register_invalid_store_name);
             return false;
         }
         clearFieldError(etStoreName);
@@ -371,8 +431,7 @@ public class RegisterActivity extends BaseActivity {
             return false;
         }
         if (!BusinessTypeMccMapper.isSupportedSelection(value)) {
-            etBusinessType.setError(getString(R.string.register_invalid_business_type));
-            etBusinessType.requestFocus();
+            setFieldError(etBusinessType, R.string.register_invalid_business_type);
             return false;
         }
         etBusinessType.setText(BusinessTypeMccMapper.toDisplay(this, value), false);
@@ -387,11 +446,75 @@ public class RegisterActivity extends BaseActivity {
         }
         if (value.length() < MIN_STORE_ADDRESS_LENGTH || value.length() > MAX_STORE_ADDRESS_LENGTH
                 || !value.matches(".*[\\p{L}\\p{N}].*")) {
-            etStoreAddress.setError(getString(R.string.register_invalid_store_address));
-            etStoreAddress.requestFocus();
+            setFieldError(etStoreAddress, R.string.register_invalid_store_address);
             return false;
         }
         clearFieldError(etStoreAddress);
+        return true;
+    }
+
+    private boolean validateBankNameField() {
+        String value = sanitizeAndApply(etBankName).toUpperCase(Locale.ROOT);
+        applyNormalizedText(etBankName, value);
+        if (requireValue(etBankName, value)) {
+            return false;
+        }
+        if (value.length() < MIN_BANK_NAME_LENGTH || value.length() > MAX_BANK_NAME_LENGTH
+                || !value.matches("^[A-Z0-9]{2,22}$")) {
+            setFieldError(etBankName, R.string.register_invalid_bank_name);
+            return false;
+        }
+        clearFieldError(etBankName);
+        return true;
+    }
+
+    private boolean validateBranchCountField() {
+        String value = getTrimmedText(etBranchCount);
+        if (value.isEmpty()) {
+            clearFieldError(etBranchCount);
+            updateBranchAddressVisibility();
+            return true;
+        }
+
+        int branchCount = parsePositiveIntOrZero(value);
+        if (branchCount < 0 || branchCount > MAX_BRANCH_COUNT) {
+            setFieldError(etBranchCount, R.string.register_invalid_branch_count);
+            return false;
+        }
+        applyNormalizedText(etBranchCount, String.valueOf(branchCount));
+        clearFieldError(etBranchCount);
+        updateBranchAddressVisibility();
+        return true;
+    }
+
+    private boolean validateBranchAddressesField() {
+        String normalizedAddresses = sanitizeBranchAddresses(getTrimmedText(etBranchAddresses));
+        applyNormalizedText(etBranchAddresses, normalizedAddresses);
+
+        int branchCount = parsePositiveIntOrZero(getTrimmedText(etBranchCount));
+        if (branchCount <= 0) {
+            clearFieldError(etBranchAddresses);
+            return true;
+        }
+
+
+        clearFieldError(etBranchAddresses);
+        return true;
+    }
+
+    private boolean validateAccountCountField() {
+        String value = getTrimmedText(etAccountCount);
+        if (value.isEmpty()) {
+            setFieldError(etAccountCount, R.string.common_required);
+            return false;
+        }
+        int accountCount = parsePositiveIntOrZero(value);
+        if (accountCount < MIN_ACCOUNT_COUNT || accountCount > MAX_ACCOUNT_COUNT) {
+            setFieldError(etAccountCount, R.string.register_invalid_account_count);
+            return false;
+        }
+        applyNormalizedText(etAccountCount, String.valueOf(accountCount));
+        clearFieldError(etAccountCount);
         return true;
     }
 
@@ -404,8 +527,7 @@ public class RegisterActivity extends BaseActivity {
                 || value.length() > MAX_FULL_NAME_LENGTH
                 || !value.matches("^[\\p{L}][\\p{L}\\s.'’-]*$")
                 || !value.matches(".*\\p{L}.*")) {
-            etFullName.setError(getString(R.string.register_invalid_full_name));
-            etFullName.requestFocus();
+            setFieldError(etFullName, R.string.register_invalid_full_name);
             return false;
         }
         clearFieldError(etFullName);
@@ -418,8 +540,7 @@ public class RegisterActivity extends BaseActivity {
             return false;
         }
         if (!isValidDateOfBirth(value)) {
-            etDob.setError(getString(R.string.register_invalid_dob));
-            etDob.requestFocus();
+            setFieldError(etDob, R.string.register_invalid_dob);
             return false;
         }
         clearFieldError(etDob);
@@ -432,8 +553,7 @@ public class RegisterActivity extends BaseActivity {
             return false;
         }
         if (!isSupportedSelection(R.array.register_gender_options, value)) {
-            etGender.setError(getString(R.string.register_invalid_gender));
-            etGender.requestFocus();
+            setFieldError(etGender, R.string.register_invalid_gender);
             return false;
         }
         clearFieldError(etGender);
@@ -444,13 +564,11 @@ public class RegisterActivity extends BaseActivity {
         String normalizedPhone = normalizePhone(getTrimmedText(etPhone));
         applyNormalizedText(etPhone, normalizedPhone);
         if (normalizedPhone.isEmpty()) {
-            etPhone.setError(getString(R.string.common_required));
-            etPhone.requestFocus();
+            setFieldError(etPhone, R.string.common_required);
             return false;
         }
         if (!normalizedPhone.matches("^\\+?[0-9]{9,15}$")) {
-            etPhone.setError(getString(R.string.register_invalid_phone));
-            etPhone.requestFocus();
+            setFieldError(etPhone, R.string.register_invalid_phone);
             return false;
         }
         clearFieldError(etPhone);
@@ -464,8 +582,7 @@ public class RegisterActivity extends BaseActivity {
             return false;
         }
         if (normalizedEmail.length() > MAX_EMAIL_LENGTH || !Patterns.EMAIL_ADDRESS.matcher(normalizedEmail).matches()) {
-            etEmail.setError(getString(R.string.register_invalid_email));
-            etEmail.requestFocus();
+            setFieldError(etEmail, R.string.register_invalid_email);
             return false;
         }
         clearFieldError(etEmail);
@@ -478,8 +595,7 @@ public class RegisterActivity extends BaseActivity {
             return false;
         }
         if (!isValidPassword(password)) {
-            etPassword.setError(getString(R.string.register_password_policy));
-            etPassword.requestFocus();
+            setFieldError(etPassword, R.string.register_password_policy);
             return false;
         }
         clearFieldError(etPassword);
@@ -495,8 +611,7 @@ public class RegisterActivity extends BaseActivity {
             return false;
         }
         if (!getTrimmedText(etPassword).equals(confirmPassword)) {
-            etConfirmPassword.setError(getString(R.string.register_passwords_do_not_match));
-            etConfirmPassword.requestFocus();
+            setFieldError(etConfirmPassword, R.string.register_passwords_do_not_match);
             return false;
         }
         clearFieldError(etConfirmPassword);
@@ -610,6 +725,9 @@ public class RegisterActivity extends BaseActivity {
                         ? form.businessType
                         : normalizedBusinessType;
                 user.storeAddress = form.storeAddress;
+                user.branchCount = form.branchCount;
+                user.branchAddresses = form.branchAddresses;
+                user.accountCount = form.accountCount;
                 user.phoneVerified = userDto == null || userDto.phoneVerified == null || userDto.phoneVerified;
                 user.adminId = "";
                 if (user.createdAt <= 0) {
@@ -635,6 +753,8 @@ public class RegisterActivity extends BaseActivity {
                 } else {
                     userDao.insert(user);
                 }
+
+                cacheDerivedAccounts(userDao, form, userDto);
                 saved = true;
             } catch (Exception e) {
                 Log.w(TAG, "Failed to cache user locally", e);
@@ -647,6 +767,73 @@ public class RegisterActivity extends BaseActivity {
         }).start();
     }
 
+    private void cacheDerivedAccounts(UserDao userDao, RegistrationForm form, ApiService.UserDto ownerDto) {
+        if (form.accountCount <= 0) {
+            return;
+        }
+
+        String sharedPasswordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashPassword(form.password);
+        String basePhone = normalizePhone(form.phone);
+
+        for (int accountIndex = 1; accountIndex <= form.accountCount; accountIndex++) {
+            String accountPhone = buildAccountPhoneIdentifier(basePhone, accountIndex);
+            String accountUsernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(accountPhone);
+
+            UserEntity accountUser = userDao.findByUsernameHash(accountUsernameHash);
+            if (accountUser == null) {
+                accountUser = userDao.findByPhone(accountPhone);
+            }
+
+            if (accountUser == null) {
+                accountUser = new UserEntity(
+                        accountUsernameHash,
+                        sharedPasswordHash,
+                        form.fullName,
+                        REGISTERED_USER_ROLE,
+                        form.email,
+                        accountPhone,
+                        form.dob);
+            }
+
+            accountUser.usernameHash = accountUsernameHash;
+            accountUser.passwordHash = sharedPasswordHash;
+            accountUser.displayName = form.fullName;
+            accountUser.role = REGISTERED_USER_ROLE;
+            accountUser.email = form.email;
+            accountUser.phone = accountPhone;
+            accountUser.dob = form.dob;
+            accountUser.gender = form.gender;
+            accountUser.storeName = form.storeName;
+            accountUser.businessType = form.businessType;
+            accountUser.storeAddress = form.storeAddress;
+            accountUser.branchCount = form.branchCount;
+            accountUser.branchAddresses = form.branchAddresses;
+            accountUser.accountCount = form.accountCount;
+            accountUser.phoneVerified = ownerDto == null || ownerDto.phoneVerified == null || ownerDto.phoneVerified;
+            accountUser.adminId = "";
+            accountUser.backendId = 0L;
+            accountUser.failedLoginAttempts = 0;
+            accountUser.lockedUntil = 0;
+            if (accountUser.createdAt <= 0) {
+                accountUser.createdAt = System.currentTimeMillis();
+            }
+
+            if (accountUser.id > 0) {
+                userDao.update(accountUser);
+            } else {
+                userDao.insert(accountUser);
+            }
+        }
+    }
+
+    private String buildAccountPhoneIdentifier(String basePhone, int accountIndex) {
+        String normalized = normalizePhone(basePhone);
+        if (accountIndex <= 0) {
+            return normalized;
+        }
+        return normalized + accountIndex;
+    }
+
     private void setRegisterLoading(boolean loading) {
         setFormEnabled(!loading);
         btnRegister.setText(loading ? R.string.processing : R.string.register_button);
@@ -654,8 +841,12 @@ public class RegisterActivity extends BaseActivity {
 
     private void setFormEnabled(boolean enabled) {
         etStoreName.setEnabled(enabled);
+        etBankName.setEnabled(enabled);
         etBusinessType.setEnabled(enabled);
         etStoreAddress.setEnabled(enabled);
+        etBranchCount.setEnabled(enabled);
+        etBranchAddresses.setEnabled(enabled);
+        etAccountCount.setEnabled(enabled);
         etFullName.setEnabled(enabled);
         etDob.setEnabled(enabled);
         etGender.setEnabled(enabled);
@@ -764,9 +955,12 @@ public class RegisterActivity extends BaseActivity {
         }
         NetworkCapabilities capabilities = connectivityManager
                 .getNetworkCapabilities(connectivityManager.getActiveNetwork());
-        return capabilities != null && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+        return capabilities != null
+                && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
                 || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
-                || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
+                || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+                || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN));
     }
 
     private String normalizePhone(String phone) {
@@ -794,6 +988,46 @@ public class RegisterActivity extends BaseActivity {
         return value == null ? "" : value.trim().replaceAll("\\s+", " ");
     }
 
+    private String sanitizeBranchAddresses(String value) {
+        if (value == null) {
+            return "";
+        }
+        String[] lines = value.split("\\r?\\n");
+        StringBuilder sb = new StringBuilder();
+        for (String line : lines) {
+            String normalized = sanitizeText(line);
+            if (normalized.isEmpty()) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append('\n');
+            }
+            sb.append(normalized);
+        }
+        return sb.toString();
+    }
+
+    private int countNonEmptyLines(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return 0;
+        }
+        int count = 0;
+        for (String line : value.split("\\n")) {
+            if (!line.trim().isEmpty()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int parsePositiveIntOrZero(String value) {
+        try {
+            return Integer.parseInt(value);
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
     private void applyNormalizedText(TextView editText, String normalized) {
         String current = String.valueOf(editText.getText());
         if (!current.equals(normalized)) {
@@ -818,12 +1052,18 @@ public class RegisterActivity extends BaseActivity {
         editText.setError(null);
     }
 
+    private void setFieldError(TextView editText, int errorResId) {
+        editText.setError(getString(errorResId));
+        if (forceFocusOnValidationError && !editText.hasFocus()) {
+            editText.requestFocus();
+        }
+    }
+
     private boolean requireValue(TextView editText, String value) {
         if (!value.isEmpty()) {
             return false;
         }
-        editText.setError(getString(R.string.common_required));
-        editText.requestFocus();
+        setFieldError(editText, R.string.common_required);
         return true;
     }
 
@@ -845,9 +1085,13 @@ public class RegisterActivity extends BaseActivity {
 
     private static class RegistrationForm {
         String storeName;
+        String bankName;
         String businessTypeSelection;
         String businessType;
         String storeAddress;
+        int branchCount;
+        String branchAddresses;
+        int accountCount;
         String fullName;
         String dob;
         String gender;

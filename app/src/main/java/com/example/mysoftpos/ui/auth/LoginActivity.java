@@ -162,9 +162,12 @@ public class LoginActivity extends BaseActivity {
         if (connectivityManager != null) {
             NetworkCapabilities capabilities = connectivityManager
                     .getNetworkCapabilities(connectivityManager.getActiveNetwork());
-            return capabilities != null && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+            return capabilities != null
+                    && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
                     || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
-                    || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
+                    || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+                    || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN));
         }
         return false;
     }
@@ -191,6 +194,17 @@ public class LoginActivity extends BaseActivity {
                                 com.example.mysoftpos.utils.config.ConfigManager
                                         .getInstance(LoginActivity.this)
                                         .setMcc18(resp.user != null ? resp.user.businessType : null);
+                                if (resp.user != null && resp.user.bankName != null && !resp.user.bankName.trim().isEmpty()) {
+                                    com.example.mysoftpos.utils.config.ConfigManager
+                                            .getInstance(LoginActivity.this)
+                                            .setBankName(resp.user.bankName);
+                                }
+                                if (resp.user != null && resp.user.merchantCode != null
+                                        && resp.user.merchantCode.matches("^[A-Z0-9]{15}$")) {
+                                    com.example.mysoftpos.utils.config.ConfigManager
+                                            .getInstance(LoginActivity.this)
+                                            .setMerchantId(resp.user.merchantCode);
+                                }
                                 com.example.mysoftpos.di.ServiceLocator.getInstance(LoginActivity.this)
                                         .getDispatcherProvider().io().execute(() -> {
                                             cacheUserLocallySync(identifier, password, resp.user);
@@ -250,6 +264,12 @@ public class LoginActivity extends BaseActivity {
                                     && resp.user.serverPort != null && resp.user.serverPort > 0) {
                                 config.setServerIp(resp.user.serverIp);
                                 config.setServerPort(resp.user.serverPort);
+                            }
+                            if (resp.user.merchantCode != null && resp.user.merchantCode.matches("^[A-Z0-9]{15}$")) {
+                                config.setMerchantId(resp.user.merchantCode);
+                            }
+                            if (resp.user.bankName != null && !resp.user.bankName.trim().isEmpty()) {
+                                config.setBankName(resp.user.bankName);
                             }
                             // Set user-specific Terminal ID
                             if (resp.user.terminalId != null && !resp.user.terminalId.isEmpty()) {

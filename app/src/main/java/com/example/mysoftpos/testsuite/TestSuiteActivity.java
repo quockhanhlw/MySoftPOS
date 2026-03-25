@@ -51,10 +51,15 @@ public class TestSuiteActivity extends BaseActivity {
     // Multi-thread UI
     private View layoutSelectAll;
     private CheckBox cbSelectAll;
+    private MaterialButton btnCancelSelection;
     private MaterialButton btnRunAll;
     private com.google.android.material.floatingactionbutton.FloatingActionButton fabAdd;
     private android.widget.ImageView btnDeleteMode;
+    private TextView tvModeIndicator;
     private boolean deleteMode = false;
+    private androidx.recyclerview.widget.RecyclerView recyclerViewCases;
+    private int openedSwipePosition = androidx.recyclerview.widget.RecyclerView.NO_POSITION;
+    private static final int SWIPE_ACTION_WIDTH_DP = 112;
 
     // Queue for sequential card/PIN config in "Select All"
     private int selectAllIndex = -1;
@@ -101,7 +106,7 @@ public class TestSuiteActivity extends BaseActivity {
         tvSummaryChannel.setText(channel);
         tvSummaryType.setText(txnType);
 
-        androidx.recyclerview.widget.RecyclerView recyclerView = findViewById(R.id.recyclerViewCases);
+        recyclerViewCases = findViewById(R.id.recyclerViewCases);
 
         // Load Built-in Data
         allScenarios = TestDataProvider.generateScenarios(this, scheme);
@@ -112,19 +117,34 @@ public class TestSuiteActivity extends BaseActivity {
         adapter = new com.example.mysoftpos.testsuite.adapter.TestScenarioAdapter(
                 this::onScenarioClicked,
                 this::onScenarioLongClicked,
-                this::onScenarioToggle);
+                this::onScenarioToggle,
+                this::onScenarioEditClicked,
+                this::onScenarioDeleteClicked);
 
         adapter.setMultiMode(isMulti);
+        adapter.setDeleteMode(false);
+        adapter.setOpenedSwipePosition(openedSwipePosition);
 
-        recyclerView.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
-        recyclerView.setAdapter(adapter);
+        recyclerViewCases.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
+        recyclerViewCases.setAdapter(adapter);
+        setupSwipeActions();
 
         // Controls
         layoutSelectAll = findViewById(R.id.layoutSelectAll);
         cbSelectAll = findViewById(R.id.cbSelectAll);
+        btnCancelSelection = findViewById(R.id.btnCancelSelection);
         btnRunAll = findViewById(R.id.btnRunAll);
         fabAdd = findViewById(R.id.fabAdd);
         btnDeleteMode = findViewById(R.id.btnDeleteMode);
+        tvModeIndicator = findViewById(R.id.tvModeIndicator);
+
+        btnCancelSelection.setOnClickListener(v -> {
+            if (deleteMode) {
+                toggleDeleteMode();
+            } else if (selectionMode) {
+                exitSelectionMode();
+            }
+        });
 
         if (isMulti) {
             setupMultiMode();
@@ -133,16 +153,22 @@ public class TestSuiteActivity extends BaseActivity {
             fabAdd.setVisibility(View.VISIBLE);
             fabAdd.setOnClickListener(v -> showAddEditDialog(null));
 
-            btnDeleteMode.setVisibility(View.VISIBLE);
+            btnDeleteMode.setVisibility(View.GONE);
             btnDeleteMode.setOnClickListener(v -> toggleDeleteMode());
 
             // Setup selection controls (hidden initially, shown on long-press)
             setupSingleModeSelection();
         }
+        updateModeIndicator();
 
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
+                if (openedSwipePosition != androidx.recyclerview.widget.RecyclerView.NO_POSITION) {
+                    closeOpenedSwipe();
+                    return;
+                }
+
                 if (deleteMode) {
                     toggleDeleteMode(); // Exit delete mode
                     return;
@@ -212,6 +238,12 @@ public class TestSuiteActivity extends BaseActivity {
             } else {
                 Toast.makeText(this, R.string.testsuite_cannot_delete_builtin, Toast.LENGTH_SHORT).show();
             }
+            return;
+        }
+
+        if (configuringInProgress) {
+            Toast.makeText(this, R.string.testsuite_configuring_other_case, Toast.LENGTH_SHORT).show();
+            adapter.notifyDataSetChanged();
             return;
         }
 
@@ -302,15 +334,17 @@ public class TestSuiteActivity extends BaseActivity {
         });
 
         btnRunAll.setOnClickListener(v -> returnSelectedScenarios());
+        updateModeIndicator();
     }
 
     private void setupSingleModeSelection() {
-        // Always show selection controls in single mode
-        selectionMode = true;
+        // Default: list view only. Long-press will enable selection mode.
+        selectionMode = false;
         adapter.setMultiMode(true);
-        adapter.setSelectionMode(true);
-        layoutSelectAll.setVisibility(View.VISIBLE);
-        btnRunAll.setVisibility(View.VISIBLE);
+        adapter.setSelectionMode(false);
+        layoutSelectAll.setVisibility(View.GONE);
+        btnRunAll.setVisibility(View.GONE);
+        btnDeleteMode.setVisibility(View.GONE);
         btnRunAll.setText(R.string.testsuite_btn_confirm_selection);
         btnRunAll.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF0F172A));
 
@@ -340,11 +374,34 @@ public class TestSuiteActivity extends BaseActivity {
         });
 
         refreshSelectionControls();
+        updateModeIndicator();
+    }
+
+    private void enterSelectionModeFromLongPress() {
+        if (selectionMode || deleteMode) {
+            return;
+        }
+
+        selectionMode = true;
+        closeOpenedSwipe();
+        adapter.setMultiMode(true);
+        adapter.setSelectionMode(true);
+        adapter.setDeleteMode(false);
+
+        layoutSelectAll.setVisibility(View.VISIBLE);
+        btnRunAll.setVisibility(View.VISIBLE);
+        btnDeleteMode.setVisibility("MULTI".equals(perfMode) ? View.GONE : View.VISIBLE);
+        fabAdd.setVisibility(View.GONE);
+
+        // Keep current selection state unchanged: long-press only enables checkbox UI.
+        adapter.notifyDataSetChanged();
+        refreshSelectionControls();
+        updateModeIndicator();
     }
 
     private void exitSelectionMode() {
         selectionMode = false;
-        adapter.setMultiMode("MULTI".equals(perfMode));
+        adapter.setMultiMode(!"MULTI".equals(perfMode));
         adapter.setSelectionMode(false);
         layoutSelectAll.setVisibility(View.GONE);
         btnRunAll.setVisibility(View.GONE);
@@ -360,10 +417,13 @@ public class TestSuiteActivity extends BaseActivity {
             fabAdd.setVisibility(View.VISIBLE);
             btnDeleteMode.setVisibility(View.VISIBLE);
         }
+        updateModeIndicator();
     }
 
     private void toggleDeleteMode() {
         deleteMode = !deleteMode;
+        closeOpenedSwipe();
+        adapter.setDeleteMode(deleteMode);
 
         if (deleteMode) {
             // Enter Delete Mode
@@ -436,6 +496,7 @@ public class TestSuiteActivity extends BaseActivity {
             adapter.notifyDataSetChanged();
             refreshSelectionControls();
         }
+        updateModeIndicator();
     }
 
     private void executeBatchDelete() {
@@ -469,6 +530,7 @@ public class TestSuiteActivity extends BaseActivity {
     }
 
     private void refreshList() {
+        closeOpenedSwipe();
         displayedScenarios = new ArrayList<>();
         displayedScenarios.addAll(allScenarios); // Built-in first
         displayedScenarios.addAll(customScenarios); // Custom appended
@@ -522,14 +584,19 @@ public class TestSuiteActivity extends BaseActivity {
                 }
 
                 adapter.setSelectionMode(true); // Show checkboxes
+                adapter.setDeleteMode(deleteMode);
                 layoutSelectAll.setVisibility(View.VISIBLE);
                 btnRunAll.setVisibility(View.VISIBLE);
+                if (!"MULTI".equals(perfMode)) {
+                    btnDeleteMode.setVisibility(View.VISIBLE);
+                }
                 updateRunAllButton();
 
                 // Also update checkbox "Select All" state if all are selected?
                 if (matchCount == displayedScenarios.size()) {
                     cbSelectAll.setChecked(true);
                 }
+                refreshSelectionControls();
             }
 
             // Clear after restoring to avoid re-applying logic if not needed,
@@ -561,6 +628,11 @@ public class TestSuiteActivity extends BaseActivity {
     }
 
     private void onScenarioClicked(TestScenario scenario) {
+        closeOpenedSwipe();
+        if (configuringInProgress) {
+            Toast.makeText(this, R.string.testsuite_configuring_other_case, Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (deleteMode) {
             if (scenario.isCustom()) {
                 scenario.setSelected(!scenario.isSelected());
@@ -572,24 +644,27 @@ public class TestSuiteActivity extends BaseActivity {
             return;
         }
 
-        if (scenario.isCustom()) {
-            // Custom test case → open edit dialog
-            showAddEditDialog(scenario);
-        } else {
-            // Built-in test case → configure & run
-            configureScenario(scenario);
+        if (selectionMode) {
+            onScenarioToggle(scenario);
+            return;
         }
+
+        // Configuration flow is only available in selection mode.
+        Toast.makeText(this, R.string.testsuite_selection_mode_hint, Toast.LENGTH_SHORT).show();
+    }
+
+    private void onScenarioEditClicked(TestScenario scenario) {
+        if (scenario == null || !scenario.isCustom() || deleteMode) {
+            return;
+        }
+        closeOpenedSwipe();
+        showAddEditDialog(scenario);
     }
 
     private void configureScenario(TestScenario scenario) {
         configuringInProgress = true;
         Runnable onAmountConfigured = () -> {
             // 2. Card
-            if (scenario.isCustom() && hasCardData(scenario)) {
-                checkPinAndConfig(scenario);
-                return;
-            }
-
             String de22 = scenario.getField(22);
             if (isNfcMode(de22)) {
                 selectDefaultNfcCard(scenario, () -> checkPinAndConfig(scenario));
@@ -619,18 +694,238 @@ public class TestSuiteActivity extends BaseActivity {
         if (deleteMode) {
             return;
         }
-        // In SINGLE mode, selection is always active — long press does nothing extra
-        // In MULTI mode, long press activates selection mode
-        if ("MULTI".equals(perfMode) && !selectionMode) {
-            selectionMode = true;
-            adapter.setMultiMode(true);
-            adapter.setSelectionMode(true);
-            layoutSelectAll.setVisibility(View.VISIBLE);
-            btnRunAll.setVisibility(View.VISIBLE);
-            fabAdd.setVisibility(View.GONE);
-            btnDeleteMode.setVisibility(View.GONE);
-            adapter.notifyDataSetChanged();
+
+        if (!selectionMode) {
+            enterSelectionModeFromLongPress();
             Toast.makeText(this, R.string.testsuite_selection_mode_hint, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void onScenarioDeleteClicked(TestScenario scenario) {
+        if (scenario == null) {
+            return;
+        }
+        if (!scenario.isCustom()) {
+            Toast.makeText(this, R.string.testsuite_cannot_delete_builtin, Toast.LENGTH_SHORT).show();
+            closeOpenedSwipe();
+            return;
+        }
+
+        new android.app.AlertDialog.Builder(this)
+                .setTitle(R.string.testsuite_confirm_delete_title)
+                .setMessage(getString(R.string.testsuite_confirm_delete_message, 1))
+                .setPositiveButton(R.string.testsuite_delete_action, (dialog, which) -> executor.execute(() -> {
+                    com.example.mysoftpos.data.local.entity.TestCaseEntity entity = new com.example.mysoftpos.data.local.entity.TestCaseEntity();
+                    entity.id = scenario.getId();
+                    repository.delete(entity);
+                    runOnUiThread(this::closeOpenedSwipe);
+                }))
+                .setNegativeButton(R.string.common_cancel, (dialog, which) -> closeOpenedSwipe())
+                .setOnCancelListener(dialog -> closeOpenedSwipe())
+                .show();
+    }
+
+    private void setupSwipeActions() {
+        if (recyclerViewCases == null) {
+            return;
+        }
+
+        recyclerViewCases.setOnTouchListener((v, event) -> {
+            if (openedSwipePosition == androidx.recyclerview.widget.RecyclerView.NO_POSITION) {
+                return false;
+            }
+
+            if (event.getActionMasked() == android.view.MotionEvent.ACTION_UP
+                    && openedSwipePosition >= 0
+                    && openedSwipePosition < displayedScenarios.size()) {
+                androidx.recyclerview.widget.RecyclerView.ViewHolder openedHolder =
+                        recyclerViewCases.findViewHolderForAdapterPosition(openedSwipePosition);
+                if (openedHolder != null) {
+                    View actionEdit = openedHolder.itemView.findViewById(R.id.btnSwipeEdit);
+                    View actionDelete = openedHolder.itemView.findViewById(R.id.btnSwipeDelete);
+                    TestScenario scenario = displayedScenarios.get(openedSwipePosition);
+
+                    if (isPointInsideView(event, actionEdit)) {
+                        onScenarioEditClicked(scenario);
+                        return true;
+                    }
+                    if (isPointInsideView(event, actionDelete)) {
+                        onScenarioDeleteClicked(scenario);
+                        return true;
+                    }
+                }
+            }
+
+            if (event.getActionMasked() != android.view.MotionEvent.ACTION_DOWN) {
+                return false;
+            }
+
+            View touchedChild = recyclerViewCases.findChildViewUnder(event.getX(), event.getY());
+            if (touchedChild == null) {
+                closeOpenedSwipe();
+                return false;
+            }
+
+            androidx.recyclerview.widget.RecyclerView.ViewHolder touchedHolder =
+                    recyclerViewCases.getChildViewHolder(touchedChild);
+            int touchedPosition = touchedHolder.getBindingAdapterPosition();
+            if (touchedPosition != openedSwipePosition) {
+                closeOpenedSwipe();
+            }
+            return false;
+        });
+
+        recyclerViewCases.addOnScrollListener(new androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@androidx.annotation.NonNull androidx.recyclerview.widget.RecyclerView recyclerView,
+                    int newState) {
+                if (newState == androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_DRAGGING
+                        && openedSwipePosition != androidx.recyclerview.widget.RecyclerView.NO_POSITION) {
+                    closeOpenedSwipe();
+                }
+            }
+        });
+
+        androidx.recyclerview.widget.ItemTouchHelper.SimpleCallback callback =
+                new androidx.recyclerview.widget.ItemTouchHelper.SimpleCallback(0,
+                        androidx.recyclerview.widget.ItemTouchHelper.LEFT | androidx.recyclerview.widget.ItemTouchHelper.RIGHT) {
+                    @Override
+                    public boolean onMove(@androidx.annotation.NonNull androidx.recyclerview.widget.RecyclerView recyclerView,
+                            @androidx.annotation.NonNull androidx.recyclerview.widget.RecyclerView.ViewHolder viewHolder,
+                            @androidx.annotation.NonNull androidx.recyclerview.widget.RecyclerView.ViewHolder target) {
+                        return false;
+                    }
+
+                    @Override
+                    public int getSwipeDirs(@androidx.annotation.NonNull androidx.recyclerview.widget.RecyclerView recyclerView,
+                            @androidx.annotation.NonNull androidx.recyclerview.widget.RecyclerView.ViewHolder viewHolder) {
+                        int position = viewHolder.getBindingAdapterPosition();
+                        if (position == androidx.recyclerview.widget.RecyclerView.NO_POSITION
+                                || selectionMode
+                                || deleteMode
+                                || position >= displayedScenarios.size()) {
+                            return 0;
+                        }
+                        TestScenario scenario = displayedScenarios.get(position);
+                        if (!scenario.isCustom()) {
+                            return 0;
+                        }
+                        // Keep gestures off for the opened row so edit/delete taps are not
+                        // interpreted as swipe and snapped back.
+                        if (openedSwipePosition == position) {
+                            return 0;
+                        }
+                        return androidx.recyclerview.widget.ItemTouchHelper.LEFT;
+                    }
+
+                    @Override
+                    public float getSwipeThreshold(@androidx.annotation.NonNull androidx.recyclerview.widget.RecyclerView.ViewHolder viewHolder) {
+                        return 2f;
+                    }
+
+                    @Override
+                    public void onSwiped(@androidx.annotation.NonNull androidx.recyclerview.widget.RecyclerView.ViewHolder viewHolder,
+                            int direction) {
+                        // Handled by foreground translation. Keep item in place.
+                    }
+
+                    @Override
+                    public void clearView(@androidx.annotation.NonNull androidx.recyclerview.widget.RecyclerView recyclerView,
+                            @androidx.annotation.NonNull androidx.recyclerview.widget.RecyclerView.ViewHolder viewHolder) {
+                        super.clearView(recyclerView, viewHolder);
+                        View foreground = viewHolder.itemView.findViewById(R.id.cardForeground);
+                        if (foreground == null) {
+                            return;
+                        }
+                        int position = viewHolder.getBindingAdapterPosition();
+                        if (position == androidx.recyclerview.widget.RecyclerView.NO_POSITION) {
+                            foreground.setTranslationX(0f);
+                            return;
+                        }
+
+                        float actionWidthPx = dpToPx(SWIPE_ACTION_WIDTH_DP);
+                        float target = Math.abs(foreground.getTranslationX()) > actionWidthPx / 4f
+                                ? -actionWidthPx
+                                : 0f;
+                        foreground.animate().translationX(target).setDuration(140).start();
+
+                        if (target < 0f) {
+                            if (openedSwipePosition != position) {
+                                closeSwipeAt(openedSwipePosition);
+                            }
+                            openedSwipePosition = position;
+                            adapter.setOpenedSwipePosition(openedSwipePosition);
+                        } else if (openedSwipePosition == position) {
+                            openedSwipePosition = androidx.recyclerview.widget.RecyclerView.NO_POSITION;
+                            adapter.setOpenedSwipePosition(openedSwipePosition);
+                        }
+                    }
+
+                    @Override
+                    public void onChildDraw(@androidx.annotation.NonNull android.graphics.Canvas c,
+                            @androidx.annotation.NonNull androidx.recyclerview.widget.RecyclerView recyclerView,
+                            @androidx.annotation.NonNull androidx.recyclerview.widget.RecyclerView.ViewHolder viewHolder,
+                            float dX,
+                            float dY,
+                            int actionState,
+                            boolean isCurrentlyActive) {
+                        if (actionState != androidx.recyclerview.widget.ItemTouchHelper.ACTION_STATE_SWIPE) {
+                            super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+                            return;
+                        }
+                        View foreground = viewHolder.itemView.findViewById(R.id.cardForeground);
+                        if (foreground == null) {
+                            return;
+                        }
+                        int position = viewHolder.getBindingAdapterPosition();
+                        float actionWidth = dpToPx(SWIPE_ACTION_WIDTH_DP);
+                        float min = -actionWidth;
+                        float base = (openedSwipePosition == position) ? -actionWidth : 0f;
+                        float clamped = Math.max(min, Math.min(0f, base + dX));
+                        foreground.setTranslationX(clamped);
+                    }
+                };
+
+        new androidx.recyclerview.widget.ItemTouchHelper(callback).attachToRecyclerView(recyclerViewCases);
+    }
+
+    private float dpToPx(int dp) {
+        return dp * getResources().getDisplayMetrics().density;
+    }
+
+    private boolean isPointInsideView(android.view.MotionEvent event, View target) {
+        if (target == null || target.getVisibility() != View.VISIBLE) {
+            return false;
+        }
+        int[] location = new int[2];
+        target.getLocationOnScreen(location);
+        float rawX = event.getRawX();
+        float rawY = event.getRawY();
+        return rawX >= location[0]
+                && rawX <= location[0] + target.getWidth()
+                && rawY >= location[1]
+                && rawY <= location[1] + target.getHeight();
+    }
+
+
+    private void closeOpenedSwipe() {
+        closeSwipeAt(openedSwipePosition);
+        openedSwipePosition = androidx.recyclerview.widget.RecyclerView.NO_POSITION;
+        adapter.setOpenedSwipePosition(openedSwipePosition);
+    }
+
+    private void closeSwipeAt(int position) {
+        if (position == androidx.recyclerview.widget.RecyclerView.NO_POSITION || recyclerViewCases == null) {
+            return;
+        }
+        androidx.recyclerview.widget.RecyclerView.ViewHolder holder =
+                recyclerViewCases.findViewHolderForAdapterPosition(position);
+        if (holder == null) {
+            return;
+        }
+        View foreground = holder.itemView.findViewById(R.id.cardForeground);
+        if (foreground != null) {
+            foreground.animate().translationX(0f).setDuration(120).start();
         }
     }
 
@@ -662,10 +957,8 @@ public class TestSuiteActivity extends BaseActivity {
         com.google.android.material.textfield.TextInputLayout tilName = view.findViewById(R.id.tilName);
         android.widget.EditText etName = view.findViewById(R.id.etName);
         android.widget.EditText etDe22 = view.findViewById(R.id.etDe22);
-        android.widget.EditText etAmount = view.findViewById(R.id.etAmount);
-        final boolean isBalanceTxn = "BALANCE".equals(isEdit && existing != null && existing.getTxnType() != null
-                ? existing.getTxnType()
-                : txnType);
+        View labelAmount = view.findViewById(R.id.labelAmount);
+        View tilAmount = view.findViewById(R.id.tilAmount);
 
         View layoutManual = view.findViewById(R.id.layoutManual);
         com.google.android.material.textfield.TextInputLayout tilPan = view.findViewById(R.id.tilPan);
@@ -684,13 +977,19 @@ public class TestSuiteActivity extends BaseActivity {
         View layoutDe22Display = view.findViewById(R.id.layoutDe22Display);
         TextView tvEntryModeName = view.findViewById(R.id.tvEntryModeName);
 
+        if (labelAmount != null) {
+            labelAmount.setVisibility(View.GONE);
+        }
+        if (tilAmount != null) {
+            tilAmount.setVisibility(View.GONE);
+        }
+
         // Update field visibility and label based on DE22 value
         Runnable updateEntryModeUI = () -> {
             String code = etDe22.getText().toString().trim();
             boolean isNfcFixedMode = isNfcMode(code);
             boolean isManual = code.startsWith("01");
-            boolean hasTrack2 = !isNfcFixedMode && (code.startsWith("02") || code.startsWith("05")
-                    || code.startsWith("91"));
+            boolean hasTrack2 = "021".equals(code) || "022".equals(code);
 
             layoutManual.setVisibility(isManual ? View.VISIBLE : View.GONE);
             layoutTrack2.setVisibility(hasTrack2 ? View.VISIBLE : View.GONE);
@@ -884,22 +1183,11 @@ public class TestSuiteActivity extends BaseActivity {
             if (existDe22 != null) {
                 etDe22.setText(existDe22);
             }
-            etAmount.setText(existing.getField(4));
             etPan.setText(existing.getField(2));
             etExpiry.setText(existing.getField(14));
             etTrack2.setText(existing.getField(35));
         } else {
             etDe22.setText(R.string.testsuite_default_de22);
-            etAmount.setText(R.string.testsuite_default_amount);
-        }
-        if (isBalanceTxn) {
-            etAmount.setText("");
-            etAmount.setEnabled(false);
-            etAmount.setHint(R.string.testsuite_balance_amount_not_required);
-            etAmount.setAlpha(0.6f);
-        } else {
-            etAmount.setEnabled(true);
-            etAmount.setAlpha(1f);
         }
         updateEntryModeUI.run();
 
@@ -918,19 +1206,6 @@ public class TestSuiteActivity extends BaseActivity {
             if (de22Spec != null && de22Spec.pattern != null && !de22Spec.pattern.matcher(de22).matches()) {
                 Toast.makeText(this, getString(R.string.testsuite_invalid_entry_mode, de22), Toast.LENGTH_SHORT).show();
                 valid = false;
-            }
-
-            // Amount
-            String amount = etAmount.getText().toString().trim();
-            if (!isBalanceTxn && !amount.isEmpty()) {
-                try {
-                    long amountVal = Long.parseLong(amount);
-                    if (amountVal < 10000 || amountVal > 500000000) {
-                        etAmount.setError(getString(R.string.testsuite_amount_range)); valid = false;
-                    } else { etAmount.setError(null); }
-                } catch (NumberFormatException e) {
-                    etAmount.setError(getString(R.string.testsuite_amount_numeric)); valid = false;
-                }
             }
 
             // PAN + Expiry (manual mode)
@@ -961,8 +1236,12 @@ public class TestSuiteActivity extends BaseActivity {
             // Track 2
             if (layoutTrack2.getVisibility() == View.VISIBLE) {
                 String t2 = etTrack2.getText().toString().trim();
-                if (t2.isEmpty()) { tilTrack2.setError(getString(R.string.testsuite_required)); valid = false; }
-                else { tilTrack2.setError(null); }
+                if (!t2.isEmpty() && (!t2.contains("=") && !t2.contains("D"))) {
+                    tilTrack2.setError(getString(R.string.testsuite_track2_format));
+                    valid = false;
+                } else {
+                    tilTrack2.setError(null);
+                }
             }
 
             if (!valid) return;
@@ -973,11 +1252,6 @@ public class TestSuiteActivity extends BaseActivity {
 
             if (isBuiltIn) {
                 existing.setField(22, de22);
-                if (isBalanceTxn) {
-                    existing.getAllFields().remove(4);
-                } else {
-                    existing.setField(4, amount);
-                }
                 if (isNfcMode(de22)) {
                     applyFixedNfcData(existing);
                 } else {
@@ -989,12 +1263,12 @@ public class TestSuiteActivity extends BaseActivity {
                     existing.setField(35, null);
                 }
                 if (!isNfcMode(de22) && layoutTrack2.getVisibility() == View.VISIBLE) {
-                    existing.setField(35, track2Final);
-                    if (track2Final.contains("=")) {
-                        String[] parts = track2Final.split("=");
-                        existing.setField(2, parts[0]);
-                        if (parts.length > 1 && parts[1].length() >= 4)
-                            existing.setField(14, parts[1].substring(0, 4));
+                    if (!track2Final.isEmpty()) {
+                        applyTrack2ToScenario(existing, track2Final);
+                    } else {
+                        existing.setField(2, null);
+                        existing.setField(14, null);
+                        existing.setField(35, null);
                     }
                 }
                 applyCustomFieldsToScenario(existing, containerCustomFields, reservedFields);
@@ -1015,7 +1289,7 @@ public class TestSuiteActivity extends BaseActivity {
                 entity.timestamp = System.currentTimeMillis();
                 entity.status = "NEW";
                 entity.de22 = de22;
-                entity.amount = isBalanceTxn ? null : amount;
+                entity.amount = null;
                 if (isNfcMode(de22)) {
                     entity.pan = NFC_071_072_PAN;
                     entity.expiry = NFC_071_072_EXPIRY;
@@ -1023,9 +1297,31 @@ public class TestSuiteActivity extends BaseActivity {
                 } else if (layoutManual.getVisibility() == View.VISIBLE) {
                     entity.pan = panFinal;
                     entity.expiry = expiryFinal;
+                    entity.track2 = null;
                 }
                 if (!isNfcMode(de22) && layoutTrack2.getVisibility() == View.VISIBLE) {
-                    entity.track2 = track2Final;
+                    if (!track2Final.isEmpty()) {
+                        entity.track2 = track2Final;
+                        String normalized = track2Final.trim();
+                        String[] parts;
+                        if (normalized.contains("=")) {
+                            parts = normalized.split("=");
+                        } else if (normalized.contains("D")) {
+                            parts = normalized.split("D");
+                        } else {
+                            parts = new String[] { normalized };
+                        }
+                        if (parts.length > 0 && !parts[0].isEmpty()) {
+                            entity.pan = parts[0];
+                        }
+                        if (parts.length > 1 && parts[1] != null && parts[1].length() >= 4) {
+                            entity.expiry = parts[1].substring(0, 4);
+                        }
+                    } else {
+                        entity.pan = null;
+                        entity.expiry = null;
+                        entity.track2 = null;
+                    }
                 }
                 String customFieldJson = collectCustomFieldsJson(containerCustomFields, reservedFields);
                 if (isNfcMode(de22)) {
@@ -1149,24 +1445,10 @@ public class TestSuiteActivity extends BaseActivity {
             return;
         }
 
-        // If Custom scenario has a valid amount, use it directly (Skip Dialog)
-        if (scenario.isCustom()) {
-            String currentAmount = scenario.getField(4);
-            if (currentAmount != null && !currentAmount.isEmpty()) {
-                proceedWithRunner(scenario);
-                return;
-            }
-        }
-
         showAmountInput(scenario, () -> proceedWithRunner(scenario));
     }
 
     private void proceedWithRunner(TestScenario scenario) {
-        if (scenario.isCustom() && hasCardData(scenario)) {
-            checkPinAndLaunch(scenario);
-            return;
-        }
-
         String de22 = scenario.getField(22);
         if (isNfcMode(de22)) {
             selectDefaultNfcCard(scenario, () -> checkPinAndLaunch(scenario));
@@ -1330,11 +1612,6 @@ public class TestSuiteActivity extends BaseActivity {
         configureForMultiMode(next);
     }
 
-    private boolean hasCardData(TestScenario scenario) {
-        String pan = scenario.getField(2);
-        String track2 = scenario.getField(35);
-        return (pan != null && !pan.trim().isEmpty()) || (track2 != null && !track2.trim().isEmpty());
-    }
 
     private void checkPinAndLaunch(TestScenario scenario) {
         checkPinAndConfig(scenario);
@@ -1353,10 +1630,22 @@ public class TestSuiteActivity extends BaseActivity {
     }
 
     private void showCardSelectionDialog(TestScenario scenario, Runnable onSelected) {
-        showCardLikeDialog(getString(R.string.dialog_select_card_title), TRACK2_OPTIONS, selected -> {
+        showCardLikeDialog(getString(R.string.dialog_select_card_title), buildTrack2OptionsForScenario(scenario), selected -> {
             applyTrack2ToScenario(scenario, selected);
             onSelected.run();
         });
+    }
+
+    private java.util.List<String> buildTrack2OptionsForScenario(TestScenario scenario) {
+        java.util.LinkedHashSet<String> options = new java.util.LinkedHashSet<>();
+        if (scenario != null) {
+            String customTrack2 = scenario.getField(35);
+            if (customTrack2 != null && !customTrack2.trim().isEmpty()) {
+                options.add(customTrack2.trim());
+            }
+        }
+        options.addAll(TRACK2_OPTIONS);
+        return new java.util.ArrayList<>(options);
     }
 
     private void showCardLikeDialog(String title, java.util.List<String> options,
@@ -1496,6 +1785,32 @@ public class TestSuiteActivity extends BaseActivity {
     private void refreshSelectionControls() {
         updateRunAllButton();
         syncSelectAllCheckbox();
+        updateModeIndicator();
+        updateCancelSelectionButton();
+    }
+
+    private void updateCancelSelectionButton() {
+        if (btnCancelSelection == null) {
+            return;
+        }
+        btnCancelSelection.setVisibility((selectionMode && !deleteMode) ? View.VISIBLE : View.GONE);
+    }
+
+    private void updateModeIndicator() {
+        if (tvModeIndicator == null) {
+            return;
+        }
+        if (deleteMode) {
+            tvModeIndicator.setVisibility(View.VISIBLE);
+            tvModeIndicator.setText(R.string.testsuite_mode_indicator_delete);
+            return;
+        }
+        if (selectionMode) {
+            tvModeIndicator.setVisibility(View.VISIBLE);
+            tvModeIndicator.setText(R.string.testsuite_mode_indicator_selection);
+            return;
+        }
+        tvModeIndicator.setVisibility(View.GONE);
     }
 
     private void syncSelectAllCheckbox() {

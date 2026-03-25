@@ -75,20 +75,8 @@ public class TransactionExecutor {
         ctx.terminalId41 = config.getTerminalId();
         ctx.merchantId42 = config.getMerchantId();
 
-        // DE 43: Dynamic Country Code
-        String baseName = config.getMerchantName();
-        // Ensure baseName is at least 37 chars or padded, then replace last 3 chars
-        if (baseName.length() > 37) {
-            baseName = baseName.substring(0, 37);
-        } else {
-            baseName = String.format("%-37s", baseName);
-        }
-
-        String alphaCountry = "VNM"; // Default
-        if ("840".equals(safeCountry)) {
-            alphaCountry = "USA";
-        }
-        ctx.merchantNameLocation43 = baseName + alphaCountry;
+        // DE 43: 22-byte bank + 1 space + 13-byte location + 1 space + 3-byte country.
+        ctx.merchantNameLocation43 = config.getMerchantNameForCountry(safeCountry);
 
         // Set Currency (49) and Country (19)
         ctx.currency49 = safeCurrency;

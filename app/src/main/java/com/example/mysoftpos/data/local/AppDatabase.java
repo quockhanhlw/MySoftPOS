@@ -20,7 +20,7 @@ import com.example.mysoftpos.data.local.dao.*;
         MerchantEntity.class,
         TerminalEntity.class,
         CardEntity.class
-}, version = 20, exportSchema = true)
+}, version = 21, exportSchema = true)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract TransactionDao transactionDao();
@@ -148,6 +148,19 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /**
+     * Migration 20 -> 21:
+     * User merchant profile extended with branch and account sizing.
+     */
+    static final Migration MIGRATION_20_21 = new Migration(20, 21) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE users ADD COLUMN branch_count INTEGER NOT NULL DEFAULT 0");
+            db.execSQL("ALTER TABLE users ADD COLUMN branch_addresses TEXT");
+            db.execSQL("ALTER TABLE users ADD COLUMN account_count INTEGER NOT NULL DEFAULT 1");
+        }
+    };
+
     // ──────────────────────────────────────────────────────────────────────────
     // Singleton
     // ──────────────────────────────────────────────────────────────────────────
@@ -169,7 +182,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             // Liệt kê toàn bộ migration để Room nâng cấp schema
                             // mà KHÔNG xoá dữ liệu cũ.
                             .addMigrations(MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
-                                    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20)
+                                    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21)
                             // WAL (Write-Ahead Logging): cải thiện hiệu năng đọc/ghi
                             // đồng thời, thay thế TRUNCATE.
                             .setJournalMode(RoomDatabase.JournalMode.AUTOMATIC)

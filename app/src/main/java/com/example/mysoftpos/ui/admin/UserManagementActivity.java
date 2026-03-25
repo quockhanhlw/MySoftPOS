@@ -7,46 +7,53 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.mysoftpos.R;
-import com.example.mysoftpos.data.local.AppDatabase;
-import com.example.mysoftpos.data.local.dao.UserDao;
-import com.example.mysoftpos.data.local.entity.UserEntity;
 import com.example.mysoftpos.data.remote.api.ApiClient;
 import com.example.mysoftpos.data.remote.api.ApiService;
 import com.example.mysoftpos.ui.BaseActivity;
-import com.example.mysoftpos.utils.mcc.BusinessTypeMccMapper;
-import com.example.mysoftpos.utils.security.PasswordUtils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import java.net.InetSocketAddress;
+import java.net.Socket;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
- * Admin: User Management — CRUD via Backend API.
- * Each user has a unique TID (Terminal ID).
+ * Admin: Merchant Management.
+ * Show merchant list, then drill down to account (TID) list of selected merchant.
  */
-public class UserManagementActivity extends BaseActivity implements UserAdapter.OnUserListener {
+public class UserManagementActivity extends BaseActivity implements UserAdapter.OnMerchantListener {
 
     private static final int MAX_TOKEN_WAIT_RETRIES = 15;
     private static final long TOKEN_WAIT_RETRY_DELAY_MS = 1200L;
+    private static final String TID_REGEX = "^[A-Z0-9]{8}$";
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    private final Runnable retryLoadRunnable = this::loadUsers;
+    private final Runnable retryLoadRunnable = this::loadMerchants;
+    private final ExecutorService accountNetworkExecutor = Executors.newCachedThreadPool();
 
     private UserAdapter adapter;
     private TextView tvUserCount;
@@ -59,7 +66,10 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
     private TextView tvEmptyTitle;
     private TextView tvEmptySubtitle;
     private View btnRetryConnection;
-    private List<ApiService.UserDto> allUsers = new ArrayList<>();
+
+    private List<ApiService.MerchantDto> allMerchants = new ArrayList<>();
+    private final Map<Long, Integer> missingTidCountByMerchantId = new HashMap<>();
+    private int merchantBadgeRequestVersion = 0;
     private int tokenWaitRetryCount = 0;
     private boolean backendListAvailable = false;
     private boolean networkCallbackRegistered = false;
@@ -87,16 +97,11 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         adapter = new UserAdapter(this);
         rvUsers.setAdapter(adapter);
 
-        fabAdd.setOnClickListener(v -> {
-            if (!isNetworkAvailable()) {
-                showOfflineState();
-                return;
-            }
-            showAddEditDialog(null);
-        });
+        // Merchant list is read-only in this phase.
+        fabAdd.setVisibility(View.GONE);
 
         if (btnRetryConnection != null) {
-            btnRetryConnection.setOnClickListener(v -> loadUsers());
+            btnRetryConnection.setOnClickListener(v -> loadMerchants());
         }
 
         etSearch.addTextChangedListener(new android.text.TextWatcher() {
@@ -110,25 +115,25 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
 
             @Override
             public void afterTextChanged(android.text.Editable s) {
-                filterUsers(s.toString().trim());
+                filterMerchants(s.toString().trim());
             }
         });
 
         if (swipeRefresh != null) {
             swipeRefresh.setOnRefreshListener(() -> {
-                loadUsers();
+                loadMerchants();
                 swipeRefresh.setRefreshing(false);
             });
         }
 
         initNetworkCallback();
-        loadUsers();
+        loadMerchants();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        loadUsers();
+        loadMerchants();
     }
 
     @Override
@@ -149,8 +154,13 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         unregisterNetworkCallback();
     }
 
-    // ====== Load from API ======
-    private void loadUsers() {
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        accountNetworkExecutor.shutdownNow();
+    }
+
+    private void loadMerchants() {
         mainHandler.removeCallbacks(retryLoadRunnable);
 
         if (!isNetworkAvailable()) {
@@ -160,11 +170,8 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         }
 
         String token = ApiClient.bearerToken(this);
-        android.util.Log.d("UserMgmt", "loadUsers: token=" +
-                (token.length() > 15 ? token.substring(0, 15) + "..." : token));
-
         if (token.isEmpty() || "Bearer ".equals(token) || !ApiClient.isLoggedIn(this)) {
-            clearRenderedUsers();
+            clearRenderedMerchants();
             if (tokenWaitRetryCount < MAX_TOKEN_WAIT_RETRIES) {
                 tokenWaitRetryCount++;
                 showNonContentState(getString(R.string.user_mgmt_state_preparing_session_title),
@@ -181,39 +188,31 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         showNonContentState(getString(R.string.user_mgmt_state_loading_title),
                 getString(R.string.user_mgmt_state_loading_subtitle), false);
 
-        ApiClient.getService(this).getUsers(token).enqueue(new Callback<List<ApiService.UserDto>>() {
+        ApiClient.getService(this).getMerchants(token).enqueue(new Callback<List<ApiService.MerchantDto>>() {
             @Override
-            public void onResponse(Call<List<ApiService.UserDto>> call, Response<List<ApiService.UserDto>> resp) {
-                android.util.Log.d("UserMgmt", "getUsers response: code=" + resp.code()
-                        + " body=" + (resp.body() != null ? resp.body().size() + " users" : "null"));
-                if (resp.isSuccessful() && resp.body() != null) {
-                    allUsers = new ArrayList<>(resp.body());
-                    backendListAvailable = true;
-                    syncUsersToLocal(resp.body());
-                    showContentChrome();
-                    filterUsers(etSearch.getText().toString().trim());
+            public void onResponse(@NonNull Call<List<ApiService.MerchantDto>> call,
+                    @NonNull Response<List<ApiService.MerchantDto>> response) {
+                if (!response.isSuccessful() || response.body() == null) {
+                    clearRenderedMerchants();
+                    showNonContentState(getString(R.string.user_mgmt_state_backend_unavailable_title),
+                            getString(R.string.user_mgmt_state_load_users_failed_subtitle), true);
+                    Toast.makeText(UserManagementActivity.this,
+                            getString(R.string.user_mgmt_error_code, response.code()), Toast.LENGTH_LONG).show();
                     return;
                 }
 
-                String errMsg = "Failed to load users (HTTP " + resp.code() + ")";
-                try (okhttp3.ResponseBody errorBody = resp.errorBody()) {
-                    if (errorBody != null) {
-                        errMsg += ": " + errorBody.string();
-                    }
-                } catch (Exception ignored) {
-                }
-                android.util.Log.w("UserMgmt", errMsg);
-                clearRenderedUsers();
-                showNonContentState(getString(R.string.user_mgmt_state_backend_unavailable_title),
-                        getString(R.string.user_mgmt_state_load_users_failed_subtitle), true);
-                Toast.makeText(UserManagementActivity.this,
-                        getString(R.string.user_mgmt_error_code, resp.code()), Toast.LENGTH_LONG).show();
+                allMerchants = new ArrayList<>(response.body());
+                backendListAvailable = true;
+                merchantBadgeRequestVersion++;
+                missingTidCountByMerchantId.clear();
+                showContentChrome();
+                filterMerchants(etSearch.getText().toString().trim());
+                fetchMissingTidCounts(allMerchants, token, merchantBadgeRequestVersion);
             }
 
             @Override
-            public void onFailure(Call<List<ApiService.UserDto>> call, Throwable t) {
-                android.util.Log.e("UserMgmt", "getUsers failed: " + t.getMessage());
-                clearRenderedUsers();
+            public void onFailure(@NonNull Call<List<ApiService.MerchantDto>> call, @NonNull Throwable t) {
+                clearRenderedMerchants();
                 showNonContentState(getString(R.string.user_mgmt_state_backend_unavailable_title),
                         getString(R.string.user_mgmt_state_load_users_network_subtitle), true);
                 Toast.makeText(UserManagementActivity.this,
@@ -222,33 +221,35 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         });
     }
 
-    private void filterUsers(String query) {
+    private void filterMerchants(String query) {
         if (!backendListAvailable) {
             return;
         }
 
-        List<ApiService.UserDto> displayUsers;
+        List<ApiService.MerchantDto> display;
         if (query.isEmpty()) {
-            displayUsers = new ArrayList<>(allUsers);
+            display = new ArrayList<>(allMerchants);
         } else {
-            displayUsers = new ArrayList<>();
             String q = query.toLowerCase();
-            for (ApiService.UserDto u : allUsers) {
-                if ((u.fullName != null && u.fullName.toLowerCase().contains(q)) ||
-                        (u.phone != null && u.phone.toLowerCase().contains(q)) ||
-                        (u.terminalId != null && u.terminalId.toLowerCase().contains(q))) {
-                    displayUsers.add(u);
+            display = new ArrayList<>();
+            for (ApiService.MerchantDto merchant : allMerchants) {
+                String name = merchant.merchantName != null ? merchant.merchantName.toLowerCase() : "";
+                String mid = merchant.merchantCode != null ? merchant.merchantCode.toLowerCase() : "";
+                String address = merchant.storeAddress != null ? merchant.storeAddress.toLowerCase() : "";
+                String businessType = merchant.businessType != null ? merchant.businessType.toLowerCase() : "";
+                if (name.contains(q) || mid.contains(q) || address.contains(q) || businessType.contains(q)) {
+                    display.add(merchant);
                 }
             }
         }
 
-        adapter.setUsers(displayUsers);
-        int count = displayUsers.size();
-        tvUserCount.setText(getString(R.string.user_mgmt_count_format, count));
+        adapter.setMerchants(display);
+        adapter.setMissingTidCounts(missingTidCountByMerchantId);
+        tvUserCount.setText(getString(R.string.user_mgmt_count_format, display.size()));
         showContentChrome();
 
-        if (count == 0) {
-            if (allUsers.isEmpty()) {
+        if (display.isEmpty()) {
+            if (allMerchants.isEmpty()) {
                 showEmptyStateText(getString(R.string.user_mgmt_empty_title),
                         getString(R.string.user_mgmt_empty_subtitle), false);
             } else {
@@ -261,463 +262,730 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
     }
 
     @Override
-    public void onUserClick(ApiService.UserDto user) {
+    public void onMerchantClick(ApiService.MerchantDto merchant) {
         if (!isNetworkAvailable()) {
             showOfflineState();
             return;
         }
-        showAddEditDialog(user);
+        showMerchantAccountsDialog(merchant);
     }
 
     @Override
-    public void onUserLongClick(ApiService.UserDto user) {
+    public void onMerchantLongClick(ApiService.MerchantDto merchant) {
+        onMerchantClick(merchant);
+    }
+
+    private void showMerchantAccountsDialog(ApiService.MerchantDto merchant) {
+        String token = ApiClient.bearerToken(this);
+        if (token.isEmpty() || "Bearer ".equals(token)) {
+            Toast.makeText(this, R.string.user_mgmt_state_backend_session_unavailable_title, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ApiClient.getService(this).getMerchantAccounts(token, merchant.id).enqueue(new Callback<List<ApiService.UserDto>>() {
+            @Override
+            public void onResponse(@NonNull Call<List<ApiService.UserDto>> call,
+                    @NonNull Response<List<ApiService.UserDto>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    showMerchantAccountsFromUsers(merchant, response.body());
+                    return;
+                }
+                // Fallback for older backend versions without /accounts endpoint.
+                loadAccountsFromTerminals(merchant, token);
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<List<ApiService.UserDto>> call, @NonNull Throwable t) {
+                loadAccountsFromTerminals(merchant, token);
+            }
+        });
+    }
+
+    private void loadAccountsFromTerminals(ApiService.MerchantDto merchant, String token) {
+        ApiClient.getService(this).getTerminals(token).enqueue(new Callback<List<ApiService.TerminalDto>>() {
+            @Override
+            public void onResponse(@NonNull Call<List<ApiService.TerminalDto>> call,
+                    @NonNull Response<List<ApiService.TerminalDto>> response) {
+                if (!response.isSuccessful() || response.body() == null) {
+                    showMerchantAccountsMessage(merchant, Collections.emptyList());
+                    return;
+                }
+                List<String> lines = new ArrayList<>();
+                int index = 1;
+                for (ApiService.TerminalDto terminal : response.body()) {
+                    if (terminal.merchant == null || terminal.merchant.id != merchant.id) {
+                        continue;
+                    }
+                    String tid = terminal.terminalCode != null && !terminal.terminalCode.trim().isEmpty()
+                            ? terminal.terminalCode
+                            : getString(R.string.txn_detail_placeholder_dash);
+                    lines.add(getString(R.string.user_mgmt_accounts_dialog_line, index++, tid));
+                }
+                showMerchantAccountsMessage(merchant, lines);
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<List<ApiService.TerminalDto>> call, @NonNull Throwable t) {
+                showMerchantAccountsMessage(merchant, Collections.emptyList());
+            }
+        });
+    }
+
+    private void showMerchantAccountsFromUsers(ApiService.MerchantDto merchant, List<ApiService.UserDto> users) {
+        if (users == null || users.isEmpty()) {
+            showMerchantAccountsMessage(merchant, Collections.emptyList());
+            return;
+        }
+
+        int missingTidCount = 0;
+        for (ApiService.UserDto user : users) {
+            if (normalizeTid(user.terminalId).isEmpty()) {
+                missingTidCount++;
+            }
+        }
+        missingTidCountByMerchantId.put(merchant.id, missingTidCount);
+        adapter.setMissingTidCounts(missingTidCountByMerchantId);
+
+        if (missingTidCount > 0) {
+            Toast.makeText(this,
+                    getString(R.string.user_mgmt_accounts_missing_tid_notice, missingTidCount),
+                    Toast.LENGTH_LONG).show();
+        }
+
+        showMerchantAccountListDialog(merchant, users);
+    }
+
+    private void showMerchantAccountListDialog(ApiService.MerchantDto merchant, List<ApiService.UserDto> users) {
+        List<ApiService.UserDto> accountUsers = new ArrayList<>(users);
+        String merchantName = merchant.merchantName != null && !merchant.merchantName.trim().isEmpty()
+                ? merchant.merchantName
+                : merchant.merchantCode;
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_list_item_1,
+                buildAccountListItems(accountUsers));
+
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.user_mgmt_accounts_dialog_title) + " - " + merchantName)
+                .setAdapter(adapter, (dialog, which) -> {
+                    if (which < 0 || which >= accountUsers.size()) {
+                        return;
+                    }
+                    ApiService.UserDto selectedUser = accountUsers.get(which);
+                    showAccountConfigDialog(merchant, selectedUser);
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private List<String> buildAccountListItems(List<ApiService.UserDto> users) {
+        List<String> items = new ArrayList<>();
+        for (int i = 0; i < users.size(); i++) {
+            ApiService.UserDto user = users.get(i);
+            String identity = resolveAccountIdentity(user);
+            String tid = normalizeTid(user.terminalId);
+            String ip = safe(user.serverIp);
+            String port = user.serverPort != null && user.serverPort > 0 ? String.valueOf(user.serverPort) : "-";
+            String info = getString(
+                    R.string.user_mgmt_accounts_dialog_item_format,
+                    i + 1,
+                    identity,
+                    tid.isEmpty() ? getString(R.string.txn_detail_placeholder_dash) : tid,
+                    ip.isEmpty() ? getString(R.string.txn_detail_placeholder_dash) : ip,
+                    port);
+            items.add(info);
+        }
+        return items;
+    }
+
+    private void showAccountConfigDialog(ApiService.MerchantDto merchant, ApiService.UserDto user) {
+        View content = getLayoutInflater().inflate(R.layout.dialog_merchant_account_config, null, false);
+
+        TextView tvHint = content.findViewById(R.id.tvAccountHint);
+        EditText etTid = content.findViewById(R.id.etAccountTid);
+        EditText etServerIp = content.findViewById(R.id.etAccountServerIp);
+        EditText etServerPort = content.findViewById(R.id.etAccountServerPort);
+
+        tvHint.setText(getString(R.string.user_mgmt_account_editor_hint, resolveAccountIdentity(user)));
+        etTid.setText(normalizeTid(user.terminalId));
+        etServerIp.setText(safe(user.serverIp));
+        etServerPort.setText(user.serverPort != null && user.serverPort > 0 ? String.valueOf(user.serverPort) : "");
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.user_mgmt_account_editor_title)
+                .setView(content)
+                .setNegativeButton(R.string.user_mgmt_account_editor_clear, null)
+                .setNeutralButton(R.string.user_mgmt_account_editor_test, null)
+                .setPositiveButton(R.string.common_save, null)
+                .create();
+
+        dialog.setOnShowListener(d -> {
+            Button btnSave = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            Button btnTest = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
+            Button btnClear = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+
+            btnSave.setOnClickListener(v -> saveAccountConfig(dialog, merchant, user, etTid, etServerIp, etServerPort));
+            btnTest.setOnClickListener(v -> testAccountConnection(etServerIp, etServerPort));
+            btnClear.setOnClickListener(v -> clearAccountConfig(dialog, merchant, user));
+        });
+        dialog.show();
+    }
+
+
+    private void saveAccountConfig(AlertDialog dialog,
+            ApiService.MerchantDto merchant,
+            ApiService.UserDto user,
+            EditText etTid,
+            EditText etServerIp,
+            EditText etServerPort) {
+        String token = ApiClient.bearerToken(this);
+        if (token.isEmpty() || "Bearer ".equals(token)) {
+            Toast.makeText(this, R.string.user_mgmt_state_backend_session_unavailable_title, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String tid = normalizeTid(etTid.getText().toString());
+        if (!tid.isEmpty() && !tid.matches(TID_REGEX)) {
+            etTid.setError(getString(R.string.user_mgmt_accounts_dialog_tid_invalid, 1));
+            etTid.requestFocus();
+            return;
+        }
+
+        String serverIp = safe(etServerIp.getText().toString());
+        String portText = safe(etServerPort.getText().toString());
+        Integer serverPort = null;
+        if (!portText.isEmpty()) {
+            try {
+                int parsed = Integer.parseInt(portText);
+                if (parsed <= 0 || parsed > 65535) {
+                    etServerPort.setError(getString(R.string.user_mgmt_account_editor_invalid_port));
+                    etServerPort.requestFocus();
+                    return;
+                }
+                serverPort = parsed;
+            } catch (NumberFormatException ex) {
+                etServerPort.setError(getString(R.string.user_mgmt_account_editor_invalid_port));
+                etServerPort.requestFocus();
+                return;
+            }
+        }
+
+        ApiService.CreateUserRequest body = new ApiService.CreateUserRequest(
+                null,
+                safe(user.fullName),
+                safe(user.phone),
+                safe(user.email),
+                safe(user.dob),
+                safe(user.gender),
+                safe(user.storeName),
+                safe(user.businessType),
+                safe(user.storeAddress),
+                user.merchantId,
+                tid,
+                serverIp,
+                serverPort);
+
+        setDialogButtonsEnabled(dialog, false);
+        ApiClient.getService(this).updateUser(token, user.id, body).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiService.UserDto> call,
+                    @NonNull Response<ApiService.UserDto> response) {
+                setDialogButtonsEnabled(dialog, true);
+                if (!response.isSuccessful()) {
+                    Toast.makeText(UserManagementActivity.this,
+                            getString(R.string.user_mgmt_error_code, response.code()),
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
+                Toast.makeText(UserManagementActivity.this,
+                        R.string.user_mgmt_account_editor_save_success,
+                        Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+                showMerchantAccountsDialog(merchant);
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ApiService.UserDto> call, @NonNull Throwable t) {
+                setDialogButtonsEnabled(dialog, true);
+                Toast.makeText(UserManagementActivity.this,
+                        getString(R.string.user_mgmt_network_error, t.getMessage()),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void clearAccountConfig(AlertDialog dialog,
+            ApiService.MerchantDto merchant,
+            ApiService.UserDto user) {
+        String token = ApiClient.bearerToken(this);
+        if (token.isEmpty() || "Bearer ".equals(token)) {
+            Toast.makeText(this, R.string.user_mgmt_state_backend_session_unavailable_title, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ApiService.CreateUserRequest body = new ApiService.CreateUserRequest(
+                null,
+                safe(user.fullName),
+                safe(user.phone),
+                safe(user.email),
+                safe(user.dob),
+                safe(user.gender),
+                safe(user.storeName),
+                safe(user.businessType),
+                safe(user.storeAddress),
+                user.merchantId,
+                "",
+                "",
+                null);
+
+        setDialogButtonsEnabled(dialog, false);
+        ApiClient.getService(this).updateUser(token, user.id, body).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiService.UserDto> call,
+                    @NonNull Response<ApiService.UserDto> response) {
+                setDialogButtonsEnabled(dialog, true);
+                if (!response.isSuccessful()) {
+                    Toast.makeText(UserManagementActivity.this,
+                            getString(R.string.user_mgmt_error_code, response.code()),
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
+                Toast.makeText(UserManagementActivity.this,
+                        R.string.user_mgmt_account_editor_clear_success,
+                        Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+                showMerchantAccountsDialog(merchant);
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ApiService.UserDto> call, @NonNull Throwable t) {
+                setDialogButtonsEnabled(dialog, true);
+                Toast.makeText(UserManagementActivity.this,
+                        getString(R.string.user_mgmt_network_error, t.getMessage()),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void testAccountConnection(EditText etServerIp, EditText etServerPort) {
+        String ip = safe(etServerIp.getText().toString());
+        String portText = safe(etServerPort.getText().toString());
+        if (ip.isEmpty()) {
+            etServerIp.setError(getString(R.string.common_required));
+            etServerIp.requestFocus();
+            return;
+        }
+        int port;
+        try {
+            port = Integer.parseInt(portText);
+            if (port <= 0 || port > 65535) {
+                throw new NumberFormatException();
+            }
+        } catch (Exception ex) {
+            etServerPort.setError(getString(R.string.user_mgmt_account_editor_invalid_port));
+            etServerPort.requestFocus();
+            return;
+        }
+
+        Toast.makeText(this, R.string.processing, Toast.LENGTH_SHORT).show();
+        accountNetworkExecutor.execute(() -> {
+            boolean connected = false;
+            String reason = null;
+            try (Socket socket = new Socket()) {
+                socket.connect(new InetSocketAddress(ip, port), 5000);
+                connected = true;
+            } catch (Exception e) {
+                reason = e.getMessage();
+            }
+            final boolean ok = connected;
+            final String failureReason = reason;
+            runOnUiThread(() -> {
+                if (ok) {
+                    Toast.makeText(this, R.string.user_mgmt_account_editor_test_success, Toast.LENGTH_SHORT).show();
+                } else {
+                    String suffix = failureReason == null || failureReason.trim().isEmpty()
+                            ? ""
+                            : ": " + failureReason;
+                    Toast.makeText(this,
+                            getString(R.string.user_mgmt_account_editor_test_failed) + suffix,
+                            Toast.LENGTH_LONG).show();
+                }
+            });
+        });
+    }
+
+    private void showMerchantAccountsEditorDialog(ApiService.MerchantDto merchant, List<ApiService.UserDto> users) {
+        String merchantName = merchant.merchantName != null && !merchant.merchantName.trim().isEmpty()
+                ? merchant.merchantName
+                : merchant.merchantCode;
+        String mid = merchant.merchantCode != null && !merchant.merchantCode.trim().isEmpty()
+                ? merchant.merchantCode
+                : getString(R.string.txn_detail_placeholder_dash);
+
+        ScrollView scrollView = new ScrollView(this);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        scrollView.setPadding(pad, pad, pad, 0);
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        scrollView.addView(content);
+
+        TextView tvHeader = new TextView(this);
+        tvHeader.setText(getString(R.string.user_mgmt_accounts_dialog_setup_hint, mid));
+        tvHeader.setTextColor(0xFF334155);
+        tvHeader.setTextSize(13);
+        content.addView(tvHeader);
+
+        List<TidInputRow> rows = new ArrayList<>();
+        for (int i = 0; i < users.size(); i++) {
+            ApiService.UserDto user = users.get(i);
+            int accountIndex = i + 1;
+
+            TextView tvAccount = new TextView(this);
+            tvAccount.setPadding(0, pad, 0, 8);
+            tvAccount.setText(getString(R.string.user_mgmt_accounts_dialog_account_label,
+                    accountIndex,
+                    resolveAccountIdentity(user)));
+            tvAccount.setTextColor(0xFF0F172A);
+            tvAccount.setTextSize(14);
+            content.addView(tvAccount);
+
+            EditText input = new EditText(this);
+            input.setSingleLine(true);
+            input.setHint(getString(R.string.user_mgmt_accounts_dialog_tid_hint, accountIndex));
+            input.setText(normalizeTid(user.terminalId));
+            input.setSelectAllOnFocus(true);
+            input.setPadding(24, 18, 24, 18);
+            input.setBackgroundResource(R.drawable.bg_input_rounded);
+            content.addView(input);
+
+            rows.add(new TidInputRow(user, accountIndex, input));
+        }
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.user_mgmt_accounts_dialog_title) + " - " + merchantName)
+                .setView(scrollView)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.user_mgmt_accounts_dialog_save_tid, null)
+                .create();
+
+        dialog.setOnShowListener(d -> {
+            Button saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            saveButton.setOnClickListener(v -> submitTidUpdates(dialog, rows));
+        });
+        dialog.show();
+    }
+
+    private void submitTidUpdates(AlertDialog dialog, List<TidInputRow> rows) {
         if (!isNetworkAvailable()) {
             showOfflineState();
             return;
         }
-        confirmDelete(user);
+
+        String token = ApiClient.bearerToken(this);
+        if (token.isEmpty() || "Bearer ".equals(token)) {
+            Toast.makeText(this, R.string.user_mgmt_state_backend_session_unavailable_title, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        List<TidUpdateRequest> updates = new ArrayList<>();
+        for (TidInputRow row : rows) {
+            String tid = normalizeTid(row.input.getText().toString());
+            if (!tid.matches(TID_REGEX)) {
+                row.input.setError(getString(R.string.user_mgmt_accounts_dialog_tid_invalid, row.accountIndex));
+                row.input.requestFocus();
+                return;
+            }
+
+            String currentTid = normalizeTid(row.user.terminalId);
+            if (!tid.equals(currentTid)) {
+                updates.add(new TidUpdateRequest(row.user, row.accountIndex, tid));
+            }
+        }
+
+        if (updates.isEmpty()) {
+            Toast.makeText(this, R.string.user_mgmt_accounts_dialog_tid_no_change, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        setDialogButtonsEnabled(dialog, false);
+        updateTidRecursive(token, updates, 0, 0, 0, dialog);
     }
 
-    // ====== Add / Edit Dialog ======
-    private void showAddEditDialog(ApiService.UserDto existing) {
-        boolean isEdit = existing != null;
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_edit_user, null);
-
-        EditText etName = dialogView.findViewById(R.id.etName);
-        EditText etPhone = dialogView.findViewById(R.id.etPhone);
-        EditText etEmail = dialogView.findViewById(R.id.etEmail);
-        EditText etDob = dialogView.findViewById(R.id.etDob);
-        AutoCompleteTextView etGender = dialogView.findViewById(R.id.etGender);
-        EditText etStoreName = dialogView.findViewById(R.id.etStoreName);
-        AutoCompleteTextView etBusinessType = dialogView.findViewById(R.id.etBusinessType);
-        TextInputLayout tilBusinessType = dialogView.findViewById(R.id.tilBusinessType);
-        EditText etStoreAddress = dialogView.findViewById(R.id.etStoreAddress);
-        EditText etPassword = dialogView.findViewById(R.id.etPassword);
-        TextInputLayout tilPassword = dialogView.findViewById(R.id.tilPassword);
-        EditText etTerminalId = dialogView.findViewById(R.id.etTerminalId);
-        EditText etServerIp = dialogView.findViewById(R.id.etServerIp);
-        EditText etServerPort = dialogView.findViewById(R.id.etServerPort);
-
-        TextView tvTitle = dialogView.findViewById(R.id.tvDialogTitle);
-        TextView tvSubtitle = dialogView.findViewById(R.id.tvDialogSubtitle);
-
-        if (etGender != null) {
-            ArrayAdapter<CharSequence> genderAdapter = ArrayAdapter.createFromResource(this,
-                    R.array.register_gender_options,
-                    android.R.layout.simple_list_item_1);
-            etGender.setAdapter(genderAdapter);
-            etGender.setOnClickListener(v -> etGender.showDropDown());
-        }
-        if (etBusinessType != null) {
-            ArrayAdapter<String> businessTypeAdapter = new ArrayAdapter<>(this,
-                    android.R.layout.simple_list_item_1,
-                    BusinessTypeMccMapper.getDisplayOptions(this));
-            etBusinessType.setAdapter(businessTypeAdapter);
-            // Business type is selection-only to keep MCC mapping valid.
-            etBusinessType.setKeyListener(null);
-            etBusinessType.setInputType(android.text.InputType.TYPE_NULL);
-            etBusinessType.setFocusable(false);
-            etBusinessType.setCursorVisible(false);
-            etBusinessType.setOnClickListener(v -> etBusinessType.showDropDown());
-            etBusinessType.setOnDismissListener(() -> {
-                if (tilBusinessType != null) {
-                    tilBusinessType.setError(null);
-                }
-            });
-        }
-
-        if (isEdit) {
-            if (tvTitle != null)
-                tvTitle.setText(R.string.user_mgmt_edit_user_title);
-            if (tvSubtitle != null)
-                tvSubtitle.setText(R.string.user_mgmt_edit_user_subtitle);
-            etName.setText(existing.fullName);
-            etPhone.setText(existing.phone);
-            etEmail.setText(existing.email);
-            if (etDob != null) etDob.setText(existing.dob);
-            if (etGender != null) etGender.setText(existing.gender);
-            if (etStoreName != null) etStoreName.setText(existing.storeName);
-            if (etBusinessType != null) {
-                etBusinessType.setText(BusinessTypeMccMapper.toDisplay(this, existing.businessType), false);
-            }
-            if (etStoreAddress != null) etStoreAddress.setText(existing.storeAddress);
-            if (etTerminalId != null)
-                etTerminalId.setText(existing.terminalId);
-            if (etServerIp != null && existing.serverIp != null)
-                etServerIp.setText(existing.serverIp);
-            if (etServerPort != null && existing.serverPort != null)
-                etServerPort.setText(String.valueOf(existing.serverPort));
-            etPassword.setText("");
-            etPassword.setHint(R.string.settings_change_password);
-            if (tilPassword != null) {
-                tilPassword.setHelperText(getString(R.string.user_mgmt_new_password_optional_hint));
-            }
-        } else if (tilPassword != null) {
-            tilPassword.setHelperText(null);
-        }
-
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setView(dialogView)
-                .setCancelable(true)
-                .create();
-
-        // Test Connection button
-        View btnTestConnection = dialogView.findViewById(R.id.btnTestConnection);
-        TextView tvStatus = dialogView.findViewById(R.id.tvConnectionStatus);
-        if (btnTestConnection != null) {
-            btnTestConnection.setVisibility(View.VISIBLE);
-            btnTestConnection.setOnClickListener(v -> {
-                String ip = etServerIp != null ? etServerIp.getText().toString().trim() : "";
-                String portStr = etServerPort != null ? etServerPort.getText().toString().trim() : "";
-                if (ip.isEmpty() || portStr.isEmpty()) {
-                    if (tvStatus != null) {
-                        tvStatus.setVisibility(View.VISIBLE);
-                        tvStatus.setText(R.string.user_mgmt_enter_ip_port_first);
-                        tvStatus.setTextColor(0xFFEF4444);
-                    }
-                    return;
-                }
-                int port;
-                try {
-                    port = Integer.parseInt(portStr);
-                } catch (NumberFormatException e) {
-                    if (tvStatus != null) {
-                        tvStatus.setVisibility(View.VISIBLE);
-                        tvStatus.setText(R.string.user_mgmt_invalid_port_number);
-                        tvStatus.setTextColor(0xFFEF4444);
-                    }
-                    return;
-                }
-                if (tvStatus != null) {
-                    tvStatus.setVisibility(View.VISIBLE);
-                    tvStatus.setText(R.string.user_mgmt_testing_connection);
-                    tvStatus.setTextColor(0xFF64748B);
-                }
-                final int finalPort = port;
-                new Thread(() -> {
-                    boolean ok = false;
-                    try {
-                        java.net.Socket socket = new java.net.Socket();
-                        socket.connect(new java.net.InetSocketAddress(ip, finalPort), 5000);
-                        socket.close();
-                        ok = true;
-                    } catch (Exception ignored) {
-                    }
-                    final boolean result = ok;
-                    runOnUiThread(() -> {
-                        if (tvStatus != null) {
-                            tvStatus.setVisibility(View.VISIBLE);
-                            if (result) {
-                                tvStatus.setText(R.string.user_mgmt_connected);
-                                tvStatus.setTextColor(0xFF16A34A);
-                            } else {
-                                tvStatus.setText(R.string.user_mgmt_connection_failed);
-                                tvStatus.setTextColor(0xFFEF4444);
-                            }
-                        }
-                    });
-                }).start();
-            });
-        }
-
-        // Save button
-        View btnSave = dialogView.findViewById(R.id.btnDialogSave);
-        if (btnSave != null) {
-            btnSave.setOnClickListener(v -> {
-                String fullName = etName.getText().toString().trim();
-                String phone = etPhone.getText().toString().trim();
-                String email = etEmail.getText().toString().trim();
-                String dob = etDob != null ? etDob.getText().toString().trim() : "";
-                String gender = etGender != null ? etGender.getText().toString().trim() : "";
-                String storeName = etStoreName != null ? etStoreName.getText().toString().trim() : "";
-                String businessTypeSelection = etBusinessType != null
-                        ? etBusinessType.getText().toString().trim()
-                        : "";
-                String businessType = BusinessTypeMccMapper.toMcc(businessTypeSelection);
-                String storeAddress = etStoreAddress != null ? etStoreAddress.getText().toString().trim() : "";
-                String password = etPassword.getText().toString().trim();
-                String terminalId = etTerminalId != null ? etTerminalId.getText().toString().trim() : "";
-                String serverIp = etServerIp != null ? etServerIp.getText().toString().trim() : "";
-                String serverPortStr = etServerPort != null ? etServerPort.getText().toString().trim() : "";
-                int serverPort = 0;
-                try {
-                    serverPort = Integer.parseInt(serverPortStr);
-                } catch (NumberFormatException ignored) {
-                }
-
-                if (!isEdit && phone.isEmpty()) {
-                    Toast.makeText(this, R.string.user_mgmt_phone_required, Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if (!isEdit && password.isEmpty()) {
-                    Toast.makeText(this, R.string.user_mgmt_password_required, Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if (!businessTypeSelection.isEmpty() && !BusinessTypeMccMapper.isSupportedSelection(businessTypeSelection)) {
-                    if (tilBusinessType != null) {
-                        tilBusinessType.setError(getString(R.string.register_invalid_business_type));
-                    }
-                    if (etBusinessType != null) {
-                        etBusinessType.requestFocus();
-                        etBusinessType.showDropDown();
-                    }
-                    return;
-                }
-                if (tilBusinessType != null) {
-                    tilBusinessType.setError(null);
-                }
-
-                String token = ApiClient.bearerToken(this);
-                final String fServerIp = serverIp;
-                final int fServerPort = serverPort;
-                final String fTerminalId = terminalId;
-
-                if (isEdit) {
-                    ApiService.CreateUserRequest req = new ApiService.CreateUserRequest(
-                            password.isEmpty() ? null : password,
-                            fullName, phone, email,
-                            dob, gender, storeName, businessType, storeAddress,
-                            terminalId, serverIp, serverPort > 0 ? serverPort : null);
-                    ApiClient.getService(this).updateUser(token, existing.id, req)
-                            .enqueue(new SimpleCallbackWithLocalSync(getString(R.string.user_mgmt_user_updated), existing.id, fServerIp,
-                                    fServerPort, fTerminalId));
-                } else {
-                    ApiService.CreateUserRequest req = new ApiService.CreateUserRequest(
-                            password, fullName, phone, email,
-                            dob, gender, storeName, businessType, storeAddress,
-                            terminalId, serverIp, serverPort > 0 ? serverPort : null);
-                    ApiClient.getService(this).createUser(token, req)
-                            .enqueue(new SimpleCallbackWithLocalSync(getString(R.string.user_mgmt_user_created), -1, fServerIp, fServerPort,
-                                    fTerminalId));
-                }
-                dialog.dismiss();
-            });
-        }
-
-        // Cancel button
-        View btnCancel = dialogView.findViewById(R.id.btnDialogCancel);
-        if (btnCancel != null) {
-            btnCancel.setOnClickListener(v -> dialog.dismiss());
-        }
-
-        // Delete button (edit mode only)
-        View btnDelete = dialogView.findViewById(R.id.btnDelete);
-        if (btnDelete != null) {
-            if (isEdit) {
-                btnDelete.setVisibility(View.VISIBLE);
-                btnDelete.setOnClickListener(v -> {
-                    dialog.dismiss();
-                    confirmDelete(existing);
-                });
+    private void updateTidRecursive(String token,
+            List<TidUpdateRequest> updates,
+            int index,
+            int successCount,
+            int failCount,
+            AlertDialog dialog) {
+        if (index >= updates.size()) {
+            setDialogButtonsEnabled(dialog, true);
+            dialog.dismiss();
+            loadMerchants();
+            if (failCount == 0) {
+                Toast.makeText(this,
+                        getString(R.string.user_mgmt_accounts_dialog_tid_update_success, successCount),
+                        Toast.LENGTH_SHORT).show();
             } else {
-                btnDelete.setVisibility(View.GONE);
+                Toast.makeText(this,
+                        getString(R.string.user_mgmt_accounts_dialog_tid_update_partial, successCount, failCount),
+                        Toast.LENGTH_LONG).show();
+            }
+            return;
+        }
+
+        TidUpdateRequest request = updates.get(index);
+        ApiService.UserDto user = request.user;
+        ApiService.CreateUserRequest body = new ApiService.CreateUserRequest(
+                null,
+                safe(user.fullName),
+                safe(user.phone),
+                safe(user.email),
+                safe(user.dob),
+                safe(user.gender),
+                safe(user.storeName),
+                safe(user.businessType),
+                safe(user.storeAddress),
+                user.merchantId,
+                request.tid,
+                user.serverIp,
+                user.serverPort);
+
+        ApiClient.getService(this).updateUser(token, user.id, body).enqueue(new Callback<ApiService.UserDto>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiService.UserDto> call,
+                    @NonNull Response<ApiService.UserDto> response) {
+                int nextSuccess = successCount;
+                int nextFail = failCount;
+                if (response.isSuccessful()) {
+                    nextSuccess++;
+                } else {
+                    nextFail++;
+                }
+                updateTidRecursive(token, updates, index + 1, nextSuccess, nextFail, dialog);
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ApiService.UserDto> call, @NonNull Throwable t) {
+                updateTidRecursive(token, updates, index + 1, successCount, failCount + 1, dialog);
+            }
+        });
+    }
+
+    private void setDialogButtonsEnabled(AlertDialog dialog, boolean enabled) {
+        Button positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        Button negative = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+        if (positive != null) {
+            positive.setEnabled(enabled);
+        }
+        if (negative != null) {
+            negative.setEnabled(enabled);
+        }
+    }
+
+    private String resolveAccountIdentity(ApiService.UserDto user) {
+        if (user == null) {
+            return getString(R.string.txn_detail_placeholder_dash);
+        }
+        if (user.fullName != null && !user.fullName.trim().isEmpty()) {
+            return user.fullName.trim();
+        }
+        if (user.phone != null && !user.phone.trim().isEmpty()) {
+            return user.phone.trim();
+        }
+        if (user.email != null && !user.email.trim().isEmpty()) {
+            return user.email.trim();
+        }
+        return getString(R.string.txn_detail_placeholder_dash);
+    }
+
+    private String normalizeTid(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private static class TidInputRow {
+        final ApiService.UserDto user;
+        final int accountIndex;
+        final EditText input;
+
+        TidInputRow(ApiService.UserDto user, int accountIndex, EditText input) {
+            this.user = user;
+            this.accountIndex = accountIndex;
+            this.input = input;
+        }
+    }
+
+    private static class TidUpdateRequest {
+        final ApiService.UserDto user;
+        final int accountIndex;
+        final String tid;
+
+        TidUpdateRequest(ApiService.UserDto user, int accountIndex, String tid) {
+            this.user = user;
+            this.accountIndex = accountIndex;
+            this.tid = tid;
+        }
+    }
+
+    private void showMerchantAccountsMessage(ApiService.MerchantDto merchant, List<String> lines) {
+        String merchantName = merchant.merchantName != null && !merchant.merchantName.trim().isEmpty()
+                ? merchant.merchantName
+                : merchant.merchantCode;
+        String mid = merchant.merchantCode != null && !merchant.merchantCode.trim().isEmpty()
+                ? merchant.merchantCode
+                : getString(R.string.txn_detail_placeholder_dash);
+
+        StringBuilder message = new StringBuilder();
+        message.append(getString(R.string.user_mgmt_accounts_dialog_mid, mid));
+        if (merchant.storeAddress != null && !merchant.storeAddress.trim().isEmpty()) {
+            message.append("\n").append(merchant.storeAddress.trim());
+        }
+
+        if (lines.isEmpty()) {
+            message.append("\n\n").append(getString(R.string.user_mgmt_accounts_dialog_empty));
+        } else {
+            message.append("\n\n");
+            for (String line : lines) {
+                message.append(line).append("\n");
             }
         }
 
-        dialog.show();
-    }
-
-    // ====== Delete ======
-    private void confirmDelete(ApiService.UserDto user) {
         new AlertDialog.Builder(this)
-                .setTitle(R.string.user_mgmt_delete_user_title)
-                .setMessage(getString(R.string.user_mgmt_delete_user_message,
-                        user.fullName != null ? user.fullName : user.phone))
-                .setPositiveButton(R.string.user_mgmt_delete_action, (d, w) -> {
-                    String token = ApiClient.bearerToken(this);
-                    ApiClient.getService(this).deleteUser(token, user.id)
-                            .enqueue(new Callback<Map<String, String>>() {
-                                @Override
-                                public void onResponse(Call<Map<String, String>> c, Response<Map<String, String>> r) {
-                                    if (r.isSuccessful()) {
-                                        Toast.makeText(UserManagementActivity.this, R.string.user_mgmt_user_deleted,
-                                                Toast.LENGTH_SHORT).show();
-                                        loadUsers();
-                                    } else {
-                                        Toast.makeText(UserManagementActivity.this,
-                                                extractBackendError(r, getString(R.string.user_mgmt_error_code, r.code())),
-                                                Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-
-                                @Override
-                                public void onFailure(Call<Map<String, String>> c, Throwable t) {
-                                    Toast.makeText(UserManagementActivity.this, getString(R.string.common_error_with_reason, t.getMessage()),
-                                            Toast.LENGTH_SHORT).show();
-                                }
-                            });
-                })
-                .setNegativeButton(R.string.common_cancel, null)
+                .setTitle(getString(R.string.user_mgmt_accounts_dialog_title) + " - " + merchantName)
+                .setMessage(message.toString().trim())
+                .setPositiveButton(android.R.string.ok, null)
                 .show();
     }
 
-    // Helper callback that shows a toast, reloads, and saves server config locally
-    private class SimpleCallbackWithLocalSync implements Callback<ApiService.UserDto> {
-        private final String successMsg;
-        private final long existingBackendId;
-        private final String serverIp;
-        private final int serverPort;
-        private final String terminalId;
+    private void showOfflineState() {
+        backendListAvailable = false;
+        clearRenderedMerchants();
+        showNonContentState(getString(R.string.user_mgmt_state_backend_unavailable_title),
+                getString(R.string.user_mgmt_state_load_users_network_subtitle), false);
+        Toast.makeText(this, R.string.network_lost, Toast.LENGTH_SHORT).show();
+    }
 
-        SimpleCallbackWithLocalSync(String msg, long existingBackendId, String serverIp, int serverPort,
-                String terminalId) {
-            this.successMsg = msg;
-            this.existingBackendId = existingBackendId;
-            this.serverIp = serverIp;
-            this.serverPort = serverPort;
-            this.terminalId = terminalId;
+    private void clearRenderedMerchants() {
+        adapter.setMerchants(new ArrayList<>());
+        adapter.setMissingTidCounts(new HashMap<>());
+        tvUserCount.setText(getString(R.string.user_mgmt_count_format, 0));
+    }
+
+    private void fetchMissingTidCounts(List<ApiService.MerchantDto> merchants,
+            String token,
+            int requestVersion) {
+        if (merchants == null || merchants.isEmpty()) {
+            return;
         }
 
-        @Override
-        public void onResponse(Call<ApiService.UserDto> call, Response<ApiService.UserDto> resp) {
-            if (resp.isSuccessful() && resp.body() != null) {
-                Toast.makeText(UserManagementActivity.this, successMsg, Toast.LENGTH_SHORT).show();
+        for (ApiService.MerchantDto merchant : merchants) {
+            ApiClient.getService(this).getMerchantAccounts(token, merchant.id).enqueue(new Callback<>() {
+                @Override
+                public void onResponse(@NonNull Call<List<ApiService.UserDto>> call,
+                        @NonNull Response<List<ApiService.UserDto>> response) {
+                    if (requestVersion != merchantBadgeRequestVersion) {
+                        return;
+                    }
+                    if (!response.isSuccessful() || response.body() == null) {
+                        fetchMissingTidFromTerminalsFallback(merchant, token, requestVersion);
+                        return;
+                    }
 
-                ApiService.UserDto savedUser = resp.body();
-                new Thread(() -> {
-                    try {
-                        AppDatabase db = AppDatabase.getInstance(UserManagementActivity.this);
-                        UserDao userDao = db.userDao();
-
-                        String phoneHash = PasswordUtils.hashSHA256(savedUser.phone);
-                        UserEntity localUser = userDao.findByUsernameHash(phoneHash);
-
-                        if (localUser != null) {
-                            localUser.serverIp = serverIp;
-                            localUser.serverPort = serverPort;
-                            localUser.terminalId = terminalId;
-                            localUser.backendId = savedUser.id;
-                            localUser.adminId = getCurrentAdminHash();
-                            userDao.update(localUser);
-                        } else {
-                            localUser = new UserEntity();
-                            localUser.usernameHash = phoneHash;
-                            localUser.passwordHash = "";
-                            localUser.displayName = savedUser.fullName;
-                            localUser.role = savedUser.role;
-                            localUser.email = savedUser.email;
-                            localUser.phone = savedUser.phone;
-                            localUser.dob = savedUser.dob;
-                            localUser.gender = savedUser.gender;
-                            localUser.storeName = savedUser.storeName;
-                            localUser.businessType = savedUser.businessType;
-                            localUser.storeAddress = savedUser.storeAddress;
-                            localUser.dob = savedUser.dob;
-                            localUser.gender = savedUser.gender;
-                            localUser.storeName = savedUser.storeName;
-                            localUser.businessType = savedUser.businessType;
-                            localUser.storeAddress = savedUser.storeAddress;
-                            localUser.backendId = savedUser.id;
-                            localUser.terminalId = terminalId;
-                            localUser.serverIp = serverIp;
-                            localUser.serverPort = serverPort;
-                            localUser.adminId = getCurrentAdminHash();
-                            localUser.createdAt = System.currentTimeMillis();
-                            userDao.insert(localUser);
+                    int missingTidCount = 0;
+                    for (ApiService.UserDto user : response.body()) {
+                        if (normalizeTid(user.terminalId).isEmpty()) {
+                            missingTidCount++;
                         }
-                    } catch (Exception e) {
-                        android.util.Log.w("UserMgmt", "Failed to sync local: " + e.getMessage());
                     }
-                }).start();
+                    missingTidCountByMerchantId.put(merchant.id, missingTidCount);
+                    runOnUiThread(() -> adapter.setMissingTidCounts(missingTidCountByMerchantId));
+                }
 
-                loadUsers();
-            } else {
-                Toast.makeText(UserManagementActivity.this,
-                        extractBackendError(resp, getString(R.string.user_mgmt_error_code, resp.code())),
-                        Toast.LENGTH_SHORT).show();
-            }
-        }
-
-        @Override
-        public void onFailure(Call<ApiService.UserDto> call, Throwable t) {
-            Toast.makeText(UserManagementActivity.this,
-                    getString(R.string.user_mgmt_network_error, t.getMessage()), Toast.LENGTH_SHORT).show();
+                @Override
+                public void onFailure(@NonNull Call<List<ApiService.UserDto>> call, @NonNull Throwable t) {
+                    fetchMissingTidFromTerminalsFallback(merchant, token, requestVersion);
+                }
+            });
         }
     }
 
-    private void loadCachedUsers() {
-        // Admin screens are backend-only for rendering.
-    }
+    private void fetchMissingTidFromTerminalsFallback(ApiService.MerchantDto merchant,
+            String token,
+            int requestVersion) {
+        ApiClient.getService(this).getTerminals(token).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<List<ApiService.TerminalDto>> call,
+                    @NonNull Response<List<ApiService.TerminalDto>> response) {
+                if (requestVersion != merchantBadgeRequestVersion) {
+                    return;
+                }
+                if (!response.isSuccessful() || response.body() == null || merchant.accountCount == null) {
+                    return;
+                }
 
-    private void syncUsersToLocal(List<ApiService.UserDto> remoteUsers) {
-        new Thread(() -> {
-            try {
-                AppDatabase db = AppDatabase.getInstance(UserManagementActivity.this);
-                UserDao userDao = db.userDao();
-                String adminHash = getCurrentAdminHash();
-
-                for (ApiService.UserDto remoteUser : remoteUsers) {
-                    UserEntity localUser = userDao.findByBackendId(remoteUser.id);
-                    if (localUser == null && remoteUser.phone != null) {
-                        localUser = userDao.findByPhone(remoteUser.phone);
-                    }
-                    if (localUser == null && remoteUser.email != null) {
-                        localUser = userDao.findByEmail(remoteUser.email);
-                    }
-
-                    if (localUser == null) {
-                        localUser = new UserEntity();
-                        localUser.usernameHash = PasswordUtils.hashSHA256(
-                                remoteUser.phone != null && !remoteUser.phone.isEmpty()
-                                        ? remoteUser.phone
-                                        : String.valueOf(remoteUser.id));
-                        localUser.passwordHash = "";
-                        localUser.createdAt = System.currentTimeMillis();
-                    }
-
-                    localUser.displayName = remoteUser.fullName;
-                    localUser.role = remoteUser.role;
-                    localUser.email = remoteUser.email;
-                    localUser.phone = remoteUser.phone;
-                    localUser.dob = remoteUser.dob;
-                    localUser.gender = remoteUser.gender;
-                    localUser.storeName = remoteUser.storeName;
-                    localUser.businessType = remoteUser.businessType;
-                    localUser.storeAddress = remoteUser.storeAddress;
-                    localUser.backendId = remoteUser.id;
-                    localUser.terminalId = remoteUser.terminalId;
-                    localUser.serverIp = remoteUser.serverIp;
-                    localUser.serverPort = remoteUser.serverPort != null ? remoteUser.serverPort : 0;
-                    localUser.adminId = adminHash;
-
-                    if (localUser.id > 0) {
-                        userDao.update(localUser);
-                    } else {
-                        userDao.insert(localUser);
+                int assignedCount = 0;
+                for (ApiService.TerminalDto terminal : response.body()) {
+                    if (terminal.merchant != null && terminal.merchant.id == merchant.id
+                            && terminal.terminalCode != null && !terminal.terminalCode.trim().isEmpty()) {
+                        assignedCount++;
                     }
                 }
-            } catch (Exception e) {
-                android.util.Log.w("UserMgmt", "Failed to cache remote users: " + e.getMessage());
+
+                int missing = Math.max(merchant.accountCount - assignedCount, 0);
+                missingTidCountByMerchantId.put(merchant.id, missing);
+                runOnUiThread(() -> adapter.setMissingTidCounts(missingTidCountByMerchantId));
             }
-        }).start();
+
+            @Override
+            public void onFailure(@NonNull Call<List<ApiService.TerminalDto>> call, @NonNull Throwable t) {
+                // Keep badge unknown/unset when both APIs cannot be fetched.
+            }
+        });
     }
 
-    private ApiService.UserDto toUserDto(UserEntity entity) {
-        ApiService.UserDto dto = new ApiService.UserDto();
-        dto.id = entity.backendId;
-        dto.role = entity.role;
-        dto.fullName = entity.displayName;
-        dto.phone = entity.phone;
-        dto.email = entity.email;
-        dto.dob = entity.dob;
-        dto.gender = entity.gender;
-        dto.storeName = entity.storeName;
-        dto.businessType = entity.businessType;
-        dto.storeAddress = entity.storeAddress;
-        dto.terminalId = entity.terminalId;
-        dto.serverIp = entity.serverIp;
-        dto.serverPort = entity.serverPort > 0 ? entity.serverPort : null;
-        dto.active = true;
-        dto.online = false;
-        return dto;
-    }
-
-    private String getCurrentAdminHash() {
-        String adminIdentifier = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME);
-        if (adminIdentifier == null) {
-            adminIdentifier = "";
+    private void showNonContentState(String title, String subtitle, boolean showRetryButton) {
+        layoutSearch.setVisibility(View.GONE);
+        rvUsers.setVisibility(View.GONE);
+        layoutEmpty.setVisibility(View.VISIBLE);
+        if (tvEmptyTitle != null) {
+            tvEmptyTitle.setText(title);
         }
-        return PasswordUtils.hashSHA256(adminIdentifier.trim());
+        if (tvEmptySubtitle != null) {
+            tvEmptySubtitle.setText(subtitle);
+        }
+        if (btnRetryConnection != null) {
+            btnRetryConnection.setVisibility(showRetryButton ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private void showContentChrome() {
+        layoutSearch.setVisibility(View.VISIBLE);
+        rvUsers.setVisibility(View.VISIBLE);
+        if (btnRetryConnection != null) {
+            btnRetryConnection.setVisibility(View.GONE);
+        }
+    }
+
+    private void showEmptyStateText(String title, String subtitle, boolean showRetryButton) {
+        showContentChrome();
+        layoutEmpty.setVisibility(View.VISIBLE);
+        if (tvEmptyTitle != null) {
+            tvEmptyTitle.setText(title);
+        }
+        if (tvEmptySubtitle != null) {
+            tvEmptySubtitle.setText(subtitle);
+        }
+        if (btnRetryConnection != null) {
+            btnRetryConnection.setVisibility(showRetryButton ? View.VISIBLE : View.GONE);
+        }
     }
 
     private boolean isNetworkAvailable() {
@@ -725,128 +993,27 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         if (connectivityManager == null) {
             return false;
         }
-        NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.getActiveNetwork());
+        NetworkCapabilities capabilities = connectivityManager
+                .getNetworkCapabilities(connectivityManager.getActiveNetwork());
         return capabilities != null && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
                 || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
                 || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
     }
 
-    private void showOfflineState() {
-        clearRenderedUsers();
-        showNonContentState(getString(R.string.user_mgmt_offline_title),
-                getString(R.string.user_mgmt_offline_subtitle), true);
-    }
-
-    private void showContentChrome() {
-        backendListAvailable = true;
-        if (swipeRefresh != null) {
-            swipeRefresh.setVisibility(View.VISIBLE);
-            swipeRefresh.setEnabled(true);
-        }
-        if (rvUsers != null) {
-            rvUsers.setVisibility(View.VISIBLE);
-        }
-        if (layoutSearch != null) {
-            layoutSearch.setVisibility(View.VISIBLE);
-        }
-        if (etSearch != null) {
-            etSearch.setEnabled(true);
-        }
-        if (fabAdd != null) {
-            fabAdd.show();
-            fabAdd.setEnabled(true);
-        }
-    }
-
-    private void clearRenderedUsers() {
-        backendListAvailable = false;
-        allUsers = new ArrayList<>();
-        adapter.setUsers(new ArrayList<>());
-        tvUserCount.setText(getString(R.string.user_mgmt_count_format, 0));
-        if (swipeRefresh != null) {
-            swipeRefresh.setRefreshing(false);
-        }
-    }
-
-    private void showNonContentState(String title, String subtitle, boolean showRetry) {
-        if (swipeRefresh != null) {
-            swipeRefresh.setRefreshing(false);
-            swipeRefresh.setVisibility(View.GONE);
-            swipeRefresh.setEnabled(showRetry);
-        }
-        if (rvUsers != null) {
-            rvUsers.setVisibility(View.GONE);
-        }
-        if (layoutSearch != null) {
-            layoutSearch.setVisibility(View.GONE);
-        }
-        if (etSearch != null) {
-            etSearch.setEnabled(false);
-        }
-        if (fabAdd != null) {
-            fabAdd.hide();
-            fabAdd.setEnabled(false);
-        }
-        showEmptyStateText(title, subtitle, showRetry);
-    }
-
-    private void showEmptyStateText(String titleText, String subtitleText, boolean showRetry) {
-        layoutEmpty.setVisibility(View.VISIBLE);
-        if (tvEmptyTitle != null) {
-            tvEmptyTitle.setText(titleText);
-        }
-        if (tvEmptySubtitle != null) {
-            tvEmptySubtitle.setText(subtitleText);
-        }
-        if (btnRetryConnection != null) {
-            btnRetryConnection.setVisibility(showRetry ? View.VISIBLE : View.GONE);
-        }
-    }
-
-    private String extractBackendError(Response<?> response, String fallback) {
-        if (response == null) {
-            return fallback;
-        }
-        try (okhttp3.ResponseBody body = response.errorBody()) {
-            if (body == null) {
-                return fallback;
-            }
-            String raw = body.string();
-            if (raw == null || raw.trim().isEmpty()) {
-                return fallback;
-            }
-            try {
-                org.json.JSONObject json = new org.json.JSONObject(raw);
-                String error = json.optString("error", "").trim();
-                String message = json.optString("message", "").trim();
-                android.util.Log.w("UserMgmt", "Backend error payload: " + (!error.isEmpty() ? error : message));
-            } catch (Exception ignored) {
-                android.util.Log.w("UserMgmt", "Backend error payload(raw): " + raw.trim());
-            }
-            // UI should stay language-consistent with current app locale.
-            return fallback;
-        } catch (Exception ignored) {
-            return fallback;
-        }
-    }
-
     private void initNetworkCallback() {
-        if (networkCallback != null) {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        if (connectivityManager == null) {
+            networkCallback = null;
             return;
         }
+
         networkCallback = new ConnectivityManager.NetworkCallback() {
             @Override
-            public void onAvailable(android.net.Network network) {
+            public void onAvailable(@NonNull android.net.Network network) {
                 runOnUiThread(() -> {
-                    if (!backendListAvailable && isNetworkAvailable()) {
-                        loadUsers();
-                    }
+                    Toast.makeText(UserManagementActivity.this, R.string.network_restored, Toast.LENGTH_SHORT).show();
+                    loadMerchants();
                 });
-            }
-
-            @Override
-            public void onLost(android.net.Network network) {
-                runOnUiThread(() -> showOfflineState());
             }
         };
     }
@@ -862,8 +1029,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         try {
             connectivityManager.registerDefaultNetworkCallback(networkCallback);
             networkCallbackRegistered = true;
-        } catch (Exception e) {
-            android.util.Log.w("UserMgmt", "Failed to register network callback: " + e.getMessage());
+        } catch (Exception ignored) {
         }
     }
 
@@ -877,9 +1043,9 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         }
         try {
             connectivityManager.unregisterNetworkCallback(networkCallback);
-        } catch (Exception e) {
-            android.util.Log.w("UserMgmt", "Failed to unregister network callback: " + e.getMessage());
+        } catch (Exception ignored) {
+        } finally {
+            networkCallbackRegistered = false;
         }
-        networkCallbackRegistered = false;
     }
 }

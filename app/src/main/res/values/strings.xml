@@ -94,10 +94,18 @@
     <string name="register_store_section_subtitle">Tell us about the store that will use MySoftPOS.</string>
     <string name="register_store_name">Store Name</string>
     <string name="register_store_name_hint">Example: Khanh Grocery</string>
+    <string name="register_bank_name">Bank Name</string>
+    <string name="register_bank_name_hint">Example: ACB</string>
     <string name="register_business_type">Business Type</string>
     <string name="register_business_type_hint">Select your business type</string>
     <string name="register_store_address">Store Address</string>
     <string name="register_store_address_hint">Street, ward, district, city</string>
+    <string name="register_branch_count">Number of Branches (optional)</string>
+    <string name="register_branch_count_hint">0 if no branch</string>
+    <string name="register_branch_addresses">Branch Addresses</string>
+    <string name="register_branch_addresses_hint">One branch address per line</string>
+    <string name="register_account_count">Number of Accounts</string>
+    <string name="register_account_count_hint">Each account has a unique TID</string>
     <string name="register_personal_section_title">Personal Information</string>
     <string name="register_personal_section_subtitle">This information is used to identify and protect your account.</string>
     <string name="register_full_name_user">Full Name</string>
@@ -114,7 +122,12 @@
     <string name="register_password_policy">Password must be at least 8 characters and include both letters and numbers</string>
     <string name="register_error_exists_phone">Phone number already registered</string>
     <string name="register_invalid_store_name">Store name must be 3–80 characters and contain letters or numbers</string>
+    <string name="register_invalid_bank_name">Bank name must be 2-22 characters using A-Z and 0-9 only</string>
     <string name="register_invalid_store_address">Store address must be 8–160 characters and contain meaningful details</string>
+    <string name="register_invalid_branch_count">Branch count must be between 0 and 50</string>
+    <string name="register_branch_addresses_required">Please enter branch addresses for all branches</string>
+    <string name="register_invalid_branch_addresses_count">The number of branch addresses must match branch count</string>
+    <string name="register_invalid_account_count">Account count must be between 1 and 500</string>
     <string name="register_invalid_full_name">Please enter a valid full name without numbers or invalid symbols</string>
     <string name="register_invalid_gender">Please select a valid gender from the list</string>
     <string name="register_invalid_dob">Please enter a valid date of birth and ensure you are at least 18 years old</string>
@@ -166,6 +179,7 @@
     <string name="settings_identity_group">Identity</string>
     <string name="settings_terminal_id">Terminal ID (TID)</string>
     <string name="settings_terminal_id_hint">12345678</string>
+    <string name="settings_terminal_id_invalid">TID must be exactly 8 uppercase letters or digits</string>
     <string name="settings_merchant_id">Merchant ID (MID)</string>
     <string name="settings_merchant_id_hint">MERCHANT001</string>
     <string name="settings_security_group">Security</string>
@@ -354,23 +368,49 @@
     <string name="settings_service_group">Service Settings</string>
     <string name="settings_change_password">Change Password</string>
     <string name="settings_logout">Log Out</string>
-    <string name="user_mgmt_title">User Management</string>
-    <string name="user_mgmt_subtitle">Manage user accounts</string>
-    <string name="user_mgmt_search_hint">Search name or phone...</string>
-    <string name="user_mgmt_empty_title">No users yet</string>
-    <string name="user_mgmt_empty_subtitle">Tap + to create a new user</string>
-    <string name="user_mgmt_empty_filter_title">No matching users</string>
-    <string name="user_mgmt_empty_filter_subtitle">Try another name, phone, or terminal ID</string>
+    <string name="user_mgmt_title">Merchant Management</string>
+    <string name="user_mgmt_subtitle">Manage merchants and account lists</string>
+    <string name="user_mgmt_search_hint">Search merchant name, MID, or address...</string>
+    <string name="user_mgmt_empty_title">No merchants yet</string>
+    <string name="user_mgmt_empty_subtitle">Merchants will appear after backend sync</string>
+    <string name="user_mgmt_empty_filter_title">No matching merchants</string>
+    <string name="user_mgmt_empty_filter_subtitle">Try another merchant name, MID, or business type</string>
     <string name="user_mgmt_retry">Try Again</string>
     <string name="user_mgmt_state_preparing_session_title">Preparing backend session</string>
     <string name="user_mgmt_state_preparing_session_subtitle">Please wait while your admin session is restored.</string>
     <string name="user_mgmt_state_backend_session_unavailable_title">Backend session unavailable</string>
     <string name="user_mgmt_state_backend_session_unavailable_subtitle">Please sign in again or pull to retry.</string>
-    <string name="user_mgmt_state_loading_title">Loading users</string>
-    <string name="user_mgmt_state_loading_subtitle">Fetching the latest users from backend...</string>
+    <string name="user_mgmt_state_loading_title">Loading merchants</string>
+    <string name="user_mgmt_state_loading_subtitle">Fetching the latest merchants from backend...</string>
     <string name="user_mgmt_state_backend_unavailable_title">Backend unavailable</string>
-    <string name="user_mgmt_state_load_users_failed_subtitle">Could not load users from backend. Please try again.</string>
-    <string name="user_mgmt_state_load_users_network_subtitle">Could not load users from backend. Please check your connection and try again.</string>
+    <string name="user_mgmt_state_load_users_failed_subtitle">Could not load merchants from backend. Please try again.</string>
+    <string name="user_mgmt_state_load_users_network_subtitle">Could not load merchants from backend. Please check your connection and try again.</string>
+    <string name="user_mgmt_mid_format">MID: %1$s</string>
+    <string name="user_mgmt_branch_count_format">Branches: %1$d • Accounts: %2$d</string>
+    <string name="user_mgmt_missing_tid_badge">Missing TID: %1$d</string>
+    <string name="user_mgmt_accounts_dialog_title">Merchant Accounts</string>
+    <string name="user_mgmt_accounts_dialog_empty">No accounts (TID) found for this merchant.</string>
+    <string name="user_mgmt_accounts_dialog_line">%1$d. TID: %2$s</string>
+    <string name="user_mgmt_accounts_dialog_mid">MID: %1$s</string>
+    <string name="user_mgmt_accounts_missing_tid_notice">This merchant has %1$d account(s) without TID. Please assign TID now.</string>
+    <string name="user_mgmt_accounts_dialog_setup_hint">MID: %1$s\nEnter TID for each account (8 uppercase letters/digits).</string>
+    <string name="user_mgmt_accounts_dialog_account_label">Account %1$d - %2$s</string>
+    <string name="user_mgmt_accounts_dialog_item_format">%1$d) %2$s\nTID: %3$s   IP: %4$s   Port: %5$s</string>
+    <string name="user_mgmt_accounts_dialog_tid_hint">TID for account %1$d</string>
+    <string name="user_mgmt_accounts_dialog_save_tid">Save TID</string>
+    <string name="user_mgmt_accounts_dialog_tid_invalid">Account %1$d: TID must be exactly 8 uppercase letters/digits</string>
+    <string name="user_mgmt_accounts_dialog_tid_no_change">No TID changes to save.</string>
+    <string name="user_mgmt_accounts_dialog_tid_update_success">Saved TID for %1$d account(s).</string>
+    <string name="user_mgmt_accounts_dialog_tid_update_partial">Saved %1$d account(s), failed %2$d account(s).</string>
+    <string name="user_mgmt_account_editor_title">Account Configuration</string>
+    <string name="user_mgmt_account_editor_hint">Configure TID and connection for: %1$s</string>
+    <string name="user_mgmt_account_editor_test">Test Connection</string>
+    <string name="user_mgmt_account_editor_clear">Clear</string>
+    <string name="user_mgmt_account_editor_invalid_port">Port must be between 1 and 65535</string>
+    <string name="user_mgmt_account_editor_save_success">Account configuration saved</string>
+    <string name="user_mgmt_account_editor_clear_success">Account configuration cleared</string>
+    <string name="user_mgmt_account_editor_test_success">Connection test successful</string>
+    <string name="user_mgmt_account_editor_test_failed">Connection test failed</string>
 
     <string name="txn_select_title">Transaction Type</string>
     <string name="txn_select_default_scheme">Napas</string>
@@ -435,6 +475,7 @@
     <string name="register_failed">Registration failed</string>
     <string name="register_admin_exists">An account with this information already exists</string>
     <string name="register_backend_required">Backend connection is required to complete registration.</string>
+    <string name="register_backend_timeout">Registration request timed out. Please wait a moment and try again.</string>
     <string name="register_local_cache_failed" tools:ignore="MissingTranslation">Registered on backend but failed to save on this device. Please try again.</string>
     <string name="register_agree_terms">Please agree to Terms</string>
     <string name="register_error_exists_email">Email already registered</string>
@@ -507,12 +548,19 @@
     <string name="testsuite_btn_delete_selected">Delete Selected</string>
     <string name="testsuite_btn_run_transaction">Run Transaction</string>
     <string name="testsuite_btn_confirm_selection">Confirm Selection</string>
+    <string name="testsuite_btn_cancel_selection">Cancel</string>
     <string name="testsuite_no_case_selected">No test cases selected</string>
     <string name="testsuite_no_custom_case_selected">No custom cases selected</string>
     <string name="testsuite_confirm_delete_title">Confirm Delete</string>
     <string name="testsuite_confirm_delete_message">Delete %1$d test cases?</string>
     <string name="testsuite_delete_action">Delete</string>
     <string name="testsuite_selection_mode_hint">Selection Mode. Tap to select test cases.</string>
+    <string name="testsuite_configuring_other_case">Another testcase is being configured. Please complete or cancel it first.</string>
+    <string name="testsuite_mode_indicator_selection">Selection mode</string>
+    <string name="testsuite_mode_indicator_delete">Delete mode</string>
+    <string name="testsuite_swipe_edit">Edit test case</string>
+    <string name="testsuite_swipe_delete">Delete test case</string>
+    <string name="testsuite_track2_format">Track 2 must contain = or D separator</string>
     <string name="testsuite_dialog_title_configure">Configure Scenario</string>
     <string name="testsuite_dialog_title_edit">Edit Test Case</string>
     <string name="testsuite_dialog_title_new">New Test Case</string>
@@ -718,8 +766,7 @@
     <string name="txn_result_type_default">Transaction</string>
     <string name="txn_result_amount_overflow">&gt; 10,000,000,000</string>
     <string name="txn_result_balance_type_format">%1$s Balance</string>
-    <string name="txn_result_available_balance">Available Balance</string>
-    <string name="txn_balance_type_available">Available</string>
+    <string name="txn_result_available_balance">Available Balance</string>tcase<string name="txn_balance_type_available">Available</string>
     <string name="txn_balance_type_ledger">Ledger</string>
 
     <!-- Transaction select -->
@@ -840,7 +887,7 @@
     <string name="scheme_dialog_add_subtitle">Configure a new card network</string>
     <string name="scheme_dialog_edit_subtitle">Modify card network settings</string>
     <string name="scheme_dialog_preview_name_default">New Scheme</string>
-    <string name="scheme_dialog_preview_icon_default" translatable="false">?</string>
+    <string name="scheme_dialog_preview_icon_default" translatable="false">\?</string>
 
     <!-- i18n runtime texts -->
     <string name="base_rooted_blocked_message">This app cannot run on rooted devices for security reasons.</string>
@@ -865,8 +912,8 @@
     <string name="read_card_error_invalid_data">Invalid card data</string>
 
     <string name="user_mgmt_offline_title">Internet connection required</string>
-    <string name="user_mgmt_offline_subtitle">Connect to Wi-Fi or mobile data to view user management.</string>
-    <string name="user_mgmt_count_format">%1$d user(s)</string>
+    <string name="user_mgmt_offline_subtitle">Connect to Wi-Fi or mobile data to view merchant management.</string>
+    <string name="user_mgmt_count_format">%1$d merchants</string>
 
     <string name="test_scenario_badge_custom">CUSTOM</string>
     <string name="test_scenario_detail_selected">Selected</string>

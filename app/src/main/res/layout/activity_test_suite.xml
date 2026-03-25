@@ -51,6 +51,20 @@
                     android:textStyle="bold"
                     android:fontFamily="sans-serif-medium"/>
 
+                <TextView
+                    android:id="@+id/tvModeIndicator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:background="@drawable/bg_pill_neutral"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="3dp"
+                    android:textColor="#475569"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    tools:text="Selection mode" />
+
                 <!-- Breadcrumb inline -->
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -159,6 +173,20 @@
         android:background="#FFFFFF"
         android:elevation="4dp"
         app:layout_constraintBottom_toBottomOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelSelection"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:layout_marginEnd="10dp"
+            android:text="@string/testsuite_btn_cancel_selection"
+            android:textSize="14sp"
+            android:textAllCaps="false"
+            android:fontFamily="sans-serif-medium"
+            app:backgroundTint="#E2E8F0"
+            app:cornerRadius="14dp"
+            android:textColor="#0F172A"
+            android:visibility="gone" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRunAll"

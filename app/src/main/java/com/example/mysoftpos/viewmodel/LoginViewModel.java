@@ -123,6 +123,9 @@ public class LoginViewModel extends BaseViewModel {
                                 SessionManager.startSession();
                                 ConfigManager.getInstance(getApplication())
                                         .setMcc18(resp.user != null ? resp.user.businessType : null);
+                                if (resp.user != null && resp.user.bankName != null && !resp.user.bankName.trim().isEmpty()) {
+                                    ConfigManager.getInstance(getApplication()).setBankName(resp.user.bankName);
+                                }
                                 AuditLogger.log(getApplication(), username, "LOGIN",
                                         true, TAG, "API login: " + resp.user.role);
 
@@ -219,6 +222,9 @@ public class LoginViewModel extends BaseViewModel {
                                 ApiClient.saveUserSession(getApplication(), resp);
                                 ConfigManager.getInstance(getApplication())
                                         .setMcc18(resp.user != null ? resp.user.businessType : null);
+                                if (resp.user != null && resp.user.bankName != null && !resp.user.bankName.trim().isEmpty()) {
+                                    ConfigManager.getInstance(getApplication()).setBankName(resp.user.bankName);
+                                }
                                 launchIo(() -> {
                                     userRepository.cacheUser(username, password, resp.user);
                                     triggerBackendSync(resp.user.role);

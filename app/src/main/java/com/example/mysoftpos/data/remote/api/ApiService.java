@@ -63,6 +63,10 @@ public interface ApiService {
         @GET("/api/merchants")
         Call<List<MerchantDto>> getMerchants(@Header("Authorization") String token);
 
+        @GET("/api/merchants/{id}/accounts")
+        Call<List<UserDto>> getMerchantAccounts(@Header("Authorization") String token,
+                        @Path("id") long merchantId);
+
         @POST("/api/merchants")
         Call<MerchantDto> createMerchant(@Header("Authorization") String token,
                         @Body Map<String, String> body);
@@ -169,6 +173,10 @@ public interface ApiService {
                 public String storeName;
                 public String businessType;
                 public String storeAddress;
+                public Integer branchCount;
+                public String branchAddresses;
+                public Integer accountCount;
+                public String bankName;
 
                 public RegisterRequest(String password, String fullName, String phone, String email) {
                         this(password, fullName, phone, email,
@@ -178,6 +186,24 @@ public interface ApiService {
                 public RegisterRequest(String password, String fullName, String phone, String email,
                                 String dob, String gender, String storeName, String businessType,
                                 String storeAddress) {
+                        this(password, fullName, phone, email,
+                                dob, gender, storeName, businessType, storeAddress,
+                                null, null, null);
+                }
+
+                public RegisterRequest(String password, String fullName, String phone, String email,
+                                String dob, String gender, String storeName, String businessType,
+                                String storeAddress, Integer branchCount, String branchAddresses,
+                                Integer accountCount) {
+                        this(password, fullName, phone, email,
+                                dob, gender, storeName, businessType, storeAddress,
+                                branchCount, branchAddresses, accountCount, null);
+                }
+
+                public RegisterRequest(String password, String fullName, String phone, String email,
+                                String dob, String gender, String storeName, String businessType,
+                                String storeAddress, Integer branchCount, String branchAddresses,
+                                Integer accountCount, String bankName) {
                         this.password = password;
                         this.fullName = fullName;
                         this.phone = phone;
@@ -187,6 +213,10 @@ public interface ApiService {
                         this.storeName = storeName;
                         this.businessType = businessType;
                         this.storeAddress = storeAddress;
+                        this.branchCount = branchCount;
+                        this.branchAddresses = branchAddresses;
+                        this.accountCount = accountCount;
+                        this.bankName = bankName;
                 }
         }
 
@@ -200,6 +230,7 @@ public interface ApiService {
                 public String storeName;
                 public String businessType;
                 public String storeAddress;
+                public Long merchantId;
                 public String terminalId;
                 public String serverIp;
                 public Integer serverPort;
@@ -207,13 +238,13 @@ public interface ApiService {
                 public CreateUserRequest(String password, String fullName, String phone, String email,
                                 String terminalId, String serverIp, Integer serverPort) {
                         this(password, fullName, phone, email,
-                                        null, null, null, null, null,
+                                        null, null, null, null, null, null,
                                         terminalId, serverIp, serverPort);
                 }
 
                 public CreateUserRequest(String password, String fullName, String phone, String email,
                                 String dob, String gender, String storeName, String businessType,
-                                String storeAddress,
+                                String storeAddress, Long merchantId,
                                 String terminalId, String serverIp, Integer serverPort) {
                         this.password = password;
                         this.fullName = fullName;
@@ -224,6 +255,7 @@ public interface ApiService {
                         this.storeName = storeName;
                         this.businessType = businessType;
                         this.storeAddress = storeAddress;
+                        this.merchantId = merchantId;
                         this.terminalId = terminalId;
                         this.serverIp = serverIp;
                         this.serverPort = serverPort;
@@ -282,6 +314,7 @@ public interface ApiService {
 
         class UserDto {
                 public long id;
+                public Long merchantId;
                 public String role;
                 public String fullName;
                 public String phone;
@@ -289,8 +322,10 @@ public interface ApiService {
                 public String dob;
                 public String gender;
                 public String storeName;
+                public String bankName;
                 public String businessType;
                 public String storeAddress;
+                public String merchantCode;
                 public Boolean phoneVerified;
                 public String terminalId;
                 public String serverIp;
@@ -307,6 +342,9 @@ public interface ApiService {
                 public Long ownerUserId;
                 public String businessType;
                 public String storeAddress;
+                public Integer branchCount;
+                public String branchAddresses;
+                public Integer accountCount;
         }
 
         class TerminalDto {

@@ -42,6 +42,10 @@ public final class ApiClient {
     private static final long AUTH_READ_TIMEOUT_SECONDS = 12;
     private static final long AUTH_WRITE_TIMEOUT_SECONDS = 12;
     private static final long AUTH_CALL_TIMEOUT_SECONDS = 15;
+    private static final long REGISTER_CONNECT_TIMEOUT_SECONDS = 20;
+    private static final long REGISTER_READ_TIMEOUT_SECONDS = 70;
+    private static final long REGISTER_WRITE_TIMEOUT_SECONDS = 30;
+    private static final long REGISTER_CALL_TIMEOUT_SECONDS = 75;
     private static final long FORGOT_CONNECT_TIMEOUT_SECONDS = 25;
     private static final long FORGOT_READ_TIMEOUT_SECONDS = 110;
     private static final long FORGOT_WRITE_TIMEOUT_SECONDS = 30;
@@ -50,9 +54,11 @@ public final class ApiClient {
     private static volatile ApiService apiService;
     private static volatile ApiService authApiService;
     private static volatile ApiService forgotPasswordApiService;
+    private static volatile ApiService registerApiService;
     private static volatile Retrofit retrofit;
     private static volatile Retrofit authRetrofit;
     private static volatile Retrofit forgotPasswordRetrofit;
+    private static volatile Retrofit registerRetrofit;
 
     private ApiClient() {
     }
@@ -131,6 +137,31 @@ public final class ApiClient {
         return forgotPasswordApiService;
     }
 
+    /**
+     * Register can take longer when backend wakes up (e.g. Render cold start).
+     */
+    public static ApiService getRegisterService(Context context) {
+        if (registerApiService == null) {
+            synchronized (ApiClient.class) {
+                if (registerApiService == null) {
+                    String baseUrl = getBaseUrl(context);
+                    registerRetrofit = new Retrofit.Builder()
+                            .baseUrl(baseUrl)
+                            .client(buildClient(
+                                    REGISTER_CONNECT_TIMEOUT_SECONDS,
+                                    REGISTER_READ_TIMEOUT_SECONDS,
+                                    REGISTER_WRITE_TIMEOUT_SECONDS,
+                                    REGISTER_CALL_TIMEOUT_SECONDS))
+                            .addConverterFactory(GsonConverterFactory.create())
+                            .build();
+
+                    registerApiService = registerRetrofit.create(ApiService.class);
+                }
+            }
+        }
+        return registerApiService;
+    }
+
     /** Force re-create the Retrofit instance (e.g. when base URL changed) */
     public static void reset() {
         synchronized (ApiClient.class) {
@@ -140,6 +171,8 @@ public final class ApiClient {
             authRetrofit = null;
             forgotPasswordApiService = null;
             forgotPasswordRetrofit = null;
+            registerApiService = null;
+            registerRetrofit = null;
         }
     }
 
@@ -209,12 +242,18 @@ public final class ApiClient {
     // ==================== Base URL ====================
 
     public static void setBaseUrl(Context ctx, String url) {
-        getPrefs(ctx).edit().putString(KEY_BASE_URL, url).apply();
+        String normalized = normalizeBaseUrl(url);
+        getPrefs(ctx).edit().putString(KEY_BASE_URL, normalized).apply();
         reset();
     }
 
     public static String getBaseUrl(Context ctx) {
-        return getPrefs(ctx).getString(KEY_BASE_URL, DEFAULT_BASE_URL);
+        String saved = getPrefs(ctx).getString(KEY_BASE_URL, DEFAULT_BASE_URL);
+        String normalized = normalizeBaseUrl(saved);
+        if (!normalized.equals(saved)) {
+            getPrefs(ctx).edit().putString(KEY_BASE_URL, normalized).apply();
+        }
+        return normalized;
     }
 
     // ==================== SharedPreferences ====================
@@ -243,5 +282,22 @@ public final class ApiClient {
         }
 
         return clientBuilder.build();
+    }
+
+    private static String normalizeBaseUrl(String url) {
+        if (url == null) {
+            return DEFAULT_BASE_URL;
+        }
+        String normalized = url.trim();
+        if (normalized.isEmpty()) {
+            return DEFAULT_BASE_URL;
+        }
+        if (!(normalized.startsWith("https://") || normalized.startsWith("http://"))) {
+            return DEFAULT_BASE_URL;
+        }
+        if (!normalized.endsWith("/")) {
+            normalized += "/";
+        }
+        return normalized;
     }
 }

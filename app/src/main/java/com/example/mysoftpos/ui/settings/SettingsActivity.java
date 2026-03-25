@@ -91,8 +91,14 @@ public class SettingsActivity extends BaseActivity {
                 if (requireValue(etTerminalId, terminalId) || requireValue(etMerchantId, merchantId)) {
                     return;
                 }
+                String normalizedTid = terminalId.toUpperCase(java.util.Locale.ROOT);
+                if (!normalizedTid.matches("^[A-Z0-9]{8}$")) {
+                    etTerminalId.setError(getString(R.string.settings_terminal_id_invalid));
+                    etTerminalId.requestFocus();
+                    return;
+                }
 
-                config.setTerminalId(terminalId);
+                config.setTerminalId(normalizedTid);
                 config.setMerchantId(merchantId);
 
                 showToast(R.string.settings_identity_saved);
