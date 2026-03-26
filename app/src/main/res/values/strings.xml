@@ -133,7 +133,7 @@
     <string name="register_invalid_dob">Please enter a valid date of birth and ensure you are at least 18 years old</string>
 
     <!-- Login Extras -->
-    <string name="login_email_label">Email or Phone</string>
+    <string name="login_email_label">Username (phone+i)</string>
     <string name="login_no_account">Don\'t have an account?</string>
     <string name="login_sign_up">Sign Up</string>
 
@@ -388,6 +388,8 @@
     <string name="user_mgmt_mid_format">MID: %1$s</string>
     <string name="user_mgmt_branch_count_format">Branches: %1$d • Accounts: %2$d</string>
     <string name="user_mgmt_missing_tid_badge">Missing TID: %1$d</string>
+    <string name="user_mgmt_branch_dialog_title">Branches - %1$s</string>
+    <string name="user_mgmt_branch_item_format">%1$s (%2$s) - Accounts: %3$d</string>
     <string name="user_mgmt_accounts_dialog_title">Merchant Accounts</string>
     <string name="user_mgmt_accounts_dialog_empty">No accounts (TID) found for this merchant.</string>
     <string name="user_mgmt_accounts_dialog_line">%1$d. TID: %2$s</string>
@@ -395,7 +397,7 @@
     <string name="user_mgmt_accounts_missing_tid_notice">This merchant has %1$d account(s) without TID. Please assign TID now.</string>
     <string name="user_mgmt_accounts_dialog_setup_hint">MID: %1$s\nEnter TID for each account (8 uppercase letters/digits).</string>
     <string name="user_mgmt_accounts_dialog_account_label">Account %1$d - %2$s</string>
-    <string name="user_mgmt_accounts_dialog_item_format">%1$d) %2$s\nTID: %3$s   IP: %4$s   Port: %5$s</string>
+    <string name="user_mgmt_accounts_dialog_item_format">%1$d) %2$s\nTID: %3$s\nIP: %4$s • Port: %5$s</string>
     <string name="user_mgmt_accounts_dialog_tid_hint">TID for account %1$d</string>
     <string name="user_mgmt_accounts_dialog_save_tid">Save TID</string>
     <string name="user_mgmt_accounts_dialog_tid_invalid">Account %1$d: TID must be exactly 8 uppercase letters/digits</string>
@@ -411,6 +413,36 @@
     <string name="user_mgmt_account_editor_clear_success">Account configuration cleared</string>
     <string name="user_mgmt_account_editor_test_success">Connection test successful</string>
     <string name="user_mgmt_account_editor_test_failed">Connection test failed</string>
+    <string name="user_mgmt_action_view_accounts">View accounts</string>
+    <string name="user_mgmt_add_merchant">Add merchant</string>
+    <string name="user_mgmt_edit_merchant">Edit merchant</string>
+    <string name="user_mgmt_delete_merchant">Delete merchant</string>
+    <string name="user_mgmt_delete_merchant_confirm">Delete merchant %1$s?</string>
+    <string name="user_mgmt_delete_merchant_blocked">Cannot delete merchant while accounts, branches, or terminals are still linked.</string>
+    <string name="user_mgmt_merchant_code">Merchant code (MID)</string>
+    <string name="user_mgmt_merchant_name">Merchant name</string>
+    <string name="user_mgmt_add_account">Add account</string>
+    <string name="user_mgmt_edit_account">Edit account</string>
+    <string name="user_mgmt_delete_account">Delete account</string>
+    <string name="user_mgmt_delete_account_confirm">Delete account %1$s?</string>
+    <string name="user_mgmt_delete_success">Deleted successfully</string>
+    <string name="user_mgmt_account_item_config_format">TID: %1$s\nIP: %2$s • Port: %3$s</string>
+    <string name="user_mgmt_branch_picker_hint">Select a branch to manage its POS accounts.</string>
+    <string name="user_mgmt_branch_code_format">Code: %1$s</string>
+    <string name="user_mgmt_branch_accounts_badge">%1$d account(s)</string>
+    <string name="user_mgmt_account_editor_section_title">ACCOUNT INFORMATION</string>
+    <string name="user_mgmt_account_tid_helper">Exactly 8 uppercase letters or digits</string>
+    <string name="user_mgmt_error_phone_exists">Phone number is already registered.</string>
+    <string name="user_mgmt_error_email_exists">Email is already registered.</string>
+    <string name="user_mgmt_error_password_required_create">Password is required when creating a new account.</string>
+    <string name="user_mgmt_error_tid_invalid_strict">Terminal ID (TID) must be exactly 8 uppercase letters or digits.</string>
+    <string name="user_mgmt_error_merchant_not_found">Merchant not found. Please refresh and try again.</string>
+    <string name="user_mgmt_error_access_denied">Access denied for this operation.</string>
+    <string name="user_mgmt_error_branch_invalid">Invalid branch selection for this merchant.</string>
+    <string name="user_mgmt_error_account_not_found">Account not found. It may have been deleted.</string>
+    <string name="user_mgmt_error_create_account_failed">Could not create account. Please review input and try again.</string>
+    <string name="common_edit">Edit</string>
+    <string name="common_delete">Delete</string>
 
     <string name="txn_select_title">Transaction Type</string>
     <string name="txn_select_default_scheme">Napas</string>
@@ -495,7 +527,8 @@
     <string name="common_preview_unknown">\?</string>
 
     <!-- Login -->
-    <string name="login_error_enter_email_or_phone">Please enter email or phone</string>
+    <string name="login_error_enter_email_or_phone">Please enter username</string>
+    <string name="login_error_enter_username">Please enter username</string>
     <string name="login_error_enter_password">Please enter your password</string>
     <string name="login_session_expired">Session expired. Please login again.</string>
     <string name="login_invalid_credentials">Invalid username or password!</string>

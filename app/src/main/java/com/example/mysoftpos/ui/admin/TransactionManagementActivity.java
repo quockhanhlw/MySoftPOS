@@ -33,11 +33,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -67,7 +65,7 @@ public class TransactionManagementActivity extends BaseActivity {
     private View btnRetryConnection;
 
     private List<ApiService.TransactionSummaryDto> userTransactions = new ArrayList<>();
-    private Map<Long, String> userIdToName = new LinkedHashMap<>();
+    private final Map<Long, String> userIdToName = new LinkedHashMap<>();
     private int tokenWaitRetryCount = 0;
     private boolean backendTransactionsAvailable = false;
     private boolean networkCallbackRegistered = false;
@@ -167,46 +165,49 @@ public class TransactionManagementActivity extends BaseActivity {
         showNonContentState(getString(R.string.txn_mgmt_state_loading_title),
                 getString(R.string.txn_mgmt_state_loading_subtitle), false);
 
-        ApiClient.getService(this).getUsers(token).enqueue(
-                new Callback<>() {
-                    @Override
-                    public void onResponse(Call<List<ApiService.UserDto>> call,
-                            Response<List<ApiService.UserDto>> resp) {
-                        if (resp.isSuccessful() && resp.body() != null) {
-                            userIdToName.clear();
-                            for (ApiService.UserDto u : resp.body()) {
-                                String displayName = u.fullName != null && !u.fullName.isEmpty() ? u.fullName : u.phone;
-                                userIdToName.put(u.id, displayName);
-                            }
-                            syncUsersToLocal(resp.body());
-                            loadTransactions(token);
-                        } else {
-                            clearRenderedTransactions();
-                            showNonContentState(getString(R.string.txn_mgmt_state_backend_unavailable_title),
-                                    getString(R.string.txn_mgmt_state_load_users_failed_subtitle), true);
-                            Toast.makeText(TransactionManagementActivity.this,
-                                    extractBackendError(resp, getString(R.string.txn_mgmt_toast_load_users_failed)),
-                                    Toast.LENGTH_SHORT).show();
-                        }
+        fetchAdminAccounts(token, new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<List<ApiService.UserDto>> call,
+                    @NonNull Response<List<ApiService.UserDto>> resp) {
+                if (resp.isSuccessful() && resp.body() != null) {
+                    userIdToName.clear();
+                    for (ApiService.UserDto u : resp.body()) {
+                        String displayName = u.fullName != null && !u.fullName.isEmpty() ? u.fullName : u.phone;
+                        userIdToName.put(u.id, displayName);
                     }
+                    syncUsersToLocal(resp.body());
+                    loadTransactions(token);
+                } else {
+                    clearRenderedTransactions();
+                    showNonContentState(getString(R.string.txn_mgmt_state_backend_unavailable_title),
+                            getString(R.string.txn_mgmt_state_load_users_failed_subtitle), true);
+                    Toast.makeText(TransactionManagementActivity.this,
+                            extractBackendError(resp, getString(R.string.txn_mgmt_toast_load_users_failed)),
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
 
-                    @Override
-                    public void onFailure(Call<List<ApiService.UserDto>> call, Throwable t) {
-                        clearRenderedTransactions();
-                        showNonContentState(getString(R.string.txn_mgmt_state_backend_unavailable_title),
-                                getString(R.string.txn_mgmt_state_load_users_network_subtitle), true);
-                        Toast.makeText(TransactionManagementActivity.this,
-                                getString(R.string.common_error_with_reason, t.getMessage()), Toast.LENGTH_SHORT).show();
-                    }
-                });
+            @Override
+            public void onFailure(@NonNull Call<List<ApiService.UserDto>> call, @NonNull Throwable t) {
+                clearRenderedTransactions();
+                showNonContentState(getString(R.string.txn_mgmt_state_backend_unavailable_title),
+                        getString(R.string.txn_mgmt_state_load_users_network_subtitle), true);
+                Toast.makeText(TransactionManagementActivity.this,
+                        getString(R.string.common_error_with_reason, t.getMessage()), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void fetchAdminAccounts(String token, Callback<List<ApiService.UserDto>> callback) {
+        ApiClient.getService(this).getPosAccounts(token).enqueue(callback);
     }
 
     private void loadTransactions(String token) {
         ApiClient.getService(this).getAllTransactions(token).enqueue(
                 new Callback<>() {
                     @Override
-                    public void onResponse(Call<List<ApiService.TransactionSummaryDto>> call,
-                            Response<List<ApiService.TransactionSummaryDto>> resp) {
+                    public void onResponse(@NonNull Call<List<ApiService.TransactionSummaryDto>> call,
+                            @NonNull Response<List<ApiService.TransactionSummaryDto>> resp) {
                         if (resp.isSuccessful() && resp.body() != null) {
                             List<ApiService.TransactionSummaryDto> rawTransactions = resp.body();
                             userTransactions = new ArrayList<>();
@@ -233,7 +234,7 @@ public class TransactionManagementActivity extends BaseActivity {
                     }
 
                     @Override
-                    public void onFailure(Call<List<ApiService.TransactionSummaryDto>> call, Throwable t) {
+                    public void onFailure(@NonNull Call<List<ApiService.TransactionSummaryDto>> call, @NonNull Throwable t) {
                         clearRenderedTransactions();
                         showNonContentState(getString(R.string.txn_mgmt_state_backend_unavailable_title),
                                 getString(R.string.txn_mgmt_state_load_txn_network_subtitle), true);
@@ -241,10 +242,6 @@ public class TransactionManagementActivity extends BaseActivity {
                                 getString(R.string.common_error_with_reason, t.getMessage()), Toast.LENGTH_SHORT).show();
                     }
                 });
-    }
-
-    private void loadCachedTransactions() {
-        // Admin screens are backend-only for rendering.
     }
 
     private void syncUsersToLocal(List<ApiService.UserDto> remoteUsers) {
@@ -265,14 +262,22 @@ public class TransactionManagementActivity extends BaseActivity {
 
                     if (localUser == null) {
                         localUser = new UserEntity();
+                        localUser.username = remoteUser.username != null && !remoteUser.username.isEmpty()
+                                ? remoteUser.username
+                                : remoteUser.phone;
                         localUser.usernameHash = PasswordUtils.hashSHA256(
-                                remoteUser.phone != null && !remoteUser.phone.isEmpty()
+                                remoteUser.username != null && !remoteUser.username.isEmpty()
+                                        ? remoteUser.username
+                                        : (remoteUser.phone != null && !remoteUser.phone.isEmpty()
                                         ? remoteUser.phone
-                                        : String.valueOf(remoteUser.id));
+                                        : String.valueOf(remoteUser.id)));
                         localUser.passwordHash = "";
                         localUser.createdAt = System.currentTimeMillis();
                     }
 
+                    localUser.username = remoteUser.username != null && !remoteUser.username.isEmpty()
+                            ? remoteUser.username
+                            : remoteUser.phone;
                     localUser.displayName = remoteUser.fullName;
                     localUser.role = remoteUser.role;
                     localUser.email = remoteUser.email;
@@ -319,6 +324,13 @@ public class TransactionManagementActivity extends BaseActivity {
                     localTxn.timestamp = parseBackendTimestamp(txn.txnTimestamp);
                     localTxn.userId = localUser != null ? localUser.id : null;
                     localTxn.ownerUsername = txn.username;
+                    localTxn.maskedPan = txn.maskedPan;
+                    localTxn.cardScheme = txn.cardScheme;
+                    localTxn.terminalCode = txn.terminalCode;
+                    localTxn.deviceId = txn.deviceId;
+                    localTxn.syncedAt = txn.syncedAt;
+                    localTxn.backendUserId = txn.userId;
+                    localTxn.backendUsername = txn.username;
 
                     if (localTxn.id > 0) {
                         transactionDao.update(localTxn);
@@ -402,20 +414,6 @@ public class TransactionManagementActivity extends BaseActivity {
         tvOtherCount.setText(String.valueOf(other));
     }
 
-    private boolean belongsToManagedUser(TransactionEntity txn, Set<Long> managedUserIds, Set<String> managedUserIdentifiers) {
-        if (txn.userId != null && managedUserIds.contains(txn.userId)) {
-            return true;
-        }
-        return txn.ownerUsername != null && managedUserIdentifiers.contains(txn.ownerUsername);
-    }
-
-    private String resolveLocalUsername(TransactionEntity txn, Map<Long, String> localUserNamesById) {
-        if (txn.userId != null && localUserNamesById.containsKey(txn.userId)) {
-            return localUserNamesById.get(txn.userId);
-        }
-        return txn.ownerUsername != null ? txn.ownerUsername : getString(R.string.txn_detail_unknown);
-    }
-
     private ApiService.TransactionSummaryDto copyTransaction(ApiService.TransactionSummaryDto source) {
         ApiService.TransactionSummaryDto copy = new ApiService.TransactionSummaryDto();
         copy.id = source.id;
@@ -444,17 +442,6 @@ public class TransactionManagementActivity extends BaseActivity {
                     .toEpochMilli();
         } catch (Exception e) {
             return System.currentTimeMillis();
-        }
-    }
-
-    private String formatTimestamp(long timestamp) {
-        try {
-            return java.time.Instant.ofEpochMilli(timestamp)
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDateTime()
-                    .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        } catch (Exception e) {
-            return getString(R.string.txn_mgmt_placeholder_dash);
         }
     }
 
@@ -564,7 +551,7 @@ public class TransactionManagementActivity extends BaseActivity {
                 return fallback;
             }
             String raw = body.string();
-            if (raw == null || raw.trim().isEmpty()) {
+            if (raw.trim().isEmpty()) {
                 return fallback;
             }
             try {
@@ -588,7 +575,7 @@ public class TransactionManagementActivity extends BaseActivity {
         }
         networkCallback = new ConnectivityManager.NetworkCallback() {
             @Override
-            public void onAvailable(android.net.Network network) {
+            public void onAvailable(@NonNull android.net.Network network) {
                 runOnUiThread(() -> {
                     if (!backendTransactionsAvailable && isNetworkAvailable()) {
                         loadUsersAndTransactions();
@@ -597,7 +584,7 @@ public class TransactionManagementActivity extends BaseActivity {
             }
 
             @Override
-            public void onLost(android.net.Network network) {
+            public void onLost(@NonNull android.net.Network network) {
                 runOnUiThread(() -> showOfflineState());
             }
         };

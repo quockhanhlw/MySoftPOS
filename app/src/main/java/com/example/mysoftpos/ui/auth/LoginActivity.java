@@ -136,7 +136,7 @@ public class LoginActivity extends BaseActivity {
         String normalizedIdentifier = normalizeIdentifierForLogin(username);
 
         if (normalizedIdentifier.isEmpty()) {
-            etUsername.setError(getString(R.string.login_error_enter_email_or_phone));
+            etUsername.setError(getString(R.string.login_error_enter_username));
             etUsername.requestFocus();
             return;
         }
@@ -410,7 +410,7 @@ public class LoginActivity extends BaseActivity {
                                 if (user.terminalId != null && !user.terminalId.isEmpty()) {
                                     config.setTerminalId(user.terminalId);
                                 }
-                                config.setMcc18(user.businessType);
+                                config.setMcc18(resolveLocalBusinessType(db.merchantDao(), user));
 
                                 com.example.mysoftpos.utils.security.SessionManager.startSession();
                                 com.example.mysoftpos.utils.security.AuditLogger.log(
@@ -506,21 +506,25 @@ public class LoginActivity extends BaseActivity {
             com.example.mysoftpos.data.local.AppDatabase db = com.example.mysoftpos.data.local.AppDatabase
                     .getInstance(LoginActivity.this);
             com.example.mysoftpos.data.local.dao.UserDao userDao = db.userDao();
+            com.example.mysoftpos.data.local.dao.MerchantDao merchantDao = db.merchantDao();
 
-            String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
+            String resolvedUsername = safeText(userDto.username).isEmpty() ? username : safeText(userDto.username);
+            String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(resolvedUsername);
             String passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashPassword(password);
 
-            com.example.mysoftpos.data.local.entity.UserEntity existing = userDao.findByUsernameHash(usernameHash);
+            com.example.mysoftpos.data.local.entity.UserEntity existing = userDao.findByUsername(resolvedUsername);
             if (existing == null) {
-                if (userDto.phone != null)
-                    existing = userDao.findByPhone(userDto.phone);
-                if (existing == null && userDto.email != null)
+                existing = userDao.findByUsernameHash(usernameHash);
+            }
+            if (existing == null) {
+                if (userDto.email != null)
                     existing = userDao.findByEmail(userDto.email);
             }
 
             String normalizedBusinessType = BusinessTypeMccMapper.toMcc(userDto.businessType);
 
             if (existing != null) {
+                existing.username = resolvedUsername;
                 existing.usernameHash = usernameHash;
                 existing.passwordHash = passwordHash;
                 existing.displayName = userDto.fullName;
@@ -529,9 +533,8 @@ public class LoginActivity extends BaseActivity {
                 existing.email = userDto.email;
                 existing.dob = userDto.dob;
                 existing.gender = safeText(userDto.gender);
-                existing.storeName = safeText(userDto.storeName);
-                existing.businessType = normalizedBusinessType;
-                existing.storeAddress = safeText(userDto.storeAddress);
+                existing.merchantBackendId = userDto.merchantId != null ? userDto.merchantId : 0L;
+                existing.branchBackendId = userDto.branchId != null ? userDto.branchId : 0L;
                 existing.phoneVerified = Boolean.TRUE.equals(userDto.phoneVerified);
                 existing.backendId = userDto.id;
                 existing.failedLoginAttempts = 0;
@@ -548,10 +551,10 @@ public class LoginActivity extends BaseActivity {
                         usernameHash, passwordHash,
                         userDto.fullName, userDto.role,
                         userDto.email, userDto.phone, userDto.dob);
+                newUser.username = resolvedUsername;
                 newUser.gender = safeText(userDto.gender);
-                newUser.storeName = safeText(userDto.storeName);
-                newUser.businessType = normalizedBusinessType;
-                newUser.storeAddress = safeText(userDto.storeAddress);
+                newUser.merchantBackendId = userDto.merchantId != null ? userDto.merchantId : 0L;
+                newUser.branchBackendId = userDto.branchId != null ? userDto.branchId : 0L;
                 newUser.phoneVerified = Boolean.TRUE.equals(userDto.phoneVerified);
                 newUser.backendId = userDto.id;
                 if (userDto.terminalId != null)
@@ -561,6 +564,24 @@ public class LoginActivity extends BaseActivity {
                 if (userDto.serverPort != null)
                     newUser.serverPort = userDto.serverPort;
                 userDao.insert(newUser);
+            }
+
+            if (userDto.merchantId != null && userDto.merchantId > 0) {
+                com.example.mysoftpos.data.local.entity.MerchantEntity merchant = merchantDao.getByBackendId(userDto.merchantId);
+                if (merchant == null) {
+                    merchant = new com.example.mysoftpos.data.local.entity.MerchantEntity();
+                }
+                merchant.backendId = userDto.merchantId;
+                merchant.merchantCode = safeText(userDto.merchantCode);
+                merchant.merchantNameLocation = safeText(userDto.storeName);
+                merchant.businessType = normalizedBusinessType;
+                merchant.storeAddress = safeText(userDto.storeAddress);
+                merchant.bankName = safeText(userDto.bankName);
+                if (merchant.id > 0) {
+                    merchantDao.update(merchant);
+                } else {
+                    merchantDao.insert(merchant);
+                }
             }
         } catch (Exception e) {
             android.util.Log.w("LoginActivity",
@@ -572,30 +593,34 @@ public class LoginActivity extends BaseActivity {
         return value != null ? value : "";
     }
 
+    private String resolveLocalBusinessType(com.example.mysoftpos.data.local.dao.MerchantDao merchantDao,
+                                            com.example.mysoftpos.data.local.entity.UserEntity user) {
+        if (merchantDao == null || user == null || user.merchantBackendId <= 0) {
+            return null;
+        }
+        com.example.mysoftpos.data.local.entity.MerchantEntity merchant = merchantDao.getByBackendId(user.merchantBackendId);
+        return merchant != null ? merchant.businessType : null;
+    }
+
     private com.example.mysoftpos.data.local.entity.UserEntity findLocalUser(
             com.example.mysoftpos.data.local.dao.UserDao userDao,
             String identifier) {
         String normalized = normalizeIdentifierForLogin(identifier);
         com.example.mysoftpos.data.local.entity.UserEntity user = null;
 
-        if (normalized.contains("@")) {
+        String normalizedHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(normalized);
+        user = userDao.findByUsername(normalized);
+        if (user == null) {
+            user = userDao.findByUsernameHash(normalizedHash);
+        }
+        if (user == null && !normalized.equals(identifier)) {
+            String legacyHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(identifier);
+            user = userDao.findByUsernameHash(legacyHash);
+        }
+        if (user == null && normalized.contains("@")) {
             user = userDao.findByEmail(normalized);
             if (user == null && !normalized.equals(identifier)) {
                 user = userDao.findByEmail(identifier);
-            }
-        } else {
-            user = userDao.findByPhone(normalized);
-            if (user == null && !normalized.equals(identifier)) {
-                user = userDao.findByPhone(identifier);
-            }
-        }
-
-        if (user == null) {
-            String normalizedHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(normalized);
-            user = userDao.findByUsernameHash(normalizedHash);
-            if (user == null && !normalized.equals(identifier)) {
-                String legacyHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(identifier);
-                user = userDao.findByUsernameHash(legacyHash);
             }
         }
         return user;

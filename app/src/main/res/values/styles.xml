@@ -125,4 +125,35 @@
         <item name="android:stateListAnimator">@null</item>
     </style>
 
+    <style name="Widget.MySoftPOS.MerchantActionIcon" parent="Widget.MaterialComponents.Button.Icon">
+        <item name="android:layout_width">36dp</item>
+        <item name="android:layout_height">36dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="iconPadding">0dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconSize">18dp</item>
+        <item name="cornerRadius">10dp</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="rippleColor">@color/merchant_mgmt_ripple</item>
+    </style>
+
+    <style name="Widget.MySoftPOS.MerchantActionIcon.Edit" parent="Widget.MySoftPOS.MerchantActionIcon">
+        <item name="backgroundTint">@color/merchant_mgmt_action_edit_bg</item>
+        <item name="iconTint">@color/merchant_mgmt_action_edit_icon</item>
+    </style>
+
+    <style name="Widget.MySoftPOS.MerchantActionIcon.Delete" parent="Widget.MySoftPOS.MerchantActionIcon">
+        <item name="backgroundTint">@color/merchant_mgmt_action_delete_bg</item>
+        <item name="iconTint">@color/merchant_mgmt_action_delete_icon</item>
+    </style>
+
+    <style name="MerchantDialogAnimation">
+        <item name="android:windowEnterAnimation">@anim/slide_up_fade_in</item>
+        <item name="android:windowExitAnimation">@anim/fade_out</item>
+    </style>
+
 </resources>

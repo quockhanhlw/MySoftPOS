@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Smaller typography scale for compact phones -->
+    <dimen name="merchant_dialog_meta_text_size">12sp</dimen>
+    <dimen name="merchant_dialog_section_text_size">11sp</dimen>
+    <dimen name="merchant_dialog_item_title_size">14sp</dimen>
+    <dimen name="merchant_dialog_item_body_size">11sp</dimen>
+    <dimen name="merchant_dialog_input_text_size">16sp</dimen>
+</resources>
+

@@ -44,7 +44,7 @@ public interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
     androidx.lifecycle.LiveData<List<TransactionEntity>> getAllTransactionsLive();
 
-    @Query("SELECT t.* FROM transactions t INNER JOIN users u ON t.user_id = u.id WHERE u.username_hash = :usernameHash ORDER BY t.timestamp DESC")
+    @Query("SELECT t.* FROM transactions t INNER JOIN pos_accounts u ON t.user_id = u.id WHERE u.username = :usernameHash OR u.username_hash = :usernameHash ORDER BY t.timestamp DESC")
     androidx.lifecycle.LiveData<List<TransactionEntity>> getTransactionsByUsernameHashLive(String usernameHash);
 
     // Kept for direct ID access if needed

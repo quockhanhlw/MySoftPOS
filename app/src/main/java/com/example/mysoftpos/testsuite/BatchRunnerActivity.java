@@ -33,6 +33,8 @@ import java.util.concurrent.Executors;
 
 public class BatchRunnerActivity extends BaseActivity {
 
+    private static final String ADMIN_TEST_SUITE_MID = "MYSOFTPOSSHOP01";
+
     // CachedThreadPool: creates new threads as needed, ideal for parallel I/O
     private final ExecutorService executor = Executors.newCachedThreadPool();
     private TransactionExecutor transactionExecutor;
@@ -143,6 +145,7 @@ public class BatchRunnerActivity extends BaseActivity {
 
                     contexts[i] = TransactionExecutor.buildContext(
                             getApplication(), txnTypes[i], amount, null, null);
+                    contexts[i].merchantId42 = ADMIN_TEST_SUITE_MID;
                     applySchemeConnection(contexts[i], scheme);
 
                     cards[i] = TransactionExecutor.prepareCard(
@@ -249,7 +252,7 @@ public class BatchRunnerActivity extends BaseActivity {
 
         org.json.JSONObject json = new org.json.JSONObject();
         java.util.Set<Integer> reserved = new java.util.HashSet<>(
-                java.util.Arrays.asList(2, 4, 14, 22, 35, 52));
+                java.util.Arrays.asList(2, 4, 14, 22, 35, 42, 52));
 
         for (java.util.Map.Entry<Integer, String> entry : scenario.getAllFields().entrySet()) {
             Integer field = entry.getKey();
@@ -268,6 +271,7 @@ public class BatchRunnerActivity extends BaseActivity {
 
 
     private void applySchemeConnection(TransactionContext ctx, String schemeName) {
+        ctx.merchantId42 = ADMIN_TEST_SUITE_MID;
         if (schemeName == null)
             return;
         SchemeRepository repo = new SchemeRepository(this);
@@ -280,8 +284,6 @@ public class BatchRunnerActivity extends BaseActivity {
         // Terminal / Merchant overrides
         String tid = s.getTerminalId();
         if (tid != null && !tid.isEmpty()) ctx.terminalId41 = tid;
-        String mid = s.getMerchantId();
-        if (mid != null && !mid.isEmpty()) ctx.merchantId42 = mid;
         String mcc = s.getMcc();
         if (mcc != null && !mcc.isEmpty()) ctx.mcc18 = mcc;
         String acq = s.getAcquirerId();

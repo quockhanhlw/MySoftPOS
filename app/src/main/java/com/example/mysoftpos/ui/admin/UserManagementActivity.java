@@ -6,11 +6,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,6 +21,7 @@ import com.example.mysoftpos.data.remote.api.ApiClient;
 import com.example.mysoftpos.data.remote.api.ApiService;
 import com.example.mysoftpos.ui.BaseActivity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,7 +59,6 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
     private EditText etSearch;
     private RecyclerView rvUsers;
     private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh;
-    private FloatingActionButton fabAdd;
     private View layoutSearch;
     private TextView tvEmptyTitle;
     private TextView tvEmptySubtitle;
@@ -85,7 +82,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         etSearch = findViewById(R.id.etSearch);
         rvUsers = findViewById(R.id.rvUsers);
         swipeRefresh = findViewById(R.id.swipeRefresh);
-        fabAdd = findViewById(R.id.fabAdd);
+        FloatingActionButton fabAdd = findViewById(R.id.fabAdd);
         layoutSearch = findViewById(R.id.layoutSearch);
         tvEmptyTitle = findViewById(R.id.tvEmptyTitle);
         tvEmptySubtitle = findViewById(R.id.tvEmptySubtitle);
@@ -97,8 +94,8 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         adapter = new UserAdapter(this);
         rvUsers.setAdapter(adapter);
 
-        // Merchant list is read-only in this phase.
-        fabAdd.setVisibility(View.GONE);
+        fabAdd.setVisibility(View.VISIBLE);
+        fabAdd.setOnClickListener(v -> showMerchantEditorDialog(null));
 
         if (btnRetryConnection != null) {
             btnRetryConnection.setOnClickListener(v -> loadMerchants());
@@ -188,7 +185,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         showNonContentState(getString(R.string.user_mgmt_state_loading_title),
                 getString(R.string.user_mgmt_state_loading_subtitle), false);
 
-        ApiClient.getService(this).getMerchants(token).enqueue(new Callback<List<ApiService.MerchantDto>>() {
+        ApiClient.getService(this).getMerchants(token).enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<List<ApiService.MerchantDto>> call,
                     @NonNull Response<List<ApiService.MerchantDto>> response) {
@@ -251,10 +248,10 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         if (display.isEmpty()) {
             if (allMerchants.isEmpty()) {
                 showEmptyStateText(getString(R.string.user_mgmt_empty_title),
-                        getString(R.string.user_mgmt_empty_subtitle), false);
+                        getString(R.string.user_mgmt_empty_subtitle));
             } else {
                 showEmptyStateText(getString(R.string.user_mgmt_empty_filter_title),
-                        getString(R.string.user_mgmt_empty_filter_subtitle), false);
+                        getString(R.string.user_mgmt_empty_filter_subtitle));
             }
         } else {
             layoutEmpty.setVisibility(View.GONE);
@@ -267,12 +264,117 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
             showOfflineState();
             return;
         }
-        showMerchantAccountsDialog(merchant);
+        showMerchantBranchesDialog(merchant);
     }
 
     @Override
     public void onMerchantLongClick(ApiService.MerchantDto merchant) {
-        onMerchantClick(merchant);
+        showMerchantActionsDialog(merchant);
+    }
+
+    private void showMerchantActionsDialog(ApiService.MerchantDto merchant) {
+        String[] actions = new String[] {
+                getString(R.string.user_mgmt_action_view_accounts),
+                getString(R.string.common_edit),
+                getString(R.string.common_delete)
+        };
+        new AlertDialog.Builder(this)
+                .setTitle(resolveMerchantName(merchant))
+                .setItems(actions, (dialog, which) -> {
+                    if (which == 0) {
+                        onMerchantClick(merchant);
+                        return;
+                    }
+                    if (which == 1) {
+                        showMerchantEditorDialog(merchant);
+                        return;
+                    }
+                    confirmDeleteMerchant(merchant);
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void showMerchantBranchesDialog(ApiService.MerchantDto merchant) {
+        String token = ApiClient.bearerToken(this);
+        if (token.isEmpty() || "Bearer ".equals(token)) {
+            Toast.makeText(this, R.string.user_mgmt_state_backend_session_unavailable_title, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ApiClient.getService(this).getMerchantBranches(token, merchant.id).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<List<ApiService.BranchDto>> call,
+                    @NonNull Response<List<ApiService.BranchDto>> response) {
+                if (!response.isSuccessful() || response.body() == null || response.body().isEmpty()) {
+                    showMerchantAccountsDialog(merchant);
+                    return;
+                }
+                showBranchListDialog(merchant, response.body());
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<List<ApiService.BranchDto>> call, @NonNull Throwable t) {
+                showMerchantAccountsDialog(merchant);
+            }
+        });
+    }
+
+    private void showBranchListDialog(ApiService.MerchantDto merchant, List<ApiService.BranchDto> branches) {
+        List<ApiService.BranchDto> branchList = new ArrayList<>(branches);
+        String merchantName = merchant.merchantName != null && !merchant.merchantName.trim().isEmpty()
+                ? merchant.merchantName
+                : merchant.merchantCode;
+
+        View content = getLayoutInflater().inflate(R.layout.dialog_branch_picker, null, false);
+        RecyclerView rvBranchPicker = content.findViewById(R.id.rvBranchPicker);
+        TextView tvBranchPickerHint = content.findViewById(R.id.tvBranchPickerHint);
+        tvBranchPickerHint.setText(getString(R.string.user_mgmt_branch_picker_hint));
+
+        rvBranchPicker.setLayoutManager(new LinearLayoutManager(this));
+        final AlertDialog[] dialogHolder = new AlertDialog[1];
+        BranchPickerAdapter pickerAdapter = new BranchPickerAdapter(branch -> {
+            if (dialogHolder[0] != null && dialogHolder[0].isShowing()) {
+                dialogHolder[0].dismiss();
+            }
+            showBranchAccountsDialog(merchant, branch);
+        });
+        pickerAdapter.submit(branchList);
+        rvBranchPicker.setAdapter(pickerAdapter);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.user_mgmt_branch_dialog_title, merchantName))
+                .setView(content)
+                .setNegativeButton(android.R.string.cancel, null)
+                .create();
+        dialogHolder[0] = dialog;
+        dialog.show();
+        applyModernDialogStyle(dialog);
+    }
+
+    private void showBranchAccountsDialog(ApiService.MerchantDto merchant, ApiService.BranchDto branch) {
+        String token = ApiClient.bearerToken(this);
+        if (token.isEmpty() || "Bearer ".equals(token)) {
+            Toast.makeText(this, R.string.user_mgmt_state_backend_session_unavailable_title, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ApiClient.getService(this).getMerchantBranchAccounts(token, merchant.id, branch.id).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<List<ApiService.UserDto>> call,
+                    @NonNull Response<List<ApiService.UserDto>> response) {
+                if (!response.isSuccessful() || response.body() == null) {
+                    showMerchantAccountsDialog(merchant);
+                    return;
+                }
+                showMerchantAccountsFromUsers(merchant, response.body(), branch);
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<List<ApiService.UserDto>> call, @NonNull Throwable t) {
+                showMerchantAccountsDialog(merchant);
+            }
+        });
     }
 
     private void showMerchantAccountsDialog(ApiService.MerchantDto merchant) {
@@ -282,7 +384,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
             return;
         }
 
-        ApiClient.getService(this).getMerchantAccounts(token, merchant.id).enqueue(new Callback<List<ApiService.UserDto>>() {
+        ApiClient.getService(this).getMerchantAccounts(token, merchant.id).enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<List<ApiService.UserDto>> call,
                     @NonNull Response<List<ApiService.UserDto>> response) {
@@ -302,7 +404,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
     }
 
     private void loadAccountsFromTerminals(ApiService.MerchantDto merchant, String token) {
-        ApiClient.getService(this).getTerminals(token).enqueue(new Callback<List<ApiService.TerminalDto>>() {
+        ApiClient.getService(this).getTerminals(token).enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<List<ApiService.TerminalDto>> call,
                     @NonNull Response<List<ApiService.TerminalDto>> response) {
@@ -331,7 +433,9 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         });
     }
 
-    private void showMerchantAccountsFromUsers(ApiService.MerchantDto merchant, List<ApiService.UserDto> users) {
+    private void showMerchantAccountsFromUsers(ApiService.MerchantDto merchant,
+            List<ApiService.UserDto> users,
+            ApiService.BranchDto branch) {
         if (users == null || users.isEmpty()) {
             showMerchantAccountsMessage(merchant, Collections.emptyList());
             return;
@@ -352,162 +456,211 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                     Toast.LENGTH_LONG).show();
         }
 
-        showMerchantAccountListDialog(merchant, users);
+        showMerchantAccountListDialog(merchant, users, branch);
     }
 
-    private void showMerchantAccountListDialog(ApiService.MerchantDto merchant, List<ApiService.UserDto> users) {
+    private void showMerchantAccountsFromUsers(ApiService.MerchantDto merchant, List<ApiService.UserDto> users) {
+        showMerchantAccountsFromUsers(merchant, users, null);
+    }
+
+    private void showMerchantAccountListDialog(ApiService.MerchantDto merchant,
+            List<ApiService.UserDto> users,
+            ApiService.BranchDto branch) {
         List<ApiService.UserDto> accountUsers = new ArrayList<>(users);
-        String merchantName = merchant.merchantName != null && !merchant.merchantName.trim().isEmpty()
-                ? merchant.merchantName
-                : merchant.merchantCode;
+        View content = getLayoutInflater().inflate(R.layout.dialog_merchant_accounts_manage, null, false);
+        TextView tvMerchantMeta = content.findViewById(R.id.tvMerchantMeta);
+        TextView tvAccountsEmpty = content.findViewById(R.id.tvAccountsEmpty);
+        RecyclerView rvAccounts = content.findViewById(R.id.rvAccounts);
+        View btnAddAccount = content.findViewById(R.id.btnAddAccount);
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_list_item_1,
-                buildAccountListItems(accountUsers));
+        String branchSuffix = "";
+        if (branch != null) {
+            String branchName = branch.branchName != null && !branch.branchName.trim().isEmpty()
+                    ? branch.branchName
+                    : branch.branchCode;
+            branchSuffix = " - " + branchName;
+        }
+        tvMerchantMeta.setText(getString(
+                R.string.user_mgmt_accounts_dialog_setup_hint,
+                safe(merchant.merchantCode)));
+        tvAccountsEmpty.setVisibility(accountUsers.isEmpty() ? View.VISIBLE : View.GONE);
 
-        new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.user_mgmt_accounts_dialog_title) + " - " + merchantName)
-                .setAdapter(adapter, (dialog, which) -> {
-                    if (which < 0 || which >= accountUsers.size()) {
-                        return;
-                    }
-                    ApiService.UserDto selectedUser = accountUsers.get(which);
-                    showAccountConfigDialog(merchant, selectedUser);
-                })
+        rvAccounts.setLayoutManager(new LinearLayoutManager(this));
+        MerchantAccountAdapter accountAdapter = new MerchantAccountAdapter(new MerchantAccountAdapter.OnAccountActionListener() {
+            @Override
+            public void onEdit(ApiService.UserDto user) {
+                showAccountEditorDialog(merchant, user);
+            }
+
+            @Override
+            public void onDelete(ApiService.UserDto user) {
+                confirmDeleteAccount(merchant, user);
+            }
+        });
+        accountAdapter.submit(accountUsers);
+        rvAccounts.setAdapter(accountAdapter);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.user_mgmt_accounts_dialog_title) + " - " + resolveMerchantName(merchant) + branchSuffix)
+                .setView(content)
                 .setNegativeButton(android.R.string.cancel, null)
+                .create();
+
+        btnAddAccount.setOnClickListener(v -> showAccountEditorDialog(merchant, null));
+        dialog.show();
+        applyModernDialogStyle(dialog);
+    }
+
+    private void showMerchantEditorDialog(ApiService.MerchantDto merchant) {
+        View content = getLayoutInflater().inflate(R.layout.dialog_merchant_form, null, false);
+        EditText etMerchantCode = content.findViewById(R.id.etMerchantCode);
+        EditText etMerchantName = content.findViewById(R.id.etMerchantName);
+        EditText etBankName = content.findViewById(R.id.etBankName);
+        EditText etBusinessType = content.findViewById(R.id.etBusinessType);
+        EditText etStoreAddress = content.findViewById(R.id.etStoreAddress);
+
+        boolean isCreate = merchant == null;
+        if (!isCreate) {
+            etMerchantCode.setText(safe(merchant.merchantCode));
+            etMerchantCode.setEnabled(false);
+            etMerchantName.setText(safe(merchant.merchantName));
+            etBankName.setText(safe(merchant.bankName));
+            etBusinessType.setText(safe(merchant.businessType));
+            etStoreAddress.setText(safe(merchant.storeAddress));
+        }
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(isCreate ? R.string.user_mgmt_add_merchant : R.string.user_mgmt_edit_merchant)
+                .setView(content)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.common_save, null)
+                .create();
+        dialog.setOnShowListener(d -> {
+            Button saveBtn = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            saveBtn.setOnClickListener(v -> {
+                String token = ApiClient.bearerToken(this);
+                if (token.isEmpty() || "Bearer ".equals(token)) {
+                    Toast.makeText(this, R.string.user_mgmt_state_backend_session_unavailable_title, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                String merchantCode = safe(etMerchantCode.getText().toString()).toUpperCase(Locale.ROOT);
+                String merchantName = safe(etMerchantName.getText().toString());
+                String bankName = safe(etBankName.getText().toString()).toUpperCase(Locale.ROOT);
+                if (merchantName.isEmpty()) {
+                    etMerchantName.setError(getString(R.string.common_required));
+                    etMerchantName.requestFocus();
+                    return;
+                }
+                if (isCreate && merchantCode.isEmpty()) {
+                    etMerchantCode.setError(getString(R.string.common_required));
+                    etMerchantCode.requestFocus();
+                    return;
+                }
+
+                Map<String, String> body = new HashMap<>();
+                if (isCreate) {
+                    body.put("merchantCode", merchantCode);
+                }
+                body.put("merchantName", merchantName);
+                body.put("bankName", bankName);
+                body.put("businessType", safe(etBusinessType.getText().toString()));
+                body.put("storeAddress", safe(etStoreAddress.getText().toString()));
+
+                setDialogButtonsEnabled(dialog, false);
+                if (isCreate) {
+                    ApiClient.getService(this).createMerchant(token, body).enqueue(new Callback<>() {
+                        @Override
+                        public void onResponse(@NonNull Call<ApiService.MerchantDto> call,
+                                @NonNull Response<ApiService.MerchantDto> response) {
+                            setDialogButtonsEnabled(dialog, true);
+                            if (!response.isSuccessful()) {
+                                Toast.makeText(UserManagementActivity.this,
+                                        getString(R.string.user_mgmt_error_code, response.code()),
+                                        Toast.LENGTH_LONG).show();
+                                return;
+                            }
+                            dialog.dismiss();
+                            loadMerchants();
+                        }
+
+                        @Override
+                        public void onFailure(@NonNull Call<ApiService.MerchantDto> call, @NonNull Throwable t) {
+                            setDialogButtonsEnabled(dialog, true);
+                            Toast.makeText(UserManagementActivity.this,
+                                    getString(R.string.user_mgmt_network_error, t.getMessage()),
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    });
+                    return;
+                }
+
+                ApiClient.getService(this).updateMerchant(token, merchant.id, body).enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(@NonNull Call<ApiService.MerchantDto> call,
+                            @NonNull Response<ApiService.MerchantDto> response) {
+                        setDialogButtonsEnabled(dialog, true);
+                        if (!response.isSuccessful()) {
+                            Toast.makeText(UserManagementActivity.this,
+                                    getString(R.string.user_mgmt_error_code, response.code()),
+                                    Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        dialog.dismiss();
+                        loadMerchants();
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<ApiService.MerchantDto> call, @NonNull Throwable t) {
+                        setDialogButtonsEnabled(dialog, true);
+                        Toast.makeText(UserManagementActivity.this,
+                                getString(R.string.user_mgmt_network_error, t.getMessage()),
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
+            });
+        });
+        dialog.show();
+        applyModernDialogStyle(dialog);
+    }
+
+    private void confirmDeleteMerchant(ApiService.MerchantDto merchant) {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.user_mgmt_delete_merchant)
+                .setMessage(getString(R.string.user_mgmt_delete_merchant_confirm, resolveMerchantName(merchant)))
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.common_delete, (d, w) -> deleteMerchant(merchant))
                 .show();
     }
 
-    private List<String> buildAccountListItems(List<ApiService.UserDto> users) {
-        List<String> items = new ArrayList<>();
-        for (int i = 0; i < users.size(); i++) {
-            ApiService.UserDto user = users.get(i);
-            String identity = resolveAccountIdentity(user);
-            String tid = normalizeTid(user.terminalId);
-            String ip = safe(user.serverIp);
-            String port = user.serverPort != null && user.serverPort > 0 ? String.valueOf(user.serverPort) : "-";
-            String info = getString(
-                    R.string.user_mgmt_accounts_dialog_item_format,
-                    i + 1,
-                    identity,
-                    tid.isEmpty() ? getString(R.string.txn_detail_placeholder_dash) : tid,
-                    ip.isEmpty() ? getString(R.string.txn_detail_placeholder_dash) : ip,
-                    port);
-            items.add(info);
-        }
-        return items;
-    }
-
-    private void showAccountConfigDialog(ApiService.MerchantDto merchant, ApiService.UserDto user) {
-        View content = getLayoutInflater().inflate(R.layout.dialog_merchant_account_config, null, false);
-
-        TextView tvHint = content.findViewById(R.id.tvAccountHint);
-        EditText etTid = content.findViewById(R.id.etAccountTid);
-        EditText etServerIp = content.findViewById(R.id.etAccountServerIp);
-        EditText etServerPort = content.findViewById(R.id.etAccountServerPort);
-
-        tvHint.setText(getString(R.string.user_mgmt_account_editor_hint, resolveAccountIdentity(user)));
-        etTid.setText(normalizeTid(user.terminalId));
-        etServerIp.setText(safe(user.serverIp));
-        etServerPort.setText(user.serverPort != null && user.serverPort > 0 ? String.valueOf(user.serverPort) : "");
-
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle(R.string.user_mgmt_account_editor_title)
-                .setView(content)
-                .setNegativeButton(R.string.user_mgmt_account_editor_clear, null)
-                .setNeutralButton(R.string.user_mgmt_account_editor_test, null)
-                .setPositiveButton(R.string.common_save, null)
-                .create();
-
-        dialog.setOnShowListener(d -> {
-            Button btnSave = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-            Button btnTest = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
-            Button btnClear = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
-
-            btnSave.setOnClickListener(v -> saveAccountConfig(dialog, merchant, user, etTid, etServerIp, etServerPort));
-            btnTest.setOnClickListener(v -> testAccountConnection(etServerIp, etServerPort));
-            btnClear.setOnClickListener(v -> clearAccountConfig(dialog, merchant, user));
-        });
-        dialog.show();
-    }
-
-
-    private void saveAccountConfig(AlertDialog dialog,
-            ApiService.MerchantDto merchant,
-            ApiService.UserDto user,
-            EditText etTid,
-            EditText etServerIp,
-            EditText etServerPort) {
+    private void deleteMerchant(ApiService.MerchantDto merchant) {
         String token = ApiClient.bearerToken(this);
         if (token.isEmpty() || "Bearer ".equals(token)) {
             Toast.makeText(this, R.string.user_mgmt_state_backend_session_unavailable_title, Toast.LENGTH_SHORT).show();
             return;
         }
-
-        String tid = normalizeTid(etTid.getText().toString());
-        if (!tid.isEmpty() && !tid.matches(TID_REGEX)) {
-            etTid.setError(getString(R.string.user_mgmt_accounts_dialog_tid_invalid, 1));
-            etTid.requestFocus();
-            return;
-        }
-
-        String serverIp = safe(etServerIp.getText().toString());
-        String portText = safe(etServerPort.getText().toString());
-        Integer serverPort = null;
-        if (!portText.isEmpty()) {
-            try {
-                int parsed = Integer.parseInt(portText);
-                if (parsed <= 0 || parsed > 65535) {
-                    etServerPort.setError(getString(R.string.user_mgmt_account_editor_invalid_port));
-                    etServerPort.requestFocus();
-                    return;
-                }
-                serverPort = parsed;
-            } catch (NumberFormatException ex) {
-                etServerPort.setError(getString(R.string.user_mgmt_account_editor_invalid_port));
-                etServerPort.requestFocus();
-                return;
-            }
-        }
-
-        ApiService.CreateUserRequest body = new ApiService.CreateUserRequest(
-                null,
-                safe(user.fullName),
-                safe(user.phone),
-                safe(user.email),
-                safe(user.dob),
-                safe(user.gender),
-                safe(user.storeName),
-                safe(user.businessType),
-                safe(user.storeAddress),
-                user.merchantId,
-                tid,
-                serverIp,
-                serverPort);
-
-        setDialogButtonsEnabled(dialog, false);
-        ApiClient.getService(this).updateUser(token, user.id, body).enqueue(new Callback<>() {
+        ApiClient.getService(this).deleteMerchant(token, merchant.id).enqueue(new Callback<>() {
             @Override
-            public void onResponse(@NonNull Call<ApiService.UserDto> call,
-                    @NonNull Response<ApiService.UserDto> response) {
-                setDialogButtonsEnabled(dialog, true);
+            public void onResponse(@NonNull Call<Map<String, String>> call,
+                    @NonNull Response<Map<String, String>> response) {
                 if (!response.isSuccessful()) {
+                    if (response.code() == 409) {
+                        Toast.makeText(UserManagementActivity.this,
+                                R.string.user_mgmt_delete_merchant_blocked,
+                                Toast.LENGTH_LONG).show();
+                        return;
+                    }
                     Toast.makeText(UserManagementActivity.this,
                             getString(R.string.user_mgmt_error_code, response.code()),
                             Toast.LENGTH_LONG).show();
                     return;
                 }
-                Toast.makeText(UserManagementActivity.this,
-                        R.string.user_mgmt_account_editor_save_success,
-                        Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
-                showMerchantAccountsDialog(merchant);
+                Toast.makeText(UserManagementActivity.this, R.string.user_mgmt_delete_success, Toast.LENGTH_SHORT).show();
+                loadMerchants();
             }
 
             @Override
-            public void onFailure(@NonNull Call<ApiService.UserDto> call, @NonNull Throwable t) {
-                setDialogButtonsEnabled(dialog, true);
+            public void onFailure(@NonNull Call<Map<String, String>> call, @NonNull Throwable t) {
                 Toast.makeText(UserManagementActivity.this,
                         getString(R.string.user_mgmt_network_error, t.getMessage()),
                         Toast.LENGTH_LONG).show();
@@ -515,52 +668,207 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         });
     }
 
-    private void clearAccountConfig(AlertDialog dialog,
-            ApiService.MerchantDto merchant,
-            ApiService.UserDto user) {
+    private void showAccountEditorDialog(ApiService.MerchantDto merchant, ApiService.UserDto user) {
+        View content = getLayoutInflater().inflate(R.layout.dialog_merchant_account_form, null, false);
+        EditText etFullName = content.findViewById(R.id.etAccountFullName);
+        EditText etPhone = content.findViewById(R.id.etAccountPhone);
+        EditText etEmail = content.findViewById(R.id.etAccountEmail);
+        EditText etPassword = content.findViewById(R.id.etAccountPassword);
+        EditText etTid = content.findViewById(R.id.etAccountTid);
+        EditText etServerIp = content.findViewById(R.id.etAccountServerIp);
+        EditText etServerPort = content.findViewById(R.id.etAccountServerPort);
+        View tilPassword = content.findViewById(R.id.tilAccountPassword);
+
+        boolean isCreate = user == null;
+        if (!isCreate) {
+            etFullName.setText(safe(user.fullName));
+            etPhone.setText(safe(user.phone));
+            etEmail.setText(safe(user.email));
+            etTid.setText(normalizeTid(user.terminalId));
+            etServerIp.setText(safe(user.serverIp));
+            etServerPort.setText(user.serverPort != null && user.serverPort > 0 ? String.valueOf(user.serverPort) : "");
+            if (tilPassword != null) {
+                tilPassword.setVisibility(View.GONE);
+            }
+        }
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(isCreate ? R.string.user_mgmt_add_account : R.string.user_mgmt_edit_account)
+                .setView(content)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setNeutralButton(R.string.user_mgmt_account_editor_test, null)
+                .setPositiveButton(R.string.common_save, null)
+                .create();
+        dialog.setOnShowListener(d -> {
+            Button saveBtn = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            Button testBtn = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
+            saveBtn.setOnClickListener(v -> {
+                String token = ApiClient.bearerToken(this);
+                if (token.isEmpty() || "Bearer ".equals(token)) {
+                    Toast.makeText(this, R.string.user_mgmt_state_backend_session_unavailable_title, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                String fullName = safe(etFullName.getText().toString());
+                String phone = safe(etPhone.getText().toString());
+                String email = safe(etEmail.getText().toString());
+                String password = safe(etPassword.getText().toString());
+                String tid = normalizeTid(etTid.getText().toString());
+                if (!tid.isEmpty() && !tid.matches(TID_REGEX)) {
+                    etTid.setError(getString(R.string.user_mgmt_accounts_dialog_tid_invalid, 1));
+                    etTid.requestFocus();
+                    return;
+                }
+                if (fullName.isEmpty()) {
+                    etFullName.setError(getString(R.string.common_required));
+                    etFullName.requestFocus();
+                    return;
+                }
+                if (phone.isEmpty()) {
+                    etPhone.setError(getString(R.string.common_required));
+                    etPhone.requestFocus();
+                    return;
+                }
+                if (isCreate && password.isEmpty()) {
+                    etPassword.setError(getString(R.string.common_required));
+                    etPassword.requestFocus();
+                    return;
+                }
+
+                Integer serverPort = parseServerPort(etServerPort);
+                if (Integer.valueOf(Integer.MIN_VALUE).equals(serverPort)) {
+                    return;
+                }
+
+                ApiService.CreateUserRequest body = new ApiService.CreateUserRequest(
+                        isCreate ? password : null,
+                        fullName,
+                        phone,
+                        email,
+                        isCreate ? null : safe(user.dob),
+                        isCreate ? null : safe(user.gender),
+                        safe(merchant.merchantName),
+                        safe(merchant.businessType),
+                        safe(merchant.storeAddress),
+                        merchant.id,
+                        isCreate ? null : user.branchId,
+                        tid,
+                        safe(etServerIp.getText().toString()),
+                        serverPort);
+
+                setDialogButtonsEnabled(dialog, false);
+                if (isCreate) {
+                    enqueueCreatePosAccount(token, body, new Callback<>() {
+                        @Override
+                        public void onResponse(@NonNull Call<ApiService.UserDto> call,
+                                @NonNull Response<ApiService.UserDto> response) {
+                            setDialogButtonsEnabled(dialog, true);
+                            if (!response.isSuccessful()) {
+                                showAccountApiError(response, true);
+                                return;
+                            }
+                            dialog.dismiss();
+                            showMerchantAccountsDialog(merchant);
+                        }
+
+                        @Override
+                        public void onFailure(@NonNull Call<ApiService.UserDto> call, @NonNull Throwable t) {
+                            setDialogButtonsEnabled(dialog, true);
+                            Toast.makeText(UserManagementActivity.this,
+                                    getString(R.string.user_mgmt_network_error, t.getMessage()),
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    });
+                    return;
+                }
+
+                enqueueUpdatePosAccount(token, user.id, body, new Callback<>() {
+                    @Override
+                    public void onResponse(@NonNull Call<ApiService.UserDto> call,
+                            @NonNull Response<ApiService.UserDto> response) {
+                        setDialogButtonsEnabled(dialog, true);
+                        if (!response.isSuccessful()) {
+                            showAccountApiError(response, false);
+                            return;
+                        }
+                        dialog.dismiss();
+                        showMerchantAccountsDialog(merchant);
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<ApiService.UserDto> call, @NonNull Throwable t) {
+                        setDialogButtonsEnabled(dialog, true);
+                        Toast.makeText(UserManagementActivity.this,
+                                getString(R.string.user_mgmt_network_error, t.getMessage()),
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
+            });
+            testBtn.setOnClickListener(v -> testAccountConnection(etServerIp, etServerPort));
+        });
+        dialog.show();
+        applyModernDialogStyle(dialog);
+    }
+
+    private void applyModernDialogStyle(AlertDialog dialog) {
+        if (dialog == null || dialog.getWindow() == null) {
+            return;
+        }
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        dialog.getWindow().getAttributes().windowAnimations = R.style.MerchantDialogAnimation;
+        int width = (int) (getResources().getDisplayMetrics().widthPixels * 0.92f);
+        dialog.getWindow().setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+    }
+
+    private Integer parseServerPort(EditText etServerPort) {
+        String portText = safe(etServerPort.getText().toString());
+        if (portText.isEmpty()) {
+            return null;
+        }
+        try {
+            int parsed = Integer.parseInt(portText);
+            if (parsed <= 0 || parsed > 65535) {
+                etServerPort.setError(getString(R.string.user_mgmt_account_editor_invalid_port));
+                etServerPort.requestFocus();
+                return Integer.MIN_VALUE;
+            }
+            return parsed;
+        } catch (NumberFormatException ex) {
+            etServerPort.setError(getString(R.string.user_mgmt_account_editor_invalid_port));
+            etServerPort.requestFocus();
+            return Integer.MIN_VALUE;
+        }
+    }
+
+    private void confirmDeleteAccount(ApiService.MerchantDto merchant, ApiService.UserDto user) {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.user_mgmt_delete_account)
+                .setMessage(getString(R.string.user_mgmt_delete_account_confirm, resolveAccountIdentity(user)))
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.common_delete, (d, w) -> deleteAccount(merchant, user))
+                .show();
+    }
+
+    private void deleteAccount(ApiService.MerchantDto merchant, ApiService.UserDto user) {
         String token = ApiClient.bearerToken(this);
         if (token.isEmpty() || "Bearer ".equals(token)) {
             Toast.makeText(this, R.string.user_mgmt_state_backend_session_unavailable_title, Toast.LENGTH_SHORT).show();
             return;
         }
-
-        ApiService.CreateUserRequest body = new ApiService.CreateUserRequest(
-                null,
-                safe(user.fullName),
-                safe(user.phone),
-                safe(user.email),
-                safe(user.dob),
-                safe(user.gender),
-                safe(user.storeName),
-                safe(user.businessType),
-                safe(user.storeAddress),
-                user.merchantId,
-                "",
-                "",
-                null);
-
-        setDialogButtonsEnabled(dialog, false);
-        ApiClient.getService(this).updateUser(token, user.id, body).enqueue(new Callback<>() {
+        enqueueDeletePosAccount(token, user.id, new Callback<>() {
             @Override
-            public void onResponse(@NonNull Call<ApiService.UserDto> call,
-                    @NonNull Response<ApiService.UserDto> response) {
-                setDialogButtonsEnabled(dialog, true);
+            public void onResponse(@NonNull Call<Map<String, String>> call,
+                    @NonNull Response<Map<String, String>> response) {
                 if (!response.isSuccessful()) {
-                    Toast.makeText(UserManagementActivity.this,
-                            getString(R.string.user_mgmt_error_code, response.code()),
-                            Toast.LENGTH_LONG).show();
+                    showAccountApiError(response, false);
                     return;
                 }
-                Toast.makeText(UserManagementActivity.this,
-                        R.string.user_mgmt_account_editor_clear_success,
-                        Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
+                Toast.makeText(UserManagementActivity.this, R.string.user_mgmt_delete_success, Toast.LENGTH_SHORT).show();
                 showMerchantAccountsDialog(merchant);
             }
 
             @Override
-            public void onFailure(@NonNull Call<ApiService.UserDto> call, @NonNull Throwable t) {
-                setDialogButtonsEnabled(dialog, true);
+            public void onFailure(@NonNull Call<Map<String, String>> call, @NonNull Throwable t) {
                 Toast.makeText(UserManagementActivity.this,
                         getString(R.string.user_mgmt_network_error, t.getMessage()),
                         Toast.LENGTH_LONG).show();
@@ -615,162 +923,53 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         });
     }
 
-    private void showMerchantAccountsEditorDialog(ApiService.MerchantDto merchant, List<ApiService.UserDto> users) {
-        String merchantName = merchant.merchantName != null && !merchant.merchantName.trim().isEmpty()
-                ? merchant.merchantName
-                : merchant.merchantCode;
-        String mid = merchant.merchantCode != null && !merchant.merchantCode.trim().isEmpty()
-                ? merchant.merchantCode
-                : getString(R.string.txn_detail_placeholder_dash);
-
-        ScrollView scrollView = new ScrollView(this);
-        int pad = (int) (16 * getResources().getDisplayMetrics().density);
-        scrollView.setPadding(pad, pad, pad, 0);
-
-        LinearLayout content = new LinearLayout(this);
-        content.setOrientation(LinearLayout.VERTICAL);
-        scrollView.addView(content);
-
-        TextView tvHeader = new TextView(this);
-        tvHeader.setText(getString(R.string.user_mgmt_accounts_dialog_setup_hint, mid));
-        tvHeader.setTextColor(0xFF334155);
-        tvHeader.setTextSize(13);
-        content.addView(tvHeader);
-
-        List<TidInputRow> rows = new ArrayList<>();
-        for (int i = 0; i < users.size(); i++) {
-            ApiService.UserDto user = users.get(i);
-            int accountIndex = i + 1;
-
-            TextView tvAccount = new TextView(this);
-            tvAccount.setPadding(0, pad, 0, 8);
-            tvAccount.setText(getString(R.string.user_mgmt_accounts_dialog_account_label,
-                    accountIndex,
-                    resolveAccountIdentity(user)));
-            tvAccount.setTextColor(0xFF0F172A);
-            tvAccount.setTextSize(14);
-            content.addView(tvAccount);
-
-            EditText input = new EditText(this);
-            input.setSingleLine(true);
-            input.setHint(getString(R.string.user_mgmt_accounts_dialog_tid_hint, accountIndex));
-            input.setText(normalizeTid(user.terminalId));
-            input.setSelectAllOnFocus(true);
-            input.setPadding(24, 18, 24, 18);
-            input.setBackgroundResource(R.drawable.bg_input_rounded);
-            content.addView(input);
-
-            rows.add(new TidInputRow(user, accountIndex, input));
+    private void showAccountApiError(Response<?> response, boolean isCreate) {
+        String backendError = extractBackendError(response).toLowerCase(Locale.ROOT);
+        int messageRes = 0;
+        if (backendError.contains("phone number already registered")) {
+            messageRes = R.string.user_mgmt_error_phone_exists;
+        } else if (backendError.contains("email already registered")) {
+            messageRes = R.string.user_mgmt_error_email_exists;
+        } else if (backendError.contains("password is required")) {
+            messageRes = R.string.user_mgmt_error_password_required_create;
+        } else if (backendError.contains("terminal id") && backendError.contains("8")) {
+            messageRes = R.string.user_mgmt_error_tid_invalid_strict;
+        } else if (backendError.contains("merchant not found")) {
+            messageRes = R.string.user_mgmt_error_merchant_not_found;
+        } else if (backendError.contains("access denied")) {
+            messageRes = R.string.user_mgmt_error_access_denied;
+        } else if (backendError.contains("branch not found") || backendError.contains("branch does not belong")) {
+            messageRes = R.string.user_mgmt_error_branch_invalid;
+        } else if (backendError.contains("user not found")) {
+            messageRes = R.string.user_mgmt_error_account_not_found;
         }
 
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.user_mgmt_accounts_dialog_title) + " - " + merchantName)
-                .setView(scrollView)
-                .setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton(R.string.user_mgmt_accounts_dialog_save_tid, null)
-                .create();
+        if (messageRes != 0) {
+            Toast.makeText(this, messageRes, Toast.LENGTH_LONG).show();
+            return;
+        }
 
-        dialog.setOnShowListener(d -> {
-            Button saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-            saveButton.setOnClickListener(v -> submitTidUpdates(dialog, rows));
-        });
-        dialog.show();
+        if (isCreate) {
+            Toast.makeText(this, R.string.user_mgmt_error_create_account_failed, Toast.LENGTH_LONG).show();
+            return;
+        }
+        Toast.makeText(this, getString(R.string.user_mgmt_error_code, response.code()), Toast.LENGTH_LONG).show();
     }
 
-    private void submitTidUpdates(AlertDialog dialog, List<TidInputRow> rows) {
-        if (!isNetworkAvailable()) {
-            showOfflineState();
-            return;
+    private String extractBackendError(Response<?> response) {
+        if (response == null || response.errorBody() == null) {
+            return "";
         }
-
-        String token = ApiClient.bearerToken(this);
-        if (token.isEmpty() || "Bearer ".equals(token)) {
-            Toast.makeText(this, R.string.user_mgmt_state_backend_session_unavailable_title, Toast.LENGTH_SHORT).show();
-            return;
+        try {
+            String raw = response.errorBody().string();
+            if (raw == null || raw.trim().isEmpty()) {
+                return "";
+            }
+            JSONObject json = new JSONObject(raw);
+            return json.optString("error", "");
+        } catch (Exception ignore) {
+            return "";
         }
-
-        List<TidUpdateRequest> updates = new ArrayList<>();
-        for (TidInputRow row : rows) {
-            String tid = normalizeTid(row.input.getText().toString());
-            if (!tid.matches(TID_REGEX)) {
-                row.input.setError(getString(R.string.user_mgmt_accounts_dialog_tid_invalid, row.accountIndex));
-                row.input.requestFocus();
-                return;
-            }
-
-            String currentTid = normalizeTid(row.user.terminalId);
-            if (!tid.equals(currentTid)) {
-                updates.add(new TidUpdateRequest(row.user, row.accountIndex, tid));
-            }
-        }
-
-        if (updates.isEmpty()) {
-            Toast.makeText(this, R.string.user_mgmt_accounts_dialog_tid_no_change, Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        setDialogButtonsEnabled(dialog, false);
-        updateTidRecursive(token, updates, 0, 0, 0, dialog);
-    }
-
-    private void updateTidRecursive(String token,
-            List<TidUpdateRequest> updates,
-            int index,
-            int successCount,
-            int failCount,
-            AlertDialog dialog) {
-        if (index >= updates.size()) {
-            setDialogButtonsEnabled(dialog, true);
-            dialog.dismiss();
-            loadMerchants();
-            if (failCount == 0) {
-                Toast.makeText(this,
-                        getString(R.string.user_mgmt_accounts_dialog_tid_update_success, successCount),
-                        Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this,
-                        getString(R.string.user_mgmt_accounts_dialog_tid_update_partial, successCount, failCount),
-                        Toast.LENGTH_LONG).show();
-            }
-            return;
-        }
-
-        TidUpdateRequest request = updates.get(index);
-        ApiService.UserDto user = request.user;
-        ApiService.CreateUserRequest body = new ApiService.CreateUserRequest(
-                null,
-                safe(user.fullName),
-                safe(user.phone),
-                safe(user.email),
-                safe(user.dob),
-                safe(user.gender),
-                safe(user.storeName),
-                safe(user.businessType),
-                safe(user.storeAddress),
-                user.merchantId,
-                request.tid,
-                user.serverIp,
-                user.serverPort);
-
-        ApiClient.getService(this).updateUser(token, user.id, body).enqueue(new Callback<ApiService.UserDto>() {
-            @Override
-            public void onResponse(@NonNull Call<ApiService.UserDto> call,
-                    @NonNull Response<ApiService.UserDto> response) {
-                int nextSuccess = successCount;
-                int nextFail = failCount;
-                if (response.isSuccessful()) {
-                    nextSuccess++;
-                } else {
-                    nextFail++;
-                }
-                updateTidRecursive(token, updates, index + 1, nextSuccess, nextFail, dialog);
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<ApiService.UserDto> call, @NonNull Throwable t) {
-                updateTidRecursive(token, updates, index + 1, successCount, failCount + 1, dialog);
-            }
-        });
     }
 
     private void setDialogButtonsEnabled(AlertDialog dialog, boolean enabled) {
@@ -800,6 +999,19 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         return getString(R.string.txn_detail_placeholder_dash);
     }
 
+    private String resolveMerchantName(ApiService.MerchantDto merchant) {
+        if (merchant == null) {
+            return getString(R.string.txn_detail_placeholder_dash);
+        }
+        if (merchant.merchantName != null && !merchant.merchantName.trim().isEmpty()) {
+            return merchant.merchantName.trim();
+        }
+        if (merchant.merchantCode != null && !merchant.merchantCode.trim().isEmpty()) {
+            return merchant.merchantCode.trim();
+        }
+        return getString(R.string.txn_detail_placeholder_dash);
+    }
+
     private String normalizeTid(String value) {
         if (value == null) {
             return "";
@@ -811,28 +1023,23 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         return value == null ? "" : value.trim();
     }
 
-    private static class TidInputRow {
-        final ApiService.UserDto user;
-        final int accountIndex;
-        final EditText input;
-
-        TidInputRow(ApiService.UserDto user, int accountIndex, EditText input) {
-            this.user = user;
-            this.accountIndex = accountIndex;
-            this.input = input;
-        }
+    private void enqueueUpdatePosAccount(String token,
+            long userId,
+            ApiService.CreateUserRequest body,
+            Callback<ApiService.UserDto> callback) {
+        ApiClient.getService(this).updatePosAccount(token, userId, body).enqueue(callback);
     }
 
-    private static class TidUpdateRequest {
-        final ApiService.UserDto user;
-        final int accountIndex;
-        final String tid;
+    private void enqueueCreatePosAccount(String token,
+            ApiService.CreateUserRequest body,
+            Callback<ApiService.UserDto> callback) {
+        ApiClient.getService(this).createPosAccount(token, body).enqueue(callback);
+    }
 
-        TidUpdateRequest(ApiService.UserDto user, int accountIndex, String tid) {
-            this.user = user;
-            this.accountIndex = accountIndex;
-            this.tid = tid;
-        }
+    private void enqueueDeletePosAccount(String token,
+            long userId,
+            Callback<Map<String, String>> callback) {
+        ApiClient.getService(this).deletePosAccount(token, userId).enqueue(callback);
     }
 
     private void showMerchantAccountsMessage(ApiService.MerchantDto merchant, List<String> lines) {
@@ -974,7 +1181,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         }
     }
 
-    private void showEmptyStateText(String title, String subtitle, boolean showRetryButton) {
+    private void showEmptyStateText(String title, String subtitle) {
         showContentChrome();
         layoutEmpty.setVisibility(View.VISIBLE);
         if (tvEmptyTitle != null) {
@@ -984,7 +1191,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
             tvEmptySubtitle.setText(subtitle);
         }
         if (btnRetryConnection != null) {
-            btnRetryConnection.setVisibility(showRetryButton ? View.VISIBLE : View.GONE);
+            btnRetryConnection.setVisibility(View.GONE);
         }
     }
 

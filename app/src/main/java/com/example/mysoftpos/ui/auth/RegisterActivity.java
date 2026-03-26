@@ -30,7 +30,9 @@ import androidx.annotation.NonNull;
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.data.local.AppDatabase;
 import com.example.mysoftpos.data.local.dao.UserDao;
+import com.example.mysoftpos.data.local.dao.MerchantDao;
 import com.example.mysoftpos.data.local.entity.UserEntity;
+import com.example.mysoftpos.data.local.entity.MerchantEntity;
 import com.example.mysoftpos.data.remote.api.ApiClient;
 import com.example.mysoftpos.data.remote.api.ApiService;
 import com.example.mysoftpos.ui.BaseActivity;
@@ -691,6 +693,7 @@ public class RegisterActivity extends BaseActivity {
             try {
                 AppDatabase db = AppDatabase.getInstance(this);
                 UserDao userDao = db.userDao();
+                MerchantDao merchantDao = db.merchantDao();
                 String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(form.phone);
                 String passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashPassword(form.password);
 
@@ -708,6 +711,7 @@ public class RegisterActivity extends BaseActivity {
                 }
 
                 user.usernameHash = usernameHash;
+                user.username = form.phone;
                 user.passwordHash = passwordHash;
                 user.displayName = form.fullName;
                 user.role = userDto != null && userDto.role != null && !userDto.role.trim().isEmpty()
@@ -717,17 +721,8 @@ public class RegisterActivity extends BaseActivity {
                 user.phone = form.phone;
                 user.dob = form.dob;
                 user.gender = form.gender;
-                user.storeName = form.storeName;
-                String normalizedBusinessType = userDto != null
-                        ? BusinessTypeMccMapper.toMcc(userDto.businessType)
-                        : "";
-                user.businessType = normalizedBusinessType.isEmpty()
-                        ? form.businessType
-                        : normalizedBusinessType;
-                user.storeAddress = form.storeAddress;
-                user.branchCount = form.branchCount;
-                user.branchAddresses = form.branchAddresses;
-                user.accountCount = form.accountCount;
+                user.merchantBackendId = userDto != null && userDto.merchantId != null ? userDto.merchantId : 0L;
+                user.branchBackendId = userDto != null && userDto.branchId != null ? userDto.branchId : 0L;
                 user.phoneVerified = userDto == null || userDto.phoneVerified == null || userDto.phoneVerified;
                 user.adminId = "";
                 if (user.createdAt <= 0) {
@@ -754,6 +749,7 @@ public class RegisterActivity extends BaseActivity {
                     userDao.insert(user);
                 }
 
+                cacheOrUpdateMerchantLocally(merchantDao, form, userDto);
                 cacheDerivedAccounts(userDao, form, userDto);
                 saved = true;
             } catch (Exception e) {
@@ -765,6 +761,59 @@ public class RegisterActivity extends BaseActivity {
                 }
             }
         }).start();
+    }
+
+    private void cacheOrUpdateMerchantLocally(MerchantDao merchantDao,
+                                              RegistrationForm form,
+                                              ApiService.UserDto userDto) {
+        if (merchantDao == null) {
+            return;
+        }
+
+        String merchantCode = userDto != null ? trimToEmpty(userDto.merchantCode) : "";
+        if (merchantCode.isEmpty()) {
+            return;
+        }
+
+        MerchantEntity merchant = merchantDao.getByCode(merchantCode);
+        if (merchant == null && userDto != null && userDto.merchantId != null && userDto.merchantId > 0) {
+            merchant = merchantDao.getByBackendId(userDto.merchantId);
+        }
+        if (merchant == null) {
+            merchant = new MerchantEntity();
+        }
+
+        merchant.merchantCode = merchantCode;
+        merchant.merchantNameLocation = userDto != null && userDto.storeName != null
+                ? userDto.storeName
+                : form.storeName;
+        merchant.businessType = userDto != null
+                ? BusinessTypeMccMapper.toMcc(userDto.businessType)
+                : form.businessType;
+        if (merchant.businessType == null || merchant.businessType.isEmpty()) {
+            merchant.businessType = form.businessType;
+        }
+        merchant.storeAddress = userDto != null && userDto.storeAddress != null
+                ? userDto.storeAddress
+                : form.storeAddress;
+        merchant.bankName = userDto != null && userDto.bankName != null ? userDto.bankName : form.bankName;
+        merchant.branchCount = form.branchCount;
+        merchant.branchAddresses = form.branchAddresses;
+        merchant.accountCount = form.accountCount;
+
+        if (userDto != null) {
+            merchant.backendId = userDto.merchantId != null ? userDto.merchantId : 0L;
+        }
+
+        if (merchant.id > 0) {
+            merchantDao.update(merchant);
+        } else {
+            merchantDao.insert(merchant);
+        }
+    }
+
+    private String trimToEmpty(String value) {
+        return value == null ? "" : value.trim();
     }
 
     private void cacheDerivedAccounts(UserDao userDao, RegistrationForm form, ApiService.UserDto ownerDto) {
@@ -796,6 +845,7 @@ public class RegisterActivity extends BaseActivity {
             }
 
             accountUser.usernameHash = accountUsernameHash;
+            accountUser.username = accountPhone;
             accountUser.passwordHash = sharedPasswordHash;
             accountUser.displayName = form.fullName;
             accountUser.role = REGISTERED_USER_ROLE;
@@ -803,12 +853,8 @@ public class RegisterActivity extends BaseActivity {
             accountUser.phone = accountPhone;
             accountUser.dob = form.dob;
             accountUser.gender = form.gender;
-            accountUser.storeName = form.storeName;
-            accountUser.businessType = form.businessType;
-            accountUser.storeAddress = form.storeAddress;
-            accountUser.branchCount = form.branchCount;
-            accountUser.branchAddresses = form.branchAddresses;
-            accountUser.accountCount = form.accountCount;
+            accountUser.merchantBackendId = ownerDto != null && ownerDto.merchantId != null ? ownerDto.merchantId : 0L;
+            accountUser.branchBackendId = ownerDto != null && ownerDto.branchId != null ? ownerDto.branchId : 0L;
             accountUser.phoneVerified = ownerDto == null || ownerDto.phoneVerified == null || ownerDto.phoneVerified;
             accountUser.adminId = "";
             accountUser.backendId = 0L;

@@ -65,7 +65,7 @@ public class StandardIsoPacker {
         SCHEMA.put(42, new FieldDef(FieldType.ALPHA, 15)); // MID (ans15)
         SCHEMA.put(43, new FieldDef(FieldType.ALPHA, 40)); // Name/Location
         SCHEMA.put(49, new FieldDef(FieldType.NUMERIC, 3)); // Currency
-        SCHEMA.put(52, new FieldDef(FieldType.BINARY, 8)); // PIN Block (64 bits)
+        SCHEMA.put(52, new FieldDef(FieldType.ALPHA, 16)); // PIN Block (16 ASCII hex chars per NAPAS/OpenWay)
         SCHEMA.put(54, new FieldDef(FieldType.LLLVAR, 120)); // Additional Amounts
         SCHEMA.put(55, new FieldDef(FieldType.LLLVAR, 510)); // ICC Data (Hex String)
         SCHEMA.put(60, new FieldDef(FieldType.LLLVAR, 60)); // Reserved Private (De 60)

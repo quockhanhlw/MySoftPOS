@@ -22,7 +22,7 @@
     <string name="login_password_hint">Nhập mật khẩu của bạn</string>
     <string name="login_forgot_password">Quên mật khẩu?</string>
     <string name="login_button">Đăng nhập</string>
-    <string name="login_email_label">Email hoặc số điện thoại</string>
+    <string name="login_email_label">Username</string>
     <string name="login_no_account">Chưa có tài khoản?</string>
     <string name="login_sign_up">Đăng ký</string>
 
@@ -379,6 +379,8 @@
     <string name="user_mgmt_mid_format">MID: %1$s</string>
     <string name="user_mgmt_branch_count_format">Chi nhánh: %1$d • Tài khoản: %2$d</string>
     <string name="user_mgmt_missing_tid_badge">Thiếu TID: %1$d</string>
+    <string name="user_mgmt_branch_dialog_title">Chi nhánh - %1$s</string>
+    <string name="user_mgmt_branch_item_format">%1$s (%2$s) - Tài khoản: %3$d</string>
     <string name="user_mgmt_accounts_dialog_title">Danh sách tài khoản merchant</string>
     <string name="user_mgmt_accounts_dialog_empty">Chưa có tài khoản (TID) cho merchant này.</string>
     <string name="user_mgmt_accounts_dialog_line">%1$d. TID: %2$s</string>
@@ -386,7 +388,7 @@
     <string name="user_mgmt_accounts_missing_tid_notice">Merchant này có %1$d tài khoản chưa có TID. Vui lòng gán TID ngay.</string>
     <string name="user_mgmt_accounts_dialog_setup_hint">MID: %1$s\nNhập TID cho từng tài khoản (8 ký tự in hoa/chữ số).</string>
     <string name="user_mgmt_accounts_dialog_account_label">Tài khoản %1$d - %2$s</string>
-    <string name="user_mgmt_accounts_dialog_item_format">%1$d) %2$s\nTID: %3$s   IP: %4$s   Port: %5$s</string>
+    <string name="user_mgmt_accounts_dialog_item_format">%1$d) %2$s\nTID: %3$s\nIP: %4$s • Port: %5$s</string>
     <string name="user_mgmt_accounts_dialog_tid_hint">TID cho tài khoản %1$d</string>
     <string name="user_mgmt_accounts_dialog_save_tid">Lưu TID</string>
     <string name="user_mgmt_accounts_dialog_tid_invalid">Tài khoản %1$d: TID phải đúng 8 ký tự in hoa/chữ số</string>
@@ -402,6 +404,36 @@
     <string name="user_mgmt_account_editor_clear_success">Đã xóa cấu hình tài khoản</string>
     <string name="user_mgmt_account_editor_test_success">Kết nối thành công</string>
     <string name="user_mgmt_account_editor_test_failed">Kết nối thất bại</string>
+    <string name="user_mgmt_action_view_accounts">Xem tài khoản</string>
+    <string name="user_mgmt_add_merchant">Thêm merchant</string>
+    <string name="user_mgmt_edit_merchant">Sửa merchant</string>
+    <string name="user_mgmt_delete_merchant">Xóa merchant</string>
+    <string name="user_mgmt_delete_merchant_confirm">Xóa merchant %1$s?</string>
+    <string name="user_mgmt_delete_merchant_blocked">Không thể xóa merchant khi vẫn còn tài khoản, chi nhánh hoặc terminal liên kết.</string>
+    <string name="user_mgmt_merchant_code">Mã merchant (MID)</string>
+    <string name="user_mgmt_merchant_name">Tên merchant</string>
+    <string name="user_mgmt_add_account">Thêm tài khoản</string>
+    <string name="user_mgmt_edit_account">Sửa tài khoản</string>
+    <string name="user_mgmt_delete_account">Xóa tài khoản</string>
+    <string name="user_mgmt_delete_account_confirm">Xóa tài khoản %1$s?</string>
+    <string name="user_mgmt_delete_success">Đã xóa thành công</string>
+    <string name="user_mgmt_account_item_config_format">TID: %1$s\nIP: %2$s • Port: %3$s</string>
+    <string name="user_mgmt_branch_picker_hint">Chọn chi nhánh để quản lý tài khoản POS.</string>
+    <string name="user_mgmt_branch_code_format">Mã: %1$s</string>
+    <string name="user_mgmt_branch_accounts_badge">%1$d tài khoản</string>
+    <string name="user_mgmt_account_editor_section_title">THÔNG TIN TÀI KHOẢN</string>
+    <string name="user_mgmt_account_tid_helper">Đúng 8 ký tự in hoa hoặc chữ số</string>
+    <string name="user_mgmt_error_phone_exists">Số điện thoại đã được đăng ký.</string>
+    <string name="user_mgmt_error_email_exists">Email đã được đăng ký.</string>
+    <string name="user_mgmt_error_password_required_create">Bắt buộc nhập mật khẩu khi tạo tài khoản mới.</string>
+    <string name="user_mgmt_error_tid_invalid_strict">Terminal ID (TID) phải đúng 8 ký tự in hoa hoặc chữ số.</string>
+    <string name="user_mgmt_error_merchant_not_found">Không tìm thấy merchant. Vui lòng tải lại và thử lại.</string>
+    <string name="user_mgmt_error_access_denied">Bạn không có quyền thực hiện thao tác này.</string>
+    <string name="user_mgmt_error_branch_invalid">Chi nhánh chọn không hợp lệ cho merchant này.</string>
+    <string name="user_mgmt_error_account_not_found">Không tìm thấy tài khoản. Có thể đã bị xóa.</string>
+    <string name="user_mgmt_error_create_account_failed">Không thể tạo tài khoản. Vui lòng kiểm tra dữ liệu và thử lại.</string>
+    <string name="common_edit">Sửa</string>
+    <string name="common_delete">Xóa</string>
 
     <string name="txn_select_title">Loại giao dịch</string>
     <string name="txn_select_default_scheme">Napas</string>
@@ -493,7 +525,8 @@
     <string name="common_preview_unknown">\?</string>
 
     <!-- Login -->
-    <string name="login_error_enter_email_or_phone">Vui lòng nhập email hoặc số điện thoại</string>
+    <string name="login_error_enter_email_or_phone">Vui lòng nhập username</string>
+    <string name="login_error_enter_username">Vui lòng nhập username</string>
     <string name="login_error_enter_password">Vui lòng nhập mật khẩu</string>
     <string name="login_session_expired">Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.</string>
     <string name="login_invalid_credentials">Sai tài khoản hoặc mật khẩu!</string>

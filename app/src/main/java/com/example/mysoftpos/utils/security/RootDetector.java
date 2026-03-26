@@ -50,19 +50,31 @@ public final class RootDetector {
         return tags != null && tags.contains("test-keys");
     }
 
-    // PA-DSS 10.x: Try to locate su binary via PATH
+    // PA-DSS 10.x: Check for su binary on PATH (filesystem-only, no shell invocation)
     private static boolean checkSuCommand() {
-        Process proc = null;
-        try {
-            proc = Runtime.getRuntime().exec(new String[] { "/system/xbin/which", "su" });
-            return proc.waitFor() == 0;
-        } catch (Exception e) {
+        String pathEnv = System.getenv("PATH");
+        if (pathEnv == null || pathEnv.isEmpty()) {
             return false;
-        } finally {
-            // Prevent process leak
-            if (proc != null)
-                proc.destroy();
         }
+        for (String dir : pathEnv.split(":")) {
+            File su = new File(dir, "su");
+            if (su.exists()) {
+                return true;
+            }
+        }
+        // Also check common which/su locations directly
+        String[] extraPaths = {
+                "/system/xbin/su",
+                "/system/bin/.ext/su",
+                "/su/bin",
+                "/magisk/.core/bin"
+        };
+        for (String path : extraPaths) {
+            if (new File(path).exists()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

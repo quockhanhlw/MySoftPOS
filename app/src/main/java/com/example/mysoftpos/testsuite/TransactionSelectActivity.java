@@ -58,14 +58,39 @@ public class TransactionSelectActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_transaction_select);
+        try {
+            setContentView(R.layout.activity_transaction_select);
+        } catch (Exception ex) {
+            Toast.makeText(this,
+                    getString(R.string.common_error_with_reason, ex.getMessage()),
+                    Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
 
         scheme = getIntent().getStringExtra(IntentKeys.SCHEME);
         channel = getIntent().getStringExtra(IntentKeys.CHANNEL);
+        if (scheme == null || scheme.trim().isEmpty()) {
+            scheme = getString(R.string.txn_select_default_scheme);
+        }
+        if (channel == null || channel.trim().isEmpty()) {
+            channel = getString(R.string.txn_select_default_channel);
+        }
 
         btnRunSelected = findViewById(R.id.btnRunSelected);
         tvPurchaseSubtitle = findViewById(R.id.tvPurchaseSubtitle);
         tvBalanceSubtitle = findViewById(R.id.tvBalanceSubtitle);
+        View btnBack = findViewById(R.id.btnBack);
+        View btnPurchase = findViewById(R.id.btnPurchase);
+        View btnBalance = findViewById(R.id.btnBalance);
+
+        if (btnRunSelected == null || btnBack == null || btnPurchase == null || btnBalance == null) {
+            Toast.makeText(this,
+                    getString(R.string.common_error_with_reason, "Invalid transaction select layout"),
+                    Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
 
         // Breadcrumbs
         TextView tvBreadcrumbScheme = findViewById(R.id.tvBreadcrumbScheme);
@@ -79,9 +104,9 @@ public class TransactionSelectActivity extends BaseActivity {
         com.example.mysoftpos.testsuite.util.SwipeBackHelper.attach(this);
         com.example.mysoftpos.testsuite.util.StepDotsHelper.setActiveStep(this, 3);
 
-        findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+        btnBack.setOnClickListener(v -> finish());
 
-        findViewById(R.id.btnPurchase).setOnClickListener(v -> {
+        btnPurchase.setOnClickListener(v -> {
             Intent i = new Intent(this, TestSuiteActivity.class);
             i.putExtra(IntentKeys.SCHEME, scheme);
             i.putExtra(IntentKeys.CHANNEL, channel);
@@ -92,7 +117,7 @@ public class TransactionSelectActivity extends BaseActivity {
             purchaseLauncher.launch(i);
         });
 
-        findViewById(R.id.btnBalance).setOnClickListener(v -> {
+        btnBalance.setOnClickListener(v -> {
             Intent i = new Intent(this, TestSuiteActivity.class);
             i.putExtra(IntentKeys.SCHEME, scheme);
             i.putExtra(IntentKeys.CHANNEL, channel);

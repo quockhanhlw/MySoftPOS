@@ -29,6 +29,18 @@ public class MerchantEntity {
     @ColumnInfo(name = "store_address")
     public String storeAddress;
 
+    @ColumnInfo(name = "bank_name")
+    public String bankName;
+
+    @ColumnInfo(name = "branch_count", defaultValue = "0")
+    public int branchCount;
+
+    @ColumnInfo(name = "branch_addresses")
+    public String branchAddresses;
+
+    @ColumnInfo(name = "account_count", defaultValue = "1")
+    public int accountCount;
+
     @ColumnInfo(name = "merchant_code")
     public String merchantCode; // DE 42
 
@@ -44,5 +56,9 @@ public class MerchantEntity {
         this.merchantNameLocation = merchantNameLocation;
         this.businessType = "";
         this.storeAddress = "";
+        this.bankName = "";
+        this.branchCount = 0;
+        this.branchAddresses = "";
+        this.accountCount = 1;
     }
 }

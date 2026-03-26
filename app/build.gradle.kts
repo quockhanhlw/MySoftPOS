@@ -64,6 +64,9 @@ dependencies {
     // WorkManager: reliable background sync (replaces raw Thread/Executor)
     implementation("androidx.work:work-runtime:2.10.0")
 
+    // Jetpack Security: EncryptedSharedPreferences (PA-DSS token storage)
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
     // Swipe to Refresh Layout
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 }

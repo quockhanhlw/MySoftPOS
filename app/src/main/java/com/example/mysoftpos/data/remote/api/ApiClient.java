@@ -2,6 +2,10 @@ package com.example.mysoftpos.data.remote.api;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
+
+import androidx.security.crypto.EncryptedSharedPreferences;
+import androidx.security.crypto.MasterKeys;
 
 import com.example.mysoftpos.BuildConfig;
 
@@ -17,12 +21,12 @@ import java.util.concurrent.TimeUnit;
  *
  * Security notes:
  * - HTTP logging set to HEADERS in debug, disabled in release — never BODY.
- * - Tokens stored alongside other session data in private SharedPreferences.
- * For PCI-DSS production, upgrade to EncryptedSharedPreferences when Tink
- * is confirmed working on all target devices.
+ * - Tokens encrypted at rest via EncryptedSharedPreferences (AES256-SIV + AES256-GCM).
+ * - Single OkHttpClient shared across all Retrofit instances for optimal memory usage.
  */
 public final class ApiClient {
 
+    private static final String TAG = "ApiClient";
     private static final String PREF_NAME = "mysoftpos_api";
 
     private static final String KEY_BASE_URL = "base_url";
@@ -55,124 +59,133 @@ public final class ApiClient {
     private static volatile ApiService authApiService;
     private static volatile ApiService forgotPasswordApiService;
     private static volatile ApiService registerApiService;
-    private static volatile Retrofit retrofit;
-    private static volatile Retrofit authRetrofit;
-    private static volatile Retrofit forgotPasswordRetrofit;
-    private static volatile Retrofit registerRetrofit;
+
+    /** Single master OkHttpClient — all variants share its connection pool & dispatcher */
+    private static volatile OkHttpClient masterClient;
 
     private ApiClient() {
+    }
+
+    /**
+     * Lazily creates and caches the master OkHttpClient with default timeouts.
+     * All Retrofit-specific clients derive from this via newBuilder().
+     */
+    private static OkHttpClient getMasterClient() {
+        if (masterClient == null) {
+            synchronized (ApiClient.class) {
+                if (masterClient == null) {
+                    OkHttpClient.Builder builder = new OkHttpClient.Builder()
+                            .connectTimeout(DEFAULT_CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                            .readTimeout(DEFAULT_READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                            .writeTimeout(DEFAULT_WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+                    if (BuildConfig.DEBUG) {
+                        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+                        logging.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+                        builder.addInterceptor(logging);
+                    }
+
+                    masterClient = builder.build();
+                }
+            }
+        }
+        return masterClient;
+    }
+
+    /**
+     * Derives a client from masterClient, overriding only the given timeouts.
+     * Shares the same connection pool, dispatcher, and interceptors.
+     */
+    private static OkHttpClient deriveClient(long connectSec, long readSec, long writeSec, long callSec) {
+        OkHttpClient.Builder b = getMasterClient().newBuilder()
+                .connectTimeout(connectSec, TimeUnit.SECONDS)
+                .readTimeout(readSec, TimeUnit.SECONDS)
+                .writeTimeout(writeSec, TimeUnit.SECONDS);
+        if (callSec > 0) {
+            b.callTimeout(callSec, TimeUnit.SECONDS);
+        }
+        return b.build();
+    }
+
+    private static Retrofit buildRetrofit(String baseUrl, OkHttpClient client) {
+        return new Retrofit.Builder()
+                .baseUrl(baseUrl)
+                .client(client)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
     }
 
     public static ApiService getService(Context context) {
         if (apiService == null) {
             synchronized (ApiClient.class) {
                 if (apiService == null) {
-                    String baseUrl = getBaseUrl(context);
-                    retrofit = new Retrofit.Builder()
-                            .baseUrl(baseUrl)
-                            .client(buildClient(
-                                    DEFAULT_CONNECT_TIMEOUT_SECONDS,
-                                    DEFAULT_READ_TIMEOUT_SECONDS,
-                                    DEFAULT_WRITE_TIMEOUT_SECONDS,
-                                    0))
-                            .addConverterFactory(GsonConverterFactory.create())
-                            .build();
-
-                    apiService = retrofit.create(ApiService.class);
+                    apiService = buildRetrofit(getBaseUrl(context), getMasterClient())
+                            .create(ApiService.class);
                 }
             }
         }
         return apiService;
     }
 
-    /**
-     * Dedicated auth client with shorter timeout so login can fall back faster
-     * when the backend is sleeping or temporarily unreachable.
-     */
     public static ApiService getAuthService(Context context) {
         if (authApiService == null) {
             synchronized (ApiClient.class) {
                 if (authApiService == null) {
-                    String baseUrl = getBaseUrl(context);
-                    authRetrofit = new Retrofit.Builder()
-                            .baseUrl(baseUrl)
-                            .client(buildClient(
-                                    AUTH_CONNECT_TIMEOUT_SECONDS,
-                                    AUTH_READ_TIMEOUT_SECONDS,
-                                    AUTH_WRITE_TIMEOUT_SECONDS,
-                                    AUTH_CALL_TIMEOUT_SECONDS))
-                            .addConverterFactory(GsonConverterFactory.create())
-                            .build();
-
-                    authApiService = authRetrofit.create(ApiService.class);
+                    OkHttpClient client = deriveClient(
+                            AUTH_CONNECT_TIMEOUT_SECONDS,
+                            AUTH_READ_TIMEOUT_SECONDS,
+                            AUTH_WRITE_TIMEOUT_SECONDS,
+                            AUTH_CALL_TIMEOUT_SECONDS);
+                    authApiService = buildRetrofit(getBaseUrl(context), client)
+                            .create(ApiService.class);
                 }
             }
         }
         return authApiService;
     }
 
-    /**
-     * Forgot-password request can include SMTP latency on backend side,
-     * so use a longer call timeout than regular API calls.
-     */
     public static ApiService getForgotPasswordService(Context context) {
         if (forgotPasswordApiService == null) {
             synchronized (ApiClient.class) {
                 if (forgotPasswordApiService == null) {
-                    String baseUrl = getBaseUrl(context);
-                    forgotPasswordRetrofit = new Retrofit.Builder()
-                            .baseUrl(baseUrl)
-                            .client(buildClient(
-                                    FORGOT_CONNECT_TIMEOUT_SECONDS,
-                                    FORGOT_READ_TIMEOUT_SECONDS,
-                                    FORGOT_WRITE_TIMEOUT_SECONDS,
-                                    FORGOT_CALL_TIMEOUT_SECONDS))
-                            .addConverterFactory(GsonConverterFactory.create())
-                            .build();
-
-                    forgotPasswordApiService = forgotPasswordRetrofit.create(ApiService.class);
+                    OkHttpClient client = deriveClient(
+                            FORGOT_CONNECT_TIMEOUT_SECONDS,
+                            FORGOT_READ_TIMEOUT_SECONDS,
+                            FORGOT_WRITE_TIMEOUT_SECONDS,
+                            FORGOT_CALL_TIMEOUT_SECONDS);
+                    forgotPasswordApiService = buildRetrofit(getBaseUrl(context), client)
+                            .create(ApiService.class);
                 }
             }
         }
         return forgotPasswordApiService;
     }
 
-    /**
-     * Register can take longer when backend wakes up (e.g. Render cold start).
-     */
     public static ApiService getRegisterService(Context context) {
         if (registerApiService == null) {
             synchronized (ApiClient.class) {
                 if (registerApiService == null) {
-                    String baseUrl = getBaseUrl(context);
-                    registerRetrofit = new Retrofit.Builder()
-                            .baseUrl(baseUrl)
-                            .client(buildClient(
-                                    REGISTER_CONNECT_TIMEOUT_SECONDS,
-                                    REGISTER_READ_TIMEOUT_SECONDS,
-                                    REGISTER_WRITE_TIMEOUT_SECONDS,
-                                    REGISTER_CALL_TIMEOUT_SECONDS))
-                            .addConverterFactory(GsonConverterFactory.create())
-                            .build();
-
-                    registerApiService = registerRetrofit.create(ApiService.class);
+                    OkHttpClient client = deriveClient(
+                            REGISTER_CONNECT_TIMEOUT_SECONDS,
+                            REGISTER_READ_TIMEOUT_SECONDS,
+                            REGISTER_WRITE_TIMEOUT_SECONDS,
+                            REGISTER_CALL_TIMEOUT_SECONDS);
+                    registerApiService = buildRetrofit(getBaseUrl(context), client)
+                            .create(ApiService.class);
                 }
             }
         }
         return registerApiService;
     }
 
-    /** Force re-create the Retrofit instance (e.g. when base URL changed) */
+    /** Force re-create all Retrofit instances (e.g. when base URL changed) */
     public static void reset() {
         synchronized (ApiClient.class) {
             apiService = null;
-            retrofit = null;
             authApiService = null;
-            authRetrofit = null;
             forgotPasswordApiService = null;
-            forgotPasswordRetrofit = null;
             registerApiService = null;
-            registerRetrofit = null;
+            // masterClient is NOT reset — its pool remains valid for any base URL
         }
     }
 
@@ -256,32 +269,37 @@ public final class ApiClient {
         return normalized;
     }
 
-    // ==================== SharedPreferences ====================
+    // ==================== Encrypted SharedPreferences ====================
 
+    private static volatile SharedPreferences encryptedPrefs;
+
+    /**
+     * Returns EncryptedSharedPreferences backed by AES256-SIV (key encryption)
+     * and AES256-GCM (value encryption). Falls back to plain SharedPreferences
+     * only if the device's keystore is fundamentally broken (extremely rare on API 23+).
+     */
     private static SharedPreferences getPrefs(Context ctx) {
-        return ctx.getApplicationContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-    }
-
-    private static OkHttpClient buildClient(long connectTimeoutSeconds,
-                                            long readTimeoutSeconds,
-                                            long writeTimeoutSeconds,
-                                            long callTimeoutSeconds) {
-        OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
-                .connectTimeout(connectTimeoutSeconds, TimeUnit.SECONDS)
-                .readTimeout(readTimeoutSeconds, TimeUnit.SECONDS)
-                .writeTimeout(writeTimeoutSeconds, TimeUnit.SECONDS);
-
-        if (callTimeoutSeconds > 0) {
-            clientBuilder.callTimeout(callTimeoutSeconds, TimeUnit.SECONDS);
+        if (encryptedPrefs == null) {
+            synchronized (ApiClient.class) {
+                if (encryptedPrefs == null) {
+                    try {
+                        String masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC);
+                        encryptedPrefs = EncryptedSharedPreferences.create(
+                                PREF_NAME,
+                                masterKeyAlias,
+                                ctx.getApplicationContext(),
+                                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM);
+                    } catch (Exception e) {
+                        // Fallback: device keystore unavailable (very rare)
+                        Log.w(TAG, "EncryptedSharedPreferences unavailable, falling back to plain prefs", e);
+                        encryptedPrefs = ctx.getApplicationContext()
+                                .getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+                    }
+                }
+            }
         }
-
-        if (BuildConfig.DEBUG) {
-            HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-            logging.setLevel(HttpLoggingInterceptor.Level.HEADERS);
-            clientBuilder.addInterceptor(logging);
-        }
-
-        return clientBuilder.build();
+        return encryptedPrefs;
     }
 
     private static String normalizeBaseUrl(String url) {

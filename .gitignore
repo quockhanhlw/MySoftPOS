@@ -60,6 +60,14 @@ google-services.json
 
 # Sensitive Project Configuration
 app/src/main/assets/pos_config.json
+**/application-local.yml
+
+# Backend build artifacts
+**/target/
+
+# Scan output
+security_scan.json
+lint_runner.json
 
 # OS specific files
 .DS_Store

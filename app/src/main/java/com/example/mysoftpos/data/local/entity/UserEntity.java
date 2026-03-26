@@ -10,7 +10,8 @@ import androidx.room.PrimaryKey;
  * Entity representing a registered user.
  * Username and password are stored as SHA-256 hashes.
  */
-@Entity(tableName = "users", indices = {
+@Entity(tableName = "pos_accounts", indices = {
+        @Index(value = { "username" }, unique = true),
         @Index(value = { "username_hash" }, unique = true),
         @Index(value = { "phone" }, unique = true)
 })
@@ -21,6 +22,9 @@ public class UserEntity {
 
     @ColumnInfo(name = "username_hash")
     public String usernameHash; // SHA-256 of username
+
+    @ColumnInfo(name = "username")
+    public String username; // Plain username for backend contract parity
 
     @ColumnInfo(name = "password_hash")
     public String passwordHash; // SHA-256 of password
@@ -40,23 +44,11 @@ public class UserEntity {
     @ColumnInfo(name = "gender")
     public String gender;
 
-    @ColumnInfo(name = "store_name")
-    public String storeName;
+    @ColumnInfo(name = "merchant_backend_id", defaultValue = "0")
+    public long merchantBackendId;
 
-    @ColumnInfo(name = "business_type")
-    public String businessType;
-
-    @ColumnInfo(name = "store_address")
-    public String storeAddress;
-
-    @ColumnInfo(name = "branch_count", defaultValue = "0")
-    public int branchCount;
-
-    @ColumnInfo(name = "branch_addresses")
-    public String branchAddresses;
-
-    @ColumnInfo(name = "account_count", defaultValue = "1")
-    public int accountCount;
+    @ColumnInfo(name = "branch_backend_id", defaultValue = "0")
+    public long branchBackendId;
 
     @ColumnInfo(name = "phone_verified", defaultValue = "0")
     public boolean phoneVerified;
@@ -98,6 +90,7 @@ public class UserEntity {
     public UserEntity(String usernameHash, String passwordHash, String displayName, String role, String email,
             String phone, String dob) {
         this.usernameHash = usernameHash;
+        this.username = phone;
         this.passwordHash = passwordHash;
         this.displayName = displayName;
         this.role = role;
@@ -105,12 +98,8 @@ public class UserEntity {
         this.phone = phone;
         this.dob = dob;
         this.gender = "";
-        this.storeName = "";
-        this.businessType = "";
-        this.storeAddress = "";
-        this.branchCount = 0;
-        this.branchAddresses = "";
-        this.accountCount = 1;
+        this.merchantBackendId = 0L;
+        this.branchBackendId = 0L;
         this.phoneVerified = false;
         this.createdAt = System.currentTimeMillis();
         this.terminalId = "";

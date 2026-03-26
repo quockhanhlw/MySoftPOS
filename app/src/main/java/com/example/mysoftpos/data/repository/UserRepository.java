@@ -53,5 +53,10 @@ public interface UserRepository {
      * Must be called from IO thread.
      */
     void resetFailedAttempts(UserEntity user);
+
+    /**
+     * Resolve business type (MCC source) from merchant profile linked to this account.
+     */
+    String resolveBusinessType(UserEntity user);
 }
 

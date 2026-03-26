@@ -59,7 +59,7 @@ public class TestDataProvider {
 
         for (String code : codes) {
             String modeStr = getModeName(context, code);
-            boolean isPin = code.endsWith("1") && !"021".equals(code);
+            boolean isPin = code.endsWith("1");
             String desc;
             if ("071".equals(code)) {
                 desc = context.getString(R.string.testsuite_desc_contactless_pin_071);

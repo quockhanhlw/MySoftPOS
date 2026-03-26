@@ -75,6 +75,27 @@ public class TransactionEntity {
     @ColumnInfo(name = "card_id")
     public Long cardId;
 
+    @ColumnInfo(name = "masked_pan")
+    public String maskedPan;
+
+    @ColumnInfo(name = "card_scheme")
+    public String cardScheme;
+
+    @ColumnInfo(name = "terminal_code")
+    public String terminalCode;
+
+    @ColumnInfo(name = "device_id")
+    public String deviceId;
+
+    @ColumnInfo(name = "synced_at")
+    public String syncedAt;
+
+    @ColumnInfo(name = "backend_user_id")
+    public Long backendUserId;
+
+    @ColumnInfo(name = "backend_username")
+    public String backendUsername;
+
     public TransactionEntity() {
     }
 

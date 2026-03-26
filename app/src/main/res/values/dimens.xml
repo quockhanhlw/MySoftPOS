@@ -58,6 +58,11 @@
     <!-- Dialog -->
     <dimen name="dialog_max_width">400dp</dimen>
     <dimen name="dialog_padding">24dp</dimen>
+    <dimen name="merchant_dialog_meta_text_size">13sp</dimen>
+    <dimen name="merchant_dialog_section_text_size">12sp</dimen>
+    <dimen name="merchant_dialog_item_title_size">15sp</dimen>
+    <dimen name="merchant_dialog_item_body_size">12sp</dimen>
+    <dimen name="merchant_dialog_input_text_size">18sp</dimen>
 
     <!-- Status Pill -->
     <dimen name="status_pill_text_size">10sp</dimen>

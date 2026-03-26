@@ -76,7 +76,7 @@ public class LoginViewModel extends BaseViewModel {
                         // ✅ LOCAL LOGIN SUCCESS
                         userRepository.resetFailedAttempts(user);
                         SessionManager.startSession();
-                        ConfigManager.getInstance(getApplication()).setMcc18(user.businessType);
+                        ConfigManager.getInstance(getApplication()).setMcc18(userRepository.resolveBusinessType(user));
                         AuditLogger.log(getApplication(), username, "LOGIN",
                                 true, TAG, "Local-first login: " + user.role);
 
@@ -181,7 +181,7 @@ public class LoginViewModel extends BaseViewModel {
                     if (PasswordUtils.verifyPassword(password, user.passwordHash)) {
                         userRepository.resetFailedAttempts(user);
                         SessionManager.startSession();
-                        ConfigManager.getInstance(getApplication()).setMcc18(user.businessType);
+                        ConfigManager.getInstance(getApplication()).setMcc18(userRepository.resolveBusinessType(user));
                         AuditLogger.log(getApplication(), username, "LOGIN",
                                 true, TAG, "Offline login: " + user.role);
 

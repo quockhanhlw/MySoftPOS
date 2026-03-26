@@ -26,40 +26,46 @@ public interface UserDao {
     @Delete
     void delete(UserEntity user);
 
-    @Query("SELECT * FROM users WHERE username_hash = :usernameHash LIMIT 1")
+    @Query("SELECT * FROM pos_accounts WHERE username_hash = :usernameHash LIMIT 1")
     UserEntity findByUsernameHash(String usernameHash);
 
-    @Query("SELECT EXISTS(SELECT 1 FROM users WHERE username_hash = :usernameHash)")
+    @Query("SELECT * FROM pos_accounts WHERE username = :username LIMIT 1")
+    UserEntity findByUsername(String username);
+
+    @Query("SELECT EXISTS(SELECT 1 FROM pos_accounts WHERE username_hash = :usernameHash)")
     boolean existsByUsernameHash(String usernameHash);
 
-    @Query("SELECT COUNT(*) FROM users")
+    @Query("SELECT EXISTS(SELECT 1 FROM pos_accounts WHERE username = :username)")
+    boolean existsByUsername(String username);
+
+    @Query("SELECT COUNT(*) FROM pos_accounts")
     int count();
 
-    @Query("SELECT * FROM users WHERE username_hash = :hash LIMIT 1")
+    @Query("SELECT * FROM pos_accounts WHERE username_hash = :hash LIMIT 1")
     UserEntity getByUsernameHashSync(String hash);
 
-    @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
+    @Query("SELECT * FROM pos_accounts WHERE email = :email LIMIT 1")
     UserEntity findByEmail(String email);
 
-    @Query("SELECT * FROM users WHERE phone = :phone LIMIT 1")
+    @Query("SELECT * FROM pos_accounts WHERE phone = :phone LIMIT 1")
     UserEntity findByPhone(String phone);
 
-    /** Find user by any identifier: phone, email, or usernameHash (SHA256) */
-    @Query("SELECT * FROM users WHERE phone = :identifier OR email = :identifier OR username_hash = :identifierHash LIMIT 1")
+    /** Find user by any identifier: username (plain), usernameHash (legacy) or email. */
+    @Query("SELECT * FROM pos_accounts WHERE username = :identifier OR email = :identifier OR username_hash = :identifierHash LIMIT 1")
     UserEntity findByAnyIdentifier(String identifier, String identifierHash);
 
-    @Query("SELECT EXISTS(SELECT 1 FROM users WHERE email = :email)")
+    @Query("SELECT EXISTS(SELECT 1 FROM pos_accounts WHERE email = :email)")
     boolean existsByEmail(String email);
 
-    @Query("SELECT EXISTS(SELECT 1 FROM users WHERE phone = :phone)")
+    @Query("SELECT EXISTS(SELECT 1 FROM pos_accounts WHERE phone = :phone)")
     boolean existsByPhone(String phone);
 
-    @Query("SELECT * FROM users WHERE admin_id = :adminId ORDER BY created_at DESC")
+    @Query("SELECT * FROM pos_accounts WHERE admin_id = :adminId ORDER BY created_at DESC")
     LiveData<List<UserEntity>> getAllByAdminId(String adminId);
 
-    @Query("SELECT * FROM users WHERE admin_id = :adminId ORDER BY created_at DESC")
+    @Query("SELECT * FROM pos_accounts WHERE admin_id = :adminId ORDER BY created_at DESC")
     List<UserEntity> getAllByAdminIdSync(String adminId);
 
-    @Query("SELECT * FROM users WHERE backend_id = :backendId LIMIT 1")
+    @Query("SELECT * FROM pos_accounts WHERE backend_id = :backendId LIMIT 1")
     UserEntity findByBackendId(long backendId);
 }

@@ -181,4 +181,11 @@
     <color name="auth_input_border">#D9E2EC</color>
     <color name="auth_input_border_focused">#00ACC1</color>
     <color name="auth_error">#D32F2F</color>
+
+    <!-- Merchant Management semantic actions -->
+    <color name="merchant_mgmt_action_edit_bg">#DBEAFE</color>
+    <color name="merchant_mgmt_action_edit_icon">#1D4ED8</color>
+    <color name="merchant_mgmt_action_delete_bg">#FEE2E2</color>
+    <color name="merchant_mgmt_action_delete_icon">#B91C1C</color>
+    <color name="merchant_mgmt_ripple">#1A2563EB</color>
 </resources>

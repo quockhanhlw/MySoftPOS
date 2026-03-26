@@ -66,6 +66,12 @@ public class TransactionSyncManager {
                     item.status = txn.status;
                     item.deviceId = android.os.Build.MODEL;
                     item.txnTimestamp = txn.timestamp;
+                    item.requestHex = txn.requestHex;
+                    item.responseHex = txn.responseHex;
+                    item.processingCode = txn.processingCode;
+                    item.currencyCode = txn.currencyCode;
+                    item.rrn = txn.rrn;
+                    item.ownerUsername = txn.ownerUsername;
 
                     // Get card and terminal info from transaction details
                     try {

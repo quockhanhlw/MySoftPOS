@@ -2,6 +2,7 @@ package com.example.mysoftpos.testsuite;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.ui.BaseActivity;
@@ -28,10 +29,22 @@ public class ChannelSelectActivity extends BaseActivity {
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
         findViewById(R.id.btnPos).setOnClickListener(v -> {
+            if (scheme == null || scheme.trim().isEmpty()) {
+                Toast.makeText(this,
+                        getString(R.string.common_error_with_reason, getString(R.string.common_required)),
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
             Intent i = new Intent(this, TransactionSelectActivity.class);
             i.putExtra(IntentKeys.SCHEME, scheme);
             i.putExtra(IntentKeys.CHANNEL, "POS");
-            startActivity(i);
+            try {
+                startActivity(i);
+            } catch (Exception ex) {
+                Toast.makeText(this,
+                        getString(R.string.common_error_with_reason, ex.getMessage()),
+                        Toast.LENGTH_LONG).show();
+            }
         });
 
         findViewById(R.id.btnAtm).setOnClickListener(v -> {

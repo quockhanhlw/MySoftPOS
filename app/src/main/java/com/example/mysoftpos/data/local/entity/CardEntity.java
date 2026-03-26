@@ -6,6 +6,10 @@ import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 import androidx.room.Index;
 
+/**
+ * Local cache for masked card metadata used to enrich transaction details.
+ * Backend persists only summary fields (maskedPan/cardScheme), not a separate cards table.
+ */
 @Entity(tableName = "cards", indices = { @Index(value = "pan_masked", unique = true) })
 public class CardEntity {
     @PrimaryKey(autoGenerate = true)

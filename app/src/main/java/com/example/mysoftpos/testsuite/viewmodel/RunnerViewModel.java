@@ -25,6 +25,8 @@ import java.util.concurrent.Executors;
 
 public class RunnerViewModel extends AndroidViewModel {
 
+    private static final String ADMIN_TEST_SUITE_MID = "MYSOFTPOSSHOP01";
+
     private final MutableLiveData<String> logMessage = new MutableLiveData<>();
     private final MutableLiveData<String> previewMessage = new MutableLiveData<>();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -59,6 +61,7 @@ public class RunnerViewModel extends AndroidViewModel {
 
                 TransactionContext ctx = TransactionExecutor.buildContext(getApplication(), txnType, amount,
                         currencyCode, countryCode);
+                ctx.merchantId42 = ADMIN_TEST_SUITE_MID;
                 applySchemeConnection(ctx, schemeName);
 
                 CardInputData card = TransactionExecutor.prepareCard(
@@ -103,6 +106,7 @@ public class RunnerViewModel extends AndroidViewModel {
 
                 TransactionContext ctx = TransactionExecutor.buildContext(getApplication(), txnType, amount,
                         currencyCode, countryCode);
+                ctx.merchantId42 = ADMIN_TEST_SUITE_MID;
                 applySchemeConnection(ctx, schemeName);
 
                 CardInputData card = TransactionExecutor.prepareCard(
@@ -114,7 +118,7 @@ public class RunnerViewModel extends AndroidViewModel {
                 sb.append(app.getString(R.string.runner_building_format, txnLabel, ctx.ip, ctx.port));
 
                 TransactionResult result = transactionExecutor.execute(
-                        getApplication(), ctx, card, txnType, logger, "", fieldConfigJson);
+                        getApplication(), ctx, card, txnType, logger, "", sanitizeFieldConfigJson(fieldConfigJson));
 
                 sb.append("\n").append(app.getString(R.string.runner_packed_hex_bytes_format, result.reqHex.length() / 2)).append("\n")
                         .append(result.reqHex).append("\n");
@@ -156,15 +160,34 @@ public class RunnerViewModel extends AndroidViewModel {
             while (keys.hasNext()) {
                 String key = keys.next();
                 int fieldNum = Integer.parseInt(key);
+                if (fieldNum == 42) {
+                    continue;
+                }
                 msg.setField(fieldNum, json.getString(key));
             }
+            msg.setField(42, ADMIN_TEST_SUITE_MID);
         } catch (Exception e) {
             Log.w("RunnerVM", "Failed to apply custom fields: " + e.getMessage());
         }
     }
 
+    private String sanitizeFieldConfigJson(String fieldConfigJson) {
+        if (fieldConfigJson == null || fieldConfigJson.isEmpty()) {
+            return null;
+        }
+        try {
+            org.json.JSONObject json = new org.json.JSONObject(fieldConfigJson);
+            json.remove("42");
+            return json.length() > 0 ? json.toString() : null;
+        } catch (Exception e) {
+            Log.w("RunnerVM", "Failed to sanitize custom fields: " + e.getMessage());
+            return null;
+        }
+    }
+
     /** Override ctx fields from per-scheme config if available */
     private void applySchemeConnection(TransactionContext ctx, String schemeName) {
+        ctx.merchantId42 = ADMIN_TEST_SUITE_MID;
         if (schemeName == null || schemeName.isEmpty())
             return;
         try {
@@ -182,8 +205,6 @@ public class RunnerViewModel extends AndroidViewModel {
             String tid = scheme.getTerminalId();
             if (tid != null && !tid.isEmpty()) ctx.terminalId41 = tid;
 
-            String mid = scheme.getMerchantId();
-            if (mid != null && !mid.isEmpty()) ctx.merchantId42 = mid;
 
             String mcc = scheme.getMcc();
             if (mcc != null && !mcc.isEmpty()) ctx.mcc18 = mcc;

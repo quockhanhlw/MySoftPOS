@@ -3,7 +3,9 @@ package com.example.mysoftpos.data.repository;
 import android.util.Log;
 
 import com.example.mysoftpos.data.local.AppDatabase;
+import com.example.mysoftpos.data.local.dao.MerchantDao;
 import com.example.mysoftpos.data.local.dao.UserDao;
+import com.example.mysoftpos.data.local.entity.MerchantEntity;
 import com.example.mysoftpos.data.local.entity.UserEntity;
 import com.example.mysoftpos.data.remote.api.ApiService;
 import com.example.mysoftpos.utils.mcc.BusinessTypeMccMapper;
@@ -31,17 +33,20 @@ public class UserRepositoryImpl implements UserRepository {
         if (identifier == null) return null;
         UserDao dao = db.userDao();
 
-        // Try phone first
-        UserEntity user = dao.findByPhone(identifier);
+        String normalized = identifier.trim();
+
+        UserEntity user = dao.findByUsername(normalized);
         if (user != null) return user;
 
-        // Try email
+        // Username is the primary login identity.
+        user = dao.findByUsernameHash(PasswordUtils.hashSHA256(normalized));
+        if (user != null) return user;
+
+        // Backward compatibility: allow legacy email login cache lookup.
         user = dao.findByEmail(identifier);
         if (user != null) return user;
 
-        // Try username hash
-        String hash = PasswordUtils.hashSHA256(identifier);
-        return dao.findByUsernameHash(hash);
+        return null;
     }
 
     @Override
@@ -53,19 +58,22 @@ public class UserRepositoryImpl implements UserRepository {
     public void cacheUser(String username, String password, ApiService.UserDto userDto) {
         try {
             UserDao dao = db.userDao();
-            String usernameHash = PasswordUtils.hashSHA256(username);
+            MerchantDao merchantDao = db.merchantDao();
+            String resolvedUsername = userDto.username != null ? userDto.username : username;
+            String usernameHash = PasswordUtils.hashSHA256(resolvedUsername);
             String passwordHash = PasswordUtils.hashPassword(password);
             String normalizedBusinessType = BusinessTypeMccMapper.toMcc(userDto.businessType);
 
-            UserEntity existing = dao.findByUsernameHash(usernameHash);
-            if (existing == null && userDto.phone != null) {
-                existing = dao.findByPhone(userDto.phone);
+            UserEntity existing = dao.findByUsername(resolvedUsername);
+            if (existing == null) {
+                existing = dao.findByUsernameHash(usernameHash);
             }
             if (existing == null && userDto.email != null) {
                 existing = dao.findByEmail(userDto.email);
             }
 
             if (existing != null) {
+                existing.username = resolvedUsername;
                 existing.usernameHash = usernameHash;
                 existing.passwordHash = passwordHash;
                 existing.displayName = userDto.fullName;
@@ -74,9 +82,8 @@ public class UserRepositoryImpl implements UserRepository {
                 existing.email = userDto.email;
                 existing.dob = userDto.dob;
                 existing.gender = safeText(userDto.gender);
-                existing.storeName = safeText(userDto.storeName);
-                existing.businessType = normalizedBusinessType;
-                existing.storeAddress = safeText(userDto.storeAddress);
+                existing.merchantBackendId = userDto.merchantId != null ? userDto.merchantId : 0L;
+                existing.branchBackendId = userDto.branchId != null ? userDto.branchId : 0L;
                 existing.phoneVerified = Boolean.TRUE.equals(userDto.phoneVerified);
                 existing.backendId = userDto.id;
                 existing.failedLoginAttempts = 0;
@@ -90,16 +97,34 @@ public class UserRepositoryImpl implements UserRepository {
                         usernameHash, passwordHash,
                         userDto.fullName, userDto.role,
                         userDto.email, userDto.phone, userDto.dob);
+                newUser.username = resolvedUsername;
                 newUser.gender = safeText(userDto.gender);
-                newUser.storeName = safeText(userDto.storeName);
-                newUser.businessType = normalizedBusinessType;
-                newUser.storeAddress = safeText(userDto.storeAddress);
+                newUser.merchantBackendId = userDto.merchantId != null ? userDto.merchantId : 0L;
+                newUser.branchBackendId = userDto.branchId != null ? userDto.branchId : 0L;
                 newUser.phoneVerified = Boolean.TRUE.equals(userDto.phoneVerified);
                 newUser.backendId = userDto.id;
                 if (userDto.terminalId != null) newUser.terminalId = userDto.terminalId;
                 if (userDto.serverIp != null) newUser.serverIp = userDto.serverIp;
                 if (userDto.serverPort != null) newUser.serverPort = userDto.serverPort;
                 dao.insert(newUser);
+            }
+
+            if (userDto.merchantId != null && userDto.merchantId > 0) {
+                MerchantEntity merchant = merchantDao.getByBackendId(userDto.merchantId);
+                if (merchant == null) {
+                    merchant = new MerchantEntity();
+                }
+                merchant.backendId = userDto.merchantId;
+                merchant.merchantCode = safeText(userDto.merchantCode);
+                merchant.merchantNameLocation = safeText(userDto.storeName);
+                merchant.businessType = normalizedBusinessType;
+                merchant.storeAddress = safeText(userDto.storeAddress);
+                merchant.bankName = safeText(userDto.bankName);
+                if (merchant.id > 0) {
+                    merchantDao.update(merchant);
+                } else {
+                    merchantDao.insert(merchant);
+                }
             }
         } catch (Exception e) {
             Log.w(TAG, "Failed to cache user locally: " + e.getMessage());
@@ -148,6 +173,15 @@ public class UserRepositoryImpl implements UserRepository {
         user.failedLoginAttempts = 0;
         user.lockedUntil = 0;
         db.userDao().update(user);
+    }
+
+    @Override
+    public String resolveBusinessType(UserEntity user) {
+        if (user == null || user.merchantBackendId <= 0) {
+            return null;
+        }
+        MerchantEntity merchant = db.merchantDao().getByBackendId(user.merchantBackendId);
+        return merchant != null ? merchant.businessType : null;
     }
 }
 

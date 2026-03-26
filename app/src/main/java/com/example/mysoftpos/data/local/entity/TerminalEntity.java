@@ -9,7 +9,9 @@ import androidx.room.PrimaryKey;
 
 @Entity(tableName = "terminals", foreignKeys = @ForeignKey(entity = MerchantEntity.class, parentColumns = "id", childColumns = "merchant_id", onDelete = ForeignKey.CASCADE), indices = {
         @Index(value = "terminal_code", unique = true),
-        @Index("merchant_id")
+        @Index("merchant_id"),
+        @Index("branch_backend_id"),
+        @Index("pos_account_backend_id")
 })
 public class TerminalEntity {
     @PrimaryKey(autoGenerate = true)
@@ -30,6 +32,12 @@ public class TerminalEntity {
 
     @ColumnInfo(name = "server_port")
     public int serverPort;
+
+    @ColumnInfo(name = "branch_backend_id", defaultValue = "0")
+    public long branchBackendId;
+
+    @ColumnInfo(name = "pos_account_backend_id", defaultValue = "0")
+    public long posAccountBackendId;
 
     public TerminalEntity() {
     }

@@ -19,8 +19,9 @@ import com.example.mysoftpos.data.local.dao.*;
         UserEntity.class,
         MerchantEntity.class,
         TerminalEntity.class,
+        BranchEntity.class,
         CardEntity.class
-}, version = 21, exportSchema = true)
+}, version = 23, exportSchema = true)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract TransactionDao transactionDao();
@@ -34,6 +35,8 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract MerchantDao merchantDao();
 
     public abstract TerminalDao terminalDao();
+
+    public abstract BranchDao branchDao();
 
     public abstract CardDao cardDao();
 
@@ -161,6 +164,132 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /**
+     * Migration 21 -> 22:
+     * - Rename local users table to pos_accounts semantics.
+     * - Move merchant-owned profile columns from users to merchants.
+     */
+    static final Migration MIGRATION_21_22 = new Migration(21, 22) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE merchants ADD COLUMN bank_name TEXT");
+            db.execSQL("ALTER TABLE merchants ADD COLUMN branch_count INTEGER NOT NULL DEFAULT 0");
+            db.execSQL("ALTER TABLE merchants ADD COLUMN branch_addresses TEXT");
+            db.execSQL("ALTER TABLE merchants ADD COLUMN account_count INTEGER NOT NULL DEFAULT 1");
+
+            db.execSQL("CREATE TABLE IF NOT EXISTS transactions_new ("
+                    + "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
+                    + "trace_number TEXT,"
+                    + "amount TEXT,"
+                    + "status TEXT,"
+                    + "request_hex TEXT,"
+                    + "response_hex TEXT,"
+                    + "timestamp INTEGER NOT NULL,"
+                    + "user_id INTEGER,"
+                    + "owner_username TEXT,"
+                    + "processing_code TEXT,"
+                    + "currency_code TEXT,"
+                    + "rrn TEXT,"
+                    + "terminal_id INTEGER,"
+                    + "card_id INTEGER,"
+                    + "FOREIGN KEY(user_id) REFERENCES pos_accounts(id) ON UPDATE NO ACTION ON DELETE SET NULL,"
+                    + "FOREIGN KEY(card_id) REFERENCES cards(id) ON UPDATE NO ACTION ON DELETE SET NULL)");
+
+            db.execSQL("INSERT INTO transactions_new ("
+                    + "id, trace_number, amount, status, request_hex, response_hex, timestamp,"
+                    + "user_id, owner_username, processing_code, currency_code, rrn, terminal_id, card_id"
+                    + ") SELECT "
+                    + "id, trace_number, amount, status, request_hex, response_hex, timestamp,"
+                    + "user_id, owner_username, processing_code, currency_code, rrn, terminal_id, card_id "
+                    + "FROM transactions");
+
+            db.execSQL("CREATE TABLE IF NOT EXISTS pos_accounts ("
+                    + "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
+                    + "username_hash TEXT,"
+                    + "password_hash TEXT,"
+                    + "display_name TEXT,"
+                    + "email TEXT,"
+                    + "phone TEXT,"
+                    + "dob TEXT,"
+                    + "gender TEXT,"
+                    + "merchant_backend_id INTEGER NOT NULL DEFAULT 0,"
+                    + "branch_backend_id INTEGER NOT NULL DEFAULT 0,"
+                    + "phone_verified INTEGER NOT NULL DEFAULT 0,"
+                    + "role TEXT,"
+                    + "created_at INTEGER NOT NULL,"
+                    + "admin_id TEXT,"
+                    + "backend_id INTEGER NOT NULL,"
+                    + "terminal_id_assigned TEXT,"
+                    + "server_ip TEXT,"
+                    + "server_port INTEGER NOT NULL,"
+                    + "failed_login_attempts INTEGER NOT NULL DEFAULT 0,"
+                    + "locked_until INTEGER NOT NULL DEFAULT 0)");
+
+            db.execSQL("INSERT INTO pos_accounts ("
+                    + "id, username_hash, password_hash, display_name, email, phone, dob, gender,"
+                    + "merchant_backend_id, branch_backend_id, phone_verified, role, created_at, admin_id, backend_id,"
+                    + "terminal_id_assigned, server_ip, server_port, failed_login_attempts, locked_until"
+                    + ") "
+                    + "SELECT id, username_hash, password_hash, display_name, email, phone, dob, gender,"
+                    + "0, 0, phone_verified, role, created_at, admin_id, backend_id,"
+                    + "terminal_id_assigned, server_ip, server_port, failed_login_attempts, locked_until "
+                    + "FROM users");
+
+            db.execSQL("DROP TABLE transactions");
+            db.execSQL("ALTER TABLE transactions_new RENAME TO transactions");
+            db.execSQL("DROP TABLE users");
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_transactions_trace_number ON transactions(trace_number)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_user_id ON transactions(user_id)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_terminal_id ON transactions(terminal_id)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_card_id ON transactions(card_id)");
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_pos_accounts_username_hash ON pos_accounts(username_hash)");
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_pos_accounts_phone ON pos_accounts(phone)");
+        }
+    };
+
+    /**
+     * Migration 22 -> 23:
+     * - pos_accounts: add plain-text username for backend parity.
+     * - branches: add local branch cache table mapped by backend IDs.
+     * - terminals: add branch_backend_id and pos_account_backend_id references from backend.
+     * - transactions: add backend summary columns while keeping local hex payload.
+     */
+    static final Migration MIGRATION_22_23 = new Migration(22, 23) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE pos_accounts ADD COLUMN username TEXT");
+            db.execSQL("UPDATE pos_accounts SET username = phone "
+                    + "WHERE (username IS NULL OR TRIM(username)='') "
+                    + "AND phone IS NOT NULL");
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_pos_accounts_username ON pos_accounts(username)");
+
+            db.execSQL("CREATE TABLE IF NOT EXISTS branches ("
+                    + "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
+                    + "backend_id INTEGER NOT NULL,"
+                    + "merchant_backend_id INTEGER NOT NULL,"
+                    + "branch_code TEXT,"
+                    + "branch_name TEXT,"
+                    + "branch_address TEXT,"
+                    + "created_at INTEGER NOT NULL DEFAULT 0)");
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_branches_backend_id ON branches(backend_id)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_branches_merchant_backend_id "
+                    + "ON branches(merchant_backend_id)");
+
+            db.execSQL("ALTER TABLE terminals ADD COLUMN branch_backend_id INTEGER NOT NULL DEFAULT 0");
+            db.execSQL("ALTER TABLE terminals ADD COLUMN pos_account_backend_id INTEGER NOT NULL DEFAULT 0");
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_terminals_branch_backend_id ON terminals(branch_backend_id)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_terminals_pos_account_backend_id ON terminals(pos_account_backend_id)");
+
+            db.execSQL("ALTER TABLE transactions ADD COLUMN masked_pan TEXT");
+            db.execSQL("ALTER TABLE transactions ADD COLUMN card_scheme TEXT");
+            db.execSQL("ALTER TABLE transactions ADD COLUMN terminal_code TEXT");
+            db.execSQL("ALTER TABLE transactions ADD COLUMN device_id TEXT");
+            db.execSQL("ALTER TABLE transactions ADD COLUMN synced_at TEXT");
+            db.execSQL("ALTER TABLE transactions ADD COLUMN backend_user_id INTEGER");
+            db.execSQL("ALTER TABLE transactions ADD COLUMN backend_username TEXT");
+        }
+    };
+
     // ──────────────────────────────────────────────────────────────────────────
     // Singleton
     // ──────────────────────────────────────────────────────────────────────────
@@ -182,7 +311,8 @@ public abstract class AppDatabase extends RoomDatabase {
                             // Liệt kê toàn bộ migration để Room nâng cấp schema
                             // mà KHÔNG xoá dữ liệu cũ.
                             .addMigrations(MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
-                                    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21)
+                                    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21,
+                                    MIGRATION_21_22, MIGRATION_22_23)
                             // WAL (Write-Ahead Logging): cải thiện hiệu năng đọc/ghi
                             // đồng thời, thay thế TRUNCATE.
                             .setJournalMode(RoomDatabase.JournalMode.AUTOMATIC)

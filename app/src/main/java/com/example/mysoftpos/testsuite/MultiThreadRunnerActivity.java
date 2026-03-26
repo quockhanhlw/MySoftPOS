@@ -28,6 +28,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class MultiThreadRunnerActivity extends BaseActivity {
 
+    private static final String ADMIN_TEST_SUITE_MID = "MYSOFTPOSSHOP01";
+
     private TextView tvLog;
     private TextView tvStatus;
     private ScrollView scrollLog;
@@ -93,6 +95,7 @@ public class MultiThreadRunnerActivity extends BaseActivity {
                     TransactionExecutor.LogCallback noop = msg -> {};
                     String amount = scenario.getField(4);
                     contexts[i] = TransactionExecutor.buildContext(getApplicationContext(), types[i], amount, null, null);
+                    contexts[i].merchantId42 = ADMIN_TEST_SUITE_MID;
 
                     if (schemeName != null && !schemeName.isEmpty()) {
                         try {
@@ -208,7 +211,7 @@ public class MultiThreadRunnerActivity extends BaseActivity {
 
         org.json.JSONObject json = new org.json.JSONObject();
         java.util.Set<Integer> reserved = new java.util.HashSet<>(
-                java.util.Arrays.asList(2, 4, 14, 22, 35, 52));
+                java.util.Arrays.asList(2, 4, 14, 22, 35, 42, 52));
 
         for (java.util.Map.Entry<Integer, String> entry : scenario.getAllFields().entrySet()) {
             Integer field = entry.getKey();
@@ -257,10 +260,9 @@ public class MultiThreadRunnerActivity extends BaseActivity {
     }
 
     private void applySchemeToContext(com.example.mysoftpos.iso8583.TransactionContext ctx, Scheme scheme) {
+        ctx.merchantId42 = ADMIN_TEST_SUITE_MID;
         String tid = scheme.getTerminalId();
         if (tid != null && !tid.isEmpty()) ctx.terminalId41 = tid;
-        String mid = scheme.getMerchantId();
-        if (mid != null && !mid.isEmpty()) ctx.merchantId42 = mid;
         String mcc = scheme.getMcc();
         if (mcc != null && !mcc.isEmpty()) ctx.mcc18 = mcc;
         String acq = scheme.getAcquirerId();

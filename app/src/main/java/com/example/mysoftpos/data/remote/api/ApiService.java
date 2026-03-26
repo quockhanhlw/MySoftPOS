@@ -35,28 +35,6 @@ public interface ApiService {
         @POST("/api/auth/forgot-password/reset")
         Call<Map<String, String>> resetForgotPassword(@Body ForgotPasswordResetRequest request);
 
-        // ==================== Users (Admin) ====================
-
-        @GET("/api/users")
-        Call<List<UserDto>> getUsers(@Header("Authorization") String token);
-
-        @POST("/api/users")
-        Call<UserDto> createUser(@Header("Authorization") String token,
-                        @Body CreateUserRequest request);
-
-        @PUT("/api/users/{id}")
-        Call<UserDto> updateUser(@Header("Authorization") String token,
-                        @Path("id") long id,
-                        @Body CreateUserRequest request);
-
-        @DELETE("/api/users/{id}")
-        Call<Map<String, String>> deleteUser(@Header("Authorization") String token,
-                        @Path("id") long id);
-
-        @PUT("/api/users/{id}/reset-password")
-        Call<Map<String, String>> resetPassword(@Header("Authorization") String token,
-                        @Path("id") long id,
-                        @Body Map<String, String> body);
 
         // ==================== Merchants (Admin) ====================
 
@@ -67,6 +45,15 @@ public interface ApiService {
         Call<List<UserDto>> getMerchantAccounts(@Header("Authorization") String token,
                         @Path("id") long merchantId);
 
+        @GET("/api/merchants/{id}/branches")
+        Call<List<BranchDto>> getMerchantBranches(@Header("Authorization") String token,
+                        @Path("id") long merchantId);
+
+        @GET("/api/merchants/{merchantId}/branches/{branchId}/accounts")
+        Call<List<UserDto>> getMerchantBranchAccounts(@Header("Authorization") String token,
+                        @Path("merchantId") long merchantId,
+                        @Path("branchId") long branchId);
+
         @POST("/api/merchants")
         Call<MerchantDto> createMerchant(@Header("Authorization") String token,
                         @Body Map<String, String> body);
@@ -75,6 +62,10 @@ public interface ApiService {
         Call<MerchantDto> updateMerchant(@Header("Authorization") String token,
                         @Path("id") long id,
                         @Body Map<String, String> body);
+
+        @DELETE("/api/merchants/{id}")
+        Call<Map<String, String>> deleteMerchant(@Header("Authorization") String token,
+                        @Path("id") long id);
 
         // ==================== Terminals (Admin) ====================
 
@@ -150,6 +141,29 @@ public interface ApiService {
         @POST("/api/test-suites/sync")
         Call<Map<String, Integer>> syncTestSuites(@Header("Authorization") String token,
                         @Body List<TestSuiteDto> suites);
+
+        // ==================== POS Accounts (Admin, domain alias of users) ====================
+
+        @GET("/api/pos-accounts")
+        Call<List<UserDto>> getPosAccounts(@Header("Authorization") String token);
+
+        @POST("/api/pos-accounts")
+        Call<UserDto> createPosAccount(@Header("Authorization") String token,
+                        @Body CreateUserRequest request);
+
+        @PUT("/api/pos-accounts/{id}")
+        Call<UserDto> updatePosAccount(@Header("Authorization") String token,
+                        @Path("id") long id,
+                        @Body CreateUserRequest request);
+
+        @DELETE("/api/pos-accounts/{id}")
+        Call<Map<String, String>> deletePosAccount(@Header("Authorization") String token,
+                        @Path("id") long id);
+
+        @PUT("/api/pos-accounts/{id}/reset-password")
+        Call<Map<String, String>> resetPosAccountPassword(@Header("Authorization") String token,
+                        @Path("id") long id,
+                        @Body Map<String, String> body);
 
         // ==================== Inner DTOs ====================
 
@@ -231,6 +245,7 @@ public interface ApiService {
                 public String businessType;
                 public String storeAddress;
                 public Long merchantId;
+                public Long branchId;
                 public String terminalId;
                 public String serverIp;
                 public Integer serverPort;
@@ -246,6 +261,15 @@ public interface ApiService {
                                 String dob, String gender, String storeName, String businessType,
                                 String storeAddress, Long merchantId,
                                 String terminalId, String serverIp, Integer serverPort) {
+                        this(password, fullName, phone, email,
+                                dob, gender, storeName, businessType, storeAddress, merchantId,
+                                null, terminalId, serverIp, serverPort);
+                }
+
+                public CreateUserRequest(String password, String fullName, String phone, String email,
+                                String dob, String gender, String storeName, String businessType,
+                                String storeAddress, Long merchantId, Long branchId,
+                                String terminalId, String serverIp, Integer serverPort) {
                         this.password = password;
                         this.fullName = fullName;
                         this.phone = phone;
@@ -256,6 +280,7 @@ public interface ApiService {
                         this.businessType = businessType;
                         this.storeAddress = storeAddress;
                         this.merchantId = merchantId;
+                        this.branchId = branchId;
                         this.terminalId = terminalId;
                         this.serverIp = serverIp;
                         this.serverPort = serverPort;
@@ -315,8 +340,12 @@ public interface ApiService {
         class UserDto {
                 public long id;
                 public Long merchantId;
+                public Long branchId;
+                public String branchCode;
+                public String branchName;
                 public String role;
                 public String fullName;
+                public String username;
                 public String phone;
                 public String email;
                 public String dob;
@@ -338,6 +367,7 @@ public interface ApiService {
                 public long id;
                 public String merchantCode;
                 public String merchantName;
+                public String bankName;
                 public Long adminId;
                 public Long ownerUserId;
                 public String businessType;
@@ -351,8 +381,19 @@ public interface ApiService {
                 public long id;
                 public String terminalCode;
                 public MerchantDto merchant;
+                public Long branchId;
+                public Long posAccountId;
                 public String serverIp;
                 public Integer serverPort;
+        }
+
+        class BranchDto {
+                public long id;
+                public Long merchantId;
+                public String branchCode;
+                public String branchName;
+                public String branchAddress;
+                public Integer accountCount;
         }
 
         class TransactionSyncRequest {
@@ -371,6 +412,12 @@ public interface ApiService {
                 public String cardScheme;
                 public String terminalCode;
                 public String deviceId;
+                public String requestHex;
+                public String responseHex;
+                public String processingCode;
+                public String currencyCode;
+                public String rrn;
+                public String ownerUsername;
                 public long txnTimestamp;
         }
 
@@ -387,6 +434,12 @@ public interface ApiService {
                 public String syncedAt;
                 public Long userId;
                 public String username;
+                public String requestHex;
+                public String responseHex;
+                public String processingCode;
+                public String currencyCode;
+                public String rrn;
+                public String ownerUsername;
         }
 
         class TestSuiteDto {
