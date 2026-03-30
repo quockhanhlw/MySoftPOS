@@ -43,7 +43,7 @@ import retrofit2.Response;
  * Admin: Merchant Management.
  * Show merchant list, then drill down to account (TID) list of selected merchant.
  */
-public class UserManagementActivity extends BaseActivity implements UserAdapter.OnMerchantListener {
+public class PosAccountManagementActivity extends BaseActivity implements PosAccountAdapter.OnMerchantListener {
 
     private static final int MAX_TOKEN_WAIT_RETRIES = 15;
     private static final long TOKEN_WAIT_RETRY_DELAY_MS = 1200L;
@@ -53,7 +53,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
     private final Runnable retryLoadRunnable = this::loadMerchants;
     private final ExecutorService accountNetworkExecutor = Executors.newCachedThreadPool();
 
-    private UserAdapter adapter;
+    private PosAccountAdapter adapter;
     private TextView tvUserCount;
     private View layoutEmpty;
     private EditText etSearch;
@@ -75,7 +75,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_user_management);
+        setContentView(R.layout.activity_pos_account_management);
 
         tvUserCount = findViewById(R.id.tvUserCount);
         layoutEmpty = findViewById(R.id.layoutEmpty);
@@ -91,7 +91,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
         rvUsers.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new UserAdapter(this);
+        adapter = new PosAccountAdapter(this);
         rvUsers.setAdapter(adapter);
 
         fabAdd.setVisibility(View.VISIBLE);
@@ -193,7 +193,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                     clearRenderedMerchants();
                     showNonContentState(getString(R.string.user_mgmt_state_backend_unavailable_title),
                             getString(R.string.user_mgmt_state_load_users_failed_subtitle), true);
-                    Toast.makeText(UserManagementActivity.this,
+                    Toast.makeText(PosAccountManagementActivity.this,
                             getString(R.string.user_mgmt_error_code, response.code()), Toast.LENGTH_LONG).show();
                     return;
                 }
@@ -212,7 +212,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                 clearRenderedMerchants();
                 showNonContentState(getString(R.string.user_mgmt_state_backend_unavailable_title),
                         getString(R.string.user_mgmt_state_load_users_network_subtitle), true);
-                Toast.makeText(UserManagementActivity.this,
+                Toast.makeText(PosAccountManagementActivity.this,
                         getString(R.string.user_mgmt_network_error, t.getMessage()), Toast.LENGTH_SHORT).show();
             }
         });
@@ -361,8 +361,8 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
 
         ApiClient.getService(this).getMerchantBranchAccounts(token, merchant.id, branch.id).enqueue(new Callback<>() {
             @Override
-            public void onResponse(@NonNull Call<List<ApiService.UserDto>> call,
-                    @NonNull Response<List<ApiService.UserDto>> response) {
+            public void onResponse(@NonNull Call<List<ApiService.PosAccountDto>> call,
+                    @NonNull Response<List<ApiService.PosAccountDto>> response) {
                 if (!response.isSuccessful() || response.body() == null) {
                     showMerchantAccountsDialog(merchant);
                     return;
@@ -371,7 +371,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
             }
 
             @Override
-            public void onFailure(@NonNull Call<List<ApiService.UserDto>> call, @NonNull Throwable t) {
+            public void onFailure(@NonNull Call<List<ApiService.PosAccountDto>> call, @NonNull Throwable t) {
                 showMerchantAccountsDialog(merchant);
             }
         });
@@ -386,8 +386,8 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
 
         ApiClient.getService(this).getMerchantAccounts(token, merchant.id).enqueue(new Callback<>() {
             @Override
-            public void onResponse(@NonNull Call<List<ApiService.UserDto>> call,
-                    @NonNull Response<List<ApiService.UserDto>> response) {
+            public void onResponse(@NonNull Call<List<ApiService.PosAccountDto>> call,
+                    @NonNull Response<List<ApiService.PosAccountDto>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     showMerchantAccountsFromUsers(merchant, response.body());
                     return;
@@ -397,7 +397,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
             }
 
             @Override
-            public void onFailure(@NonNull Call<List<ApiService.UserDto>> call, @NonNull Throwable t) {
+            public void onFailure(@NonNull Call<List<ApiService.PosAccountDto>> call, @NonNull Throwable t) {
                 loadAccountsFromTerminals(merchant, token);
             }
         });
@@ -434,7 +434,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
     }
 
     private void showMerchantAccountsFromUsers(ApiService.MerchantDto merchant,
-            List<ApiService.UserDto> users,
+            List<ApiService.PosAccountDto> users,
             ApiService.BranchDto branch) {
         if (users == null || users.isEmpty()) {
             showMerchantAccountsMessage(merchant, Collections.emptyList());
@@ -442,7 +442,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         }
 
         int missingTidCount = 0;
-        for (ApiService.UserDto user : users) {
+        for (ApiService.PosAccountDto user : users) {
             if (normalizeTid(user.terminalId).isEmpty()) {
                 missingTidCount++;
             }
@@ -459,14 +459,14 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         showMerchantAccountListDialog(merchant, users, branch);
     }
 
-    private void showMerchantAccountsFromUsers(ApiService.MerchantDto merchant, List<ApiService.UserDto> users) {
+    private void showMerchantAccountsFromUsers(ApiService.MerchantDto merchant, List<ApiService.PosAccountDto> users) {
         showMerchantAccountsFromUsers(merchant, users, null);
     }
 
     private void showMerchantAccountListDialog(ApiService.MerchantDto merchant,
-            List<ApiService.UserDto> users,
+            List<ApiService.PosAccountDto> users,
             ApiService.BranchDto branch) {
-        List<ApiService.UserDto> accountUsers = new ArrayList<>(users);
+        List<ApiService.PosAccountDto> accountUsers = new ArrayList<>(users);
         View content = getLayoutInflater().inflate(R.layout.dialog_merchant_accounts_manage, null, false);
         TextView tvMerchantMeta = content.findViewById(R.id.tvMerchantMeta);
         TextView tvAccountsEmpty = content.findViewById(R.id.tvAccountsEmpty);
@@ -488,12 +488,12 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         rvAccounts.setLayoutManager(new LinearLayoutManager(this));
         MerchantAccountAdapter accountAdapter = new MerchantAccountAdapter(new MerchantAccountAdapter.OnAccountActionListener() {
             @Override
-            public void onEdit(ApiService.UserDto user) {
+            public void onEdit(ApiService.PosAccountDto user) {
                 showAccountEditorDialog(merchant, user);
             }
 
             @Override
-            public void onDelete(ApiService.UserDto user) {
+            public void onDelete(ApiService.PosAccountDto user) {
                 confirmDeleteAccount(merchant, user);
             }
         });
@@ -575,7 +575,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                                 @NonNull Response<ApiService.MerchantDto> response) {
                             setDialogButtonsEnabled(dialog, true);
                             if (!response.isSuccessful()) {
-                                Toast.makeText(UserManagementActivity.this,
+                                Toast.makeText(PosAccountManagementActivity.this,
                                         getString(R.string.user_mgmt_error_code, response.code()),
                                         Toast.LENGTH_LONG).show();
                                 return;
@@ -587,7 +587,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                         @Override
                         public void onFailure(@NonNull Call<ApiService.MerchantDto> call, @NonNull Throwable t) {
                             setDialogButtonsEnabled(dialog, true);
-                            Toast.makeText(UserManagementActivity.this,
+                            Toast.makeText(PosAccountManagementActivity.this,
                                     getString(R.string.user_mgmt_network_error, t.getMessage()),
                                     Toast.LENGTH_LONG).show();
                         }
@@ -601,7 +601,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                             @NonNull Response<ApiService.MerchantDto> response) {
                         setDialogButtonsEnabled(dialog, true);
                         if (!response.isSuccessful()) {
-                            Toast.makeText(UserManagementActivity.this,
+                            Toast.makeText(PosAccountManagementActivity.this,
                                     getString(R.string.user_mgmt_error_code, response.code()),
                                     Toast.LENGTH_LONG).show();
                             return;
@@ -613,7 +613,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                     @Override
                     public void onFailure(@NonNull Call<ApiService.MerchantDto> call, @NonNull Throwable t) {
                         setDialogButtonsEnabled(dialog, true);
-                        Toast.makeText(UserManagementActivity.this,
+                        Toast.makeText(PosAccountManagementActivity.this,
                                 getString(R.string.user_mgmt_network_error, t.getMessage()),
                                 Toast.LENGTH_LONG).show();
                     }
@@ -645,30 +645,30 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                     @NonNull Response<Map<String, String>> response) {
                 if (!response.isSuccessful()) {
                     if (response.code() == 409) {
-                        Toast.makeText(UserManagementActivity.this,
+                        Toast.makeText(PosAccountManagementActivity.this,
                                 R.string.user_mgmt_delete_merchant_blocked,
                                 Toast.LENGTH_LONG).show();
                         return;
                     }
-                    Toast.makeText(UserManagementActivity.this,
+                    Toast.makeText(PosAccountManagementActivity.this,
                             getString(R.string.user_mgmt_error_code, response.code()),
                             Toast.LENGTH_LONG).show();
                     return;
                 }
-                Toast.makeText(UserManagementActivity.this, R.string.user_mgmt_delete_success, Toast.LENGTH_SHORT).show();
+                Toast.makeText(PosAccountManagementActivity.this, R.string.user_mgmt_delete_success, Toast.LENGTH_SHORT).show();
                 loadMerchants();
             }
 
             @Override
             public void onFailure(@NonNull Call<Map<String, String>> call, @NonNull Throwable t) {
-                Toast.makeText(UserManagementActivity.this,
+                Toast.makeText(PosAccountManagementActivity.this,
                         getString(R.string.user_mgmt_network_error, t.getMessage()),
                         Toast.LENGTH_LONG).show();
             }
         });
     }
 
-    private void showAccountEditorDialog(ApiService.MerchantDto merchant, ApiService.UserDto user) {
+    private void showAccountEditorDialog(ApiService.MerchantDto merchant, ApiService.PosAccountDto user) {
         View content = getLayoutInflater().inflate(R.layout.dialog_merchant_account_form, null, false);
         EditText etFullName = content.findViewById(R.id.etAccountFullName);
         EditText etPhone = content.findViewById(R.id.etAccountPhone);
@@ -685,8 +685,6 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
             etPhone.setText(safe(user.phone));
             etEmail.setText(safe(user.email));
             etTid.setText(normalizeTid(user.terminalId));
-            etServerIp.setText(safe(user.serverIp));
-            etServerPort.setText(user.serverPort != null && user.serverPort > 0 ? String.valueOf(user.serverPort) : "");
             if (tilPassword != null) {
                 tilPassword.setVisibility(View.GONE);
             }
@@ -735,12 +733,9 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                     return;
                 }
 
-                Integer serverPort = parseServerPort(etServerPort);
-                if (Integer.valueOf(Integer.MIN_VALUE).equals(serverPort)) {
-                    return;
-                }
+                // Server validation for Terminals logic removed from Account form
 
-                ApiService.CreateUserRequest body = new ApiService.CreateUserRequest(
+                ApiService.CreatePosAccountRequest body = new ApiService.CreatePosAccountRequest(
                         isCreate ? password : null,
                         fullName,
                         phone,
@@ -752,16 +747,14 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                         safe(merchant.storeAddress),
                         merchant.id,
                         isCreate ? null : user.branchId,
-                        tid,
-                        safe(etServerIp.getText().toString()),
-                        serverPort);
+                        tid);
 
                 setDialogButtonsEnabled(dialog, false);
                 if (isCreate) {
                     enqueueCreatePosAccount(token, body, new Callback<>() {
                         @Override
-                        public void onResponse(@NonNull Call<ApiService.UserDto> call,
-                                @NonNull Response<ApiService.UserDto> response) {
+                        public void onResponse(@NonNull Call<ApiService.PosAccountDto> call,
+                                @NonNull Response<ApiService.PosAccountDto> response) {
                             setDialogButtonsEnabled(dialog, true);
                             if (!response.isSuccessful()) {
                                 showAccountApiError(response, true);
@@ -772,9 +765,9 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                         }
 
                         @Override
-                        public void onFailure(@NonNull Call<ApiService.UserDto> call, @NonNull Throwable t) {
+                        public void onFailure(@NonNull Call<ApiService.PosAccountDto> call, @NonNull Throwable t) {
                             setDialogButtonsEnabled(dialog, true);
-                            Toast.makeText(UserManagementActivity.this,
+                            Toast.makeText(PosAccountManagementActivity.this,
                                     getString(R.string.user_mgmt_network_error, t.getMessage()),
                                     Toast.LENGTH_LONG).show();
                         }
@@ -784,8 +777,8 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
 
                 enqueueUpdatePosAccount(token, user.id, body, new Callback<>() {
                     @Override
-                    public void onResponse(@NonNull Call<ApiService.UserDto> call,
-                            @NonNull Response<ApiService.UserDto> response) {
+                    public void onResponse(@NonNull Call<ApiService.PosAccountDto> call,
+                            @NonNull Response<ApiService.PosAccountDto> response) {
                         setDialogButtonsEnabled(dialog, true);
                         if (!response.isSuccessful()) {
                             showAccountApiError(response, false);
@@ -796,15 +789,14 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                     }
 
                     @Override
-                    public void onFailure(@NonNull Call<ApiService.UserDto> call, @NonNull Throwable t) {
+                    public void onFailure(@NonNull Call<ApiService.PosAccountDto> call, @NonNull Throwable t) {
                         setDialogButtonsEnabled(dialog, true);
-                        Toast.makeText(UserManagementActivity.this,
+                        Toast.makeText(PosAccountManagementActivity.this,
                                 getString(R.string.user_mgmt_network_error, t.getMessage()),
                                 Toast.LENGTH_LONG).show();
                     }
                 });
             });
-            testBtn.setOnClickListener(v -> testAccountConnection(etServerIp, etServerPort));
         });
         dialog.show();
         applyModernDialogStyle(dialog);
@@ -840,7 +832,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         }
     }
 
-    private void confirmDeleteAccount(ApiService.MerchantDto merchant, ApiService.UserDto user) {
+    private void confirmDeleteAccount(ApiService.MerchantDto merchant, ApiService.PosAccountDto user) {
         new AlertDialog.Builder(this)
                 .setTitle(R.string.user_mgmt_delete_account)
                 .setMessage(getString(R.string.user_mgmt_delete_account_confirm, resolveAccountIdentity(user)))
@@ -849,7 +841,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                 .show();
     }
 
-    private void deleteAccount(ApiService.MerchantDto merchant, ApiService.UserDto user) {
+    private void deleteAccount(ApiService.MerchantDto merchant, ApiService.PosAccountDto user) {
         String token = ApiClient.bearerToken(this);
         if (token.isEmpty() || "Bearer ".equals(token)) {
             Toast.makeText(this, R.string.user_mgmt_state_backend_session_unavailable_title, Toast.LENGTH_SHORT).show();
@@ -863,13 +855,13 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                     showAccountApiError(response, false);
                     return;
                 }
-                Toast.makeText(UserManagementActivity.this, R.string.user_mgmt_delete_success, Toast.LENGTH_SHORT).show();
+                Toast.makeText(PosAccountManagementActivity.this, R.string.user_mgmt_delete_success, Toast.LENGTH_SHORT).show();
                 showMerchantAccountsDialog(merchant);
             }
 
             @Override
             public void onFailure(@NonNull Call<Map<String, String>> call, @NonNull Throwable t) {
-                Toast.makeText(UserManagementActivity.this,
+                Toast.makeText(PosAccountManagementActivity.this,
                         getString(R.string.user_mgmt_network_error, t.getMessage()),
                         Toast.LENGTH_LONG).show();
             }
@@ -983,7 +975,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         }
     }
 
-    private String resolveAccountIdentity(ApiService.UserDto user) {
+    private String resolveAccountIdentity(ApiService.PosAccountDto user) {
         if (user == null) {
             return getString(R.string.txn_detail_placeholder_dash);
         }
@@ -1025,14 +1017,14 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
 
     private void enqueueUpdatePosAccount(String token,
             long userId,
-            ApiService.CreateUserRequest body,
-            Callback<ApiService.UserDto> callback) {
+            ApiService.CreatePosAccountRequest body,
+            Callback<ApiService.PosAccountDto> callback) {
         ApiClient.getService(this).updatePosAccount(token, userId, body).enqueue(callback);
     }
 
     private void enqueueCreatePosAccount(String token,
-            ApiService.CreateUserRequest body,
-            Callback<ApiService.UserDto> callback) {
+            ApiService.CreatePosAccountRequest body,
+            Callback<ApiService.PosAccountDto> callback) {
         ApiClient.getService(this).createPosAccount(token, body).enqueue(callback);
     }
 
@@ -1096,8 +1088,8 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
         for (ApiService.MerchantDto merchant : merchants) {
             ApiClient.getService(this).getMerchantAccounts(token, merchant.id).enqueue(new Callback<>() {
                 @Override
-                public void onResponse(@NonNull Call<List<ApiService.UserDto>> call,
-                        @NonNull Response<List<ApiService.UserDto>> response) {
+                public void onResponse(@NonNull Call<List<ApiService.PosAccountDto>> call,
+                        @NonNull Response<List<ApiService.PosAccountDto>> response) {
                     if (requestVersion != merchantBadgeRequestVersion) {
                         return;
                     }
@@ -1107,7 +1099,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                     }
 
                     int missingTidCount = 0;
-                    for (ApiService.UserDto user : response.body()) {
+                    for (ApiService.PosAccountDto user : response.body()) {
                         if (normalizeTid(user.terminalId).isEmpty()) {
                             missingTidCount++;
                         }
@@ -1117,7 +1109,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
                 }
 
                 @Override
-                public void onFailure(@NonNull Call<List<ApiService.UserDto>> call, @NonNull Throwable t) {
+                public void onFailure(@NonNull Call<List<ApiService.PosAccountDto>> call, @NonNull Throwable t) {
                     fetchMissingTidFromTerminalsFallback(merchant, token, requestVersion);
                 }
             });
@@ -1218,7 +1210,7 @@ public class UserManagementActivity extends BaseActivity implements UserAdapter.
             @Override
             public void onAvailable(@NonNull android.net.Network network) {
                 runOnUiThread(() -> {
-                    Toast.makeText(UserManagementActivity.this, R.string.network_restored, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(PosAccountManagementActivity.this, R.string.network_restored, Toast.LENGTH_SHORT).show();
                     loadMerchants();
                 });
             }

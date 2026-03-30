@@ -79,6 +79,12 @@ public final class ApiClient {
                             .readTimeout(DEFAULT_READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                             .writeTimeout(DEFAULT_WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
+                    // Attach app version for backend observability (e.g., legacy /api/users sunset dashboard).
+                    builder.addInterceptor(chain -> chain.proceed(
+                            chain.request().newBuilder()
+                                    .header("X-App-Version", BuildConfig.VERSION_NAME)
+                                    .build()));
+
                     if (BuildConfig.DEBUG) {
                         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
                         logging.setLevel(HttpLoggingInterceptor.Level.HEADERS);

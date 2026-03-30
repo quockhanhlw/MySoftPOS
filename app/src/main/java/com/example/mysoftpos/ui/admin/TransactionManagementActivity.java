@@ -21,9 +21,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.data.local.AppDatabase;
 import com.example.mysoftpos.data.local.dao.TransactionDao;
-import com.example.mysoftpos.data.local.dao.UserDao;
+import com.example.mysoftpos.data.local.dao.PosAccountDao;
 import com.example.mysoftpos.data.local.entity.TransactionEntity;
-import com.example.mysoftpos.data.local.entity.UserEntity;
+import com.example.mysoftpos.data.local.entity.PosAccountEntity;
 import com.example.mysoftpos.data.remote.api.ApiClient;
 import com.example.mysoftpos.data.remote.api.ApiService;
 import com.example.mysoftpos.ui.BaseActivity;
@@ -167,11 +167,11 @@ public class TransactionManagementActivity extends BaseActivity {
 
         fetchAdminAccounts(token, new Callback<>() {
             @Override
-            public void onResponse(@NonNull Call<List<ApiService.UserDto>> call,
-                    @NonNull Response<List<ApiService.UserDto>> resp) {
+            public void onResponse(@NonNull Call<List<ApiService.PosAccountDto>> call,
+                    @NonNull Response<List<ApiService.PosAccountDto>> resp) {
                 if (resp.isSuccessful() && resp.body() != null) {
                     userIdToName.clear();
-                    for (ApiService.UserDto u : resp.body()) {
+                    for (ApiService.PosAccountDto u : resp.body()) {
                         String displayName = u.fullName != null && !u.fullName.isEmpty() ? u.fullName : u.phone;
                         userIdToName.put(u.id, displayName);
                     }
@@ -188,7 +188,7 @@ public class TransactionManagementActivity extends BaseActivity {
             }
 
             @Override
-            public void onFailure(@NonNull Call<List<ApiService.UserDto>> call, @NonNull Throwable t) {
+            public void onFailure(@NonNull Call<List<ApiService.PosAccountDto>> call, @NonNull Throwable t) {
                 clearRenderedTransactions();
                 showNonContentState(getString(R.string.txn_mgmt_state_backend_unavailable_title),
                         getString(R.string.txn_mgmt_state_load_users_network_subtitle), true);
@@ -198,7 +198,7 @@ public class TransactionManagementActivity extends BaseActivity {
         });
     }
 
-    private void fetchAdminAccounts(String token, Callback<List<ApiService.UserDto>> callback) {
+    private void fetchAdminAccounts(String token, Callback<List<ApiService.PosAccountDto>> callback) {
         ApiClient.getService(this).getPosAccounts(token).enqueue(callback);
     }
 
@@ -244,54 +244,49 @@ public class TransactionManagementActivity extends BaseActivity {
                 });
     }
 
-    private void syncUsersToLocal(List<ApiService.UserDto> remoteUsers) {
+    private void syncUsersToLocal(List<ApiService.PosAccountDto> remoteUsers) {
         new Thread(() -> {
             try {
                 AppDatabase db = AppDatabase.getInstance(TransactionManagementActivity.this);
-                UserDao userDao = db.userDao();
+                PosAccountDao posAccountDao = db.posAccountDao();
                 String adminHash = getCurrentAdminHash();
 
-                for (ApiService.UserDto remoteUser : remoteUsers) {
-                    UserEntity localUser = remoteUser.id > 0 ? userDao.findByBackendId(remoteUser.id) : null;
-                    if (localUser == null && remoteUser.phone != null) {
-                        localUser = userDao.findByPhone(remoteUser.phone);
+                for (ApiService.PosAccountDto remoteUser : remoteUsers) {
+                    PosAccountEntity localAccount = remoteUser.id > 0 ? posAccountDao.findByBackendId(remoteUser.id) : null;
+                    if (localAccount == null && remoteUser.phone != null) {
+                        localAccount = posAccountDao.findByUsername(remoteUser.phone);
                     }
-                    if (localUser == null && remoteUser.email != null) {
-                        localUser = userDao.findByEmail(remoteUser.email);
+                    if (localAccount == null && remoteUser.email != null) {
+                        localAccount = posAccountDao.findByUsername(remoteUser.email);
                     }
 
-                    if (localUser == null) {
-                        localUser = new UserEntity();
-                        localUser.username = remoteUser.username != null && !remoteUser.username.isEmpty()
+                    if (localAccount == null) {
+                        localAccount = new PosAccountEntity();
+                        localAccount.username = remoteUser.username != null && !remoteUser.username.isEmpty()
                                 ? remoteUser.username
                                 : remoteUser.phone;
-                        localUser.usernameHash = PasswordUtils.hashSHA256(
+                        localAccount.usernameHash = PasswordUtils.hashSHA256(
                                 remoteUser.username != null && !remoteUser.username.isEmpty()
                                         ? remoteUser.username
                                         : (remoteUser.phone != null && !remoteUser.phone.isEmpty()
                                         ? remoteUser.phone
                                         : String.valueOf(remoteUser.id)));
-                        localUser.passwordHash = "";
-                        localUser.createdAt = System.currentTimeMillis();
+                        localAccount.passwordHash = "";
+                        localAccount.createdAt = System.currentTimeMillis();
                     }
 
-                    localUser.username = remoteUser.username != null && !remoteUser.username.isEmpty()
+                    localAccount.username = remoteUser.username != null && !remoteUser.username.isEmpty()
                             ? remoteUser.username
                             : remoteUser.phone;
-                    localUser.displayName = remoteUser.fullName;
-                    localUser.role = remoteUser.role;
-                    localUser.email = remoteUser.email;
-                    localUser.phone = remoteUser.phone;
-                    localUser.backendId = remoteUser.id;
-                    localUser.terminalId = remoteUser.terminalId;
-                    localUser.serverIp = remoteUser.serverIp;
-                    localUser.serverPort = remoteUser.serverPort != null ? remoteUser.serverPort : 0;
-                    localUser.adminId = adminHash;
+                    localAccount.role = remoteUser.role;
+                    localAccount.backendId = remoteUser.id;
+                    localAccount.terminalId = remoteUser.terminalId;
+                    localAccount.adminId = adminHash;
 
-                    if (localUser.id > 0) {
-                        userDao.update(localUser);
+                    if (localAccount.id > 0) {
+                        posAccountDao.update(localAccount);
                     } else {
-                        userDao.insert(localUser);
+                        posAccountDao.insert(localAccount);
                     }
                 }
             } catch (Exception e) {
@@ -304,7 +299,7 @@ public class TransactionManagementActivity extends BaseActivity {
         new Thread(() -> {
             try {
                 AppDatabase db = AppDatabase.getInstance(TransactionManagementActivity.this);
-                UserDao userDao = db.userDao();
+                PosAccountDao posAccountDao = db.posAccountDao();
                 TransactionDao transactionDao = db.transactionDao();
 
                 for (ApiService.TransactionSummaryDto txn : remoteTransactions) {
@@ -312,7 +307,7 @@ public class TransactionManagementActivity extends BaseActivity {
                         continue;
                     }
 
-                    UserEntity localUser = userDao.findByBackendId(txn.userId);
+                    PosAccountEntity localAccount = posAccountDao.findByBackendId(txn.userId);
                     TransactionEntity localTxn = transactionDao.getByTraceNumber(txn.traceNumber);
                     if (localTxn == null) {
                         localTxn = new TransactionEntity();
@@ -322,7 +317,7 @@ public class TransactionManagementActivity extends BaseActivity {
                     localTxn.amount = txn.amount;
                     localTxn.status = txn.status;
                     localTxn.timestamp = parseBackendTimestamp(txn.txnTimestamp);
-                    localTxn.userId = localUser != null ? localUser.id : null;
+                    localTxn.userId = localAccount != null ? localAccount.id : null;
                     localTxn.ownerUsername = txn.username;
                     localTxn.maskedPan = txn.maskedPan;
                     localTxn.cardScheme = txn.cardScheme;

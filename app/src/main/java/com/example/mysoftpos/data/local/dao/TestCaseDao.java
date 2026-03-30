@@ -14,7 +14,7 @@ import java.util.List;
 
 @Dao
 public interface TestCaseDao {
-    @Query("SELECT * FROM test_cases WHERE suite_id = :suiteId ORDER BY timestamp DESC")
+    @Query("SELECT * FROM test_cases WHERE suite_id = :suiteId ORDER BY created_at DESC")
     LiveData<List<TestCaseEntity>> getCasesBySuite(long suiteId);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -26,12 +26,12 @@ public interface TestCaseDao {
     @Delete
     void delete(TestCaseEntity testCase);
 
-    @Query("SELECT * FROM test_cases WHERE transaction_type = :type AND suite_id = -1 ORDER BY timestamp DESC")
+    @Query("SELECT * FROM test_cases WHERE transaction_type = :type AND suite_id = -1 ORDER BY created_at DESC")
     LiveData<List<TestCaseEntity>> getCustomCasesByType(String type);
 
-    @Query("SELECT * FROM test_cases WHERE scheme = :scheme AND transaction_type = :type AND suite_id = -1 ORDER BY timestamp DESC")
+    @Query("SELECT * FROM test_cases WHERE scheme = :scheme AND transaction_type = :type AND suite_id = -1 ORDER BY created_at DESC")
     LiveData<List<TestCaseEntity>> getCustomCasesBySchemeAndType(String scheme, String type);
 
-    @Query("SELECT * FROM test_cases WHERE scheme = :scheme AND suite_id = -1 ORDER BY timestamp DESC")
+    @Query("SELECT * FROM test_cases WHERE scheme = :scheme AND suite_id = -1 ORDER BY created_at DESC")
     LiveData<List<TestCaseEntity>> getCustomCasesByScheme(String scheme);
 }

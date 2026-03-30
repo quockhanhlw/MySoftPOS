@@ -11,7 +11,7 @@ public class TransactionWithDetails {
     public CardEntity card;
 
     @Relation(parentColumn = "user_id", entityColumn = "id")
-    public UserEntity user;
+    public PosAccountEntity user;
 
     @Relation(parentColumn = "terminal_id", entityColumn = "id")
     public TerminalEntity terminal;

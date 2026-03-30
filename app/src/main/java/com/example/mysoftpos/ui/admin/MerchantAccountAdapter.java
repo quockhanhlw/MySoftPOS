@@ -18,19 +18,19 @@ import java.util.List;
 public class MerchantAccountAdapter extends RecyclerView.Adapter<MerchantAccountAdapter.AccountViewHolder> {
 
     public interface OnAccountActionListener {
-        void onEdit(ApiService.UserDto user);
+        void onEdit(ApiService.PosAccountDto user);
 
-        void onDelete(ApiService.UserDto user);
+        void onDelete(ApiService.PosAccountDto user);
     }
 
-    private final List<ApiService.UserDto> users = new ArrayList<>();
+    private final List<ApiService.PosAccountDto> users = new ArrayList<>();
     private final OnAccountActionListener listener;
 
     public MerchantAccountAdapter(OnAccountActionListener listener) {
         this.listener = listener;
     }
 
-    public void submit(List<ApiService.UserDto> data) {
+    public void submit(List<ApiService.PosAccountDto> data) {
         users.clear();
         if (data != null) {
             users.addAll(data);
@@ -47,20 +47,18 @@ public class MerchantAccountAdapter extends RecyclerView.Adapter<MerchantAccount
 
     @Override
     public void onBindViewHolder(@NonNull AccountViewHolder holder, int position) {
-        ApiService.UserDto user = users.get(position);
+        ApiService.PosAccountDto user = users.get(position);
         String name = safe(user.fullName);
         String phone = safe(user.phone);
         String tid = safe(user.terminalId);
-        String ip = safe(user.serverIp);
-        String port = user.serverPort != null && user.serverPort > 0 ? String.valueOf(user.serverPort) : "-";
 
         holder.tvAccountName.setText(name.isEmpty() ? "-" : name);
         holder.tvAccountPhone.setText(phone.isEmpty() ? "-" : phone);
         holder.tvAccountConfig.setText(holder.itemView.getContext().getString(
                 R.string.user_mgmt_account_item_config_format,
                 tid.isEmpty() ? "-" : tid,
-                ip.isEmpty() ? "-" : ip,
-                port));
+                "-",
+                "-"));
 
         holder.btnEdit.setOnClickListener(v -> listener.onEdit(user));
         holder.btnDelete.setOnClickListener(v -> listener.onDelete(user));

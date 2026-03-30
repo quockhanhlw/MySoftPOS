@@ -343,14 +343,14 @@ public class ForgotPasswordActivity extends BaseActivity {
     private void updateLocalPasswordCacheAsync(String email, String newPassword) {
         new Thread(() -> {
             try {
-                com.example.mysoftpos.data.local.dao.UserDao userDao =
-                        com.example.mysoftpos.data.local.AppDatabase.getInstance(this).userDao();
-                com.example.mysoftpos.data.local.entity.UserEntity user = userDao.findByEmail(email);
+                com.example.mysoftpos.data.local.dao.PosAccountDao posAccountDao =
+                        com.example.mysoftpos.data.local.AppDatabase.getInstance(this).posAccountDao();
+                com.example.mysoftpos.data.local.entity.PosAccountEntity user = posAccountDao.findByUsername(email);
                 if (user != null) {
                     user.passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashPassword(newPassword);
                     user.failedLoginAttempts = 0;
                     user.lockedUntil = 0;
-                    userDao.update(user);
+                    posAccountDao.update(user);
                 }
             } catch (Exception ignored) {
                 // Local cache sync failure should not block reset success.

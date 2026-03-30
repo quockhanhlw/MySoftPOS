@@ -42,7 +42,7 @@ public interface ApiService {
         Call<List<MerchantDto>> getMerchants(@Header("Authorization") String token);
 
         @GET("/api/merchants/{id}/accounts")
-        Call<List<UserDto>> getMerchantAccounts(@Header("Authorization") String token,
+        Call<List<PosAccountDto>> getMerchantAccounts(@Header("Authorization") String token,
                         @Path("id") long merchantId);
 
         @GET("/api/merchants/{id}/branches")
@@ -50,7 +50,7 @@ public interface ApiService {
                         @Path("id") long merchantId);
 
         @GET("/api/merchants/{merchantId}/branches/{branchId}/accounts")
-        Call<List<UserDto>> getMerchantBranchAccounts(@Header("Authorization") String token,
+        Call<List<PosAccountDto>> getMerchantBranchAccounts(@Header("Authorization") String token,
                         @Path("merchantId") long merchantId,
                         @Path("branchId") long branchId);
 
@@ -94,9 +94,9 @@ public interface ApiService {
         Call<List<TransactionSummaryDto>> getByTerminal(@Header("Authorization") String token,
                         @Path("code") String code);
 
-        @GET("/api/transactions/user/{userId}")
+        @GET("/api/transactions/pos-accounts/{id}")
         Call<List<TransactionSummaryDto>> getByUser(@Header("Authorization") String token,
-                        @Path("userId") long userId);
+                        @Path("id") long id);
 
         // ==================== Test Suites (Admin) ====================
 
@@ -145,16 +145,16 @@ public interface ApiService {
         // ==================== POS Accounts (Admin, domain alias of users) ====================
 
         @GET("/api/pos-accounts")
-        Call<List<UserDto>> getPosAccounts(@Header("Authorization") String token);
+        Call<List<PosAccountDto>> getPosAccounts(@Header("Authorization") String token);
 
         @POST("/api/pos-accounts")
-        Call<UserDto> createPosAccount(@Header("Authorization") String token,
-                        @Body CreateUserRequest request);
+        Call<PosAccountDto> createPosAccount(@Header("Authorization") String token,
+                        @Body CreatePosAccountRequest request);
 
         @PUT("/api/pos-accounts/{id}")
-        Call<UserDto> updatePosAccount(@Header("Authorization") String token,
+        Call<PosAccountDto> updatePosAccount(@Header("Authorization") String token,
                         @Path("id") long id,
-                        @Body CreateUserRequest request);
+                        @Body CreatePosAccountRequest request);
 
         @DELETE("/api/pos-accounts/{id}")
         Call<Map<String, String>> deletePosAccount(@Header("Authorization") String token,
@@ -234,7 +234,7 @@ public interface ApiService {
                 }
         }
 
-        class CreateUserRequest {
+        class CreatePosAccountRequest {
                 public String password;
                 public String fullName;
                 public String phone;
@@ -247,29 +247,27 @@ public interface ApiService {
                 public Long merchantId;
                 public Long branchId;
                 public String terminalId;
-                public String serverIp;
-                public Integer serverPort;
 
-                public CreateUserRequest(String password, String fullName, String phone, String email,
-                                String terminalId, String serverIp, Integer serverPort) {
+                public CreatePosAccountRequest(String password, String fullName, String phone, String email,
+                                String terminalId) {
                         this(password, fullName, phone, email,
                                         null, null, null, null, null, null,
-                                        terminalId, serverIp, serverPort);
+                                        null, terminalId);
                 }
 
-                public CreateUserRequest(String password, String fullName, String phone, String email,
+                public CreatePosAccountRequest(String password, String fullName, String phone, String email,
                                 String dob, String gender, String storeName, String businessType,
                                 String storeAddress, Long merchantId,
-                                String terminalId, String serverIp, Integer serverPort) {
+                                String terminalId) {
                         this(password, fullName, phone, email,
                                 dob, gender, storeName, businessType, storeAddress, merchantId,
-                                null, terminalId, serverIp, serverPort);
+                                null, terminalId);
                 }
 
-                public CreateUserRequest(String password, String fullName, String phone, String email,
+                public CreatePosAccountRequest(String password, String fullName, String phone, String email,
                                 String dob, String gender, String storeName, String businessType,
                                 String storeAddress, Long merchantId, Long branchId,
-                                String terminalId, String serverIp, Integer serverPort) {
+                                String terminalId) {
                         this.password = password;
                         this.fullName = fullName;
                         this.phone = phone;
@@ -282,8 +280,6 @@ public interface ApiService {
                         this.merchantId = merchantId;
                         this.branchId = branchId;
                         this.terminalId = terminalId;
-                        this.serverIp = serverIp;
-                        this.serverPort = serverPort;
                 }
         }
 
@@ -334,10 +330,10 @@ public interface ApiService {
         class LoginResponse {
                 public String accessToken;
                 public String refreshToken;
-                public UserDto user;
+                public PosAccountDto user;
         }
 
-        class UserDto {
+        class PosAccountDto {
                 public long id;
                 public Long merchantId;
                 public Long branchId;
@@ -357,8 +353,6 @@ public interface ApiService {
                 public String merchantCode;
                 public Boolean phoneVerified;
                 public String terminalId;
-                public String serverIp;
-                public Integer serverPort;
                 public boolean active;
                 public boolean online;
         }
@@ -367,6 +361,11 @@ public interface ApiService {
                 public long id;
                 public String merchantCode;
                 public String merchantName;
+                public String fullName;
+                public String phone;
+                public String email;
+                public String dob;
+                public String gender;
                 public String bankName;
                 public Long adminId;
                 public Long ownerUserId;
@@ -410,6 +409,8 @@ public interface ApiService {
                 public String status;
                 public String maskedPan;
                 public String cardScheme;
+                public Long terminalId;
+                public Long cardId;
                 public String terminalCode;
                 public String deviceId;
                 public String requestHex;
@@ -428,6 +429,8 @@ public interface ApiService {
                 public String status;
                 public String maskedPan;
                 public String cardScheme;
+                public Long terminalId;
+                public Long cardId;
                 public String terminalCode;
                 public String deviceId;
                 public String txnTimestamp;
@@ -461,6 +464,8 @@ public interface ApiService {
                 public String de22;
                 public String maskedPan;
                 public String expiry;
+                public String reqFilePath;
+                public String resFilePath;
                 public String track2;
                 public String scheme;
                 public String fieldConfigJson;

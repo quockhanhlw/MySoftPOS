@@ -6,10 +6,10 @@ import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import com.example.mysoftpos.data.local.entity.UserEntity;
+import com.example.mysoftpos.data.local.entity.PosAccountEntity;
 import com.example.mysoftpos.data.remote.api.ApiClient;
 import com.example.mysoftpos.data.remote.api.ApiService;
-import com.example.mysoftpos.data.repository.UserRepository;
+import com.example.mysoftpos.data.repository.PosAccountRepository;
 import com.example.mysoftpos.ui.base.BaseViewModel;
 import com.example.mysoftpos.utils.config.ConfigManager;
 import com.example.mysoftpos.utils.security.AuditLogger;
@@ -32,10 +32,10 @@ public class LoginViewModel extends BaseViewModel {
 
     private static final String TAG = "LoginVM";
 
-    private final UserRepository userRepository;
+    private final PosAccountRepository userRepository;
     private final MutableLiveData<LoginState> loginState = new MutableLiveData<>(LoginState.idle());
 
-    public LoginViewModel(Application application, UserRepository userRepository,
+    public LoginViewModel(Application application, PosAccountRepository userRepository,
                           DispatcherProvider dispatchers) {
         super(application, dispatchers);
         this.userRepository = userRepository;
@@ -52,57 +52,7 @@ public class LoginViewModel extends BaseViewModel {
      */
     public void login(String username, String password) {
         loginState.setValue(LoginState.loading());
-
-        launchIo(() -> {
-            try {
-                UserEntity user = userRepository.findUser(username);
-
-                if (user != null) {
-                    if (requiresFirstLoginOnline(user)) {
-                        launchUi(() -> loginViaApi(username, password));
-                        return;
-                    }
-
-                    // Check account lockout
-                    long lockRemaining = userRepository.getLockRemainingMillis(user);
-                    if (lockRemaining > 0) {
-                        int min = (int) (lockRemaining / 60000) + 1;
-                        launchUi(() -> loginState.setValue(LoginState.locked(min)));
-                        return;
-                    }
-
-                    // Verify password against local cache
-                    if (PasswordUtils.verifyPassword(password, user.passwordHash)) {
-                        // ✅ LOCAL LOGIN SUCCESS
-                        userRepository.resetFailedAttempts(user);
-                        SessionManager.startSession();
-                        ConfigManager.getInstance(getApplication()).setMcc18(userRepository.resolveBusinessType(user));
-                        AuditLogger.log(getApplication(), username, "LOGIN",
-                                true, TAG, "Local-first login: " + user.role);
-
-                        final UserEntity cachedUser = user;
-                        launchUi(() -> loginState.setValue(LoginState.success(
-                                cachedUser.id, cachedUser.role,
-                                cachedUser.displayName != null ? cachedUser.displayName : "User",
-                                cachedUser.phone, cachedUser.email)));
-
-                        // Background: sync with API to refresh JWT token
-                        syncWithBackendInBackground(username, password);
-                        return;
-                    } else {
-                        // Wrong password — increment failed attempts
-                        userRepository.incrementFailedAttempts(user);
-                    }
-                }
-
-                // Step 2: Not found locally or wrong password → try API
-                launchUi(() -> loginViaApi(username, password));
-            } catch (Exception e) {
-                // SQLite error → fallback to API
-                Log.w(TAG, "Local DB error, falling back to API: " + e.getMessage());
-                launchUi(() -> loginViaApi(username, password));
-            }
-        });
+        loginViaApi(username, password);
     }
 
     /**
@@ -147,8 +97,8 @@ public class LoginViewModel extends BaseViewModel {
 
                         @Override
                         public void onFailure(Call<ApiService.LoginResponse> call, Throwable t) {
-                            Log.w(TAG, "API unreachable, falling back to offline: " + t.getMessage());
-                            loginViaLocalRoom(username, password);
+                            Log.w(TAG, "API unreachable: " + t.getMessage());
+                            loginState.setValue(LoginState.error("Khong the ket noi backend. Vui long thu lai."));
                         }
                     });
         } catch (Exception e) {
@@ -162,7 +112,7 @@ public class LoginViewModel extends BaseViewModel {
     private void loginViaLocalRoom(String username, String password) {
         launchIo(() -> {
             try {
-                UserEntity user = userRepository.findUser(username);
+                PosAccountEntity user = userRepository.findUser(username);
 
                 if (user != null) {
                     if (requiresFirstLoginOnline(user)) {
@@ -185,11 +135,14 @@ public class LoginViewModel extends BaseViewModel {
                         AuditLogger.log(getApplication(), username, "LOGIN",
                                 true, TAG, "Offline login: " + user.role);
 
-                        final UserEntity finalUser = user;
+                        final PosAccountEntity finalUser = user;
+                        final String displayName = userRepository.resolveDisplayName(finalUser);
+                        final String phone = userRepository.resolveContactPhone(finalUser);
+                        final String email = userRepository.resolveContactEmail(finalUser);
                         launchUi(() -> loginState.setValue(LoginState.success(
                                 finalUser.id, finalUser.role,
-                                finalUser.displayName != null ? finalUser.displayName : "User",
-                                finalUser.phone, finalUser.email)));
+                                displayName != null ? displayName : finalUser.username,
+                                phone, email)));
                         syncWithBackendInBackground(username, password);
                         return;
                     } else {
@@ -271,7 +224,7 @@ public class LoginViewModel extends BaseViewModel {
         loginState.setValue(LoginState.error(finalMsg));
     }
 
-    private boolean requiresFirstLoginOnline(UserEntity user) {
+    private boolean requiresFirstLoginOnline(PosAccountEntity user) {
         if (user == null) {
             return false;
         }

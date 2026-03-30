@@ -24,6 +24,15 @@ public interface MerchantDao {
     @Query("SELECT * FROM merchants WHERE backend_id = :backendId LIMIT 1")
     MerchantEntity getByBackendId(long backendId);
 
+    @Query("SELECT * FROM merchants WHERE owner_user_backend_id = :ownerBackendId LIMIT 1")
+    MerchantEntity getByOwnerUserBackendId(long ownerBackendId);
+
+    @Query("SELECT * FROM merchants WHERE phone = :phone LIMIT 1")
+    MerchantEntity getByPhone(String phone);
+
+    @Query("SELECT * FROM merchants WHERE email = :email LIMIT 1")
+    MerchantEntity getByEmail(String email);
+
     @Query("SELECT * FROM merchants ORDER BY id")
     List<MerchantEntity> getAll();
 

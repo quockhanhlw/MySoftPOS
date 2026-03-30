@@ -72,7 +72,7 @@
 
         <!-- Admin Activities -->
         <activity
-            android:name=".ui.admin.UserManagementActivity"
+            android:name=".ui.admin.PosAccountManagementActivity"
             android:exported="false"
             android:label="@string/user_mgmt_title" />
 

@@ -3,11 +3,12 @@ package com.example.mysoftpos.data.local.entity;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
+import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "transactions", foreignKeys = {
-        @ForeignKey(entity = UserEntity.class, parentColumns = "id", childColumns = "user_id", onDelete = ForeignKey.SET_NULL),
+        @ForeignKey(entity = PosAccountEntity.class, parentColumns = "id", childColumns = "user_id", onDelete = ForeignKey.SET_NULL),
         @ForeignKey(entity = CardEntity.class, parentColumns = "id", childColumns = "card_id", onDelete = ForeignKey.SET_NULL)
 }, indices = {
         @Index(value = "trace_number", unique = true),
@@ -35,7 +36,7 @@ public class TransactionEntity {
     @ColumnInfo(name = "response_hex")
     public String responseHex;
 
-    @ColumnInfo(name = "timestamp")
+    @ColumnInfo(name = "txn_timestamp")
     public long timestamp;
 
     @ColumnInfo(name = "user_id")
@@ -45,7 +46,7 @@ public class TransactionEntity {
      * Raw username (phone/email) of the user who initiated this transaction.
      * Admin test-suite uses "TEST_SUITE_USER", "TEST_SUITE_BATCH", etc.
      */
-    @ColumnInfo(name = "owner_username")
+    @Ignore
     public String ownerUsername;
 
     /**
@@ -81,7 +82,7 @@ public class TransactionEntity {
     @ColumnInfo(name = "card_scheme")
     public String cardScheme;
 
-    @ColumnInfo(name = "terminal_code")
+    @Ignore
     public String terminalCode;
 
     @ColumnInfo(name = "device_id")

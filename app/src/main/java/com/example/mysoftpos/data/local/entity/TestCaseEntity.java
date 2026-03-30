@@ -2,6 +2,7 @@ package com.example.mysoftpos.data.local.entity;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "test_cases")
@@ -33,19 +34,22 @@ public class TestCaseEntity {
     @ColumnInfo(name = "de22")
     public String de22;
 
-    @ColumnInfo(name = "pan")
-    public String pan;
+    @ColumnInfo(name = "masked_pan")
+    public String maskedPan;
 
     @ColumnInfo(name = "expiry")
     public String expiry;
 
-    @ColumnInfo(name = "track2")
+    @Ignore
     public String track2;
+
+    @Ignore
+    public String pan;
 
     @ColumnInfo(name = "scheme")
     public String scheme; // "Napas", "Visa", etc.
 
-    @ColumnInfo(name = "timestamp")
+    @ColumnInfo(name = "created_at")
     public long timestamp;
 
     /**

@@ -114,9 +114,10 @@ public class TestSuiteSyncManager {
                     entity.status = dto.status;
                     entity.amount = dto.amount;
                     entity.de22 = dto.de22;
-                    entity.pan = dto.maskedPan;
+                    entity.maskedPan = dto.maskedPan;
                     entity.expiry = dto.expiry;
-                    entity.track2 = dto.track2;
+                    entity.requestFilePath = dto.reqFilePath;
+                    entity.responseFilePath = dto.resFilePath;
                     entity.scheme = dto.scheme;
                     entity.fieldConfigJson = dto.fieldConfigJson;
                     entity.timestamp = System.currentTimeMillis();

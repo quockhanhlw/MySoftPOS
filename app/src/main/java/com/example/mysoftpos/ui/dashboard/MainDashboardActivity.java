@@ -138,7 +138,7 @@ public class MainDashboardActivity extends BaseActivity {
         // User Management Action (Admin Only)
         if (btnUserManagement != null) {
             btnUserManagement.setOnClickListener(v -> {
-                Intent intent = new Intent(this, com.example.mysoftpos.ui.admin.UserManagementActivity.class);
+                Intent intent = new Intent(this, com.example.mysoftpos.ui.admin.PosAccountManagementActivity.class);
                 // Pass email for admin features (adminId = SHA256(email) in existing DB)
                 String userEmail = getIntent().getStringExtra("USER_EMAIL");
                 intent.putExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME,

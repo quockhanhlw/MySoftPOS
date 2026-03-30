@@ -51,7 +51,13 @@ public class ConfigSyncManager {
                                 MerchantEntity existing = dao.getByBackendId(dto.id);
                                 if (existing != null) {
                                     existing.merchantCode = dto.merchantCode;
-                                    existing.merchantNameLocation = dto.merchantName;
+                                    existing.merchantName = dto.merchantName;
+                                    existing.fullName = dto.fullName != null ? dto.fullName : "";
+                                    existing.phone = dto.phone != null ? dto.phone : "";
+                                    existing.email = dto.email != null ? dto.email : "";
+                                    existing.dob = dto.dob != null ? dto.dob : "";
+                                    existing.gender = dto.gender != null ? dto.gender : "";
+                                    existing.bankName = dto.bankName != null ? dto.bankName : "";
                                     existing.adminBackendId = dto.adminId;
                                     existing.ownerUserBackendId = dto.ownerUserId != null ? dto.ownerUserId : 0L;
                                     existing.businessType = dto.businessType != null ? dto.businessType : "";
@@ -61,7 +67,13 @@ public class ConfigSyncManager {
                                     existing = dao.getByCode(dto.merchantCode);
                                     if (existing != null) {
                                         existing.backendId = dto.id;
-                                        existing.merchantNameLocation = dto.merchantName;
+                                        existing.merchantName = dto.merchantName;
+                                        existing.fullName = dto.fullName != null ? dto.fullName : "";
+                                        existing.phone = dto.phone != null ? dto.phone : "";
+                                        existing.email = dto.email != null ? dto.email : "";
+                                        existing.dob = dto.dob != null ? dto.dob : "";
+                                        existing.gender = dto.gender != null ? dto.gender : "";
+                                        existing.bankName = dto.bankName != null ? dto.bankName : "";
                                         existing.adminBackendId = dto.adminId;
                                         existing.ownerUserBackendId = dto.ownerUserId != null ? dto.ownerUserId : 0L;
                                         existing.businessType = dto.businessType != null ? dto.businessType : "";
@@ -71,7 +83,13 @@ public class ConfigSyncManager {
                                         MerchantEntity entity = new MerchantEntity();
                                         entity.backendId = dto.id;
                                         entity.merchantCode = dto.merchantCode;
-                                        entity.merchantNameLocation = dto.merchantName;
+                                        entity.merchantName = dto.merchantName;
+                                        entity.fullName = dto.fullName != null ? dto.fullName : "";
+                                        entity.phone = dto.phone != null ? dto.phone : "";
+                                        entity.email = dto.email != null ? dto.email : "";
+                                        entity.dob = dto.dob != null ? dto.dob : "";
+                                        entity.gender = dto.gender != null ? dto.gender : "";
+                                        entity.bankName = dto.bankName != null ? dto.bankName : "";
                                         entity.adminBackendId = dto.adminId;
                                         entity.ownerUserBackendId = dto.ownerUserId != null ? dto.ownerUserId : 0L;
                                         entity.businessType = dto.businessType != null ? dto.businessType : "";

@@ -109,12 +109,6 @@ public class TransactionDetailViewModel extends BaseViewModel {
                         serverIp = scheme.getServerIp();
                         serverPort = scheme.getServerPort();
                     }
-                } else if (txnDetails.user != null
-                        && txnDetails.user.serverIp != null && !txnDetails.user.serverIp.isEmpty()
-                        && txnDetails.user.serverPort > 0) {
-                    // User void: use user's server config from admin management
-                    serverIp = txnDetails.user.serverIp;
-                    serverPort = txnDetails.user.serverPort;
                 }
 
                 if (serverIp == null || serverIp.trim().isEmpty() || serverPort <= 0) {

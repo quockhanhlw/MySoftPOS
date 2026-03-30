@@ -12,6 +12,7 @@ public class TransactionRepositoryImpl implements TransactionRepository {
 
     private final AppDatabase db;
     private final DispatcherProvider dispatchers;
+    private final SensitiveDataMaskingService maskingService = new SensitiveDataMaskingService();
 
     public TransactionRepositoryImpl(AppDatabase db, DispatcherProvider dispatchers) {
         this.db = db;
@@ -92,15 +93,12 @@ public class TransactionRepositoryImpl implements TransactionRepository {
                 userId = record.userId;
             } else {
                 String username = record.username;
-                com.example.mysoftpos.data.local.entity.UserEntity user = null;
+                com.example.mysoftpos.data.local.entity.PosAccountEntity user = null;
                 if (username != null && !username.isEmpty()) {
-                    user = db.userDao().findByPhone(username);
-                    if (user == null) {
-                        user = db.userDao().findByEmail(username);
-                    }
+                    user = db.posAccountDao().findByUsername(username);
                     if (user == null) {
                         String hash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(username);
-                        user = db.userDao().getByUsernameHashSync(hash);
+                        user = db.posAccountDao().getByUsernameHashSync(hash);
                     }
                 }
                 userId = (user != null) ? user.id : null;
@@ -111,13 +109,12 @@ public class TransactionRepositoryImpl implements TransactionRepository {
             txn.traceNumber = record.traceNumber;
             txn.amount = record.amount;
             txn.status = record.status;
-            txn.requestHex = record.reqHex;
-            txn.responseHex = record.respHex;
+            txn.requestHex = maskingService.maskIsoHex(record.reqHex);
+            txn.responseHex = maskingService.maskIsoHex(record.respHex);
             txn.timestamp = record.timestamp;
             txn.terminalId = terminalId > 0 ? terminalId : null;
             txn.cardId = cardId > 0 ? cardId : null;
             txn.userId = userId;
-            txn.ownerUsername = record.username;
             txn.processingCode = record.processingCode;
             txn.currencyCode = record.currencyCode;
             txn.rrn = record.rrn;
@@ -140,14 +137,14 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     @Override
     public void updateTransactionResponse(String traceNumber, String responseHex, String status) {
         dispatchers.io().execute(() -> {
-            db.transactionDao().updateResponse(traceNumber, responseHex, status);
+            db.transactionDao().updateResponse(traceNumber, maskingService.maskIsoHex(responseHex), status);
         });
     }
 
     @Override
     public void updateTransactionResponseHex(String traceNumber, String responseHex) {
         dispatchers.io().execute(() -> {
-            db.transactionDao().updateResponseHex(traceNumber, responseHex);
+            db.transactionDao().updateResponseHex(traceNumber, maskingService.maskIsoHex(responseHex));
         });
     }
 

@@ -23,6 +23,21 @@ public class MerchantEntity {
     @ColumnInfo(name = "owner_user_backend_id")
     public long ownerUserBackendId;
 
+    @ColumnInfo(name = "full_name")
+    public String fullName;
+
+    @ColumnInfo(name = "phone")
+    public String phone;
+
+    @ColumnInfo(name = "email")
+    public String email;
+
+    @ColumnInfo(name = "dob")
+    public String dob;
+
+    @ColumnInfo(name = "gender")
+    public String gender;
+
     @ColumnInfo(name = "business_type")
     public String businessType;
 
@@ -32,28 +47,33 @@ public class MerchantEntity {
     @ColumnInfo(name = "bank_name")
     public String bankName;
 
-    @ColumnInfo(name = "branch_count", defaultValue = "0")
+    @Ignore
     public int branchCount;
 
-    @ColumnInfo(name = "branch_addresses")
+    @Ignore
     public String branchAddresses;
 
-    @ColumnInfo(name = "account_count", defaultValue = "1")
+    @Ignore
     public int accountCount;
 
     @ColumnInfo(name = "merchant_code")
     public String merchantCode; // DE 42
 
-    @ColumnInfo(name = "merchant_name_location")
-    public String merchantNameLocation; // DE 43
+    @ColumnInfo(name = "merchant_name")
+    public String merchantName; // DE 43
 
     public MerchantEntity() {
     }
 
     @Ignore
-    public MerchantEntity(String merchantCode, String merchantNameLocation) {
+    public MerchantEntity(String merchantCode, String merchantName) {
         this.merchantCode = merchantCode;
-        this.merchantNameLocation = merchantNameLocation;
+        this.merchantName = merchantName;
+        this.fullName = "";
+        this.phone = "";
+        this.email = "";
+        this.dob = "";
+        this.gender = "";
         this.businessType = "";
         this.storeAddress = "";
         this.bankName = "";

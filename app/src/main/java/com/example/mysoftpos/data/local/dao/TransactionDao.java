@@ -35,25 +35,25 @@ public interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE trace_number = :traceNumber LIMIT 1")
     TransactionEntity getByTraceNumber(String traceNumber);
 
-    @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
+    @Query("SELECT * FROM transactions ORDER BY txn_timestamp DESC")
     List<TransactionEntity> getAllTransactions();
 
-    @Query("SELECT * FROM transactions WHERE owner_username = :username AND status IS NOT NULL AND status != 'PENDING' ORDER BY timestamp DESC")
-    List<TransactionEntity> getCompletedTransactionsByOwnerSync(String username);
+    @Query("SELECT * FROM transactions WHERE user_id = :userId AND status IS NOT NULL AND status != 'PENDING' ORDER BY txn_timestamp DESC")
+    List<TransactionEntity> getCompletedTransactionsByUserIdSync(long userId);
 
-    @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
+    @Query("SELECT * FROM transactions ORDER BY txn_timestamp DESC")
     androidx.lifecycle.LiveData<List<TransactionEntity>> getAllTransactionsLive();
 
-    @Query("SELECT t.* FROM transactions t INNER JOIN pos_accounts u ON t.user_id = u.id WHERE u.username = :usernameHash OR u.username_hash = :usernameHash ORDER BY t.timestamp DESC")
+    @Query("SELECT t.* FROM transactions t INNER JOIN pos_accounts u ON t.user_id = u.id WHERE u.username = :usernameHash OR u.username_hash = :usernameHash ORDER BY t.txn_timestamp DESC")
     androidx.lifecycle.LiveData<List<TransactionEntity>> getTransactionsByUsernameHashLive(String usernameHash);
 
     // Kept for direct ID access if needed
-    @Query("SELECT * FROM transactions WHERE user_id = :userId ORDER BY timestamp DESC")
+    @Query("SELECT * FROM transactions WHERE user_id = :userId ORDER BY txn_timestamp DESC")
     androidx.lifecycle.LiveData<List<TransactionEntity>> getTransactionsByUserIdLive(long userId);
 
-    /** Get transactions by owner_username — the definitive way to find a user's own transactions. */
-    @Query("SELECT * FROM transactions WHERE owner_username = :username ORDER BY timestamp DESC")
-    androidx.lifecycle.LiveData<List<TransactionEntity>> getTransactionsByOwnerLive(String username);
+    /** Backward-compatible method name; now keyed by user_id. */
+    @Query("SELECT * FROM transactions WHERE user_id = :userId ORDER BY txn_timestamp DESC")
+    androidx.lifecycle.LiveData<List<TransactionEntity>> getTransactionsByOwnerLive(long userId);
 
     @Transaction
     @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")

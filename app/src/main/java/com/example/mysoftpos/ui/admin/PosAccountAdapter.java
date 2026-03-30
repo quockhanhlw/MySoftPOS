@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
+public class PosAccountAdapter extends RecyclerView.Adapter<PosAccountAdapter.ViewHolder> {
 
     private List<ApiService.MerchantDto> merchants = new ArrayList<>();
     private Map<Long, Integer> missingTidCountByMerchantId = new HashMap<>();
@@ -35,7 +35,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         void onMerchantLongClick(ApiService.MerchantDto merchant);
     }
 
-    public UserAdapter(OnMerchantListener listener) {
+    public PosAccountAdapter(OnMerchantListener listener) {
         this.listener = listener;
     }
 
@@ -55,7 +55,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_user, parent, false);
+                .inflate(R.layout.item_pos_account, parent, false);
         return new ViewHolder(view);
     }
 

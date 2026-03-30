@@ -12,10 +12,9 @@ import androidx.room.PrimaryKey;
  */
 @Entity(tableName = "pos_accounts", indices = {
         @Index(value = { "username" }, unique = true),
-        @Index(value = { "username_hash" }, unique = true),
-        @Index(value = { "phone" }, unique = true)
+        @Index(value = { "username_hash" }, unique = true)
 })
-public class UserEntity {
+public class PosAccountEntity {
 
     @PrimaryKey(autoGenerate = true)
     public long id;
@@ -26,23 +25,8 @@ public class UserEntity {
     @ColumnInfo(name = "username")
     public String username; // Plain username for backend contract parity
 
-    @ColumnInfo(name = "password_hash")
-    public String passwordHash; // SHA-256 of password
-
-    @ColumnInfo(name = "display_name")
-    public String displayName; // Plain text display name
-
-    @ColumnInfo(name = "email")
-    public String email;
-
-    @ColumnInfo(name = "phone")
-    public String phone;
-
-    @ColumnInfo(name = "dob")
-    public String dob;
-
-    @ColumnInfo(name = "gender")
-    public String gender;
+    @Ignore
+    public String passwordHash; // Deprecated local cache field (not persisted)
 
     @ColumnInfo(name = "merchant_backend_id", defaultValue = "0")
     public long merchantBackendId;
@@ -70,11 +54,11 @@ public class UserEntity {
     @ColumnInfo(name = "terminal_id_assigned")
     public String terminalId;
 
-    @ColumnInfo(name = "server_ip")
-    public String serverIp;
+    @Ignore
+    public String serverIp; // Deprecated in pos_accounts (moved to terminals)
 
-    @ColumnInfo(name = "server_port")
-    public int serverPort;
+    @Ignore
+    public int serverPort; // Deprecated in pos_accounts (moved to terminals)
 
     // PA-DSS 3.x: Account lockout after failed login attempts
     @ColumnInfo(name = "failed_login_attempts", defaultValue = "0")
@@ -83,21 +67,15 @@ public class UserEntity {
     @ColumnInfo(name = "locked_until", defaultValue = "0")
     public long lockedUntil; // epoch ms — locked until this time
 
-    public UserEntity() {
+    public PosAccountEntity() {
     }
 
     @Ignore
-    public UserEntity(String usernameHash, String passwordHash, String displayName, String role, String email,
-            String phone, String dob) {
+    public PosAccountEntity(String usernameHash, String role) {
         this.usernameHash = usernameHash;
-        this.username = phone;
-        this.passwordHash = passwordHash;
-        this.displayName = displayName;
+        this.username = "";
+        this.passwordHash = null;
         this.role = role;
-        this.email = email;
-        this.phone = phone;
-        this.dob = dob;
-        this.gender = "";
         this.merchantBackendId = 0L;
         this.branchBackendId = 0L;
         this.phoneVerified = false;
@@ -107,5 +85,11 @@ public class UserEntity {
         this.serverPort = 0;
         this.failedLoginAttempts = 0;
         this.lockedUntil = 0;
+    }
+
+    @Ignore
+    public PosAccountEntity(String usernameHash, String passwordHash, String role) {
+        this(usernameHash, role);
+        this.passwordHash = null;
     }
 }

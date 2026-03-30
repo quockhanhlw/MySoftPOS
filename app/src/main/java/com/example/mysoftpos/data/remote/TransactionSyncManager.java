@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.example.mysoftpos.data.local.AppDatabase;
 import com.example.mysoftpos.data.local.entity.TransactionEntity;
+import com.example.mysoftpos.data.repository.SensitiveDataMaskingService;
 import com.example.mysoftpos.data.remote.api.ApiClient;
 import com.example.mysoftpos.data.remote.api.ApiService;
 
@@ -25,6 +26,7 @@ public class TransactionSyncManager {
 
     private static final String TAG = "TxnSyncManager";
     private final Context context;
+    private final SensitiveDataMaskingService maskingService = new SensitiveDataMaskingService();
 
     public TransactionSyncManager(Context context) {
         this.context = context.getApplicationContext();
@@ -40,17 +42,23 @@ public class TransactionSyncManager {
             return;
         }
 
-        String ownerUsername = ApiClient.getUsername(context).trim();
-        if (ownerUsername.isEmpty()) {
-            Log.w(TAG, "Missing owner username in session, skipping sync to avoid cross-user upload");
+        long backendUserId = ApiClient.getUserId(context);
+        if (backendUserId <= 0) {
+            Log.w(TAG, "Missing backend user id in session, skipping sync");
             return;
         }
 
         new Thread(() -> {
             try {
                 AppDatabase db = AppDatabase.getInstance(context);
+                com.example.mysoftpos.data.local.entity.PosAccountEntity currentUser = db.posAccountDao().findByBackendId(backendUserId);
+                if (currentUser == null) {
+                    Log.w(TAG, "No local pos_account mapped for backend user id=" + backendUserId);
+                    return;
+                }
+
                 List<TransactionEntity> allTxns = db.transactionDao()
-                        .getCompletedTransactionsByOwnerSync(ownerUsername);
+                        .getCompletedTransactionsByUserIdSync(currentUser.id);
 
                 if (allTxns == null || allTxns.isEmpty()) {
                     Log.d(TAG, "No transactions to sync");
@@ -66,12 +74,13 @@ public class TransactionSyncManager {
                     item.status = txn.status;
                     item.deviceId = android.os.Build.MODEL;
                     item.txnTimestamp = txn.timestamp;
-                    item.requestHex = txn.requestHex;
-                    item.responseHex = txn.responseHex;
+                    item.requestHex = maskingService.maskIsoHex(txn.requestHex);
+                    item.responseHex = maskingService.maskIsoHex(txn.responseHex);
                     item.processingCode = txn.processingCode;
                     item.currencyCode = txn.currencyCode;
                     item.rrn = txn.rrn;
-                    item.ownerUsername = txn.ownerUsername;
+                    item.cardId = txn.cardId;
+                    item.terminalId = txn.terminalId;
 
                     // Get card and terminal info from transaction details
                     try {
@@ -81,17 +90,11 @@ public class TransactionSyncManager {
                             item.maskedPan = details.card.panMasked;
                             item.cardScheme = details.card.scheme;
                         }
-                        if (details != null && details.terminal != null) {
-                            item.terminalCode = details.terminal.terminalCode;
-                        }
+                        // terminal/card ids are preferred; codes are legacy fallback.
                     } catch (Exception e) {
                         Log.w(TAG, "Failed to get transaction details: " + e.getMessage());
                     }
 
-                    // Fallback terminal code
-                    if (item.terminalCode == null || item.terminalCode.isEmpty()) {
-                        item.terminalCode = "AUTO0001";
-                    }
 
                     items.add(item);
                 }

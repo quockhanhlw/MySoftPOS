@@ -15,6 +15,7 @@ import androidx.work.WorkerParameters;
 
 import com.example.mysoftpos.data.local.AppDatabase;
 import com.example.mysoftpos.data.local.entity.TransactionEntity;
+import com.example.mysoftpos.data.repository.SensitiveDataMaskingService;
 import com.example.mysoftpos.data.remote.api.ApiClient;
 import com.example.mysoftpos.data.remote.api.ApiService;
 
@@ -39,6 +40,7 @@ public class SyncWorker extends Worker {
 
     private static final String TAG = "SyncWorker";
     public static final String UNIQUE_PERIODIC_WORK = "mysoftpos_periodic_sync";
+    private final SensitiveDataMaskingService maskingService = new SensitiveDataMaskingService();
 
     public SyncWorker(@NonNull Context context, @NonNull WorkerParameters params) {
         super(context, params);
@@ -54,16 +56,22 @@ public class SyncWorker extends Worker {
             return Result.success();
         }
 
-        String ownerUsername = ApiClient.getUsername(context).trim();
-        if (ownerUsername.isEmpty()) {
-            Log.w(TAG, "Missing owner username in session, skipping sync to avoid cross-user upload");
+        long backendUserId = ApiClient.getUserId(context);
+        if (backendUserId <= 0) {
+            Log.w(TAG, "Missing backend user id in session, skipping sync");
             return Result.success();
         }
 
         try {
             AppDatabase db = AppDatabase.getInstance(context);
+            com.example.mysoftpos.data.local.entity.PosAccountEntity currentUser = db.posAccountDao().findByBackendId(backendUserId);
+            if (currentUser == null) {
+                Log.w(TAG, "No local pos_account mapped for backend user id=" + backendUserId);
+                return Result.success();
+            }
+
             List<TransactionEntity> allTxns = db.transactionDao()
-                    .getCompletedTransactionsByOwnerSync(ownerUsername);
+                    .getCompletedTransactionsByUserIdSync(currentUser.id);
 
             if (allTxns == null || allTxns.isEmpty()) {
                 Log.d(TAG, "No transactions to sync");
@@ -79,6 +87,13 @@ public class SyncWorker extends Worker {
                 item.status = txn.status;
                 item.deviceId = android.os.Build.MODEL;
                 item.txnTimestamp = txn.timestamp;
+                item.requestHex = maskingService.maskIsoHex(txn.requestHex);
+                item.responseHex = maskingService.maskIsoHex(txn.responseHex);
+                item.processingCode = txn.processingCode;
+                item.currencyCode = txn.currencyCode;
+                item.rrn = txn.rrn;
+                item.terminalId = txn.terminalId;
+                item.cardId = txn.cardId;
 
                 try {
                     com.example.mysoftpos.data.local.entity.TransactionWithDetails details =
@@ -87,15 +102,8 @@ public class SyncWorker extends Worker {
                         item.maskedPan = details.card.panMasked;
                         item.cardScheme = details.card.scheme;
                     }
-                    if (details != null && details.terminal != null) {
-                        item.terminalCode = details.terminal.terminalCode;
-                    }
                 } catch (Exception e) {
                     Log.w(TAG, "Failed to get transaction details: " + e.getMessage());
-                }
-
-                if (item.terminalCode == null || item.terminalCode.isEmpty()) {
-                    item.terminalCode = "AUTO0001";
                 }
                 items.add(item);
             }

@@ -422,25 +422,25 @@ public class SettingsActivity extends BaseActivity {
         new Thread(() -> {
             boolean success = false;
             try {
-                com.example.mysoftpos.data.local.dao.UserDao userDao =
-                        com.example.mysoftpos.data.local.AppDatabase.getInstance(this).userDao();
+                com.example.mysoftpos.data.local.dao.PosAccountDao posAccountDao =
+                        com.example.mysoftpos.data.local.AppDatabase.getInstance(this).posAccountDao();
                 long backendUserId = com.example.mysoftpos.data.remote.api.ApiClient.getUserId(this);
                 String currentUsername = com.example.mysoftpos.data.remote.api.ApiClient.getUsername(this);
-                com.example.mysoftpos.data.local.entity.UserEntity localUser = null;
+                com.example.mysoftpos.data.local.entity.PosAccountEntity localAccount = null;
 
                 if (backendUserId > 0) {
-                    localUser = userDao.findByBackendId(backendUserId);
+                    localAccount = posAccountDao.findByBackendId(backendUserId);
                 }
-                if (localUser == null && !currentUsername.trim().isEmpty()) {
-                    localUser = userDao.findByAnyIdentifier(
+                if (localAccount == null && !currentUsername.trim().isEmpty()) {
+                    localAccount = posAccountDao.findByAnyIdentifier(
                             currentUsername.trim(),
                             com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(currentUsername.trim()));
                 }
-                if (localUser != null) {
-                    localUser.passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashPassword(newPassword);
-                    localUser.failedLoginAttempts = 0;
-                    localUser.lockedUntil = 0;
-                    userDao.update(localUser);
+                if (localAccount != null) {
+                    localAccount.passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashPassword(newPassword);
+                    localAccount.failedLoginAttempts = 0;
+                    localAccount.lockedUntil = 0;
+                    posAccountDao.update(localAccount);
                     success = true;
                 }
             } catch (Exception e) {

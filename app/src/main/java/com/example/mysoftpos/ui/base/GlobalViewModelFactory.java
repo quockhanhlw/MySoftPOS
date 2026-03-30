@@ -22,7 +22,7 @@ public class GlobalViewModelFactory implements ViewModelProvider.Factory {
         if (modelClass.isAssignableFrom(com.example.mysoftpos.viewmodel.LoginViewModel.class)) {
             return (T) new com.example.mysoftpos.viewmodel.LoginViewModel(
                     serviceLocator.getApplication(),
-                    serviceLocator.getUserRepository(),
+                    serviceLocator.getPosAccountRepository(),
                     serviceLocator.getDispatcherProvider());
         }
 

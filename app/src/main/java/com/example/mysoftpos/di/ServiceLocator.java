@@ -47,7 +47,7 @@ public class ServiceLocator {
     private com.example.mysoftpos.data.remote.IsoNetworkClient isoNetworkClient;
     private com.example.mysoftpos.domain.service.TransactionExecutor transactionExecutor;
     private com.example.mysoftpos.testsuite.storage.SchemeRepository schemeRepository;
-    private com.example.mysoftpos.data.repository.UserRepository userRepository;
+    private com.example.mysoftpos.data.repository.PosAccountRepository posAccountRepository;
 
     public com.example.mysoftpos.data.remote.IsoNetworkClient getIsoNetworkClient() {
         if (isoNetworkClient == null) {
@@ -78,10 +78,10 @@ public class ServiceLocator {
         return transactionRepository;
     }
 
-    public com.example.mysoftpos.data.repository.UserRepository getUserRepository() {
-        if (userRepository == null) {
-            userRepository = new com.example.mysoftpos.data.repository.UserRepositoryImpl(appDatabase);
+    public com.example.mysoftpos.data.repository.PosAccountRepository getPosAccountRepository() {
+        if (posAccountRepository == null) {
+            posAccountRepository = new com.example.mysoftpos.data.repository.PosAccountRepositoryImpl(appDatabase);
         }
-        return userRepository;
+        return posAccountRepository;
     }
 }

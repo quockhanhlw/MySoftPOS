@@ -29,9 +29,9 @@ import androidx.annotation.NonNull;
 
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.data.local.AppDatabase;
-import com.example.mysoftpos.data.local.dao.UserDao;
+import com.example.mysoftpos.data.local.dao.PosAccountDao;
 import com.example.mysoftpos.data.local.dao.MerchantDao;
-import com.example.mysoftpos.data.local.entity.UserEntity;
+import com.example.mysoftpos.data.local.entity.PosAccountEntity;
 import com.example.mysoftpos.data.local.entity.MerchantEntity;
 import com.example.mysoftpos.data.remote.api.ApiClient;
 import com.example.mysoftpos.data.remote.api.ApiService;
@@ -683,44 +683,36 @@ public class RegisterActivity extends BaseActivity {
         }
     }
 
-    private void cacheUserLocally(RegistrationForm form, ApiService.UserDto userDto) {
+    private void cacheUserLocally(RegistrationForm form, ApiService.PosAccountDto userDto) {
         cacheUserLocally(form, userDto, null);
     }
 
-    private void cacheUserLocally(RegistrationForm form, ApiService.UserDto userDto, LocalCacheCallback callback) {
+    private void cacheUserLocally(RegistrationForm form, ApiService.PosAccountDto userDto, LocalCacheCallback callback) {
         new Thread(() -> {
             boolean saved = false;
             try {
                 AppDatabase db = AppDatabase.getInstance(this);
-                UserDao userDao = db.userDao();
+                PosAccountDao posAccountDao = db.posAccountDao();
                 MerchantDao merchantDao = db.merchantDao();
-                String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(form.phone);
+                String primaryUsername = buildAccountPhoneIdentifier(form.phone, 1);
+                String usernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(primaryUsername);
                 String passwordHash = com.example.mysoftpos.utils.security.PasswordUtils.hashPassword(form.password);
 
-                UserEntity user = userDao.findByUsernameHash(usernameHash);
+                PosAccountEntity user = posAccountDao.findByUsernameHash(usernameHash);
                 if (user == null) {
-                    user = userDao.findByPhone(form.phone);
+                    user = posAccountDao.findByUsername(primaryUsername);
                 }
                 if (user == null) {
-                    user = userDao.findByEmail(form.email);
-                }
-                if (user == null) {
-                    user = new UserEntity(usernameHash, passwordHash, form.fullName,
-                            userDto != null && userDto.role != null ? userDto.role : REGISTERED_USER_ROLE,
-                            form.email, form.phone, form.dob);
+                    user = new PosAccountEntity(usernameHash,
+                            userDto != null && userDto.role != null ? userDto.role : REGISTERED_USER_ROLE);
                 }
 
                 user.usernameHash = usernameHash;
-                user.username = form.phone;
+                user.username = primaryUsername;
                 user.passwordHash = passwordHash;
-                user.displayName = form.fullName;
                 user.role = userDto != null && userDto.role != null && !userDto.role.trim().isEmpty()
                         ? userDto.role
                         : REGISTERED_USER_ROLE;
-                user.email = form.email;
-                user.phone = form.phone;
-                user.dob = form.dob;
-                user.gender = form.gender;
                 user.merchantBackendId = userDto != null && userDto.merchantId != null ? userDto.merchantId : 0L;
                 user.branchBackendId = userDto != null && userDto.branchId != null ? userDto.branchId : 0L;
                 user.phoneVerified = userDto == null || userDto.phoneVerified == null || userDto.phoneVerified;
@@ -735,22 +727,16 @@ public class RegisterActivity extends BaseActivity {
                     if (userDto.terminalId != null) {
                         user.terminalId = userDto.terminalId;
                     }
-                    if (userDto.serverIp != null) {
-                        user.serverIp = userDto.serverIp;
-                    }
-                    if (userDto.serverPort != null) {
-                        user.serverPort = userDto.serverPort;
-                    }
                 }
 
                 if (user.id > 0) {
-                    userDao.update(user);
+                    posAccountDao.update(user);
                 } else {
-                    userDao.insert(user);
+                    posAccountDao.insert(user);
                 }
 
                 cacheOrUpdateMerchantLocally(merchantDao, form, userDto);
-                cacheDerivedAccounts(userDao, form, userDto);
+                cacheDerivedAccounts(posAccountDao, form, userDto);
                 saved = true;
             } catch (Exception e) {
                 Log.w(TAG, "Failed to cache user locally", e);
@@ -765,7 +751,7 @@ public class RegisterActivity extends BaseActivity {
 
     private void cacheOrUpdateMerchantLocally(MerchantDao merchantDao,
                                               RegistrationForm form,
-                                              ApiService.UserDto userDto) {
+                                              ApiService.PosAccountDto userDto) {
         if (merchantDao == null) {
             return;
         }
@@ -784,9 +770,14 @@ public class RegisterActivity extends BaseActivity {
         }
 
         merchant.merchantCode = merchantCode;
-        merchant.merchantNameLocation = userDto != null && userDto.storeName != null
+        merchant.merchantName = userDto != null && userDto.storeName != null
                 ? userDto.storeName
                 : form.storeName;
+        merchant.fullName = userDto != null && userDto.fullName != null ? userDto.fullName : form.fullName;
+        merchant.phone = userDto != null && userDto.phone != null ? userDto.phone : form.phone;
+        merchant.email = userDto != null && userDto.email != null ? userDto.email : form.email;
+        merchant.dob = userDto != null && userDto.dob != null ? userDto.dob : form.dob;
+        merchant.gender = userDto != null && userDto.gender != null ? userDto.gender : form.gender;
         merchant.businessType = userDto != null
                 ? BusinessTypeMccMapper.toMcc(userDto.businessType)
                 : form.businessType;
@@ -803,6 +794,7 @@ public class RegisterActivity extends BaseActivity {
 
         if (userDto != null) {
             merchant.backendId = userDto.merchantId != null ? userDto.merchantId : 0L;
+            merchant.ownerUserBackendId = userDto.id;
         }
 
         if (merchant.id > 0) {
@@ -816,7 +808,7 @@ public class RegisterActivity extends BaseActivity {
         return value == null ? "" : value.trim();
     }
 
-    private void cacheDerivedAccounts(UserDao userDao, RegistrationForm form, ApiService.UserDto ownerDto) {
+    private void cacheDerivedAccounts(PosAccountDao posAccountDao, RegistrationForm form, ApiService.PosAccountDto ownerDto) {
         if (form.accountCount <= 0) {
             return;
         }
@@ -828,31 +820,21 @@ public class RegisterActivity extends BaseActivity {
             String accountPhone = buildAccountPhoneIdentifier(basePhone, accountIndex);
             String accountUsernameHash = com.example.mysoftpos.utils.security.PasswordUtils.hashSHA256(accountPhone);
 
-            UserEntity accountUser = userDao.findByUsernameHash(accountUsernameHash);
+            PosAccountEntity accountUser = posAccountDao.findByUsernameHash(accountUsernameHash);
             if (accountUser == null) {
-                accountUser = userDao.findByPhone(accountPhone);
+                accountUser = posAccountDao.findByUsername(accountPhone);
             }
 
             if (accountUser == null) {
-                accountUser = new UserEntity(
+                accountUser = new PosAccountEntity(
                         accountUsernameHash,
-                        sharedPasswordHash,
-                        form.fullName,
-                        REGISTERED_USER_ROLE,
-                        form.email,
-                        accountPhone,
-                        form.dob);
+                        REGISTERED_USER_ROLE);
             }
 
             accountUser.usernameHash = accountUsernameHash;
             accountUser.username = accountPhone;
             accountUser.passwordHash = sharedPasswordHash;
-            accountUser.displayName = form.fullName;
             accountUser.role = REGISTERED_USER_ROLE;
-            accountUser.email = form.email;
-            accountUser.phone = accountPhone;
-            accountUser.dob = form.dob;
-            accountUser.gender = form.gender;
             accountUser.merchantBackendId = ownerDto != null && ownerDto.merchantId != null ? ownerDto.merchantId : 0L;
             accountUser.branchBackendId = ownerDto != null && ownerDto.branchId != null ? ownerDto.branchId : 0L;
             accountUser.phoneVerified = ownerDto == null || ownerDto.phoneVerified == null || ownerDto.phoneVerified;
@@ -865,9 +847,9 @@ public class RegisterActivity extends BaseActivity {
             }
 
             if (accountUser.id > 0) {
-                userDao.update(accountUser);
+                posAccountDao.update(accountUser);
             } else {
-                userDao.insert(accountUser);
+                posAccountDao.insert(accountUser);
             }
         }
     }
