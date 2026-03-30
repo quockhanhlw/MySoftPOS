@@ -133,7 +133,7 @@
     <string name="register_invalid_dob">Please enter a valid date of birth and ensure you are at least 18 years old</string>
 
     <!-- Login Extras -->
-    <string name="login_email_label">Username (phone+i)</string>
+    <string name="login_email_label">Username</string>
     <string name="login_no_account">Don\'t have an account?</string>
     <string name="login_sign_up">Sign Up</string>
 

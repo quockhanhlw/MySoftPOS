@@ -747,7 +747,9 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
                         safe(merchant.storeAddress),
                         merchant.id,
                         isCreate ? null : user.branchId,
-                        tid);
+                        tid,
+                        etServerIp.getText().toString(),
+                        parseServerPort(etServerPort));
 
                 setDialogButtonsEnabled(dialog, false);
                 if (isCreate) {

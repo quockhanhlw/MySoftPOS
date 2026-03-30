@@ -95,7 +95,7 @@ public interface ApiService {
                         @Path("code") String code);
 
         @GET("/api/transactions/pos-accounts/{id}")
-        Call<List<TransactionSummaryDto>> getByUser(@Header("Authorization") String token,
+        Call<List<TransactionSummaryDto>> getByPosAccount(@Header("Authorization") String token,
                         @Path("id") long id);
 
         // ==================== Test Suites (Admin) ====================
@@ -247,27 +247,29 @@ public interface ApiService {
                 public Long merchantId;
                 public Long branchId;
                 public String terminalId;
+                public String serverIp;
+                public Integer serverPort;
 
                 public CreatePosAccountRequest(String password, String fullName, String phone, String email,
-                                String terminalId) {
+                                String terminalId, String serverIp, Integer serverPort) {
                         this(password, fullName, phone, email,
                                         null, null, null, null, null, null,
-                                        null, terminalId);
+                                        null, terminalId, serverIp, serverPort);
                 }
 
                 public CreatePosAccountRequest(String password, String fullName, String phone, String email,
                                 String dob, String gender, String storeName, String businessType,
                                 String storeAddress, Long merchantId,
-                                String terminalId) {
+                                String terminalId, String serverIp, Integer serverPort) {
                         this(password, fullName, phone, email,
                                 dob, gender, storeName, businessType, storeAddress, merchantId,
-                                null, terminalId);
+                                null, terminalId, serverIp, serverPort);
                 }
 
                 public CreatePosAccountRequest(String password, String fullName, String phone, String email,
                                 String dob, String gender, String storeName, String businessType,
                                 String storeAddress, Long merchantId, Long branchId,
-                                String terminalId) {
+                                String terminalId, String serverIp, Integer serverPort) {
                         this.password = password;
                         this.fullName = fullName;
                         this.phone = phone;
@@ -280,6 +282,8 @@ public interface ApiService {
                         this.merchantId = merchantId;
                         this.branchId = branchId;
                         this.terminalId = terminalId;
+                        this.serverIp = serverIp;
+                        this.serverPort = serverPort;
                 }
         }
 
@@ -354,7 +358,6 @@ public interface ApiService {
                 public Boolean phoneVerified;
                 public String terminalId;
                 public boolean active;
-                public boolean online;
         }
 
         class MerchantDto {
@@ -435,6 +438,7 @@ public interface ApiService {
                 public String deviceId;
                 public String txnTimestamp;
                 public String syncedAt;
+                public Long posAccountId;
                 public Long userId;
                 public String username;
                 public String requestHex;
