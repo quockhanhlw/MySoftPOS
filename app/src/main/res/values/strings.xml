@@ -840,6 +840,8 @@
     <string name="txn_mgmt_label_other">Other</string>
     <string name="txn_mgmt_toast_load_users_failed">Failed to load users</string>
     <string name="txn_mgmt_toast_load_txn_failed">Failed to load transactions</string>
+    <string name="txn_mgmt_filters_title">Filters</string>
+    <string name="txn_mgmt_filter_label_user">User</string>
     <string name="txn_mgmt_filter_all_users">All users</string>
     <string name="txn_mgmt_filter_label_store">Store</string>
     <string name="txn_mgmt_filter_all_stores">All stores</string>

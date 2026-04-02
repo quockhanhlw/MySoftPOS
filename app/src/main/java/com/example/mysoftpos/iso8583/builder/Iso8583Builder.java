@@ -55,7 +55,8 @@ public class Iso8583Builder {
         m.setField(IsoField.LOCAL_TIME_12, ctx.localTime12);
         m.setField(IsoField.LOCAL_DATE_13, ctx.localDate13);
         m.setField(IsoField.MERCHANT_TYPE_18, ctx.mcc18);
-        m.setField(IsoField.COUNTRY_CODE_19, ctx.country19);
+        String effectiveCountry = deriveCountryCode(ctx.country19, ctx.currency49);
+        m.setField(IsoField.COUNTRY_CODE_19, effectiveCountry);
 
         // DE 22: POS Entry Mode
         String de22 = card.getPosEntryMode();
@@ -90,7 +91,8 @@ public class Iso8583Builder {
         m.setField(IsoField.RRN_37, ctx.rrn37);
         m.setField(IsoField.TERMINAL_ID_41, formatTerminalId(ctx.terminalId41));
         m.setField(IsoField.MERCHANT_ID_42, formatMerchantId(ctx.merchantId42));
-        m.setField(IsoField.MERCHANT_NAME_LOCATION_43, ctx.merchantNameLocation43);
+        m.setField(IsoField.MERCHANT_NAME_LOCATION_43,
+                alignDe43Country(ctx.merchantNameLocation43, effectiveCountry));
         m.setField(IsoField.CURRENCY_CODE_49, ctx.currency49);
 
         // PIN Block
@@ -152,13 +154,15 @@ public class Iso8583Builder {
         }
 
         m.setField(IsoField.MERCHANT_TYPE_18, ctx.mcc18);
-        m.setField(IsoField.COUNTRY_CODE_19, ctx.country19);
+        String effectiveCountry = deriveCountryCode(ctx.country19, ctx.currency49);
+        m.setField(IsoField.COUNTRY_CODE_19, effectiveCountry);
         m.setField(IsoField.POS_CONDITION_CODE_25, ctx.posCondition25);
         m.setField(IsoField.ACQUIRER_ID_32, ctx.acquirerId32);
         m.setField(IsoField.RRN_37, ctx.rrn37);
         m.setField(IsoField.TERMINAL_ID_41, formatTerminalId(ctx.terminalId41));
         m.setField(IsoField.MERCHANT_ID_42, formatMerchantId(ctx.merchantId42));
-        m.setField(IsoField.MERCHANT_NAME_LOCATION_43, ctx.merchantNameLocation43);
+        m.setField(IsoField.MERCHANT_NAME_LOCATION_43,
+                alignDe43Country(ctx.merchantNameLocation43, effectiveCountry));
         m.setField(IsoField.CURRENCY_CODE_49, ctx.currency49);
 
         if (ctx.encryptPin && ctx.pinBlock52 != null) {
@@ -361,5 +365,27 @@ public class Iso8583Builder {
         if (mid.length() > 15)
             return mid.substring(0, 15);
         return String.format("%-15s", mid);
+    }
+
+    private static String alignDe43Country(String de43, String country19) {
+        if (de43 == null || de43.isEmpty()) {
+            return de43;
+        }
+        String country = country19 != null ? country19.trim() : "";
+        if (!country.matches("^[A-Za-z0-9]{3}$")) {
+            country = "704";
+        }
+        if (de43.length() < 3) {
+            return de43;
+        }
+        return de43.substring(0, de43.length() - 3) + country;
+    }
+
+    private static String deriveCountryCode(String country19, String currency49) {
+        String country = country19 != null ? country19.trim() : "";
+        if (country.matches("^[A-Za-z0-9]{3}$")) {
+            return country;
+        }
+        return "704";
     }
 }

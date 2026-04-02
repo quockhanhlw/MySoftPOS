@@ -136,6 +136,8 @@ public class BatchRunnerActivity extends BaseActivity {
                     String expiry = scenario.getField(14);
                     String track2 = scenario.getField(35);
                     String amount = scenario.getField(4);
+                    String currencyCode = scenario.getField(49);
+                    String countryCode = scenario.getField(19);
                     String pinBlock = null;
                     if ("PIN_BLOCK_PRESENT".equals(scenario.getField(52))) {
                         pinBlock = scenario.getUserPin() != null ? scenario.getUserPin() : "123456";
@@ -144,7 +146,7 @@ public class BatchRunnerActivity extends BaseActivity {
                     }
 
                     contexts[i] = TransactionExecutor.buildContext(
-                            getApplication(), txnTypes[i], amount, null, null);
+                            getApplication(), txnTypes[i], amount, currencyCode, countryCode);
                     contexts[i].merchantId42 = ADMIN_TEST_SUITE_MID;
                     applySchemeConnection(contexts[i], scheme);
 

@@ -94,7 +94,10 @@ public class MultiThreadRunnerActivity extends BaseActivity {
                 try {
                     TransactionExecutor.LogCallback noop = msg -> {};
                     String amount = scenario.getField(4);
-                    contexts[i] = TransactionExecutor.buildContext(getApplicationContext(), types[i], amount, null, null);
+                    String currencyCode = scenario.getField(49);
+                    String countryCode = scenario.getField(19);
+                    contexts[i] = TransactionExecutor.buildContext(getApplicationContext(), types[i], amount,
+                            currencyCode, countryCode);
                     contexts[i].merchantId42 = ADMIN_TEST_SUITE_MID;
 
                     if (schemeName != null && !schemeName.isEmpty()) {

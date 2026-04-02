@@ -838,6 +838,8 @@
     <string name="txn_mgmt_label_other">Khác</string>
     <string name="txn_mgmt_toast_load_users_failed">Tải danh sách người dùng thất bại</string>
     <string name="txn_mgmt_toast_load_txn_failed">Tải giao dịch thất bại</string>
+    <string name="txn_mgmt_filters_title">Bộ lọc</string>
+    <string name="txn_mgmt_filter_label_user">Người dùng</string>
     <string name="txn_mgmt_filter_all_users">Tất cả người dùng</string>
     <string name="txn_mgmt_filter_label_store">Cửa hàng</string>
     <string name="txn_mgmt_filter_all_stores">Tất cả cửa hàng</string>

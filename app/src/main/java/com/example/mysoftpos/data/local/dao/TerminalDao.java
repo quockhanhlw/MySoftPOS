@@ -24,6 +24,9 @@ public interface TerminalDao {
     @Query("SELECT * FROM terminals WHERE backend_id = :backendId LIMIT 1")
     TerminalEntity getByBackendId(long backendId);
 
+    @Query("SELECT * FROM terminals WHERE pos_account_backend_id = :posAccountBackendId LIMIT 1")
+    TerminalEntity getByPosAccountBackendId(long posAccountBackendId);
+
     @Query("SELECT * FROM terminals ORDER BY id")
     List<TerminalEntity> getAll();
 

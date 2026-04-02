@@ -433,10 +433,7 @@ public class LoginActivity extends BaseActivity {
                                 posAccountDao.update(user);
 
                                 String displayName = resolveLocalDisplayName(db.merchantDao(), user);
-                                config.resetServerConfig();
-                                if (user.terminalId != null && !user.terminalId.isEmpty()) {
-                                    config.setTerminalId(user.terminalId);
-                                }
+                                applyLocalConnectionConfig(config, db, user);
                                 config.setMcc18(resolveLocalBusinessType(db.merchantDao(), user));
 
                                 com.example.mysoftpos.utils.security.SessionManager.startSession();
@@ -744,7 +741,6 @@ public class LoginActivity extends BaseActivity {
     private void applyServerConfigFromUser(com.example.mysoftpos.data.remote.api.ApiService.PosAccountDto userDto) {
         com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
                 .getInstance(LoginActivity.this);
-        config.resetServerConfig();
         if (userDto == null) {
             return;
         }
@@ -756,6 +752,60 @@ public class LoginActivity extends BaseActivity {
         }
         if (userDto.terminalId != null && !userDto.terminalId.trim().isEmpty()) {
             config.setTerminalId(userDto.terminalId);
+        }
+    }
+
+    private void applyLocalConnectionConfig(com.example.mysoftpos.utils.config.ConfigManager config,
+                                            com.example.mysoftpos.data.local.AppDatabase db,
+                                            com.example.mysoftpos.data.local.entity.PosAccountEntity user) {
+        if (config == null || db == null || user == null) {
+            return;
+        }
+
+        if (user.terminalId != null && !user.terminalId.trim().isEmpty()) {
+            config.setTerminalId(user.terminalId.trim());
+        }
+
+        try {
+            com.example.mysoftpos.data.local.dao.TerminalDao terminalDao = db.terminalDao();
+            com.example.mysoftpos.data.local.entity.TerminalEntity terminal = null;
+            if (user.backendId > 0) {
+                terminal = terminalDao.getByPosAccountBackendId(user.backendId);
+            }
+            if (terminal == null && user.terminalId != null && !user.terminalId.trim().isEmpty()) {
+                terminal = terminalDao.getByCode(user.terminalId.trim());
+            }
+            if (terminal != null) {
+                if (terminal.terminalCode != null && !terminal.terminalCode.trim().isEmpty()) {
+                    config.setTerminalId(terminal.terminalCode.trim());
+                }
+                if (terminal.serverIp != null && !terminal.serverIp.trim().isEmpty()) {
+                    config.setServerIp(terminal.serverIp.trim());
+                }
+                if (terminal.serverPort > 0) {
+                    config.setServerPort(terminal.serverPort);
+                }
+            }
+        } catch (Exception e) {
+            android.util.Log.w("LoginActivity", "Local terminal config restore failed: " + e.getMessage());
+        }
+
+        try {
+            com.example.mysoftpos.data.local.dao.MerchantDao merchantDao = db.merchantDao();
+            com.example.mysoftpos.data.local.entity.MerchantEntity merchant = null;
+            if (user.merchantBackendId > 0) {
+                merchant = merchantDao.getByBackendId(user.merchantBackendId);
+            }
+            if (merchant != null) {
+                if (merchant.merchantCode != null && merchant.merchantCode.matches("^[A-Z0-9]{15}$")) {
+                    config.setMerchantId(merchant.merchantCode);
+                }
+                if (merchant.bankName != null && !merchant.bankName.trim().isEmpty()) {
+                    config.setBankName(merchant.bankName);
+                }
+            }
+        } catch (Exception e) {
+            android.util.Log.w("LoginActivity", "Local merchant config restore failed: " + e.getMessage());
         }
     }
 

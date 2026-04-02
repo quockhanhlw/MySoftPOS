@@ -9,7 +9,8 @@
     app:cardElevation="0dp"
     app:strokeColor="#E2E8F0"
     app:strokeWidth="1dp"
-    app:cardBackgroundColor="@color/background_primary">
+    app:cardBackgroundColor="@color/background_primary"
+    android:foreground="?attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -17,22 +18,12 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Row 1: Icon, User, Amount -->
+        <!-- Row 1: User + Amount + Status -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
-
-            <!-- Transaction Icon -->
-            <ImageView
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_baseline_credit_card_24"
-                app:tint="@color/text_muted"
-                android:layout_marginEnd="12dp"
-                android:background="@drawable/bg_spinner_outlined"
-                android:padding="6dp"/>
 
             <!-- Username & Trace -->
             <LinearLayout
@@ -58,7 +49,7 @@
                     android:textSize="12sp"
                     android:fontFamily="sans-serif"
                     android:textColor="@color/text_muted"
-                    android:layout_marginTop="2dp" />
+                    android:layout_marginTop="3dp" />
             </LinearLayout>
 
             <!-- Amount & Status -->
@@ -73,7 +64,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/common_zero"
-                    android:textSize="16sp"
+                    android:textSize="17sp"
                     android:fontFamily="sans-serif-bold"
                     android:textColor="@color/text_primary" />
                 
@@ -82,12 +73,12 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/status_approved"
-                    android:textSize="10sp"
+                    android:textSize="11sp"
                     android:fontFamily="sans-serif-medium"
                     android:textColor="@android:color/white"
                     android:background="@drawable/bg_status_approved"
-                    android:paddingHorizontal="6dp"
-                    android:paddingVertical="2dp"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="3dp"
                     android:layout_marginTop="4dp"
                     android:textAllCaps="true" />
             </LinearLayout>
@@ -100,7 +91,7 @@
             android:background="#F1F5F9"
             android:layout_marginVertical="12dp" />
 
-        <!-- Row 2: Card Info, Terminal, Time -->
+        <!-- Row 2: Card + Time -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -135,7 +126,7 @@
                 android:textColor="@color/text_muted" />
         </LinearLayout>
 
-        <!-- Row 3: Terminal Info -->
+        <!-- Row 3: Terminal -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -156,6 +147,32 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/txn_detail_placeholder_dash"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif"
+                android:textColor="@color/text_secondary" />
+        </LinearLayout>
+
+        <!-- Row 4: Store -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="4dp">
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_baseline_store_24"
+                app:tint="@color/text_secondary"
+                android:layout_marginEnd="6dp" />
+
+            <TextView
+                android:id="@+id/tvStore"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/txn_mgmt_filter_unknown_store"
                 android:textSize="12sp"
                 android:fontFamily="sans-serif"
                 android:textColor="@color/text_secondary" />

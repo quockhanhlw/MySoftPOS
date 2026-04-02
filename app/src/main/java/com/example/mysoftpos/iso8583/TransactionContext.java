@@ -121,9 +121,9 @@ public class TransactionContext {
      * VND (704): Input amount is whole number, append "00" suffix for minor units.
      * Example: "1234" -> "123400" -> "000000123400"
      * 
-     * USD (840): Input amount already includes cents (last 2 digits are cents).
-     * Example: "345678" -> "000000345678" (means $3,456.78)
-     * 
+     * USD (840): Input amount is treated as already in DE4 unit in this project.
+     * Example: "1234" -> "000000001234"
+     *
      * @param amount       Raw amount string
      * @param currencyCode "704" for VND, "840" for USD
      */
@@ -134,11 +134,9 @@ public class TransactionContext {
             long val = Long.parseLong(amount.replace(".", "").replace(",", ""));
 
             if ("704".equals(currencyCode)) {
-                // VND: Append "00" (multiply by 100) - VND has no minor units
+                // VND: append "00" (legacy project convention)
                 val = val * 100;
             }
-            // USD (840): Input already includes cents, no multiplication needed
-            // Example: 345678 means $3,456.78
 
             return String.format(Locale.US, "%012d", val);
         } catch (NumberFormatException e) {

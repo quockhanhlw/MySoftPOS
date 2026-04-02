@@ -277,6 +277,10 @@ public class ConfigManager {
         return formatDe43(getBankName(), location, countryCode);
     }
 
+    public String getMerchantNameForCurrency(String currencyCode) {
+        return formatDe43(getBankName(), location, getCountryCodeForCurrency(currencyCode));
+    }
+
     public String getMerchantNameForCountry(String countryOverride) {
         String normalizedCountry = sanitizeCountryCode(countryOverride);
         return formatDe43(getBankName(), location, normalizedCountry);
@@ -353,6 +357,33 @@ public class ConfigManager {
 
     public String getUsdCountrySuffix() {
         return usdCountry;
+    }
+
+    public String getCountryCodeForCurrency(String currencyCode) {
+        String normalized = normalizeIsoNumericCode(currencyCode);
+        if (normalized.equals(getUsdCurrencyCode())) {
+            String usdCountryCode = sanitizeCountryCode(getUsdCountrySuffix());
+            return usdCountryCode.matches("^\\d{3}$") ? usdCountryCode : getUsdCurrencyCode();
+        }
+        String configuredCountryCode = sanitizeCountryCode(countryCode);
+        return configuredCountryCode.matches("^\\d{3}$") ? configuredCountryCode : normalized;
+    }
+
+    public String normalizeIsoNumericCode(String code) {
+        if (code == null) {
+            return getCurrencyCode49();
+        }
+        String normalized = code.trim().toUpperCase(Locale.ROOT);
+        if ("USD".equals(normalized)) {
+            return getUsdCurrencyCode();
+        }
+        if ("VND".equals(normalized)) {
+            return getCurrencyCode49();
+        }
+        if (normalized.matches("^\\d{3}$")) {
+            return normalized;
+        }
+        return getCurrencyCode49();
     }
 
     // Removed ADMIN methods

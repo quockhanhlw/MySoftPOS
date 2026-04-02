@@ -13,6 +13,9 @@ import com.example.mysoftpos.utils.PanUtils;
 import com.example.mysoftpos.utils.config.ConfigManager;
 import com.example.mysoftpos.utils.logging.FileLogger;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Centralized transaction execution: build ISO → pack → send → receive → unpack
  * → result.
@@ -53,8 +56,10 @@ public class TransactionExecutor {
         ctx.rrn37 = TransactionContext.calculateRrn(config.getServerId(), ctx.stan11);
 
         // Usage defaults if not provided (VND/704)
-        String safeCurrency = (currencyCode != null && !currencyCode.isEmpty()) ? currencyCode : "704";
-        String safeCountry = (countryCode != null && !countryCode.isEmpty()) ? countryCode : "704";
+        String safeCurrency = config.normalizeIsoNumericCode(currencyCode);
+        String safeCountry = (countryCode != null && !countryCode.isEmpty())
+                ? config.normalizeIsoNumericCode(countryCode)
+                : "704";
 
         if ("BALANCE".equals(txnType)) {
             ctx.processingCode3 = "300000";
@@ -173,24 +178,8 @@ public class TransactionExecutor {
         }
 
         // 1.5 Apply custom field overrides
-        if (fieldConfigJson != null && !fieldConfigJson.isEmpty()) {
-            try {
-                org.json.JSONObject json = new org.json.JSONObject(fieldConfigJson);
-                java.util.Iterator<String> keys = json.keys();
-                while (keys.hasNext()) {
-                    String key = keys.next();
-                    int fieldNum = Integer.parseInt(key);
-                    msg.setField(fieldNum, json.getString(key));
-                }
-                if (logger != null) {
-                    logger.log("Applied " + json.length() + " custom field override(s)");
-                }
-            } catch (Exception e) {
-                if (logger != null) {
-                    logger.log("Warning: Failed to apply custom fields: " + e.getMessage());
-                }
-            }
-        }
+        Set<Integer> overriddenFields = applyCustomFieldOverrides(msg, fieldConfigJson, logger);
+        reconcileCurrencyAndMerchantFields(appContext, ctx, msg, overriddenFields);
 
         if (logger != null && BuildConfig.DEBUG) {
             logger.log("Built " + msg.getMti() + " | STAN=" + ctx.stan11);
@@ -245,6 +234,69 @@ public class TransactionExecutor {
         int port = ctx != null ? ctx.port : 0;
         if (ip.isEmpty() || port <= 0) {
             throw new IllegalStateException("Server IP/Port is not configured");
+        }
+    }
+
+    private Set<Integer> applyCustomFieldOverrides(IsoMessage msg,
+                                                   String fieldConfigJson,
+                                                   LogCallback logger) {
+        Set<Integer> overridden = new HashSet<>();
+        if (fieldConfigJson == null || fieldConfigJson.isEmpty()) {
+            return overridden;
+        }
+        try {
+            org.json.JSONObject json = new org.json.JSONObject(fieldConfigJson);
+            java.util.Iterator<String> keys = json.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                int fieldNum = Integer.parseInt(key);
+                msg.setField(fieldNum, json.getString(key));
+                overridden.add(fieldNum);
+            }
+            if (logger != null) {
+                logger.log("Applied " + json.length() + " custom field override(s)");
+            }
+        } catch (Exception e) {
+            if (logger != null) {
+                logger.log("Warning: Failed to apply custom fields: " + e.getMessage());
+            }
+        }
+        return overridden;
+    }
+
+    private void reconcileCurrencyAndMerchantFields(Context appContext,
+                                                    TransactionContext ctx,
+                                                    IsoMessage msg,
+                                                    Set<Integer> overriddenFields) {
+        ConfigManager config = ConfigManager.getInstance(appContext);
+        String effectiveCurrency = msg.hasField(49) ? msg.getField(49) : ctx.currency49;
+        effectiveCurrency = config.normalizeIsoNumericCode(effectiveCurrency);
+        if (effectiveCurrency != null && !effectiveCurrency.isEmpty()) {
+            msg.setField(49, effectiveCurrency);
+            ctx.currency49 = effectiveCurrency;
+        }
+
+        String country = msg.hasField(19) ? msg.getField(19) : ctx.country19;
+        if (country == null || !country.trim().matches("^[A-Za-z0-9]{3}$")) {
+            country = "704";
+        } else {
+            country = country.trim();
+        }
+
+        if (overriddenFields == null || !overriddenFields.contains(19)) {
+            msg.setField(19, country);
+            ctx.country19 = country;
+        }
+
+        String current43 = msg.hasField(43) ? msg.getField(43) : null;
+        if (current43 != null && current43.length() >= 3) {
+            String updated43 = current43.substring(0, current43.length() - 3) + country;
+            msg.setField(43, updated43);
+            ctx.merchantNameLocation43 = updated43;
+        } else {
+            String fallback43 = config.getMerchantNameForCountry(country);
+            msg.setField(43, fallback43);
+            ctx.merchantNameLocation43 = fallback43;
         }
     }
 }

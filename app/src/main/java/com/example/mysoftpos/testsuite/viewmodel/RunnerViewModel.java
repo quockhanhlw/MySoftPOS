@@ -16,6 +16,7 @@ import com.example.mysoftpos.iso8583.builder.Iso8583Builder;
 import com.example.mysoftpos.iso8583.message.IsoMessage;
 import com.example.mysoftpos.iso8583.util.StandardIsoPacker;
 import com.example.mysoftpos.utils.PanUtils;
+import com.example.mysoftpos.utils.config.ConfigManager;
 import com.example.mysoftpos.utils.logging.ResponseCodeHelper;
 import com.example.mysoftpos.testsuite.model.Scheme;
 import com.example.mysoftpos.testsuite.storage.SchemeRepository;
@@ -76,6 +77,7 @@ public class RunnerViewModel extends AndroidViewModel {
 
                 // Apply custom field overrides
                 applyCustomFieldOverrides(msg, fieldConfigJson);
+                reconcileCurrencyAndDe43(msg);
 
                 sb.append(app.getString(R.string.runner_preview_header)).append("\n");
                 sb.append(app.getString(R.string.runner_preview_server_format, ctx.ip, ctx.port)).append("\n");
@@ -182,6 +184,33 @@ public class RunnerViewModel extends AndroidViewModel {
         } catch (Exception e) {
             Log.w("RunnerVM", "Failed to sanitize custom fields: " + e.getMessage());
             return null;
+        }
+    }
+
+    private void reconcileCurrencyAndDe43(IsoMessage msg) {
+        try {
+            ConfigManager config = ConfigManager.getInstance(getApplication());
+            String effectiveCurrency = msg.hasField(49) ? msg.getField(49) : null;
+            effectiveCurrency = config.normalizeIsoNumericCode(effectiveCurrency);
+            if (effectiveCurrency == null || effectiveCurrency.isEmpty()) {
+                effectiveCurrency = "704";
+            }
+            msg.setField(49, effectiveCurrency);
+
+            String country = msg.hasField(19) ? msg.getField(19) : "704";
+            if (country == null || !country.trim().matches("^[A-Za-z0-9]{3}$")) {
+                country = "704";
+            } else {
+                country = country.trim();
+            }
+            msg.setField(19, country);
+
+            String de43 = msg.hasField(43) ? msg.getField(43) : null;
+            if (de43 != null && de43.length() >= 3) {
+                msg.setField(43, de43.substring(0, de43.length() - 3) + country);
+            }
+        } catch (Exception e) {
+            Log.w("RunnerVM", "Failed to reconcile DE19/DE43 by currency: " + e.getMessage());
         }
     }
 

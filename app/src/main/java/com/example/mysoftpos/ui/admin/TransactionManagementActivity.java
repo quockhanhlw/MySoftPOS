@@ -28,6 +28,8 @@ import com.example.mysoftpos.data.remote.api.ApiClient;
 import com.example.mysoftpos.data.remote.api.ApiService;
 import com.example.mysoftpos.ui.BaseActivity;
 import com.example.mysoftpos.utils.IntentKeys;
+import com.example.mysoftpos.utils.format.AmountFormatUtils;
+import com.example.mysoftpos.utils.format.DateTimeFormatUtils;
 import com.example.mysoftpos.utils.security.PasswordUtils;
 
 import java.time.LocalDateTime;
@@ -253,6 +255,7 @@ public class TransactionManagementActivity extends BaseActivity {
                                 } else if (displayTxn.username == null || displayTxn.username.trim().isEmpty()) {
                                     displayTxn.username = getString(R.string.txn_detail_unknown);
                                 }
+                                displayTxn.ownerUsername = getTxnStoreName(txn);
                                 userTransactions.add(displayTxn);
                             }
                             backendTransactionsAvailable = true;
@@ -822,7 +825,7 @@ public class TransactionManagementActivity extends BaseActivity {
         }
 
         static class VH extends RecyclerView.ViewHolder {
-            final TextView tvTrace, tvAmount, tvStatus, tvCardInfo, tvTerminal, tvTime, tvUsername;
+            final TextView tvTrace, tvAmount, tvStatus, tvCardInfo, tvTerminal, tvTime, tvUsername, tvStore;
 
             VH(View v) {
                 super(v);
@@ -833,20 +836,26 @@ public class TransactionManagementActivity extends BaseActivity {
                 tvTerminal = v.findViewById(R.id.tvTerminal);
                 tvTime = v.findViewById(R.id.tvTime);
                 tvUsername = v.findViewById(R.id.tvUsername);
+                tvStore = v.findViewById(R.id.tvStore);
             }
 
             void bind(ApiService.TransactionSummaryDto txn) {
                 String trace = txn.traceNumber != null ? txn.traceNumber :
                         itemView.getContext().getString(R.string.txn_mgmt_placeholder_dash);
                 tvTrace.setText(itemView.getContext().getString(R.string.txn_mgmt_trace_format, trace));
-                tvAmount.setText(txn.amount != null ? txn.amount : itemView.getContext().getString(R.string.txn_mgmt_placeholder_dash));
+                tvAmount.setText(formatAmountDisplay(txn.amount, txn.currencyCode));
                 tvCardInfo.setText((txn.maskedPan != null ? txn.maskedPan : "") +
                         (txn.cardScheme != null ? " (" + txn.cardScheme + ")" : ""));
                 tvTerminal.setText(txn.terminalCode != null ? txn.terminalCode : itemView.getContext().getString(R.string.txn_mgmt_placeholder_dash));
-                tvTime.setText(txn.txnTimestamp != null ? txn.txnTimestamp : itemView.getContext().getString(R.string.txn_mgmt_placeholder_dash));
+                tvTime.setText(formatTimestamp(txn.txnTimestamp));
 
                 if (tvUsername != null) {
                     tvUsername.setText(txn.username != null ? txn.username : itemView.getContext().getString(R.string.txn_detail_unknown));
+                }
+                if (tvStore != null) {
+                    tvStore.setText(txn.ownerUsername != null && !txn.ownerUsername.trim().isEmpty()
+                            ? txn.ownerUsername
+                            : itemView.getContext().getString(R.string.txn_mgmt_filter_unknown_store));
                 }
 
                 // Status pill with localized text while keeping backend code matching.
@@ -876,6 +885,24 @@ public class TransactionManagementActivity extends BaseActivity {
                     tvStatus.setBackgroundResource(R.drawable.bg_status_other);
                     tvStatus.setTextColor(0xFFFFFFFF);
                 }
+            }
+
+            private String formatTimestamp(String raw) {
+                if (raw == null || raw.trim().isEmpty()) {
+                    return itemView.getContext().getString(R.string.txn_mgmt_placeholder_dash);
+                }
+                String out = DateTimeFormatUtils.formatBackendTimestamp(raw);
+                return (out == null || out.trim().isEmpty())
+                        ? itemView.getContext().getString(R.string.txn_mgmt_placeholder_dash)
+                        : out;
+            }
+
+            private String formatAmountDisplay(String rawAmount, String currencyCode) {
+                String out = AmountFormatUtils.formatAmountDisplay(rawAmount, currencyCode);
+                if ("-".equals(out)) {
+                    return itemView.getContext().getString(R.string.txn_mgmt_placeholder_dash);
+                }
+                return out;
             }
         }
     }

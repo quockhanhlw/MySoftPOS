@@ -6,13 +6,11 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
-import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.graphics.Color;
 
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
@@ -22,12 +20,11 @@ import com.example.mysoftpos.data.local.entity.TransactionWithDetails;
 import com.example.mysoftpos.ui.base.GlobalViewModelFactory;
 import com.example.mysoftpos.di.ServiceLocator;
 import com.example.mysoftpos.viewmodel.TransactionDetailViewModel;
-import com.example.mysoftpos.viewmodel.TransactionState;
 import com.example.mysoftpos.ui.BaseActivity;
+import com.example.mysoftpos.utils.IntentKeys;
+import com.example.mysoftpos.utils.format.AmountFormatUtils;
+import com.example.mysoftpos.utils.format.DateTimeFormatUtils;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 
 public class TransactionDetailActivity extends BaseActivity {
 
@@ -207,13 +204,12 @@ public class TransactionDetailActivity extends BaseActivity {
                 /* ignore */ }
 
             intent.putExtra(com.example.mysoftpos.utils.IntentKeys.AMOUNT, realAmount);
+            intent.putExtra(IntentKeys.CURRENCY_CODE, currencyCode);
             intent.putExtra(com.example.mysoftpos.utils.IntentKeys.TXN_ID, cachedTxnDetails.transaction.traceNumber);
 
             // Date
-            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm:ss dd/MM/yyyy",
-                    java.util.Locale.getDefault());
             intent.putExtra(com.example.mysoftpos.utils.IntentKeys.TXN_DATE,
-                    sdf.format(new java.util.Date(cachedTxnDetails.transaction.timestamp)));
+                    DateTimeFormatUtils.formatEpochMillis(cachedTxnDetails.transaction.timestamp));
             intent.putExtra(com.example.mysoftpos.utils.IntentKeys.SUCCESS, true);
 
             // Card
@@ -232,15 +228,9 @@ public class TransactionDetailActivity extends BaseActivity {
         TransactionEntity txn = txnDetails.transaction;
 
         // Amount: for Balance Inquiry, prefer DE54 balance over stored amount (often 0)
-        try {
-            long amt = Long.parseLong(resolveDisplayAmount(txn));
-            java.text.DecimalFormatSymbols symbols = new java.text.DecimalFormatSymbols(Locale.getDefault());
-            symbols.setGroupingSeparator(',');
-            java.text.DecimalFormat bucket = new java.text.DecimalFormat("#,###", symbols);
-            tvAmount.setText(bucket.format(amt));
-        } catch (Exception e) {
-            tvAmount.setText(resolveDisplayAmount(txn));
-        }
+        String displayAmount = resolveDisplayAmount(txn);
+        String displayCurrencyCode = resolveCurrencyCode(txn);
+        tvAmount.setText(AmountFormatUtils.formatAmountDisplay(displayAmount, displayCurrencyCode));
 
         // Status
         tvStatus.setText(txn.status);
@@ -272,8 +262,7 @@ public class TransactionDetailActivity extends BaseActivity {
         }
 
         // Details
-        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss dd/MM/yyyy", Locale.getDefault());
-        valDate.setText(sdf.format(new Date(txn.timestamp)));
+        valDate.setText(DateTimeFormatUtils.formatEpochMillis(txn.timestamp));
 
         // Card Details from Relation
         if (txnDetails.card != null) {
@@ -400,6 +389,26 @@ public class TransactionDetailActivity extends BaseActivity {
         } catch (Exception ignored) {
         }
         return txn.amount != null ? txn.amount : "0";
+    }
+
+    private String resolveCurrencyCode(TransactionEntity txn) {
+        if (txn != null && txn.currencyCode != null && !txn.currencyCode.trim().isEmpty()) {
+            return txn.currencyCode.trim();
+        }
+        try {
+            if (txn != null && txn.requestHex != null && !txn.requestHex.trim().isEmpty()) {
+                com.example.mysoftpos.iso8583.message.IsoMessage req = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                        .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker.hexToBytes(txn.requestHex));
+                if (req.hasField(49)) {
+                    String de49 = req.getField(49);
+                    if (de49 != null && !de49.trim().isEmpty()) {
+                        return de49.trim();
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return "704";
     }
 
     private void showVoidConfirmation() {

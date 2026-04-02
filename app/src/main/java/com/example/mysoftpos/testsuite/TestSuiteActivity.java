@@ -1666,7 +1666,7 @@ public class TestSuiteActivity extends BaseActivity {
 
             if (rbUsd.isChecked()) {
                 scenario.setField(49, "840");
-                scenario.setField(19, "840");
+                scenario.setField(19, "704");
             } else {
                 scenario.setField(49, "704");
                 scenario.setField(19, "704");

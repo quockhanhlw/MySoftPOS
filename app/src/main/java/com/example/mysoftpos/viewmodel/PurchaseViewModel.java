@@ -81,25 +81,19 @@ public class PurchaseViewModel extends BaseViewModel {
                 ctx.mcc18 = configManager.getMcc18();
                 ctx.posCondition25 = configManager.getPosConditionCode();
                 ctx.acquirerId32 = configManager.getAcquirerId32();
-                ctx.currency49 = currencyCode != null ? currencyCode : configManager.getCurrencyCode49();
+                ctx.currency49 = configManager.normalizeIsoNumericCode(currencyCode);
                 ctx.terminalId41 = configManager.getTerminalId();
                 ctx.merchantId42 = configManager.getMerchantId();
-
-                // DE 43 customization for USD
-                String usdCode = configManager.getUsdCurrencyCode();
-                if (usdCode.equals(ctx.currency49)) {
-                    String suffix = configManager.getUsdCountrySuffix();
-                    ctx.merchantNameLocation43 = configManager.getMerchantNameForCountry(suffix);
-                } else {
-                    ctx.merchantNameLocation43 = configManager.getMerchantName();
-                }
+                // Country/location for DE19/DE43 follows terminal country (VN=704),
+                // while DE49 can still be USD(840) for foreign-currency amount.
+                ctx.country19 = "704";
+                ctx.merchantNameLocation43 = configManager.getMerchantNameForCountry("704");
 
                 ctx.ip = configManager.getServerIp();
                 ctx.port = configManager.getServerPort();
 
                 // Populate card-related fields into ctx for reversal
                 ctx.posEntryMode22 = card.getPosEntryMode();
-                ctx.country19 = ctx.currency49; // VN uses same code for country and currency
                 if (card.getTrack2() != null && !card.getTrack2().isEmpty()) {
                     // Keep canonical '=' separator in Track 2. Do not replace with 'D'.
                     ctx.track2_35 = card.getTrack2();

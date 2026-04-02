@@ -23,6 +23,8 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
 import com.example.mysoftpos.ui.BaseActivity;
+import com.example.mysoftpos.utils.format.AmountFormatUtils;
+import com.example.mysoftpos.utils.format.DateTimeFormatUtils;
 
 public class TransactionResultActivity extends BaseActivity {
 
@@ -83,6 +85,7 @@ public class TransactionResultActivity extends BaseActivity {
         ResultType type = (ResultType) getIntent().getSerializableExtra(EXTRA_RESULT_TYPE);
         String amount = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.AMOUNT);
         String currency = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.CURRENCY);
+        String currencyCode = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.CURRENCY_CODE);
         String maskedPan = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.MASKED_PAN);
         String txnDate = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.TXN_DATE);
         String txnId = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.TXN_ID);
@@ -96,28 +99,19 @@ public class TransactionResultActivity extends BaseActivity {
 
         // Set Common Data
         tvTxnId.setText(txnId != null ? txnId : getString(R.string.txn_detail_placeholder_dash));
-        tvDate.setText(txnDate != null ? txnDate : getString(R.string.txn_detail_placeholder_dash));
+        String normalizedDate = DateTimeFormatUtils.normalizeDisplayTimestamp(txnDate);
+        tvDate.setText(normalizedDate != null ? normalizedDate : getString(R.string.txn_detail_placeholder_dash));
         tvCardNum.setText(maskedPan != null ? maskedPan : getString(R.string.txn_result_masked_pan_placeholder));
         tvType.setText(txnTypeStr != null ? txnTypeStr : getString(R.string.txn_result_type_default));
 
         // Format Amount
         if (amount != null && !"OVERFLOW".equals(amount)) {
-            try {
-                long val = Long.parseLong(amount);
-                java.text.NumberFormat nf;
-                if ("USD".equals(currency)) {
-                    nf = java.text.NumberFormat.getCurrencyInstance(java.util.Locale.US);
-                } else {
-                    // VND: no decimal places
-                    nf = java.text.NumberFormat.getCurrencyInstance(
-                            new java.util.Locale.Builder().setLanguage("vi").setRegion("VN").build());
-                    nf.setMaximumFractionDigits(0);
-                    nf.setMinimumFractionDigits(0);
-                }
-                tvAmount.setText(nf.format(val));
-            } catch (Exception e) {
-                tvAmount.setText(amount);
+            String resolvedCurrencyCode = currencyCode;
+            if (resolvedCurrencyCode == null || resolvedCurrencyCode.trim().isEmpty()) {
+                resolvedCurrencyCode = currency;
             }
+            String formattedAmount = AmountFormatUtils.formatAmountDisplay(amount, resolvedCurrencyCode);
+            tvAmount.setText(formattedAmount);
         } else if ("OVERFLOW".equals(amount)) {
             tvAmount.setText(R.string.txn_result_amount_overflow);
         } else {

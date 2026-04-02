@@ -239,7 +239,6 @@ public class LoginViewModel extends BaseViewModel {
 
     private void applyServerConfig(ApiService.PosAccountDto userDto) {
         ConfigManager config = ConfigManager.getInstance(getApplication());
-        config.resetServerConfig();
         if (userDto == null) {
             return;
         }
