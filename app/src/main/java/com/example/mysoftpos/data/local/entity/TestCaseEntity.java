@@ -10,6 +10,9 @@ public class TestCaseEntity {
     @PrimaryKey(autoGenerate = true)
     public long id;
 
+    @ColumnInfo(name = "backend_id")
+    public long backendId;
+
     @ColumnInfo(name = "suite_id")
     public long suiteId;
 
@@ -59,6 +62,9 @@ public class TestCaseEntity {
      */
     @ColumnInfo(name = "field_config_json")
     public String fieldConfigJson;
+
+    @ColumnInfo(name = "is_default")
+    public boolean isDefault;
 
     public TestCaseEntity() {
     }

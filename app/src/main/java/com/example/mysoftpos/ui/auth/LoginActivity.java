@@ -41,6 +41,7 @@ public class LoginActivity extends BaseActivity {
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
         loadingOverlay = findViewById(R.id.loadingOverlay);
+        com.example.mysoftpos.data.local.LocalDataBootstrapper.runIfNeeded(this);
 
         String prefillIdentifier = getIntent().getStringExtra(EXTRA_PREFILL_IDENTIFIER);
         if (prefillIdentifier != null && !prefillIdentifier.trim().isEmpty()) {
@@ -152,8 +153,8 @@ public class LoginActivity extends BaseActivity {
         }
 
         showLoading();
-        boolean networkAvailable = isNetworkAvailable();
-        loginViaLocalRoom(normalizedIdentifier, password, networkAvailable);
+        // Local-first: allow cached users to login instantly even when offline.
+        loginViaLocalRoom(normalizedIdentifier, password, true);
     }
 
     private boolean isNetworkAvailable() {
@@ -189,30 +190,36 @@ public class LoginActivity extends BaseActivity {
                                 retrofit2.Response<com.example.mysoftpos.data.remote.api.ApiService.LoginResponse> response) {
                             if (response.isSuccessful() && response.body() != null) {
                                 com.example.mysoftpos.data.remote.api.ApiService.LoginResponse resp = response.body();
+                                com.example.mysoftpos.data.remote.api.ApiService.PosAccountDto effectiveUser = resolveEffectiveUser(resp);
+                                if (effectiveUser == null) {
+                                    return;
+                                }
                                 com.example.mysoftpos.data.remote.api.ApiClient.saveUserSession(LoginActivity.this,
                                         resp);
+                                applyServerConfigFromUser(effectiveUser);
                                 com.example.mysoftpos.utils.config.ConfigManager
                                         .getInstance(LoginActivity.this)
-                                        .setMcc18(resp.user != null ? resp.user.businessType : null);
-                                if (resp.user != null && resp.user.bankName != null && !resp.user.bankName.trim().isEmpty()) {
+                                        .setMcc18(effectiveUser.businessType);
+                                if (effectiveUser.bankName != null && !effectiveUser.bankName.trim().isEmpty()) {
                                     com.example.mysoftpos.utils.config.ConfigManager
                                             .getInstance(LoginActivity.this)
-                                            .setBankName(resp.user.bankName);
+                                            .setBankName(effectiveUser.bankName);
                                 }
-                                if (resp.user != null && resp.user.merchantCode != null
-                                        && resp.user.merchantCode.matches("^[A-Z0-9]{15}$")) {
+                                if (effectiveUser.merchantCode != null
+                                        && effectiveUser.merchantCode.matches("^[A-Z0-9]{15}$")) {
                                     com.example.mysoftpos.utils.config.ConfigManager
                                             .getInstance(LoginActivity.this)
-                                            .setMerchantId(resp.user.merchantCode);
+                                            .setMerchantId(effectiveUser.merchantCode);
                                 }
+                                final com.example.mysoftpos.data.remote.api.ApiService.PosAccountDto cachedUser = effectiveUser;
                                 com.example.mysoftpos.di.ServiceLocator.getInstance(LoginActivity.this)
                                         .getDispatcherProvider().io().execute(() -> {
-                                            cacheUserLocallySync(identifier, password, resp.user);
-                                            if ("ADMIN".equals(resp.user.role)) {
+                                            cacheUserLocallySync(identifier, password, cachedUser);
+                                            if ("ADMIN".equals(cachedUser.role)) {
                                                 new com.example.mysoftpos.data.remote.ConfigSyncManager(
                                                         LoginActivity.this).sync();
                                                 new com.example.mysoftpos.data.remote.TestSuiteSyncManager(
-                                                        LoginActivity.this).pull();
+                                                        LoginActivity.this).push();
                                             }
                                             new com.example.mysoftpos.data.remote.TransactionSyncManager(
                                                     LoginActivity.this).syncUnsynced();
@@ -250,44 +257,60 @@ public class LoginActivity extends BaseActivity {
 
                         if (response.isSuccessful() && response.body() != null) {
                             com.example.mysoftpos.data.remote.api.ApiService.LoginResponse resp = response.body();
+                            com.example.mysoftpos.data.remote.api.ApiService.PosAccountDto effectiveUser = resolveEffectiveUser(resp);
+                            if (effectiveUser == null) {
+                                hideLoading();
+                                if (!isDestroyed() && !isFinishing()) {
+                                    Toast.makeText(LoginActivity.this, R.string.login_invalid_credentials, Toast.LENGTH_SHORT).show();
+                                }
+                                return;
+                            }
+                            com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
+                                    .getInstance(LoginActivity.this);
+                            applyServerConfigFromUser(effectiveUser);
+                            if ("USER".equalsIgnoreCase(effectiveUser.role) && !config.hasServerConnectionConfig()) {
+                                hideLoading();
+                                Toast.makeText(LoginActivity.this,
+                                        R.string.err_server_not_configured,
+                                        Toast.LENGTH_LONG).show();
+                                return;
+                            }
+
                             com.example.mysoftpos.data.remote.api.ApiClient.saveUserSession(LoginActivity.this, resp);
                             com.example.mysoftpos.utils.security.SessionManager.startSession();
                             com.example.mysoftpos.utils.security.AuditLogger.log(
                                     LoginActivity.this, identifier, "LOGIN",
-                                    true, "LoginActivity", "API login: " + resp.user.role);
+                                    true, "LoginActivity", "API login: " + effectiveUser.role);
 
                             // Set ConfigManager IP/Port/TID for NAPAS connection
-                            com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
-                                    .getInstance(LoginActivity.this);
-                            config.resetServerConfig();
-                            // (serverIp/serverPort is now managed by Terminals)
-                            if (resp.user.merchantCode != null && resp.user.merchantCode.matches("^[A-Z0-9]{15}$")) {
-                                config.setMerchantId(resp.user.merchantCode);
+                            if (effectiveUser.merchantCode != null && effectiveUser.merchantCode.matches("^[A-Z0-9]{15}$")) {
+                                config.setMerchantId(effectiveUser.merchantCode);
                             }
-                            if (resp.user.bankName != null && !resp.user.bankName.trim().isEmpty()) {
-                                config.setBankName(resp.user.bankName);
+                            if (effectiveUser.bankName != null && !effectiveUser.bankName.trim().isEmpty()) {
+                                config.setBankName(effectiveUser.bankName);
                             }
                             // Set user-specific Terminal ID
-                            if (resp.user.terminalId != null && !resp.user.terminalId.isEmpty()) {
-                                config.setTerminalId(resp.user.terminalId);
+                            if (effectiveUser.terminalId != null && !effectiveUser.terminalId.isEmpty()) {
+                                config.setTerminalId(effectiveUser.terminalId);
                             }
-                            config.setMcc18(resp.user.businessType);
+                            config.setMcc18(effectiveUser.businessType);
 
                             // Cache user locally for offline login, then resolve local ID and navigate
                             com.example.mysoftpos.di.ServiceLocator.getInstance(LoginActivity.this)
                                     .getDispatcherProvider().io().execute(() -> {
+                                        final com.example.mysoftpos.data.remote.api.ApiService.PosAccountDto finalEffectiveUser = effectiveUser;
                                         // Cache user to local Room DB
-                                        cacheUserLocallySync(identifier, password, resp.user);
+                                        cacheUserLocallySync(identifier, password, finalEffectiveUser);
 
                                         // Resolve local Room user ID (not backend ID)
-                                        long localUserId = resolveLocalUserId(identifier, resp.user.id);
+                                        long localUserId = resolveLocalUserId(identifier, finalEffectiveUser.id);
 
                                         // Sync config & transactions from backend (non-blocking)
-                                        if ("ADMIN".equals(resp.user.role)) {
+                                        if ("ADMIN".equals(finalEffectiveUser.role)) {
                                             new com.example.mysoftpos.data.remote.ConfigSyncManager(LoginActivity.this)
                                                     .sync();
                                             new com.example.mysoftpos.data.remote.TestSuiteSyncManager(
-                                                    LoginActivity.this).pull();
+                                                    LoginActivity.this).push();
                                         }
                                         new com.example.mysoftpos.data.remote.TransactionSyncManager(LoginActivity.this)
                                                 .syncUnsynced();
@@ -296,10 +319,10 @@ public class LoginActivity extends BaseActivity {
                                             hideLoading();
                                             if (isDestroyed() || isFinishing())
                                                 return;
-                                            navigateToDashboard(localUserId, resp.user.role,
-                                                    resp.user.fullName != null ? resp.user.fullName
+                                            navigateToDashboard(localUserId, finalEffectiveUser.role,
+                                                    finalEffectiveUser.fullName != null ? finalEffectiveUser.fullName
                                                             : getString(R.string.common_user),
-                                                    resp.user.phone, resp.user.email);
+                                                    finalEffectiveUser.phone, finalEffectiveUser.email);
                                         });
                                     });
                         } else {
@@ -333,9 +356,11 @@ public class LoginActivity extends BaseActivity {
                             Throwable t) {
                         if (isDestroyed() || isFinishing())
                             return;
-                        android.util.Log.w("LoginActivity",
-                                "API unreachable, falling back to offline login: " + t.getMessage());
-                        loginViaLocalRoom(identifier, password, false);
+                        android.util.Log.w("LoginActivity", "API login failed: " + t.getMessage());
+                        hideLoading();
+                        Toast.makeText(LoginActivity.this,
+                                R.string.login_server_unavailable_offline_not_found,
+                                Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -358,7 +383,18 @@ public class LoginActivity extends BaseActivity {
                         if (user != null) {
                             if (requiresFirstLoginOnline(user)) {
                                 if (allowApiFallback) {
-                                    runOnUiThread(() -> loginViaApi(identifier, password));
+                                    if (isNetworkAvailable()) {
+                                        runOnUiThread(() -> loginViaApi(identifier, password));
+                                    } else {
+                                        runOnUiThread(() -> {
+                                            hideLoading();
+                                            if (!isDestroyed() && !isFinishing()) {
+                                                Toast.makeText(LoginActivity.this,
+                                                        R.string.login_first_online_required,
+                                                        Toast.LENGTH_LONG).show();
+                                            }
+                                        });
+                                    }
                                 } else {
                                     runOnUiThread(() -> {
                                         hideLoading();
@@ -396,10 +432,8 @@ public class LoginActivity extends BaseActivity {
 
                                 posAccountDao.update(user);
 
-                                String displayName = user.username != null ? user.username
-                                        : getString(R.string.common_user);
+                                String displayName = resolveLocalDisplayName(db.merchantDao(), user);
                                 config.resetServerConfig();
-                                // serverIp/serverPort removed from PosAccountDto
                                 if (user.terminalId != null && !user.terminalId.isEmpty()) {
                                     config.setTerminalId(user.terminalId);
                                 }
@@ -436,7 +470,19 @@ public class LoginActivity extends BaseActivity {
                         }
 
                         if (allowApiFallback) {
-                            runOnUiThread(() -> loginViaApi(identifier, password));
+                            if (isNetworkAvailable()) {
+                                runOnUiThread(() -> loginViaApi(identifier, password));
+                            } else {
+                                runOnUiThread(() -> {
+                                    hideLoading();
+                                    if (!isDestroyed() && !isFinishing()) {
+                                        Toast.makeText(LoginActivity.this,
+                                                R.string.login_server_unavailable_offline_not_found,
+                                                Toast.LENGTH_LONG).show();
+                                        etPassword.setText("");
+                                    }
+                                });
+                            }
                             return;
                         }
 
@@ -451,7 +497,18 @@ public class LoginActivity extends BaseActivity {
                         });
                     } catch (Exception e) {
                         if (allowApiFallback) {
-                            runOnUiThread(() -> loginViaApi(identifier, password));
+                            if (isNetworkAvailable()) {
+                                runOnUiThread(() -> loginViaApi(identifier, password));
+                            } else {
+                                runOnUiThread(() -> {
+                                    hideLoading();
+                                    if (!isDestroyed() && !isFinishing()) {
+                                        Toast.makeText(LoginActivity.this,
+                                                R.string.login_server_unavailable_offline_not_found,
+                                                Toast.LENGTH_LONG).show();
+                                    }
+                                });
+                            }
                             return;
                         }
                         runOnUiThread(() -> {
@@ -579,6 +636,51 @@ public class LoginActivity extends BaseActivity {
         return merchant != null ? merchant.businessType : null;
     }
 
+    private String resolveLocalDisplayName(com.example.mysoftpos.data.local.dao.MerchantDao merchantDao,
+                                           com.example.mysoftpos.data.local.entity.PosAccountEntity user) {
+        if (user == null) {
+            return getString(R.string.common_user);
+        }
+
+        com.example.mysoftpos.data.local.entity.MerchantEntity merchant = null;
+        if (merchantDao != null) {
+            if (user.merchantBackendId > 0) {
+                merchant = merchantDao.getByBackendId(user.merchantBackendId);
+            }
+            if (merchant == null && user.backendId > 0) {
+                merchant = merchantDao.getByOwnerUserBackendId(user.backendId);
+            }
+            if (merchant == null && user.username != null) {
+                if (user.username.contains("@")) {
+                    merchant = merchantDao.getByEmail(user.username);
+                } else {
+                    merchant = merchantDao.getByPhone(user.username);
+                }
+            }
+        }
+
+        if (merchant != null && merchant.fullName != null && !merchant.fullName.trim().isEmpty()) {
+            return merchant.fullName.trim();
+        }
+
+        String username = user.username != null ? user.username.trim() : "";
+        if (!username.isEmpty() && !looksLikeContact(username)) {
+            return username;
+        }
+
+        return "ADMIN".equalsIgnoreCase(user.role)
+                ? getString(R.string.dashboard_admin_label)
+                : getString(R.string.common_user);
+    }
+
+    private boolean looksLikeContact(String value) {
+        if (value == null) {
+            return false;
+        }
+        String v = value.trim();
+        return v.contains("@") || v.matches("^[+]?\\d{8,15}$");
+    }
+
     private com.example.mysoftpos.data.local.entity.PosAccountEntity findLocalUser(
             com.example.mysoftpos.data.local.dao.PosAccountDao posAccountDao,
             String identifier) {
@@ -637,6 +739,35 @@ public class LoginActivity extends BaseActivity {
             normalized = normalized.replace("+", "");
         }
         return normalized;
+    }
+
+    private void applyServerConfigFromUser(com.example.mysoftpos.data.remote.api.ApiService.PosAccountDto userDto) {
+        com.example.mysoftpos.utils.config.ConfigManager config = com.example.mysoftpos.utils.config.ConfigManager
+                .getInstance(LoginActivity.this);
+        config.resetServerConfig();
+        if (userDto == null) {
+            return;
+        }
+        if (userDto.serverIp != null && !userDto.serverIp.trim().isEmpty()) {
+            config.setServerIp(userDto.serverIp);
+        }
+        if (userDto.serverPort != null && userDto.serverPort > 0) {
+            config.setServerPort(userDto.serverPort);
+        }
+        if (userDto.terminalId != null && !userDto.terminalId.trim().isEmpty()) {
+            config.setTerminalId(userDto.terminalId);
+        }
+    }
+
+    private com.example.mysoftpos.data.remote.api.ApiService.PosAccountDto resolveEffectiveUser(
+            com.example.mysoftpos.data.remote.api.ApiService.LoginResponse response) {
+        if (response == null) {
+            return null;
+        }
+        if (response.user != null) {
+            return response.user;
+        }
+        return response.posAccount;
     }
 
     private Drawable getPasswordToggleDrawable(int drawableResId) {

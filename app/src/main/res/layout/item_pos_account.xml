@@ -5,31 +5,32 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="16dp"
-    android:layout_marginBottom="8dp"
-    android:clickable="true"
-    android:focusable="true"
-    android:foreground="?attr/selectableItemBackground"
+    android:layout_marginBottom="10dp"
     app:cardBackgroundColor="#FFFFFF"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="1dp"
-    app:rippleColor="@color/merchant_mgmt_ripple"
-    app:strokeColor="#F1F5F9"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="0dp"
+    app:strokeColor="#E2E8F0"
     app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingVertical="16dp"
+        android:paddingTop="14dp"
         android:paddingStart="16dp"
-        android:paddingEnd="14dp">
+        android:paddingEnd="16dp">
 
         <!-- ═══ Avatar ═══ -->
         <FrameLayout
             android:id="@+id/avatarContainer"
-            android:layout_width="48dp"
-            android:layout_height="48dp">
+            android:layout_width="44dp"
+            android:layout_height="44dp">
 
             <TextView
                 android:id="@+id/tvAvatarLetter"
@@ -38,14 +39,14 @@
                 android:fontFamily="sans-serif-medium"
                 android:gravity="center"
                 android:textColor="#FFFFFF"
-                android:textSize="20sp"
+                android:textSize="18sp"
                 android:textStyle="bold" />
 
             <!-- Online Status Indicator -->
             <View
                 android:id="@+id/vOnlineStatus"
-                android:layout_width="14dp"
-                android:layout_height="14dp"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
                 android:layout_gravity="bottom|end"
                 android:layout_marginBottom="1dp"
                 android:layout_marginEnd="1dp"
@@ -56,7 +57,7 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
+            android:layout_marginStart="12dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -69,20 +70,20 @@
                 android:fontFamily="sans-serif-medium"
                 android:maxLines="1"
                 android:textColor="#0F172A"
-                android:textSize="15sp"
+                android:textSize="16sp"
                 android:textStyle="bold" />
 
             <!-- Phone -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
+                android:layout_marginTop="2dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <ImageView
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
+                    android:layout_width="11dp"
+                    android:layout_height="11dp"
                     android:src="@drawable/ic_baseline_phone_24"
                     app:tint="#94A3B8" />
 
@@ -90,9 +91,9 @@
                     android:id="@+id/tvPhone"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="5dp"
+                    android:layout_marginStart="4dp"
                     android:textColor="#64748B"
-                    android:textSize="13sp" />
+                    android:textSize="12sp" />
             </LinearLayout>
 
             <!-- Server Badge -->
@@ -100,7 +101,7 @@
                 android:id="@+id/tvServerInfo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="5dp"
                 android:background="@drawable/bg_count_badge"
                 android:drawableStart="@drawable/ic_baseline_dns_24"
                 android:drawablePadding="4dp"
@@ -108,31 +109,83 @@
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="3dp"
                 android:textColor="#0D9488"
-                android:textSize="10sp"
+                android:textSize="11sp"
                 android:textStyle="bold"
                 android:visibility="gone" />
         </LinearLayout>
 
-        <!-- ═══ Arrow ═══ -->
+        <!-- ═══ Alert badge ═══ -->
         <TextView
             android:id="@+id/tvTidAlertBadge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
             android:background="@drawable/bg_danger_badge"
             android:paddingHorizontal="8dp"
             android:paddingVertical="3dp"
             android:textColor="#B91C1C"
-            android:textSize="10sp"
+            android:textSize="11sp"
             android:textStyle="bold"
             android:visibility="gone"
             tools:text="Missing TID: 2" />
+    </LinearLayout>
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/ic_arrow_right"
-            app:tint="#CBD5E1" />
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:background="#EEF2F7" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnViewAccounts"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_weight="1"
+            android:text="@string/user_mgmt_action_view_accounts"
+            android:textAllCaps="false"
+            android:textSize="12sp"
+            app:backgroundTint="#0F172A"
+            app:cornerRadius="12dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEditMerchant"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="@string/common_edit"
+            android:textAllCaps="false"
+            android:textSize="12sp"
+            app:cornerRadius="12dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDeleteMerchant"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="@string/common_delete"
+            android:textAllCaps="false"
+            android:textColor="#B91C1C"
+            android:textSize="12sp"
+            app:cornerRadius="12dp"
+            app:strokeColor="#FCA5A5" />
+    </LinearLayout>
+
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

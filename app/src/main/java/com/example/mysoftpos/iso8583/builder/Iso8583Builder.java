@@ -36,13 +36,20 @@ public class Iso8583Builder {
     // Purchase (0200)
     // =====================================================================
 
-    public static IsoMessage buildPurchaseMsg(TransactionContext ctx, CardInputData card) {
+    public static IsoMessage buildPurchaseMsg(TransactionContext ctx, CardInputData card) throws Exception {
+        if (ctx == null) {
+            throw new IllegalArgumentException("TransactionContext cannot be null");
+        }
+        if (card == null) {
+            throw new IllegalArgumentException("CardInputData cannot be null");
+        }
+        
         IsoMessage m = new IsoMessage("0200");
 
         // Mandatory fields (all entry modes)
         m.setField(IsoField.PAN_2, card.getPan());
-        m.setField(IsoField.PROCESSING_CODE_3, ctx.processingCode3);
-        m.setField(IsoField.AMOUNT_4, ctx.amount4);
+        m.setField(IsoField.PROCESSING_CODE_3, ctx.processingCode3 != null ? ctx.processingCode3 : "000000");
+        m.setField(IsoField.AMOUNT_4, ctx.amount4 != null ? ctx.amount4 : "000000000000");
         m.setField(IsoField.TRANSMISSION_DATETIME_7, ctx.transmissionDt7);
         m.setField(IsoField.STAN_11, ctx.stan11);
         m.setField(IsoField.LOCAL_TIME_12, ctx.localTime12);
@@ -52,6 +59,9 @@ public class Iso8583Builder {
 
         // DE 22: POS Entry Mode
         String de22 = card.getPosEntryMode();
+        if (de22 == null || de22.isEmpty()) {
+            de22 = "011"; // Default to manual entry if not specified
+        }
         m.setField(IsoField.POS_ENTRY_MODE_22, de22);
 
         // Conditional fields based on entry mode
@@ -66,7 +76,8 @@ public class Iso8583Builder {
         } else if ("021".equals(de22) || "022".equals(de22)) {
             // ====== Magstripe ======
             if (card.getTrack2() != null && !card.getTrack2().isEmpty()) {
-                m.setField(IsoField.TRACK2_35, card.getTrack2().replace('=', 'D'));
+                // Keep canonical '=' separator in Track 2. Do not replace with 'D'.
+                m.setField(IsoField.TRACK2_35, card.getTrack2());
             }
             if (card.getExpiryDate() != null) {
                 m.setField(IsoField.EXPIRATION_DATE_14, card.getExpiryDate());
@@ -99,11 +110,18 @@ public class Iso8583Builder {
     // Balance Inquiry (0200)
     // =====================================================================
 
-    public static IsoMessage buildBalanceMsg(TransactionContext ctx, CardInputData card) {
+    public static IsoMessage buildBalanceMsg(TransactionContext ctx, CardInputData card) throws Exception {
+        if (ctx == null) {
+            throw new IllegalArgumentException("TransactionContext cannot be null");
+        }
+        if (card == null) {
+            throw new IllegalArgumentException("CardInputData cannot be null");
+        }
+        
         IsoMessage m = new IsoMessage("0200");
 
         m.setField(IsoField.PAN_2, card.getPan());
-        m.setField(IsoField.PROCESSING_CODE_3, ctx.processingCode3); // 300000
+        m.setField(IsoField.PROCESSING_CODE_3, ctx.processingCode3 != null ? ctx.processingCode3 : "300000");
         m.setField(IsoField.AMOUNT_4, "000000000000");
         m.setField(IsoField.TRANSMISSION_DATETIME_7, ctx.transmissionDt7);
         m.setField(IsoField.STAN_11, ctx.stan11);
@@ -111,6 +129,9 @@ public class Iso8583Builder {
         m.setField(IsoField.LOCAL_DATE_13, ctx.localDate13);
 
         String de22 = card.getPosEntryMode();
+        if (de22 == null || de22.isEmpty()) {
+            de22 = "011"; // Default to manual entry if not specified
+        }
         m.setField(IsoField.POS_ENTRY_MODE_22, de22);
 
         if (card.isNfcChip()) {
@@ -122,7 +143,8 @@ public class Iso8583Builder {
         } else if ("021".equals(de22) || "022".equals(de22)
                 || "901".equals(de22) || "902".equals(de22)) {
             if (card.getTrack2() != null && !card.getTrack2().isEmpty()) {
-                m.setField(IsoField.TRACK2_35, card.getTrack2().replace('=', 'D'));
+                // Keep canonical '=' separator in Track 2. Do not replace with 'D'.
+                m.setField(IsoField.TRACK2_35, card.getTrack2());
             }
             if (card.getExpiryDate() != null) {
                 m.setField(IsoField.EXPIRATION_DATE_14, card.getExpiryDate());

@@ -144,8 +144,16 @@ public class TestScenarioAdapter extends RecyclerView.Adapter<TestScenarioAdapte
 
             if (item.isCustom()) {
                 chipBadge.setText(R.string.test_scenario_badge_custom);
+                chipBadge.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0);
             } else {
-                chipBadge.setText(code);
+                if (item.isDefaultCase()) {
+                    chipBadge.setText(R.string.test_scenario_badge_default);
+                    chipBadge.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_lock, 0, 0, 0);
+                    chipBadge.setCompoundDrawablePadding((int) (itemView.getResources().getDisplayMetrics().density * 4));
+                } else {
+                    chipBadge.setText(code);
+                    chipBadge.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0);
+                }
             }
 
             boolean swipeEnabled = item.isCustom() && !selectionMode && !deleteMode;

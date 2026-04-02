@@ -17,8 +17,17 @@ public interface TestSuiteDao {
     @Query("SELECT * FROM test_suites ORDER BY created_at DESC")
     LiveData<List<TestSuiteEntity>> getAllSuites();
 
+    @Query("SELECT * FROM test_suites ORDER BY created_at DESC")
+    List<TestSuiteEntity> getAllSuitesSync();
+
+    @Query("SELECT * FROM test_suites WHERE backend_id = :backendId LIMIT 1")
+    TestSuiteEntity findByBackendIdSync(long backendId);
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     long insert(TestSuiteEntity suite);
+
+    @Query("SELECT * FROM test_suites WHERE name = :name LIMIT 1")
+    TestSuiteEntity findByNameSync(String name);
 
     @Update
     void update(TestSuiteEntity suite);

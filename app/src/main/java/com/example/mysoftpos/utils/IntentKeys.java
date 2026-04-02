@@ -13,6 +13,8 @@ public final class IntentKeys {
     public static final String USERNAME = "USERNAME";
     public static final String USER_ROLE = "USER_ROLE";
     public static final String USER_ID = "USER_ID";
+    public static final String MERCHANT_ID = "MERCHANT_ID";
+    public static final String TERMINAL_NUMERIC_ID = "TERMINAL_NUMERIC_ID";
 
     // Transaction
     public static final String TXN_TYPE = "TXN_TYPE";

@@ -11,7 +11,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.testsuite.model.TestScenario;
+import com.example.mysoftpos.testsuite.adapter.TestScenarioAdapter;
 import com.example.mysoftpos.ui.BaseActivity;
+import com.example.mysoftpos.utils.IntentKeys;
 import com.google.android.material.button.MaterialButton;
 import java.util.List;
 import java.util.ArrayList;
@@ -45,7 +47,7 @@ public class TestSuiteActivity extends BaseActivity {
     private List<TestScenario> allScenarios = new ArrayList<>(); // Built-in
     private List<TestScenario> customScenarios = new ArrayList<>(); // DB-loaded
     private List<TestScenario> displayedScenarios = new ArrayList<>();
-    private com.example.mysoftpos.testsuite.adapter.TestScenarioAdapter adapter;
+    private TestScenarioAdapter adapter;
     private ArrayList<TestScenario> preSelectedScenarios;
 
     // Multi-thread UI
@@ -71,162 +73,157 @@ public class TestSuiteActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_test_suite);
+        try {
+            setContentView(R.layout.activity_test_suite);
 
-        // Init Data Access
-        repository = new com.example.mysoftpos.data.repository.TestCaseRepository(this);
-        executor = java.util.concurrent.Executors.newSingleThreadExecutor();
+            // Breadcrumbs / Header Labels
+            scheme = getIntent().getStringExtra(IntentKeys.SCHEME);
+            if (scheme == null)
+                scheme = "Napas";
+            channel = getIntent().getStringExtra(IntentKeys.CHANNEL);
+            txnType = getIntent().getStringExtra(IntentKeys.TXN_TYPE);
+            perfMode = getIntent().getStringExtra(IntentKeys.PERF_MODE);
 
-        channel = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.CHANNEL);
-        txnType = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.TXN_TYPE);
-        perfMode = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.PERF_MODE);
-        if (perfMode == null)
-            perfMode = "SINGLE";
-
-        // Restore selection if available
-        if (getIntent().hasExtra(com.example.mysoftpos.utils.IntentKeys.SELECTED_SCENARIOS)) {
-            preSelectedScenarios = (ArrayList<TestScenario>) getIntent()
-                    .getSerializableExtra(com.example.mysoftpos.utils.IntentKeys.SELECTED_SCENARIOS);
-        }
-
-        boolean isMulti = "MULTI".equals(perfMode);
-
-        // TextView tvTitle = findViewById(R.id.tvTitle); // Unused
-
-        // Bind Summary Card
-        TextView tvSummaryScheme = findViewById(R.id.tvSummaryScheme);
-        TextView tvSummaryChannel = findViewById(R.id.tvSummaryChannel);
-        TextView tvSummaryType = findViewById(R.id.tvSummaryType);
-
-        scheme = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.SCHEME);
-        if (scheme == null)
-            scheme = "Napas";
-
-        tvSummaryScheme.setText(scheme);
-        tvSummaryChannel.setText(channel);
-        tvSummaryType.setText(txnType);
-
-        recyclerViewCases = findViewById(R.id.recyclerViewCases);
-
-        // Load Built-in Data
-        allScenarios = TestDataProvider.generateScenarios(this, scheme);
-        for (TestScenario s : allScenarios) {
-            s.setTxnType(txnType);
-        }
-
-        adapter = new com.example.mysoftpos.testsuite.adapter.TestScenarioAdapter(
-                this::onScenarioClicked,
-                this::onScenarioLongClicked,
-                this::onScenarioToggle,
-                this::onScenarioEditClicked,
-                this::onScenarioDeleteClicked);
-
-        adapter.setMultiMode(isMulti);
-        adapter.setDeleteMode(false);
-        adapter.setOpenedSwipePosition(openedSwipePosition);
-
-        recyclerViewCases.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
-        recyclerViewCases.setAdapter(adapter);
-        setupSwipeActions();
-
-        // Controls
-        layoutSelectAll = findViewById(R.id.layoutSelectAll);
-        cbSelectAll = findViewById(R.id.cbSelectAll);
-        btnCancelSelection = findViewById(R.id.btnCancelSelection);
-        btnRunAll = findViewById(R.id.btnRunAll);
-        fabAdd = findViewById(R.id.fabAdd);
-        btnDeleteMode = findViewById(R.id.btnDeleteMode);
-        tvModeIndicator = findViewById(R.id.tvModeIndicator);
-
-        btnCancelSelection.setOnClickListener(v -> {
-            if (deleteMode) {
-                toggleDeleteMode();
-            } else if (selectionMode) {
-                exitSelectionMode();
+            // Defensive default: avoid null/invalid transaction type causing Room query/filter issues.
+            if (!"PURCHASE".equals(txnType) && !"BALANCE".equals(txnType)) {
+                txnType = "PURCHASE";
             }
-        });
 
-        if (isMulti) {
-            setupMultiMode();
-        } else {
-            // Single Mode
-            fabAdd.setVisibility(View.VISIBLE);
-            fabAdd.setOnClickListener(v -> showAddEditDialog(null));
+            if (perfMode == null)
+                perfMode = "SINGLE";
 
-            btnDeleteMode.setVisibility(View.GONE);
-            btnDeleteMode.setOnClickListener(v -> toggleDeleteMode());
+            boolean isMulti = "MULTI".equals(perfMode);
 
-            // Setup selection controls (hidden initially, shown on long-press)
-            setupSingleModeSelection();
-        }
-        updateModeIndicator();
-
-        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                if (openedSwipePosition != androidx.recyclerview.widget.RecyclerView.NO_POSITION) {
-                    closeOpenedSwipe();
-                    return;
-                }
-
-                if (deleteMode) {
-                    toggleDeleteMode(); // Exit delete mode
-                    return;
-                }
-
-                if (selectionMode) {
-                    // Save selections and return to TransactionSelectActivity
-                    returnSelectedScenarios();
-                    return;
-                }
-
-                // Default back behavior
-                setEnabled(false);
-                getOnBackPressedDispatcher().onBackPressed();
+            // Restore selection if available
+            if (getIntent().hasExtra(IntentKeys.SELECTED_SCENARIOS)) {
+                preSelectedScenarios = (ArrayList<TestScenario>) getIntent()
+                        .getSerializableExtra(IntentKeys.SELECTED_SCENARIOS);
             }
-        });
 
-        findViewById(R.id.btnBack).setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
+            TextView tvSummaryScheme = findViewById(R.id.tvSummaryScheme);
+            TextView tvSummaryChannel = findViewById(R.id.tvSummaryChannel);
+            TextView tvSummaryType = findViewById(R.id.tvSummaryType);
 
-        // Swipe back
-        com.example.mysoftpos.testsuite.util.SwipeBackHelper.attach(this);
-        com.example.mysoftpos.testsuite.util.StepDotsHelper.setActiveStep(this, 4);
+            if (tvSummaryScheme != null)
+                tvSummaryScheme.setText(scheme);
+            if (tvSummaryChannel != null)
+                tvSummaryChannel.setText(channel);
+            if (tvSummaryType != null)
+                tvSummaryType.setText(txnType);
 
-        // Custom Cases Observer (TestCaseEntity)
-        repository.getCustomCasesBySchemeAndType(scheme, txnType).observe(this, entities -> {
-            customScenarios.clear();
-            if (entities != null) {
-                for (com.example.mysoftpos.data.local.entity.TestCaseEntity entity : entities) {
-                    TestScenario s = new TestScenario("0200", entity.name);
-                    s.setDescription(entity.name);
-                    s.setTxnType(entity.transactionType);
-                    s.setId(entity.id);
-                    s.setCustom(true);
+            // Load Built-in Data
+            allScenarios = TestDataProvider.generateScenarios(this, scheme);
+            for (TestScenario s : allScenarios) {
+                s.setTxnType(txnType);
+            }
 
-                    if (entity.de22 != null)   s.setField(22, entity.de22);
-                    if (entity.amount != null) s.setField(4,  entity.amount);
-                    if (entity.pan != null)    s.setField(2,  entity.pan);
-                    if (entity.expiry != null) s.setField(14, entity.expiry);
-                    if (entity.track2 != null) s.setField(35, entity.track2);
+            displayedScenarios.clear();
+            displayedScenarios.addAll(allScenarios);
 
-                    // Load custom field overrides from JSON
-                    if (entity.fieldConfigJson != null && !entity.fieldConfigJson.isEmpty()) {
-                        try {
-                            org.json.JSONObject json = new org.json.JSONObject(entity.fieldConfigJson);
-                            java.util.Iterator<String> keys = json.keys();
-                            while (keys.hasNext()) {
-                                String key = keys.next();
-                                int fieldNum = Integer.parseInt(key);
-                                s.setField(fieldNum, json.getString(key));
-                            }
-                        } catch (Exception ignored) {}
+            adapter = new TestScenarioAdapter(
+                    this::onScenarioClicked,
+                    this::onScenarioLongClicked,
+                    this::onScenarioToggle,
+                    this::onScenarioEditClicked,
+                    this::onScenarioDeleteClicked);
+
+            adapter.setScenarios(displayedScenarios);
+            adapter.setMultiMode(isMulti);
+
+            recyclerViewCases = findViewById(R.id.recyclerViewCases);
+            recyclerViewCases.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
+            recyclerViewCases.setAdapter(adapter);
+
+            openedSwipePosition = androidx.recyclerview.widget.RecyclerView.NO_POSITION;
+
+            layoutSelectAll = findViewById(R.id.layoutSelectAll);
+            cbSelectAll = findViewById(R.id.cbSelectAll);
+            btnCancelSelection = findViewById(R.id.btnCancelSelection);
+            btnRunAll = findViewById(R.id.btnRunAll);
+            fabAdd = findViewById(R.id.fabAdd);
+            btnDeleteMode = findViewById(R.id.btnDeleteMode);
+            tvModeIndicator = findViewById(R.id.tvModeIndicator);
+
+            findViewById(R.id.btnBack).setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
+
+            // Step dots
+            com.example.mysoftpos.testsuite.util.StepDotsHelper.setActiveStep(this, 3);
+
+            if (isMulti) {
+                setupMultiMode();
+            } else {
+                setupSingleModeSelection();
+            }
+
+            // Swipe back
+            com.example.mysoftpos.testsuite.util.SwipeBackHelper.attach(this);
+
+            // Database & Repository
+            repository = new com.example.mysoftpos.data.repository.TestCaseRepository(this);
+            executor = java.util.concurrent.Executors.newSingleThreadExecutor();
+            persistBuiltInSuiteSnapshot();
+
+            // Custom Cases Observer
+            repository.getCustomCasesBySchemeAndType(scheme, txnType).observe(this, entities -> {
+                customScenarios.clear();
+                if (entities != null) {
+                    for (com.example.mysoftpos.data.local.entity.TestCaseEntity entity : entities) {
+                        TestScenario s = new TestScenario("0200", entity.name);
+                        s.setDescription(entity.name);
+                        s.setTxnType(entity.transactionType);
+                        s.setId(entity.id);
+                        s.setCustom(true);
+                        s.setDefaultCase(entity.isDefault);
+
+                        if (entity.de22 != null)   s.setField(22, entity.de22);
+                        if (entity.amount != null) s.setField(4,  entity.amount);
+                        if (entity.expiry != null) s.setField(14, entity.expiry);
+
+                        if (entity.fieldConfigJson != null && !entity.fieldConfigJson.isEmpty()) {
+                            try {
+                                org.json.JSONObject json = new org.json.JSONObject(entity.fieldConfigJson);
+                                java.util.Iterator<String> keys = json.keys();
+                                while (keys.hasNext()) {
+                                    String key = keys.next();
+                                    int fieldNum = Integer.parseInt(key);
+                                    s.setField(fieldNum, json.getString(key));
+                                }
+                            } catch (Exception ignored) {}
+                        }
+                        customScenarios.add(s);
                     }
-
-                    customScenarios.add(s);
                 }
-            }
-            refreshList();
-        });
+                refreshList();
+            });
+
+            getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+                @Override
+                public void handleOnBackPressed() {
+                    if (openedSwipePosition != androidx.recyclerview.widget.RecyclerView.NO_POSITION) {
+                        closeOpenedSwipe();
+                        return;
+                    }
+                    if (deleteMode) {
+                        toggleDeleteMode();
+                        return;
+                    }
+                    if (selectionMode) {
+                        // Return selected scenarios to caller
+                        returnSelectedScenarios();
+                        return;
+                    }
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            });
+
+        } catch (Exception ex) {
+            android.util.Log.e("TestSuiteActivity", "Initialization error: " + ex.getMessage(), ex);
+            Toast.makeText(this,
+                    getString(R.string.common_error_with_reason, "Initialization error: " + ex.getMessage()),
+                    Toast.LENGTH_LONG).show();
+            finish();
+        }
     }
 
     private void onScenarioToggle(TestScenario scenario) {
@@ -522,6 +519,7 @@ public class TestSuiteActivity extends BaseActivity {
                             entity.id = s.getId();
                             repository.delete(entity);
                         }
+                        syncTestSuiteData();
                         runOnUiThread(this::toggleDeleteMode); // Exit mode after delete
                     });
                 })
@@ -718,6 +716,7 @@ public class TestSuiteActivity extends BaseActivity {
                     com.example.mysoftpos.data.local.entity.TestCaseEntity entity = new com.example.mysoftpos.data.local.entity.TestCaseEntity();
                     entity.id = scenario.getId();
                     repository.delete(entity);
+                    syncTestSuiteData();
                     runOnUiThread(this::closeOpenedSwipe);
                 }))
                 .setNegativeButton(R.string.common_cancel, (dialog, which) -> closeOpenedSwipe())
@@ -1288,20 +1287,22 @@ public class TestSuiteActivity extends BaseActivity {
                 entity.scheme = scheme;
                 entity.timestamp = System.currentTimeMillis();
                 entity.status = "NEW";
+                entity.isDefault = false;
                 entity.de22 = de22;
                 entity.amount = null;
+                String scenarioPan = null;
+                String scenarioExpiry = null;
+                String scenarioTrack2 = null;
                 if (isNfcMode(de22)) {
-                    entity.pan = NFC_071_072_PAN;
-                    entity.expiry = NFC_071_072_EXPIRY;
-                    entity.track2 = null;
+                    scenarioPan = NFC_071_072_PAN;
+                    scenarioExpiry = NFC_071_072_EXPIRY;
                 } else if (layoutManual.getVisibility() == View.VISIBLE) {
-                    entity.pan = panFinal;
-                    entity.expiry = expiryFinal;
-                    entity.track2 = null;
+                    scenarioPan = panFinal;
+                    scenarioExpiry = expiryFinal;
                 }
                 if (!isNfcMode(de22) && layoutTrack2.getVisibility() == View.VISIBLE) {
                     if (!track2Final.isEmpty()) {
-                        entity.track2 = track2Final;
+                        scenarioTrack2 = track2Final;
                         String normalized = track2Final.trim();
                         String[] parts;
                         if (normalized.contains("=")) {
@@ -1312,24 +1313,39 @@ public class TestSuiteActivity extends BaseActivity {
                             parts = new String[] { normalized };
                         }
                         if (parts.length > 0 && !parts[0].isEmpty()) {
-                            entity.pan = parts[0];
+                            scenarioPan = parts[0];
                         }
                         if (parts.length > 1 && parts[1] != null && parts[1].length() >= 4) {
-                            entity.expiry = parts[1].substring(0, 4);
+                            scenarioExpiry = parts[1].substring(0, 4);
                         }
                     } else {
-                        entity.pan = null;
-                        entity.expiry = null;
-                        entity.track2 = null;
+                        scenarioPan = null;
+                        scenarioExpiry = null;
+                        scenarioTrack2 = null;
                     }
                 }
+                entity.expiry = scenarioExpiry;
+                entity.maskedPan = (scenarioPan != null && !scenarioPan.isEmpty())
+                        ? com.example.mysoftpos.utils.PanUtils.mask(scenarioPan)
+                        : null;
                 String customFieldJson = collectCustomFieldsJson(containerCustomFields, reservedFields);
+                customFieldJson = putFieldToJson(customFieldJson, 22, de22);
+                if (scenarioPan != null && !scenarioPan.isEmpty()) {
+                    customFieldJson = putFieldToJson(customFieldJson, 2, scenarioPan);
+                }
+                if (scenarioExpiry != null && !scenarioExpiry.isEmpty()) {
+                    customFieldJson = putFieldToJson(customFieldJson, 14, scenarioExpiry);
+                }
+                if (scenarioTrack2 != null && !scenarioTrack2.isEmpty()) {
+                    customFieldJson = putFieldToJson(customFieldJson, 35, scenarioTrack2);
+                }
                 if (isNfcMode(de22)) {
                     customFieldJson = putFieldToJson(customFieldJson, 55, NFC_071_072_DE55);
                 }
                 entity.fieldConfigJson = customFieldJson;
                 if (isEdit) repository.update(entity);
                 else repository.insert(entity);
+                syncTestSuiteData();
                 runOnUiThread(dialog::dismiss);
             });
         });
@@ -1351,6 +1367,120 @@ public class TestSuiteActivity extends BaseActivity {
             isSecond = !isSecond;
         }
         return (nSum % 10 == 0);
+    }
+
+    private void persistBuiltInSuiteSnapshot() {
+        if (allScenarios == null || allScenarios.isEmpty()) {
+            return;
+        }
+
+        executor.execute(() -> {
+            try {
+                com.example.mysoftpos.data.local.AppDatabase db = com.example.mysoftpos.data.local.AppDatabase
+                        .getInstance(this);
+                com.example.mysoftpos.data.local.dao.TestSuiteDao suiteDao = db.testSuiteDao();
+                com.example.mysoftpos.data.local.dao.TestCaseDao caseDao = db.testCaseDao();
+                com.example.mysoftpos.data.local.dao.CardDao cardDao = db.cardDao();
+
+                String suiteName = "Built-in " + scheme + " - " + txnType;
+                com.example.mysoftpos.data.local.entity.TestSuiteEntity suite = suiteDao.findByNameSync(suiteName);
+                long suiteId;
+                if (suite == null) {
+                    suite = new com.example.mysoftpos.data.local.entity.TestSuiteEntity();
+                    suite.name = suiteName;
+                    suite.description = "Auto-synced built-in scenarios";
+                    suite.backendId = 0;
+                    suite.adminBackendId = 0;
+                    suite.createdAt = System.currentTimeMillis();
+                    suiteId = suiteDao.insert(suite);
+                } else {
+                    suiteId = suite.id;
+                }
+
+                if (suiteId <= 0) {
+                    return;
+                }
+
+                caseDao.deleteBySuiteId(suiteId);
+
+                for (TestScenario scenario : allScenarios) {
+                    com.example.mysoftpos.data.local.entity.TestCaseEntity entity = new com.example.mysoftpos.data.local.entity.TestCaseEntity();
+                    entity.suiteId = suiteId;
+                    entity.name = scenario.getDescription();
+                    entity.transactionType = txnType;
+                    entity.status = "READY";
+                    entity.amount = scenario.getField(4);
+                    entity.de22 = scenario.getField(22);
+                    entity.expiry = scenario.getField(14);
+                    entity.scheme = scheme;
+                    entity.timestamp = System.currentTimeMillis();
+                    entity.fieldConfigJson = scenarioFieldsToJson(scenario);
+                    entity.backendId = 0;
+                    entity.isDefault = true;
+
+                    String pan = extractPanFromScenario(scenario);
+                    if (pan != null && !pan.isEmpty()) {
+                        entity.maskedPan = com.example.mysoftpos.utils.PanUtils.mask(pan);
+                        upsertCard(cardDao, pan);
+                    }
+
+                    caseDao.insert(entity);
+                }
+            } catch (Exception e) {
+                android.util.Log.w("TestSuiteActivity", "Persist built-in suite snapshot failed: " + e.getMessage());
+            }
+        });
+    }
+
+    private void upsertCard(com.example.mysoftpos.data.local.dao.CardDao cardDao, String pan) {
+        if (pan == null || pan.isEmpty()) {
+            return;
+        }
+        String maskedPan = com.example.mysoftpos.utils.PanUtils.mask(pan);
+        com.example.mysoftpos.data.local.entity.CardEntity existing = cardDao.getByPanMasked(maskedPan);
+        if (existing != null) {
+            return;
+        }
+        com.example.mysoftpos.data.local.entity.CardEntity card = new com.example.mysoftpos.data.local.entity.CardEntity(
+                maskedPan,
+                com.example.mysoftpos.utils.PanUtils.getBin(pan),
+                com.example.mysoftpos.utils.PanUtils.getLast4(pan),
+                com.example.mysoftpos.utils.PanUtils.detectScheme(pan));
+        card.backendId = 0;
+        card.adminBackendId = 0;
+        card.posAccountBackendId = 0;
+        cardDao.insert(card);
+    }
+
+    private String extractPanFromScenario(TestScenario scenario) {
+        String pan = scenario.getField(2);
+        if (pan != null && !pan.trim().isEmpty()) {
+            return pan.trim();
+        }
+        String track2 = scenario.getField(35);
+        if (track2 == null || track2.trim().isEmpty()) {
+            return null;
+        }
+        String normalized = track2.trim();
+        int split = normalized.indexOf('=');
+        if (split < 0) {
+            split = normalized.indexOf('D');
+        }
+        return split > 0 ? normalized.substring(0, split) : normalized;
+    }
+
+    private String scenarioFieldsToJson(TestScenario scenario) {
+        try {
+            org.json.JSONObject json = new org.json.JSONObject();
+            for (java.util.Map.Entry<Integer, String> entry : scenario.getAllFields().entrySet()) {
+                if (entry.getValue() != null) {
+                    json.put(String.valueOf(entry.getKey()), entry.getValue());
+                }
+            }
+            return json.length() > 0 ? json.toString() : "{}";
+        } catch (Exception e) {
+            return "{}";
+        }
     }
 
     /**
@@ -1393,6 +1523,10 @@ public class TestSuiteActivity extends BaseActivity {
         } catch (Exception ignored) {
             return sourceJson;
         }
+    }
+
+    private void syncTestSuiteData() {
+        new com.example.mysoftpos.data.remote.TestSuiteSyncManager(this).push();
     }
 
     /**

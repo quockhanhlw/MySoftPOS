@@ -107,25 +107,39 @@ public class TransactionSelectActivity extends BaseActivity {
         btnBack.setOnClickListener(v -> finish());
 
         btnPurchase.setOnClickListener(v -> {
-            Intent i = new Intent(this, TestSuiteActivity.class);
-            i.putExtra(IntentKeys.SCHEME, scheme);
-            i.putExtra(IntentKeys.CHANNEL, channel);
-            i.putExtra(IntentKeys.TXN_TYPE, "PURCHASE");
-            if (!purchaseSelected.isEmpty()) {
-                i.putExtra(IntentKeys.SELECTED_SCENARIOS, purchaseSelected);
+            try {
+                Intent i = new Intent(this, TestSuiteActivity.class);
+                i.putExtra(IntentKeys.SCHEME, scheme);
+                i.putExtra(IntentKeys.CHANNEL, channel);
+                i.putExtra(IntentKeys.TXN_TYPE, "PURCHASE");
+                if (!purchaseSelected.isEmpty()) {
+                    i.putExtra(IntentKeys.SELECTED_SCENARIOS, purchaseSelected);
+                }
+                purchaseLauncher.launch(i);
+            } catch (Exception ex) {
+                android.util.Log.e("TransactionSelect", "Failed to launch TestSuiteActivity: " + ex.getMessage(), ex);
+                Toast.makeText(this,
+                        getString(R.string.common_error_with_reason, "Launch error: " + ex.getMessage()),
+                        Toast.LENGTH_LONG).show();
             }
-            purchaseLauncher.launch(i);
         });
 
         btnBalance.setOnClickListener(v -> {
-            Intent i = new Intent(this, TestSuiteActivity.class);
-            i.putExtra(IntentKeys.SCHEME, scheme);
-            i.putExtra(IntentKeys.CHANNEL, channel);
-            i.putExtra(IntentKeys.TXN_TYPE, "BALANCE");
-            if (!balanceSelected.isEmpty()) {
-                i.putExtra(IntentKeys.SELECTED_SCENARIOS, balanceSelected);
+            try {
+                Intent i = new Intent(this, TestSuiteActivity.class);
+                i.putExtra(IntentKeys.SCHEME, scheme);
+                i.putExtra(IntentKeys.CHANNEL, channel);
+                i.putExtra(IntentKeys.TXN_TYPE, "BALANCE");
+                if (!balanceSelected.isEmpty()) {
+                    i.putExtra(IntentKeys.SELECTED_SCENARIOS, balanceSelected);
+                }
+                balanceLauncher.launch(i);
+            } catch (Exception ex) {
+                android.util.Log.e("TransactionSelect", "Failed to launch TestSuiteActivity: " + ex.getMessage(), ex);
+                Toast.makeText(this,
+                        getString(R.string.common_error_with_reason, "Launch error: " + ex.getMessage()),
+                        Toast.LENGTH_LONG).show();
             }
-            balanceLauncher.launch(i);
         });
 
         btnRunSelected.setOnClickListener(v -> runAllSelected());

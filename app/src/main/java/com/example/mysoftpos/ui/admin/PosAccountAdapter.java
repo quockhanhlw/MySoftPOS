@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.mysoftpos.R;
 import com.example.mysoftpos.data.remote.api.ApiService;
+import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,8 +32,8 @@ public class PosAccountAdapter extends RecyclerView.Adapter<PosAccountAdapter.Vi
 
     public interface OnMerchantListener {
         void onMerchantClick(ApiService.MerchantDto merchant);
-
-        void onMerchantLongClick(ApiService.MerchantDto merchant);
+        void onMerchantEdit(ApiService.MerchantDto merchant);
+        void onMerchantDelete(ApiService.MerchantDto merchant);
     }
 
     public PosAccountAdapter(OnMerchantListener listener) {
@@ -76,6 +77,9 @@ public class PosAccountAdapter extends RecyclerView.Adapter<PosAccountAdapter.Vi
         final TextView tvPhone;
         final TextView tvServerInfo;
         final TextView tvTidAlertBadge;
+        final MaterialButton btnViewAccounts;
+        final MaterialButton btnEditMerchant;
+        final MaterialButton btnDeleteMerchant;
 
         ViewHolder(View view) {
             super(view);
@@ -85,6 +89,9 @@ public class PosAccountAdapter extends RecyclerView.Adapter<PosAccountAdapter.Vi
             tvPhone = view.findViewById(R.id.tvPhone);
             tvServerInfo = view.findViewById(R.id.tvServerInfo);
             tvTidAlertBadge = view.findViewById(R.id.tvTidAlertBadge);
+            btnViewAccounts = view.findViewById(R.id.btnViewAccounts);
+            btnEditMerchant = view.findViewById(R.id.btnEditMerchant);
+            btnDeleteMerchant = view.findViewById(R.id.btnDeleteMerchant);
         }
 
         void bind(ApiService.MerchantDto merchant,
@@ -142,10 +149,9 @@ public class PosAccountAdapter extends RecyclerView.Adapter<PosAccountAdapter.Vi
             }
 
             itemView.setOnClickListener(v -> listener.onMerchantClick(merchant));
-            itemView.setOnLongClickListener(v -> {
-                listener.onMerchantLongClick(merchant);
-                return true;
-            });
+            btnViewAccounts.setOnClickListener(v -> listener.onMerchantClick(merchant));
+            btnEditMerchant.setOnClickListener(v -> listener.onMerchantEdit(merchant));
+            btnDeleteMerchant.setOnClickListener(v -> listener.onMerchantDelete(merchant));
         }
     }
 }

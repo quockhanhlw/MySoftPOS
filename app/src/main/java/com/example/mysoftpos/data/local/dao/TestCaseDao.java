@@ -17,6 +17,12 @@ public interface TestCaseDao {
     @Query("SELECT * FROM test_cases WHERE suite_id = :suiteId ORDER BY created_at DESC")
     LiveData<List<TestCaseEntity>> getCasesBySuite(long suiteId);
 
+    @Query("SELECT * FROM test_cases WHERE suite_id = :suiteId ORDER BY created_at DESC")
+    List<TestCaseEntity> getCasesBySuiteSync(long suiteId);
+
+    @Query("SELECT * FROM test_cases WHERE backend_id = :backendId LIMIT 1")
+    TestCaseEntity findByBackendIdSync(long backendId);
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     long insert(TestCaseEntity testCase);
 
@@ -34,4 +40,10 @@ public interface TestCaseDao {
 
     @Query("SELECT * FROM test_cases WHERE scheme = :scheme AND suite_id = -1 ORDER BY created_at DESC")
     LiveData<List<TestCaseEntity>> getCustomCasesByScheme(String scheme);
+
+    @Query("DELETE FROM test_cases WHERE suite_id = :suiteId")
+    void deleteBySuiteId(long suiteId);
+
+    @Query("SELECT COUNT(*) FROM test_cases")
+    int getCount();
 }

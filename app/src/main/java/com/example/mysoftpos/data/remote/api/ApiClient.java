@@ -224,10 +224,11 @@ public final class ApiClient {
         SharedPreferences.Editor editor = getPrefs(ctx).edit();
         editor.putString(KEY_ACCESS_TOKEN, resp.accessToken);
         editor.putString(KEY_REFRESH_TOKEN, resp.refreshToken);
-        if (resp.user != null) {
-            editor.putLong(KEY_USER_ID, resp.user.id);
-            editor.putString(KEY_ROLE, resp.user.role);
-            editor.putString(KEY_USERNAME, resp.user.phone);
+        ApiService.PosAccountDto sessionUser = resp.user != null ? resp.user : resp.posAccount;
+        if (sessionUser != null) {
+            editor.putLong(KEY_USER_ID, sessionUser.id);
+            editor.putString(KEY_ROLE, sessionUser.role);
+            editor.putString(KEY_USERNAME, sessionUser.phone);
         }
         editor.apply();
     }

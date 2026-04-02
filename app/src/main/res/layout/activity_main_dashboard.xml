@@ -92,16 +92,6 @@
                 app:layout_collapseMode="pin"
                 android:layout_marginTop="24dp">
                 
-                <ImageView
-                    android:id="@+id/btnHome"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:padding="12dp"
-                    android:src="@drawable/ic_home"
-                    android:layout_gravity="start"
-                    android:layout_marginStart="0dp"
-                    android:contentDescription="@string/app_name"
-                    app:tint="@android:color/white" />
 
                 <!-- Logout Removed as per request -->
 

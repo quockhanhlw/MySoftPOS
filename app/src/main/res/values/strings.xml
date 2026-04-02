@@ -66,7 +66,7 @@
     <string name="forgot_verify_subtitle" translatable="false">Enter the 6-digit code we sent to your email</string>
     <string name="forgot_new_password_title" translatable="false">New Password</string>
     <string name="forgot_timeout" translatable="false">Server response timed out. Please try again.</string>
-    <string name="forgot_retrying" translatable="false">Server is waking up, retrying...</string>
+    <string name="forgot_retrying" translatable="false">Server is waking up, retrying…</string>
 
     <!-- Missing Register Strings -->
     <string name="register_subtitle">Please fill in your details</string>
@@ -122,7 +122,7 @@
     <string name="register_password_policy">Password must be at least 8 characters and include both letters and numbers</string>
     <string name="register_error_exists_phone">Phone number already registered</string>
     <string name="register_invalid_store_name">Store name must be 3–80 characters and contain letters or numbers</string>
-    <string name="register_invalid_bank_name">Bank name must be 2-22 characters using A-Z and 0-9 only</string>
+    <string name="register_invalid_bank_name">Bank name must be 2–22 characters using A–Z and 0–9 only</string>
     <string name="register_invalid_store_address">Store address must be 8–160 characters and contain meaningful details</string>
     <string name="register_invalid_branch_count">Branch count must be between 0 and 50</string>
     <string name="register_branch_addresses_required">Please enter branch addresses for all branches</string>
@@ -197,9 +197,13 @@
     <string name="dashboard_logon">Log On</string>
     <string name="dashboard_settings">Settings</string>
     <string name="dashboard_balance">Balance Inquiry</string>
-    <string name="dashboard_user_management">User Management</string>
+    <string name="dashboard_user_management">Merchant Management</string>
     <string name="dashboard_transaction_management">Transaction Management</string>
     <string name="dashboard_welcome">Welcome</string>
+    <string name="dashboard_welcome_admin">Welcome</string>
+    <string name="dashboard_welcome_name_format">Welcome, %1$s</string>
+    <string name="dashboard_welcome_user">Welcome User</string>
+    <string name="dashboard_admin_label">Administrator</string>
     <string name="history_title">Transaction History</string>
     <string name="history_empty">No recent transactions</string>
     <string name="history_refreshed">History refreshed</string>
@@ -370,7 +374,8 @@
     <string name="settings_logout">Log Out</string>
     <string name="user_mgmt_title">Merchant Management</string>
     <string name="user_mgmt_subtitle">Manage merchants and account lists</string>
-    <string name="user_mgmt_search_hint">Search merchant name, MID, or address...</string>
+    <string name="user_mgmt_backend_source_format">Backend: %1$s</string>
+    <string name="user_mgmt_search_hint">Search merchant name, MID, or address…</string>
     <string name="user_mgmt_empty_title">No merchants yet</string>
     <string name="user_mgmt_empty_subtitle">Merchants will appear after backend sync</string>
     <string name="user_mgmt_empty_filter_title">No matching merchants</string>
@@ -381,37 +386,43 @@
     <string name="user_mgmt_state_backend_session_unavailable_title">Backend session unavailable</string>
     <string name="user_mgmt_state_backend_session_unavailable_subtitle">Please sign in again or pull to retry.</string>
     <string name="user_mgmt_state_loading_title">Loading merchants</string>
-    <string name="user_mgmt_state_loading_subtitle">Fetching the latest merchants from backend...</string>
+    <string name="user_mgmt_state_loading_subtitle">Fetching the latest merchants from backend…</string>
     <string name="user_mgmt_state_backend_unavailable_title">Backend unavailable</string>
     <string name="user_mgmt_state_load_users_failed_subtitle">Could not load merchants from backend. Please try again.</string>
     <string name="user_mgmt_state_load_users_network_subtitle">Could not load merchants from backend. Please check your connection and try again.</string>
     <string name="user_mgmt_mid_format">MID: %1$s</string>
     <string name="user_mgmt_branch_count_format">Branches: %1$d • Accounts: %2$d</string>
     <string name="user_mgmt_missing_tid_badge">Missing TID: %1$d</string>
-    <string name="user_mgmt_branch_dialog_title">Branches - %1$s</string>
-    <string name="user_mgmt_branch_item_format">%1$s (%2$s) - Accounts: %3$d</string>
+    <string name="user_mgmt_branch_dialog_title">Branches – %1$s</string>
+    <string name="user_mgmt_branch_item_format">%1$s (%2$s) – Accounts: %3$d</string>
     <string name="user_mgmt_accounts_dialog_title">Merchant Accounts</string>
     <string name="user_mgmt_accounts_dialog_empty">No accounts (TID) found for this merchant.</string>
     <string name="user_mgmt_accounts_dialog_line">%1$d. TID: %2$s</string>
     <string name="user_mgmt_accounts_dialog_mid">MID: %1$s</string>
     <string name="user_mgmt_accounts_missing_tid_notice">This merchant has %1$d account(s) without TID. Please assign TID now.</string>
     <string name="user_mgmt_accounts_dialog_setup_hint">MID: %1$s\nEnter TID for each account (8 uppercase letters/digits).</string>
-    <string name="user_mgmt_accounts_dialog_account_label">Account %1$d - %2$s</string>
+    <string name="user_mgmt_accounts_dialog_manage_title">Manage POS Accounts</string>
+    <string name="user_mgmt_accounts_dialog_manage_subtitle">Edit account profile and terminal binding for this merchant.</string>
+    <string name="user_mgmt_accounts_dialog_account_label">Account %1$d – %2$s</string>
     <string name="user_mgmt_accounts_dialog_item_format">%1$d) %2$s\nTID: %3$s\nIP: %4$s • Port: %5$s</string>
     <string name="user_mgmt_accounts_dialog_tid_hint">TID for account %1$d</string>
     <string name="user_mgmt_accounts_dialog_save_tid">Save TID</string>
-    <string name="user_mgmt_accounts_dialog_tid_invalid">Account %1$d: TID must be exactly 8 uppercase letters/digits</string>
+    <string name="user_mgmt_accounts_dialog_tid_invalid">Account %1$d: TID must be exactly 8 uppercase letters or digits</string>
     <string name="user_mgmt_accounts_dialog_tid_no_change">No TID changes to save.</string>
     <string name="user_mgmt_accounts_dialog_tid_update_success">Saved TID for %1$d account(s).</string>
     <string name="user_mgmt_accounts_dialog_tid_update_partial">Saved %1$d account(s), failed %2$d account(s).</string>
     <string name="user_mgmt_account_editor_title">Account Configuration</string>
     <string name="user_mgmt_account_editor_hint">Configure TID and connection for: %1$s</string>
     <string name="user_mgmt_account_editor_test">Test Connection</string>
+    <string name="user_mgmt_account_editor_test_label">Test</string>
+    <string name="user_mgmt_account_editor_cancel_label">Cancel</string>
+    <string name="user_mgmt_account_editor_save_label">Save</string>
     <string name="user_mgmt_account_editor_clear">Clear</string>
     <string name="user_mgmt_account_editor_invalid_port">Port must be between 1 and 65535</string>
+    <string name="user_mgmt_account_editor_invalid_host">Host must be a valid IPv4 or domain (without http:// or path)</string>
     <string name="user_mgmt_account_editor_save_success">Account configuration saved</string>
     <string name="user_mgmt_account_editor_clear_success">Account configuration cleared</string>
-    <string name="user_mgmt_account_editor_test_success">Connection test successful</string>
+    <string name="user_mgmt_account_editor_test_success">Connection test succeeded</string>
     <string name="user_mgmt_account_editor_test_failed">Connection test failed</string>
     <string name="user_mgmt_action_view_accounts">View accounts</string>
     <string name="user_mgmt_add_merchant">Add merchant</string>
@@ -421,26 +432,54 @@
     <string name="user_mgmt_delete_merchant_blocked">Cannot delete merchant while accounts, branches, or terminals are still linked.</string>
     <string name="user_mgmt_merchant_code">Merchant code (MID)</string>
     <string name="user_mgmt_merchant_name">Merchant name</string>
+    <string name="user_mgmt_merchant_editor_section_title">MERCHANT INFORMATION</string>
+    <string name="user_mgmt_merchant_editor_subtitle">Enter merchant details to create or update this profile.</string>
+    <string name="user_mgmt_merchant_code_helper">Use uppercase MID provided by backend or acquirer.</string>
     <string name="user_mgmt_add_account">Add account</string>
     <string name="user_mgmt_edit_account">Edit account</string>
     <string name="user_mgmt_delete_account">Delete account</string>
     <string name="user_mgmt_delete_account_confirm">Delete account %1$s?</string>
     <string name="user_mgmt_delete_success">Deleted successfully</string>
     <string name="user_mgmt_account_item_config_format">TID: %1$s\nIP: %2$s • Port: %3$s</string>
+    <string name="user_mgmt_account_username_format">Username: %1$s</string>
+    <string name="user_mgmt_account_merchant_phone_format">Merchant phone: %1$s</string>
+    <string name="user_mgmt_account_password_format">Password: %1$s</string>
+    <string name="user_mgmt_account_password_saved_placeholder">(saved on server)</string>
+    <string name="user_mgmt_reset_password">Reset password</string>
+    <string name="user_mgmt_reset_password_prompt">Enter new password for %1$s</string>
+    <string name="user_mgmt_reset_password_confirm">Confirm password reset</string>
+    <string name="user_mgmt_reset_password_success">Password reset successful</string>
+    <string name="user_mgmt_host_status_configured">HOST CONFIGURED</string>
+    <string name="user_mgmt_host_status_partial">HOST INCOMPLETE</string>
+    <string name="user_mgmt_host_status_missing">HOST NOT SET</string>
+    <string name="user_mgmt_host_status_with_source">%1$s %2$s</string>
+    <string name="user_mgmt_host_source_pos_account">(by posAccountId)</string>
+    <string name="user_mgmt_host_source_terminal">(by terminalId)</string>
     <string name="user_mgmt_branch_picker_hint">Select a branch to manage its POS accounts.</string>
     <string name="user_mgmt_branch_code_format">Code: %1$s</string>
     <string name="user_mgmt_branch_accounts_badge">%1$d account(s)</string>
     <string name="user_mgmt_account_editor_section_title">ACCOUNT INFORMATION</string>
+    <string name="user_mgmt_account_editor_form_subtitle">Fill all required fields before saving changes.</string>
+    <string name="user_mgmt_account_editor_profile_section">Account Profile</string>
+    <string name="user_mgmt_account_editor_terminal_section">Terminal and Host Connection</string>
+    <string name="user_mgmt_account_editor_name_helper">Name shown in management screens.</string>
+    <string name="user_mgmt_account_editor_phone_helper">Used as login username for this POS account.</string>
+    <string name="user_mgmt_account_editor_email_helper">Optional contact email.</string>
+    <string name="user_mgmt_account_editor_password_helper">Required only when creating a new account.</string>
+    <string name="user_mgmt_account_editor_server_ip_helper">Optional. Enter with port to enable test connection.</string>
+    <string name="user_mgmt_account_editor_server_port_helper">Optional. Must be in range 1–65535.</string>
     <string name="user_mgmt_account_tid_helper">Exactly 8 uppercase letters or digits</string>
+    <string name="user_mgmt_account_editor_saving">Saving…</string>
+    <string name="user_mgmt_account_editor_testing">Testing…</string>
     <string name="user_mgmt_error_phone_exists">Phone number is already registered.</string>
     <string name="user_mgmt_error_email_exists">Email is already registered.</string>
     <string name="user_mgmt_error_password_required_create">Password is required when creating a new account.</string>
     <string name="user_mgmt_error_tid_invalid_strict">Terminal ID (TID) must be exactly 8 uppercase letters or digits.</string>
     <string name="user_mgmt_error_merchant_not_found">Merchant not found. Please refresh and try again.</string>
-    <string name="user_mgmt_error_access_denied">Access denied for this operation.</string>
-    <string name="user_mgmt_error_branch_invalid">Invalid branch selection for this merchant.</string>
+    <string name="user_mgmt_error_access_denied">You do not have permission to perform this action.</string>
+    <string name="user_mgmt_error_branch_invalid">The selected branch is invalid for this merchant.</string>
     <string name="user_mgmt_error_account_not_found">Account not found. It may have been deleted.</string>
-    <string name="user_mgmt_error_create_account_failed">Could not create account. Please review input and try again.</string>
+    <string name="user_mgmt_error_create_account_failed">Could not create account. Please verify the information and try again.</string>
     <string name="common_edit">Edit</string>
     <string name="common_delete">Delete</string>
 
@@ -451,7 +490,7 @@
     <string name="channel_select_pos_subtitle">Point of Sale</string>
     <string name="channel_select_atm_title">ATM</string>
     <string name="channel_select_atm_subtitle">Automated Teller Machine</string>
-    <string name="channel_select_history_subtitle">Transaction History &amp; Void</string>
+    <string name="channel_select_history_subtitle">Transaction history and reversals</string>
     <string name="txn_select_breadcrumb_sep"> › </string>
     <string name="txn_select_purchase_subtitle">Payment transaction test</string>
     <string name="txn_select_balance_subtitle">Balance check test</string>
@@ -467,6 +506,7 @@
     <string name="void_confirm_message">Are you sure you want to cancel this transaction? This action cannot be undone.</string>
     <string name="void_confirm_yes">Yes, Cancel</string>
     <string name="void_confirm_no">No</string>
+    <string name="void_only_purchase">Void is only available for Purchase transactions.</string>
     <string name="terms_close">Close</string>
     <string name="common_required">Required</string>
     <string name="common_error_with_reason">Error: %s</string>
@@ -474,13 +514,13 @@
     <string name="settings_security_saved">Security settings saved</string>
     <string name="settings_backend_current">Current: %s</string>
     <string name="runner_execute_transaction">Execute Transaction</string>
-    <string name="runner_waiting_for_execution">Waiting for execution...</string>
+    <string name="runner_waiting_for_execution">Waiting for execution…</string>
     <string name="runner_run_transaction">Run Transaction</string>
     <string name="batch_runner_progress_default" translatable="false">0/0</string>
-    <string name="batch_runner_run_all_plain">Run All</string>
+    <string name="batch_runner_run_all_plain">Run all</string>
     <string name="multi_thread_runner_title">Multi-thread Runner</string>
-    <string name="multi_thread_runner_preparing">Preparing...</string>
-    <string name="dynamic_test_cases_title">Test Cases</string>
+    <string name="multi_thread_runner_preparing">Preparing…</string>
+    <string name="dynamic_test_cases_title">Test Case List</string>
     <string name="numpad_digit_1" translatable="false">1</string>
     <string name="numpad_digit_2" translatable="false">2</string>
     <string name="numpad_digit_3" translatable="false">3</string>
@@ -498,7 +538,7 @@
     <string name="settings_backend_url_https_required">URL must start with https://</string>
     <string name="settings_backend_saved">Backend URL saved</string>
     <string name="settings_language_en">English</string>
-    <string name="settings_language_vi">Tiếng Việt</string>
+    <string name="settings_language_vi">Vietnamese</string>
     <string name="settings_feature_wallpaper">Wallpaper</string>
     <string name="settings_feature_password">Password</string>
     <string name="settings_feature_coming_soon">Feature Coming Soon!</string>
@@ -537,7 +577,17 @@
     <string name="login_success">Login successful!</string>
     <string name="login_first_online_required">Admin-created account requires first-time online login.</string>
     <string name="login_server_unavailable_offline_not_found">Server is unavailable and no offline account was found.</string>
+    <string name="login_backend_unreachable">Unable to connect to backend. Please try again.</string>
     <string name="login_error_with_reason">Login error: %1$s</string>
+
+    <!-- Transaction / Void errors -->
+    <string name="txn_error_not_found">Transaction not found</string>
+    <string name="txn_error_original_request_missing">Original request data missing</string>
+    <string name="txn_void_expired_24h">Only transactions within 24 hours can be voided</string>
+    <string name="txn_void_success">Transaction voided successfully</string>
+    <string name="txn_void_failed_with_rc">Void failed: RC %1$s</string>
+    <string name="txn_void_timeout">Void timeout: no response from server</string>
+    <string name="txn_void_error_with_reason">Void error: %1$s</string>
 
     <!-- Purchase Amount -->
     <string name="purchase_enter_amount">Please enter an amount</string>
@@ -564,7 +614,7 @@
 
     <!-- Dialog i18n cleanup -->
     <string name="dialog_pin_title">Enter PIN</string>
-    <string name="dialog_pin_length_error">PIN must be 4-6 digits</string>
+    <string name="dialog_pin_length_error">PIN must be 4–6 digits</string>
     <string name="dialog_select_card_title">Select Card</string>
     <string name="dialog_select_pan_title">Select PAN</string>
     <string name="dialog_select_nfc_card_title">Select NFC Card (071/072)</string>
@@ -578,36 +628,36 @@
     <!-- Test Suite UI -->
     <string name="testsuite_cannot_delete_builtin">Cannot delete built-in scenarios</string>
     <string name="testsuite_configured_selected">Configured and selected</string>
-    <string name="testsuite_btn_delete_selected">Delete Selected</string>
-    <string name="testsuite_btn_run_transaction">Run Transaction</string>
-    <string name="testsuite_btn_confirm_selection">Confirm Selection</string>
+    <string name="testsuite_btn_delete_selected">Delete selected items</string>
+    <string name="testsuite_btn_run_transaction">Run transaction</string>
+    <string name="testsuite_btn_confirm_selection">Confirm selection</string>
     <string name="testsuite_btn_cancel_selection">Cancel</string>
-    <string name="testsuite_no_case_selected">No test cases selected</string>
-    <string name="testsuite_no_custom_case_selected">No custom cases selected</string>
-    <string name="testsuite_confirm_delete_title">Confirm Delete</string>
-    <string name="testsuite_confirm_delete_message">Delete %1$d test cases?</string>
+    <string name="testsuite_no_case_selected">No test case selected</string>
+    <string name="testsuite_no_custom_case_selected">No custom test case selected</string>
+    <string name="testsuite_confirm_delete_title">Confirm delete</string>
+    <string name="testsuite_confirm_delete_message">Delete %1$d test case(s)?</string>
     <string name="testsuite_delete_action">Delete</string>
-    <string name="testsuite_selection_mode_hint">Selection Mode. Tap to select test cases.</string>
-    <string name="testsuite_configuring_other_case">Another testcase is being configured. Please complete or cancel it first.</string>
+    <string name="testsuite_selection_mode_hint">Selection mode. Tap to select test cases.</string>
+    <string name="testsuite_configuring_other_case">Another test case is being configured. Please finish or cancel first.</string>
     <string name="testsuite_mode_indicator_selection">Selection mode</string>
     <string name="testsuite_mode_indicator_delete">Delete mode</string>
     <string name="testsuite_swipe_edit">Edit test case</string>
     <string name="testsuite_swipe_delete">Delete test case</string>
-    <string name="testsuite_track2_format">Track 2 must contain = or D separator</string>
-    <string name="testsuite_dialog_title_configure">Configure Scenario</string>
-    <string name="testsuite_dialog_title_edit">Edit Test Case</string>
-    <string name="testsuite_dialog_title_new">New Test Case</string>
-    <string name="testsuite_dialog_subtitle_modify">Modify transaction parameters</string>
+    <string name="testsuite_track2_format">Track 2 must contain separator = or D</string>
+    <string name="testsuite_dialog_title_configure">Configure scenario</string>
+    <string name="testsuite_dialog_title_edit">Edit test case</string>
+    <string name="testsuite_dialog_title_new">Create test case</string>
+    <string name="testsuite_dialog_subtitle_modify">Edit transaction parameters</string>
     <string name="testsuite_dialog_subtitle_configure">Configure transaction parameters</string>
     <string name="testsuite_amount_title">Amount (%1$s)</string>
     <string name="testsuite_required">Required</string>
-    <string name="testsuite_amount_gt_zero">Must be greater than 0</string>
+    <string name="testsuite_amount_gt_zero">Amount must be greater than 0</string>
     <string name="testsuite_amount_invalid_number">Invalid number</string>
     <string name="testsuite_pin_4_6_digits">PIN must be 4-6 digits</string>
     <string name="testsuite_field_prefix_de">DE</string>
     <string name="testsuite_field_num_hint">#</string>
     <string name="testsuite_field_value_hint">Value</string>
-    <string name="testsuite_apply_config">Apply Config</string>
+    <string name="testsuite_apply_config">Apply configuration</string>
     <string name="testsuite_default_de22">051</string>
     <string name="testsuite_default_amount">100000</string>
     <string name="testsuite_balance_amount_not_required">Not required for balance inquiry</string>
@@ -615,10 +665,10 @@
     <string name="testsuite_amount_range">10,000 -> 500,000,000</string>
     <string name="testsuite_amount_numeric">Must be numeric</string>
     <string name="testsuite_pan_length">13-19 digits</string>
-    <string name="testsuite_pan_luhn_failed">Luhn failed</string>
+    <string name="testsuite_pan_luhn_failed">Luhn check failed</string>
     <string name="testsuite_expiry_yymm">YYMM</string>
     <string name="testsuite_expiry_invalid_month">Invalid month</string>
-    <string name="testsuite_expiry_expired">Expired</string>
+    <string name="testsuite_expiry_expired">Card has expired</string>
     <string name="testsuite_configuration_applied">Configuration applied</string>
 
     <!-- Shared labels -->
@@ -718,7 +768,7 @@
     <string name="user_mgmt_new_password_optional_hint">New password (leave blank to keep)</string>
     <string name="user_mgmt_enter_ip_port_first">Enter IP and Port first</string>
     <string name="user_mgmt_invalid_port_number">Invalid port number</string>
-    <string name="user_mgmt_testing_connection">Testing...</string>
+    <string name="user_mgmt_testing_connection">Testing…</string>
     <string name="user_mgmt_connected">✓ Connected</string>
     <string name="user_mgmt_connection_failed">✗ Connection failed</string>
     <string name="user_mgmt_phone_required">Phone number is required</string>
@@ -732,12 +782,13 @@
     <string name="user_mgmt_user_deleted">User deleted</string>
     <string name="user_mgmt_error_code">Error: %1$d</string>
     <string name="user_mgmt_network_error">Network error: %1$s</string>
+    <string name="user_mgmt_network_error_generic">Unable to connect to network. Please try again.</string>
 
     <!-- Scheme select -->
     <string name="scheme_select_updated">Updated</string>
     <string name="scheme_select_added">Added</string>
     <string name="scheme_select_invalid_ip">Invalid IP</string>
-    <string name="scheme_select_port_range_hint">1 - 65535</string>
+    <string name="scheme_select_port_range_hint">1–65535</string>
     <string name="scheme_select_invalid_port_range">Port must be between 1 and 65535</string>
     <string name="scheme_select_invalid_number">Invalid number</string>
     <string name="scheme_select_invalid_port">Invalid port</string>
@@ -760,7 +811,7 @@
     <string name="scheme_select_deleted">Deleted</string>
     <string name="scheme_select_enter_ip_port_first">Please enter IP and Port first</string>
     <string name="scheme_select_invalid_port_short">Invalid Port</string>
-    <string name="scheme_select_connecting_to">Connecting to %1$s:%2$d...</string>
+    <string name="scheme_select_connecting_to">Connecting to %1$s:%2$d…</string>
     <string name="scheme_select_connection_successful">Connection Successful!</string>
     <string name="scheme_select_connection_failed_with_reason">Failed: %1$s</string>
 
@@ -768,28 +819,37 @@
     <string name="txn_mgmt_state_preparing_session_title">Preparing backend session</string>
     <string name="txn_mgmt_state_preparing_session_subtitle">Please wait while your admin session is restored.</string>
     <string name="txn_mgmt_state_backend_session_unavailable_title">Backend session unavailable</string>
-    <string name="txn_mgmt_state_backend_session_unavailable_subtitle">Please sign in again or try again.</string>
+    <string name="txn_mgmt_state_backend_session_unavailable_subtitle">Please sign in again or retry.</string>
     <string name="txn_mgmt_state_loading_title">Loading transactions</string>
-    <string name="txn_mgmt_state_loading_subtitle">Fetching the latest transaction data from backend...</string>
+    <string name="txn_mgmt_state_loading_subtitle">Fetching latest transactions from backend…</string>
     <string name="txn_mgmt_state_backend_unavailable_title">Backend unavailable</string>
     <string name="txn_mgmt_state_load_users_failed_subtitle">Could not load users from backend. Please try again.</string>
-    <string name="txn_mgmt_state_load_users_network_subtitle">Could not load users from backend. Please check your connection and try again.</string>
+    <string name="txn_mgmt_state_load_users_network_subtitle">Could not load users from backend. Please check your connection and retry.</string>
     <string name="txn_mgmt_state_load_txn_failed_subtitle">Could not load transactions from backend. Please try again.</string>
-    <string name="txn_mgmt_state_load_txn_network_subtitle">Could not load transactions from backend. Please check your connection and try again.</string>
+    <string name="txn_mgmt_state_load_txn_network_subtitle">Could not load transactions from backend. Please check your connection and retry.</string>
     <string name="txn_mgmt_state_offline_title">Internet connection required</string>
     <string name="txn_mgmt_state_offline_subtitle">Connect to Wi-Fi or mobile data to view transaction management.</string>
+    <string name="txn_mgmt_backfill_action">Re-sync</string>
+    <string name="txn_mgmt_backfill_requires_network">Network connection is required for backfill</string>
+    <string name="txn_mgmt_backfill_session_required">Please sign in again before running backfill</string>
+    <string name="txn_mgmt_backfill_success">Backfill completed: relinked %1$d transaction(s), total now %2$d</string>
+    <string name="txn_mgmt_backfill_failed">Backfill failed. Please try again.</string>
     <string name="txn_mgmt_header_title">Transactions</string>
     <string name="txn_mgmt_label_approved">Approved</string>
     <string name="txn_mgmt_label_declined">Declined</string>
     <string name="txn_mgmt_label_other">Other</string>
     <string name="txn_mgmt_toast_load_users_failed">Failed to load users</string>
     <string name="txn_mgmt_toast_load_txn_failed">Failed to load transactions</string>
-    <string name="txn_mgmt_filter_all_users">All Users</string>
-    <string name="txn_mgmt_empty_no_transactions_title">No transactions found</string>
+    <string name="txn_mgmt_filter_all_users">All users</string>
+    <string name="txn_mgmt_filter_label_store">Store</string>
+    <string name="txn_mgmt_filter_all_stores">All stores</string>
+    <string name="txn_mgmt_filter_unknown_store">Unknown store</string>
+    <string name="txn_mgmt_empty_no_transactions_title">No transactions</string>
     <string name="txn_mgmt_empty_no_transactions_subtitle">Transactions from user accounts will appear here when available.</string>
     <string name="txn_mgmt_empty_filter_title">No transactions match the filter</string>
-    <string name="txn_mgmt_empty_filter_subtitle">Try selecting a different user.</string>
-    <string name="txn_mgmt_placeholder_dash">—</string>
+    <string name="txn_mgmt_empty_filter_subtitle">Try selecting another user.</string>
+    <string name="txn_mgmt_empty_filter_subtitle_store">Try selecting another user or store.</string>
+    <string name="txn_mgmt_placeholder_dash">-</string>
     <string name="txn_mgmt_trace_format">#%1$s</string>
     <string name="txn_mgmt_status_unknown">UNKNOWN</string>
     <string name="user_mgmt_tid_format">TID: %1$s</string>
@@ -799,7 +859,8 @@
     <string name="txn_result_type_default">Transaction</string>
     <string name="txn_result_amount_overflow">&gt; 10,000,000,000</string>
     <string name="txn_result_balance_type_format">%1$s Balance</string>
-    <string name="txn_result_available_balance">Available Balance</string>tcase<string name="txn_balance_type_available">Available</string>
+    <string name="txn_result_available_balance">Available Balance</string>
+    <string name="txn_balance_type_available">Available</string>
     <string name="txn_balance_type_ledger">Ledger</string>
 
     <!-- Transaction select -->
@@ -812,53 +873,53 @@
     <!-- Dynamic test suite/case -->
     <string name="dynamic_suite_option_rename">Rename</string>
     <string name="dynamic_suite_option_delete">Delete</string>
-    <string name="dynamic_suite_delete_title">Delete Suite</string>
-    <string name="dynamic_suite_delete_message">Are you sure you want to delete this suite and all its cases?</string>
-    <string name="dynamic_suite_edit_title">Edit Test Suite</string>
-    <string name="dynamic_suite_new_title">New Test Suite</string>
+    <string name="dynamic_suite_delete_title">Delete test suite</string>
+    <string name="dynamic_suite_delete_message">Are you sure you want to delete this suite and all test cases inside it?</string>
+    <string name="dynamic_suite_edit_title">Edit test suite</string>
+    <string name="dynamic_suite_new_title">New test suite</string>
     <string name="dynamic_suite_action_update">Update</string>
     <string name="dynamic_suite_action_create">Create</string>
-    <string name="dynamic_suite_name_required">Name required</string>
+    <string name="dynamic_suite_name_required">Name is required</string>
 
     <string name="dynamic_case_option_run">Run</string>
     <string name="dynamic_case_option_edit">Edit</string>
     <string name="dynamic_case_option_delete">Delete</string>
-    <string name="dynamic_case_delete_title">Delete Case</string>
+    <string name="dynamic_case_delete_title">Delete test case</string>
     <string name="dynamic_case_delete_message">Are you sure you want to delete this test case?</string>
-    <string name="dynamic_case_running">Running %1$s...</string>
-    <string name="dynamic_case_new_title">New Test Case</string>
-    <string name="dynamic_case_edit_title">Edit Test Case</string>
-    <string name="dynamic_case_name_hint">Case Name</string>
-    <string name="dynamic_case_type_hint">Transaction Type (PURCHASE/BALANCE)</string>
-    <string name="dynamic_case_type_simple_hint">Transaction Type</string>
+    <string name="dynamic_case_running">Running %1$s…</string>
+    <string name="dynamic_case_new_title">New test case</string>
+    <string name="dynamic_case_edit_title">Edit test case</string>
+    <string name="dynamic_case_name_hint">Test case name</string>
+    <string name="dynamic_case_type_hint">Transaction type (PURCHASE/BALANCE)</string>
+    <string name="dynamic_case_type_simple_hint">Transaction type</string>
     <string name="dynamic_case_action_create">Create</string>
     <string name="dynamic_case_action_update">Update</string>
-    <string name="dynamic_case_name_required">Name required</string>
+    <string name="dynamic_case_name_required">Name is required</string>
 
     <!-- Runner / scheme history -->
     <string name="testsuite_default_value">Default</string>
     <string name="testsuite_default_currency_code">Default (704)</string>
-    <string name="runner_starting_log">Starting Transaction...\nMode: %1$s\nAmount: %2$s\nCurrency: %3$s\n</string>
+    <string name="runner_starting_log">Starting transaction…\nMode: %1$s\nAmount: %2$s\nCurrency: %3$s\n</string>
     <string name="scheme_history_title">Transaction History</string>
-    <string name="scheme_history_count">%1$d transactions</string>
+    <string name="scheme_history_count">%1$d transaction(s)</string>
     <string name="scheme_history_trace_format">Trace: %1$s</string>
 
     <!-- Batch runner -->
-    <string name="batch_runner_no_cases">No test cases provided</string>
+    <string name="batch_runner_no_cases">No test cases were provided</string>
     <string name="batch_runner_progress">%1$d/%2$d</string>
-    <string name="batch_runner_title">Batch Runner (%1$d cases)</string>
-    <string name="batch_runner_run_all">Run All (%1$d)</string>
-    <string name="batch_runner_preparing">Preparing...</string>
-    <string name="batch_runner_build_error">Build error: %1$s</string>
-    <string name="batch_runner_sending">Sending %1$d transactions...</string>
+    <string name="batch_runner_title">Batch run (%1$d case(s))</string>
+    <string name="batch_runner_run_all">Run all (%1$d)</string>
+    <string name="batch_runner_preparing">Preparing…</string>
+    <string name="batch_runner_build_error">Message build error: %1$s</string>
+    <string name="batch_runner_sending">Sending %1$d transaction(s)…</string>
     <string name="batch_runner_detail_pass">RC: %1$s (%2$s)</string>
-    <string name="batch_runner_detail_fail">RC: %1$s - %2$s</string>
-    <string name="batch_runner_error_timeout">Error: Timeout waiting for response.</string>
-    <string name="batch_runner_done_summary">Done: %1$d Pass, %2$d Fail - Run Again?</string>
+    <string name="batch_runner_detail_fail">RC: %1$s – %2$s</string>
+    <string name="batch_runner_error_timeout">Error: Response timeout.</string>
+    <string name="batch_runner_done_summary">Done: %1$d Pass, %2$d Fail - Run again?</string>
     <string name="batch_runner_default_type_purchase">PURCHASE</string>
     <string name="batch_runner_case_type_format">%1$s | DE22: %2$s</string>
     <string name="batch_runner_status_pending">PENDING</string>
-    <string name="batch_runner_status_running">RUNNING...</string>
+    <string name="batch_runner_status_running">RUNNING…</string>
     <string name="batch_runner_status_fail">FAIL</string>
     <string name="batch_runner_rc_badge">RC: %1$s</string>
 
@@ -888,22 +949,23 @@
     <string name="label_scheme_history">Scheme History</string>
     <string name="label_multi_thread_runner">Multi-thread Runner</string>
     <string name="label_test_suites">Test Suites</string>
-    <string name="label_test_cases">Test Cases</string>
+    <string name="label_test_cases">Test case</string>
     <string name="testsuite_title">Test Scenarios</string>
-    <string name="testsuite_fab_add_custom_case_desc">Add Custom Case</string>
+    <string name="testsuite_fab_add_custom_case_desc">Add custom test case</string>
     <string name="testsuite_add_suite_desc">Add test suite</string>
     <string name="testsuite_add_case_desc">Add test case</string>
     <string name="content_desc_delete">Delete</string>
-    <string name="testsuite_mode_magstripe_swipe">Magstripe (Swipe)</string>
-    <string name="testsuite_mode_manual_keyin">Manual Key-in</string>
+    <string name="testsuite_mode_magstripe_swipe">Magstripe swipe</string>
+    <string name="testsuite_mode_manual_keyin">Manual key-in</string>
+    <string name="testsuite_mode_chip_contact">Chip contact</string>
     <string name="testsuite_mode_contactless">Contactless</string>
-    <string name="testsuite_mode_qr_code">QR Code</string>
+    <string name="testsuite_mode_qr_code">QR code</string>
     <string name="testsuite_mode_unknown">Unknown</string>
     <string name="testsuite_desc_mode_de22_format">%1$s (%2$s)</string>
-    <string name="testsuite_entry_mode_011">Manual Key-in + PIN</string>
-    <string name="testsuite_entry_mode_012">Manual Key-in</string>
-    <string name="testsuite_entry_mode_021">Magstripe (Swipe) + PIN</string>
-    <string name="testsuite_entry_mode_022">Magstripe (Swipe)</string>
+    <string name="testsuite_entry_mode_011">Manual key-in + PIN</string>
+    <string name="testsuite_entry_mode_012">Manual key-in</string>
+    <string name="testsuite_entry_mode_021">Magstripe swipe + PIN</string>
+    <string name="testsuite_entry_mode_022">Magstripe swipe</string>
     <string name="testsuite_entry_mode_051">NFC / Chip + PIN</string>
     <string name="testsuite_entry_mode_052">NFC / Chip</string>
     <string name="testsuite_entry_mode_071">Contactless + PIN (071)</string>
@@ -913,13 +975,13 @@
     <string name="testsuite_entry_mode_custom_format">Custom (%1$s)</string>
     <string name="testsuite_desc_contactless_pin_071">Contactless + PIN (071)</string>
     <string name="testsuite_desc_contactless_no_pin_072">Contactless - No PIN (072)</string>
-    <string name="scheme_select_add_scheme_desc">Add Scheme</string>
-    <string name="scheme_select_count_format">%1$d schemes</string>
-    <string name="scheme_dialog_add_title">Add Scheme</string>
-    <string name="scheme_dialog_edit_title">Edit Scheme</string>
+    <string name="scheme_select_add_scheme_desc">Add scheme</string>
+    <string name="scheme_select_count_format">%1$d scheme</string>
+    <string name="scheme_dialog_add_title">Add scheme</string>
+    <string name="scheme_dialog_edit_title">Edit scheme</string>
     <string name="scheme_dialog_add_subtitle">Configure a new card network</string>
-    <string name="scheme_dialog_edit_subtitle">Modify card network settings</string>
-    <string name="scheme_dialog_preview_name_default">New Scheme</string>
+    <string name="scheme_dialog_edit_subtitle">Edit card network configuration</string>
+    <string name="scheme_dialog_preview_name_default">New scheme</string>
     <string name="scheme_dialog_preview_icon_default" translatable="false">\?</string>
 
     <!-- i18n runtime texts -->
@@ -927,15 +989,15 @@
 
     <!-- Restored default (values) string keys required by layouts and runtime -->
     <string name="scheme_select_title">Test Schemes</string>
-    <string name="scheme_select_subtitle">Tap to test · Hold to edit</string>
-    <string name="scheme_history_count_placeholder">0 transactions</string>
+    <string name="scheme_select_subtitle">Tap to test · Long press to edit</string>
+    <string name="scheme_history_count_placeholder">0 transaction(s)</string>
     <string name="scheme_history_empty">No transactions found</string>
     <string name="item_batch_status_icon_desc">Status</string>
     <string name="detail_row_label_placeholder">Label</string>
     <string name="detail_row_value_placeholder">Value</string>
     <string name="txn_detail_amount_placeholder">0 VND</string>
     <string name="notification_title_default">Notification</string>
-    <string name="notification_message_placeholder">Message</string>
+    <string name="notification_message_placeholder">Notification content</string>
     <string name="nfc_error_card_not_supported">Card not supported</string>
     <string name="nfc_error_read_failed_default">Failed to read card</string>
     <string name="nfc_error_processing">Processing error: %1$s</string>
@@ -949,46 +1011,47 @@
     <string name="user_mgmt_count_format">%1$d merchants</string>
 
     <string name="test_scenario_badge_custom">CUSTOM</string>
+    <string name="test_scenario_badge_default">DEFAULT</string>
     <string name="test_scenario_detail_selected">Selected</string>
     <string name="test_scenario_detail_tap_select">Tap to select</string>
     <string name="test_scenario_detail_long_press_select">Long press to select</string>
     <string name="test_scenario_detail_tap_run">Tap to run test case</string>
 
-    <string name="multi_runner_no_scenarios_selected">No scenarios selected.</string>
-    <string name="multi_runner_status_no_scenarios">Error: No scenarios</string>
-    <string name="multi_runner_status_preparing">Preparing %1$d tests...</string>
+    <string name="multi_runner_no_scenarios_selected">No scenario selected.</string>
+    <string name="multi_runner_status_no_scenarios">Error: No scenario</string>
+    <string name="multi_runner_status_preparing">Preparing %1$d test(s)…</string>
     <string name="multi_runner_log_header">=== Multi-thread Runner ===\n</string>
     <string name="multi_runner_log_total_tests">Total tests: %1$d\n</string>
     <string name="multi_runner_log_mode_concurrent">Mode: Concurrent (Thread Pool)\n\n</string>
-    <string name="multi_runner_log_build_error">%1$s Build error: %2$s\n</string>
-    <string name="multi_runner_status_sending">Sending %1$d transactions...</string>
-    <string name="multi_runner_log_skipped">%1$s *** SKIPPED (build error) ***\n</string>
+    <string name="multi_runner_log_build_error">%1$s Message build error: %2$s\n</string>
+    <string name="multi_runner_status_sending">Sending %1$d transaction(s)…</string>
+    <string name="multi_runner_log_skipped">%1$s *** SKIPPED (message build error) ***\n</string>
     <string name="multi_runner_status_completed_simple">Completed %1$d/%2$d</string>
-    <string name="multi_runner_log_starting">%1$s Starting...\n</string>
-    <string name="multi_runner_log_status_pass">%1$s *** STATUS: PASS ***\n</string>
-    <string name="multi_runner_log_status_fail">%1$s *** STATUS: FAIL ***\n</string>
+    <string name="multi_runner_log_starting">%1$s Starting…\n</string>
+    <string name="multi_runner_log_status_pass">%1$s *** RESULT: PASS ***\n</string>
+    <string name="multi_runner_log_status_fail">%1$s *** RESULT: FAIL ***\n</string>
     <string name="multi_runner_log_rc_reason">%1$s RC: %2$s (%3$s)\n</string>
     <string name="multi_runner_log_rc_fail_reason">%1$s RC: %2$s - Reason: %3$s\n</string>
-    <string name="multi_runner_log_timeout">%1$s Error: Timeout waiting for response.\n</string>
+    <string name="multi_runner_log_timeout">%1$s Error: Response timeout.\n</string>
     <string name="multi_runner_log_error">%1$s Error: %2$s\n</string>
     <string name="multi_runner_status_completed_with_result">Completed %1$d/%2$d (Pass: %3$d / Fail: %4$d)</string>
-    <string name="multi_runner_log_all_complete">\n=== ALL TESTS COMPLETE ===\n</string>
+    <string name="multi_runner_log_all_complete">\n=== ALL TESTS COMPLETED ===\n</string>
     <string name="multi_runner_log_pass_fail">Pass: %1$d / Fail: %2$d\n</string>
     <string name="runner_preview_header">=== ISO MESSAGE PREVIEW ===</string>
     <string name="runner_preview_server_format">Server: %1$s:%2$d</string>
     <string name="runner_packed_hex_bytes_format">Packed Hex (%1$d bytes):</string>
     <string name="runner_preview_footer">===========================</string>
-    <string name="runner_preview_error_format">Preview Error: %1$s</string>
-    <string name="runner_txn_balance">Balance Inquiry</string>
+    <string name="runner_preview_error_format">Preview error: %1$s</string>
+    <string name="runner_txn_balance">Balance inquiry</string>
     <string name="runner_txn_purchase">Purchase</string>
-    <string name="runner_building_format">Building %1$s -&gt; %2$s:%3$d...\n</string>
+    <string name="runner_building_format">Building %1$s -&gt; %2$s:%3$d…\n</string>
     <string name="runner_response_hex_label">Response Hex:</string>
-    <string name="runner_status_pass_banner">*** STATUS: PASS ***</string>
-    <string name="runner_status_fail_banner">*** STATUS: FAIL ***</string>
+    <string name="runner_status_pass_banner">*** RESULT: PASS ***</string>
+    <string name="runner_status_fail_banner">*** RESULT: FAIL ***</string>
     <string name="runner_rc_success_format">RC: %1$s (%2$s)</string>
     <string name="runner_rc_fail_format">RC: %1$s - Reason: %2$s</string>
-    <string name="runner_error_timeout">Error: Timeout waiting for response.</string>
+    <string name="runner_error_timeout">Error: Response timeout.</string>
     <string name="runner_error_with_reason">Error: %1$s</string>
-    <string name="runner_saved_to_history_format">Transaction saved to History (Trace: %1$s)</string>
-    <string name="runner_save_db_error_format">Error saving to DB: %1$s</string>
+    <string name="runner_saved_to_history_format">Saved transaction to history (Trace: %1$s)</string>
+    <string name="runner_save_db_error_format">Database save error: %1$s</string>
 </resources>

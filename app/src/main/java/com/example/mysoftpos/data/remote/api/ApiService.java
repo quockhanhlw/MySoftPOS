@@ -81,6 +81,15 @@ public interface ApiService {
                         @Path("id") long id,
                         @Body Map<String, String> body);
 
+        @DELETE("/api/terminals/{id}")
+        Call<Map<String, String>> deleteTerminal(@Header("Authorization") String token,
+                        @Path("id") long id);
+
+        @DELETE("/api/merchants/{merchantId}/branches/{branchId}")
+        Call<Map<String, String>> deleteBranch(@Header("Authorization") String token,
+                        @Path("merchantId") long merchantId,
+                        @Path("branchId") long branchId);
+
         // ==================== Transactions ====================
 
         @POST("/api/transactions/sync")
@@ -88,7 +97,13 @@ public interface ApiService {
                         @Body TransactionSyncRequest request);
 
         @GET("/api/transactions")
-        Call<List<TransactionSummaryDto>> getAllTransactions(@Header("Authorization") String token);
+        Call<List<TransactionSummaryDto>> getAllTransactions(@Header("Authorization") String token,
+                        @Query("merchantId") Long merchantId,
+                        @Query("terminalId") Long terminalId);
+
+        @POST("/api/transactions/admin/backfill")
+        Call<Map<String, Integer>> backfillAdminTransactions(@Header("Authorization") String token,
+                        @Query("merchantId") Long merchantId);
 
         @GET("/api/transactions/terminal/{code}")
         Call<List<TransactionSummaryDto>> getByTerminal(@Header("Authorization") String token,
@@ -142,6 +157,13 @@ public interface ApiService {
         Call<Map<String, Integer>> syncTestSuites(@Header("Authorization") String token,
                         @Body List<TestSuiteDto> suites);
 
+        @GET("/api/cards")
+        Call<List<CardDto>> getCards(@Header("Authorization") String token);
+
+        @POST("/api/cards/sync")
+        Call<Map<String, Integer>> syncCards(@Header("Authorization") String token,
+                        @Body List<CardDto> cards);
+
         // ==================== POS Accounts (Admin, domain alias of users) ====================
 
         @GET("/api/pos-accounts")
@@ -155,6 +177,11 @@ public interface ApiService {
         Call<PosAccountDto> updatePosAccount(@Header("Authorization") String token,
                         @Path("id") long id,
                         @Body CreatePosAccountRequest request);
+
+        @PUT("/api/pos-accounts/{id}/connection")
+        Call<PosAccountDto> updatePosAccountConnection(@Header("Authorization") String token,
+                        @Path("id") long id,
+                        @Body PosAccountConnectionRequest request);
 
         @DELETE("/api/pos-accounts/{id}")
         Call<Map<String, String>> deletePosAccount(@Header("Authorization") String token,
@@ -299,6 +326,18 @@ public interface ApiService {
                 }
         }
 
+        class PosAccountConnectionRequest {
+                public String terminalId;
+                public String serverIp;
+                public Integer serverPort;
+
+                public PosAccountConnectionRequest(String terminalId, String serverIp, Integer serverPort) {
+                        this.terminalId = terminalId;
+                        this.serverIp = serverIp;
+                        this.serverPort = serverPort;
+                }
+        }
+
         class ForgotPasswordRequest {
                 public String email;
 
@@ -334,6 +373,7 @@ public interface ApiService {
         class LoginResponse {
                 public String accessToken;
                 public String refreshToken;
+                public PosAccountDto posAccount;
                 public PosAccountDto user;
         }
 
@@ -347,6 +387,7 @@ public interface ApiService {
                 public String fullName;
                 public String username;
                 public String phone;
+                public String merchantPhone;
                 public String email;
                 public String dob;
                 public String gender;
@@ -357,6 +398,8 @@ public interface ApiService {
                 public String merchantCode;
                 public Boolean phoneVerified;
                 public String terminalId;
+                public String serverIp;
+                public Integer serverPort;
                 public boolean active;
         }
 
@@ -473,6 +516,17 @@ public interface ApiService {
                 public String track2;
                 public String scheme;
                 public String fieldConfigJson;
+                public Boolean isDefault;
                 public String createdAt;
+        }
+
+        class CardDto {
+                public Long id;
+                public String panMasked;
+                public String bin;
+                public String last4;
+                public String scheme;
+                public Long adminId;
+                public Long posAccountId;
         }
 }

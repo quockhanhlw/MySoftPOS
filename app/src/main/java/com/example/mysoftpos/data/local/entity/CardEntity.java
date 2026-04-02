@@ -15,6 +15,15 @@ public class CardEntity {
     @PrimaryKey(autoGenerate = true)
     public long id;
 
+    @ColumnInfo(name = "backend_id")
+    public long backendId;
+
+    @ColumnInfo(name = "admin_backend_id")
+    public long adminBackendId;
+
+    @ColumnInfo(name = "pos_account_backend_id")
+    public long posAccountBackendId;
+
     @ColumnInfo(name = "pan_masked")
     public String panMasked;
 

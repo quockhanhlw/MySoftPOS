@@ -57,15 +57,21 @@ public class MainDashboardActivity extends BaseActivity {
         String userRoleArg = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USER_ROLE);
         String usernameArg = getIntent().getStringExtra(com.example.mysoftpos.utils.IntentKeys.USERNAME);
         String displayNameArg = getIntent().getStringExtra("DISPLAY_NAME");
-        if (userRoleArg == null)
+        if (userRoleArg == null || userRoleArg.trim().isEmpty()) {
+            userRoleArg = com.example.mysoftpos.data.remote.api.ApiClient.getRole(this);
+        }
+        if (userRoleArg == null || userRoleArg.trim().isEmpty()) {
             userRoleArg = "USER";
+        }
 
         final String userRole = userRoleArg;
         final String username = (usernameArg != null) ? usernameArg : getString(R.string.guest_user);
         final String displayName = (displayNameArg != null) ? displayNameArg : username;
+        final boolean isAdmin = "ADMIN".equalsIgnoreCase(userRole);
 
         // Bind Views
         tvMerchantName = findViewById(R.id.tvMerchantName);
+        TextView tvWelcomeTitle = findViewById(R.id.tvWelcomeTitle);
         historyListContainer = findViewById(R.id.historyListContainer);
         hiddenAdminTrigger = findViewById(R.id.hiddenAdminTrigger);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
@@ -77,13 +83,23 @@ public class MainDashboardActivity extends BaseActivity {
         View btnTransactionManagement = findViewById(R.id.btnTransactionManagement);
         ImageView btnSettings = findViewById(R.id.btnSettings);
         // ImageView btnLogout = findViewById(R.id.btnLogout); // Removed
-        ImageView btnHome = findViewById(R.id.btnHome);
 
-        // Set Welcome Name (display name, not email)
-        tvMerchantName.setText(displayName);
+        // Set role-aware hero title text to avoid showing generic "User" for admin accounts.
+        String heroName = displayName != null ? displayName.trim() : "";
+        if (heroName.isEmpty()
+                || getString(R.string.common_user).equalsIgnoreCase(heroName)
+                || looksLikeContactIdentifier(heroName)) {
+            heroName = isAdmin ? getString(R.string.dashboard_admin_label) : getString(R.string.common_user);
+        }
+        tvMerchantName.setVisibility(View.VISIBLE);
+        tvMerchantName.setText(heroName);
+        if (tvWelcomeTitle != null) {
+            tvWelcomeTitle.setText(isAdmin
+                    ? R.string.dashboard_welcome_admin
+                    : R.string.dashboard_welcome);
+        }
 
         // --- ROLE BASED UI ---
-        boolean isAdmin = "ADMIN".equals(userRole);
         if (isAdmin) {
             btnPurchase.setVisibility(View.GONE);
             btnBalance.setVisibility(View.GONE);
@@ -165,10 +181,6 @@ public class MainDashboardActivity extends BaseActivity {
 
         // Logout Action Removed from Home Screen (Only in Settings now)
 
-        // Home Action (Just refresh/toast for now)
-        btnHome.setOnClickListener(v -> {
-            // Already on home
-        });
 
         // Hidden Admin Trigger (Double tap or long press)
         // Keep as fallback for dev
@@ -283,12 +295,13 @@ public class MainDashboardActivity extends BaseActivity {
     private List<TransactionEntity> currentTransactions;
 
     private void updateHistoryList(List<TransactionEntity> transactions) {
-        // Filter: Show only Purchases using the denormalized processing_code column.
-        // No ISO hex unpacking needed — zero CPU overhead per row.
+        // Show all completed transactions for the logged-in user.
+        // Previous purchase-only filtering caused valid rows to disappear from history.
         java.util.List<TransactionEntity> filtered = new java.util.ArrayList<>();
         if (transactions != null) {
             for (TransactionEntity t : transactions) {
-                if (t.amount != null && !t.amount.equals("0") && isPurchaseTransaction(t)) {
+                String status = t.status != null ? t.status.trim().toUpperCase(java.util.Locale.ROOT) : "";
+                if (!status.isEmpty() && !"PENDING".equals(status)) {
                     filtered.add(t);
                 }
             }
@@ -319,6 +332,68 @@ public class MainDashboardActivity extends BaseActivity {
         } catch (Exception ignored) {
         }
         return false;
+    }
+
+    private boolean isBalanceTransaction(TransactionEntity txn) {
+        if (txn.processingCode != null) {
+            return txn.processingCode.startsWith("30");
+        }
+        try {
+            if (txn.requestHex == null)
+                return false;
+            com.example.mysoftpos.iso8583.message.IsoMessage req = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                    .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
+                            .hexToBytes(txn.requestHex));
+            return req.hasField(3) && req.getField(3).startsWith("30");
+        } catch (Exception ignored) {
+        }
+        return false;
+    }
+
+    /**
+     * For balance inquiry history, prefer DE54 (available/ledger balance) instead of
+     * the request amount (often 0).
+     */
+    private String resolveHistoryAmount(TransactionEntity txn) {
+        if (!isBalanceTransaction(txn)) {
+            return txn.amount != null ? txn.amount : "0";
+        }
+
+        try {
+            if (txn.responseHex == null || txn.responseHex.isEmpty()) {
+                return txn.amount != null ? txn.amount : "0";
+            }
+            com.example.mysoftpos.iso8583.message.IsoMessage resp = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                    .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker.hexToBytes(txn.responseHex));
+            String de54 = resp.getField(54);
+            if (de54 == null || de54.length() < 20) {
+                return txn.amount != null ? txn.amount : "0";
+            }
+
+            String available = null;
+            String ledger = null;
+            for (int i = 0; i + 20 <= de54.length(); i += 20) {
+                String block = de54.substring(i, i + 20);
+                String amountType = block.substring(2, 4);
+                char sign = block.charAt(7);
+                String raw = block.substring(8, 20);
+                if (sign == 'D') {
+                    raw = "-" + raw;
+                }
+                if ("02".equals(amountType)) {
+                    available = raw;
+                } else if ("01".equals(amountType)) {
+                    ledger = raw;
+                }
+            }
+
+            String chosen = available != null ? available : ledger;
+            if (chosen != null) {
+                return String.valueOf(Long.parseLong(chosen));
+            }
+        } catch (Exception ignored) {
+        }
+        return txn.amount != null ? txn.amount : "0";
     }
 
     private void renderHistoryList() {
@@ -406,7 +481,7 @@ public class MainDashboardActivity extends BaseActivity {
 
             // Amount + Currency — read from denormalized column (no hex unpacking!)
             TextView tvAmount = new TextView(this);
-            String amtStr = txn.amount != null ? txn.amount : "0";
+            String amtStr = resolveHistoryAmount(txn);
             String currencyLabel = "VND";
             if (txn.currencyCode != null) {
                 if ("840".equals(txn.currencyCode))
@@ -514,5 +589,13 @@ public class MainDashboardActivity extends BaseActivity {
                 btnSeeMore.setVisibility(View.GONE);
             }
         }
+    }
+
+    private boolean looksLikeContactIdentifier(String value) {
+        if (value == null) {
+            return false;
+        }
+        String v = value.trim();
+        return v.contains("@") || v.matches("^[+]?\\d{8,15}$");
     }
 }

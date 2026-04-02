@@ -59,6 +59,7 @@ public class TestScenario implements Serializable {
     private String txnType;
     private long id = -1;
     private boolean isCustom = false;
+    private boolean isDefaultCase = false;
 
     public String getTxnType() {
         return txnType;
@@ -82,6 +83,14 @@ public class TestScenario implements Serializable {
 
     public void setCustom(boolean custom) {
         isCustom = custom;
+    }
+
+    public boolean isDefaultCase() {
+        return isDefaultCase;
+    }
+
+    public void setDefaultCase(boolean defaultCase) {
+        isDefaultCase = defaultCase;
     }
 
     public boolean isConfigured() {

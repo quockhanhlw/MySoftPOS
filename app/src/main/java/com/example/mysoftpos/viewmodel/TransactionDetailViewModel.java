@@ -24,6 +24,8 @@ import com.example.mysoftpos.testsuite.model.Scheme;
 
 public class TransactionDetailViewModel extends BaseViewModel {
 
+    private static final long VOID_WINDOW_MS = 24L * 60L * 60L * 1000L;
+
     private final TransactionRepository repository;
     private final ConfigManager configManager;
     private final IsoNetworkClient isoNetworkClient;
@@ -58,12 +60,35 @@ public class TransactionDetailViewModel extends BaseViewModel {
                 TransactionWithDetails txnDetails = repository.getTransactionWithDetailsByIdSync(transactionId);
 
                 if (txnDetails == null || txnDetails.transaction == null) {
-                    postError("Transaction not found");
+                    postError(getApplication().getString(R.string.txn_error_not_found));
                     return;
                 }
 
-                if (txnDetails.transaction.requestHex == null) {
-                    postError("Original request data missing");
+                if (!isWithinVoidWindow(txnDetails.transaction.timestamp)) {
+                    postError(getApplication().getString(R.string.txn_void_expired_24h));
+                    return;
+                }
+
+                String processingCode = txnDetails.transaction.processingCode;
+                if (processingCode == null || processingCode.trim().isEmpty()) {
+                    try {
+                        if (txnDetails.transaction.requestHex != null) {
+                            IsoMessage reqForType = new StandardIsoPacker()
+                                    .unpack(StandardIsoPacker.hexToBytes(txnDetails.transaction.requestHex));
+                            processingCode = reqForType.hasField(3) ? reqForType.getField(3) : null;
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+                if (processingCode == null || !processingCode.startsWith("00")) {
+                    postError(getApplication().getString(R.string.void_only_purchase));
+                    return;
+                }
+
+                if (txnDetails.transaction.requestHex == null
+                        || txnDetails.transaction.requestHex.trim().isEmpty()
+                        || !isHexPayload(txnDetails.transaction.requestHex)) {
+                    postError(getApplication().getString(R.string.txn_error_original_request_missing));
                     return;
                 }
 
@@ -181,14 +206,15 @@ public class TransactionDetailViewModel extends BaseViewModel {
                      if (schemeName != null) {
                         com.example.mysoftpos.utils.logging.FileLogger.logTestSuiteString(getApplication(), "VOID APPROVED", "RC: 00 | Trace: " + txnDetails.transaction.traceNumber);
                     }
-                    launchUi(() -> state.setValue(TransactionState.success("Transaction Voided Successfully",
+                      launchUi(() -> state.setValue(TransactionState.success(
+                              getApplication().getString(R.string.txn_void_success),
                             StandardIsoPacker.bytesToHex(responseBytes), revWithNewTrace)));
                 } else {
                     com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "VOID DECLINED", "RC: " + rc);
                     if (schemeName != null) {
                         com.example.mysoftpos.utils.logging.FileLogger.logTestSuiteString(getApplication(), "VOID DECLINED", "RC: " + rc);
                     }
-                    postError("Void Failed: RC " + rc);
+                    postError(getApplication().getString(R.string.txn_void_failed_with_rc, rc));
                 }
 
             } catch (java.net.SocketTimeoutException e) {
@@ -197,14 +223,19 @@ public class TransactionDetailViewModel extends BaseViewModel {
                 if (schemeName != null) {
                     com.example.mysoftpos.utils.logging.FileLogger.logTestSuiteString(getApplication(), "VOID TIMEOUT", "No response from server");
                 }
-                postError("Void Timeout: No response from server");
+                postError(getApplication().getString(R.string.txn_void_timeout));
+            } catch (NumberFormatException e) {
+                android.util.Log.e("TxnDetailVM", "Void parse error", e);
+                com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "VOID ERROR",
+                        "Original request payload is not valid hex/ISO");
+                postError(getApplication().getString(R.string.txn_error_original_request_missing));
             } catch (Exception e) {
                 android.util.Log.e("TxnDetailVM", "Void error", e);
                 com.example.mysoftpos.utils.logging.FileLogger.logString(getApplication(), "VOID ERROR", e.getMessage());
                 if (schemeName != null) {
                     com.example.mysoftpos.utils.logging.FileLogger.logTestSuiteString(getApplication(), "VOID ERROR", e.getMessage());
                 }
-                postError("Void Error: " + e.getMessage());
+                postError(getApplication().getString(R.string.txn_void_error_with_reason, e.getMessage()));
             }
         });
     }
@@ -212,6 +243,27 @@ public class TransactionDetailViewModel extends BaseViewModel {
     /** Convenience: void without scheme (user side — uses user's server config) */
     public void voidTransaction(long transactionId) {
         voidTransaction(transactionId, null);
+    }
+
+    private boolean isWithinVoidWindow(long txnTimestamp) {
+        long ageMs = System.currentTimeMillis() - txnTimestamp;
+        return ageMs >= 0 && ageMs <= VOID_WINDOW_MS;
+    }
+
+    private boolean isHexPayload(String value) {
+        if (value == null) {
+            return false;
+        }
+        String s = value.trim();
+        if (s.isEmpty() || (s.length() % 2 != 0)) {
+            return false;
+        }
+        for (int i = 0; i < s.length(); i++) {
+            if (Character.digit(s.charAt(i), 16) < 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void postError(String message) {

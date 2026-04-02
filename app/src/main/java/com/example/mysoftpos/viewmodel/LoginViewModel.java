@@ -6,6 +6,7 @@ import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.example.mysoftpos.R;
 import com.example.mysoftpos.data.local.entity.PosAccountEntity;
 import com.example.mysoftpos.data.remote.api.ApiClient;
 import com.example.mysoftpos.data.remote.api.ApiService;
@@ -52,7 +53,7 @@ public class LoginViewModel extends BaseViewModel {
      */
     public void login(String username, String password) {
         loginState.setValue(LoginState.loading());
-        loginViaApi(username, password);
+        loginViaLocalRoom(username, password);
     }
 
     /**
@@ -71,6 +72,7 @@ public class LoginViewModel extends BaseViewModel {
                                 ApiService.LoginResponse resp = response.body();
                                 ApiClient.saveUserSession(getApplication(), resp);
                                 SessionManager.startSession();
+                                applyServerConfig(resp.user);
                                 ConfigManager.getInstance(getApplication())
                                         .setMcc18(resp.user != null ? resp.user.businessType : null);
                                 if (resp.user != null && resp.user.bankName != null && !resp.user.bankName.trim().isEmpty()) {
@@ -87,7 +89,7 @@ public class LoginViewModel extends BaseViewModel {
 
                                     launchUi(() -> loginState.setValue(LoginState.success(
                                             localUserId, resp.user.role,
-                                            resp.user.fullName != null ? resp.user.fullName : "User",
+                                            resp.user.fullName != null ? resp.user.fullName : getApplication().getString(R.string.common_user),
                                             resp.user.phone, resp.user.email)));
                                 });
                             } else {
@@ -98,11 +100,12 @@ public class LoginViewModel extends BaseViewModel {
                         @Override
                         public void onFailure(Call<ApiService.LoginResponse> call, Throwable t) {
                             Log.w(TAG, "API unreachable: " + t.getMessage());
-                            loginState.setValue(LoginState.error("Khong the ket noi backend. Vui long thu lai."));
+                            loginViaLocalRoom(username, password);
                         }
                     });
         } catch (Exception e) {
-            loginState.setValue(LoginState.error("Login Error: " + e.getMessage()));
+            loginState.setValue(LoginState.error(
+                    getApplication().getString(R.string.login_error_with_reason, e.getMessage())));
         }
     }
 
@@ -116,15 +119,15 @@ public class LoginViewModel extends BaseViewModel {
 
                 if (user != null) {
                     if (requiresFirstLoginOnline(user)) {
-                        launchUi(() -> loginState.setValue(LoginState.error(
-                                "Tai khoan do admin tao can dang nhap online lan dau.")));
+                        launchUi(() -> loginViaApi(username, password));
                         return;
                     }
 
                     long lockRemaining = userRepository.getLockRemainingMillis(user);
                     if (lockRemaining > 0) {
                         int min = (int) (lockRemaining / 60000) + 1;
-                        launchUi(() -> loginState.setValue(LoginState.locked(min)));
+                        launchUi(() -> loginState.setValue(LoginState.locked(
+                                getApplication().getString(R.string.login_account_locked_try_again, min))));
                         return;
                     }
 
@@ -147,14 +150,15 @@ public class LoginViewModel extends BaseViewModel {
                         return;
                     } else {
                         userRepository.incrementFailedAttempts(user);
+                        launchUi(() -> loginViaApi(username, password));
+                        return;
                     }
                 }
 
-                launchUi(() -> loginState.setValue(LoginState.error(
-                        "Server unavailable and no offline account found.")));
+                launchUi(() -> loginViaApi(username, password));
             } catch (Exception e) {
                 launchUi(() -> loginState.setValue(
-                        LoginState.error("Login Error: " + e.getMessage())));
+                        LoginState.error(getApplication().getString(R.string.login_error_with_reason, e.getMessage()))));
             }
         });
     }
@@ -173,6 +177,7 @@ public class LoginViewModel extends BaseViewModel {
                             if (response.isSuccessful() && response.body() != null) {
                                 ApiService.LoginResponse resp = response.body();
                                 ApiClient.saveUserSession(getApplication(), resp);
+                                applyServerConfig(resp.user);
                                 ConfigManager.getInstance(getApplication())
                                         .setMcc18(resp.user != null ? resp.user.businessType : null);
                                 if (resp.user != null && resp.user.bankName != null && !resp.user.bankName.trim().isEmpty()) {
@@ -198,7 +203,7 @@ public class LoginViewModel extends BaseViewModel {
     private void triggerBackendSync(String role) {
         if ("ADMIN".equals(role)) {
             new com.example.mysoftpos.data.remote.ConfigSyncManager(getApplication()).sync();
-            new com.example.mysoftpos.data.remote.TestSuiteSyncManager(getApplication()).pull();
+            new com.example.mysoftpos.data.remote.TestSuiteSyncManager(getApplication()).push();
         }
         // Use WorkManager for reliable transaction sync
         com.example.mysoftpos.data.remote.SyncWorker.enqueueOneTime(getApplication());
@@ -206,12 +211,12 @@ public class LoginViewModel extends BaseViewModel {
     }
 
     private void handleApiError(String username, Response<ApiService.LoginResponse> response) {
-        String errorMsg = "Invalid username or password!";
+        String errorMsg = getApplication().getString(R.string.login_invalid_credentials);
         try (okhttp3.ResponseBody errorBody = response.errorBody()) {
             if (errorBody != null) {
                 String body = errorBody.string();
                 if (body.contains("locked")) {
-                    errorMsg = "Account locked. Try again later.";
+                    errorMsg = getApplication().getString(R.string.login_account_locked);
                 }
             }
         } catch (Exception ignored) {
@@ -230,5 +235,22 @@ public class LoginViewModel extends BaseViewModel {
         }
         boolean hasLocalPassword = user.passwordHash != null && !user.passwordHash.trim().isEmpty();
         return !hasLocalPassword && user.backendId > 0 && "USER".equalsIgnoreCase(user.role);
+    }
+
+    private void applyServerConfig(ApiService.PosAccountDto userDto) {
+        ConfigManager config = ConfigManager.getInstance(getApplication());
+        config.resetServerConfig();
+        if (userDto == null) {
+            return;
+        }
+        if (userDto.serverIp != null && !userDto.serverIp.trim().isEmpty()) {
+            config.setServerIp(userDto.serverIp);
+        }
+        if (userDto.serverPort != null && userDto.serverPort > 0) {
+            config.setServerPort(userDto.serverPort);
+        }
+        if (userDto.terminalId != null && !userDto.terminalId.trim().isEmpty()) {
+            config.setTerminalId(userDto.terminalId);
+        }
     }
 }

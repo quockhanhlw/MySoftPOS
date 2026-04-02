@@ -5,14 +5,17 @@ import android.net.NetworkCapabilities;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.KeyEvent;
 import android.view.View;
-import android.widget.Button;
+import android.view.Window;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.widget.NestedScrollView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -20,7 +23,9 @@ import com.example.mysoftpos.R;
 import com.example.mysoftpos.data.remote.api.ApiClient;
 import com.example.mysoftpos.data.remote.api.ApiService;
 import com.example.mysoftpos.ui.BaseActivity;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.textfield.TextInputLayout;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -34,6 +39,7 @@ import java.util.concurrent.Executors;
 
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -52,9 +58,15 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Runnable retryLoadRunnable = this::loadMerchants;
     private final ExecutorService accountNetworkExecutor = Executors.newCachedThreadPool();
+    private final Map<Long, ApiService.TerminalDto> terminalByPosAccountId = new HashMap<>();
+    private final Map<String, ApiService.TerminalDto> terminalByTid = new HashMap<>();
+    private final Map<Long, String> passwordPreviewByAccountId = new HashMap<>();
+    private final Map<Long, MerchantAccountAdapter.HostPreview> hostPreviewByAccountId = new HashMap<>();
 
     private PosAccountAdapter adapter;
     private TextView tvUserCount;
+    private TextView tvHeaderSubtitle;
+    private TextView tvBackendSource;
     private View layoutEmpty;
     private EditText etSearch;
     private RecyclerView rvUsers;
@@ -72,12 +84,18 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
     private boolean networkCallbackRegistered = false;
     private ConnectivityManager.NetworkCallback networkCallback;
 
+    private interface OnPosAccountSavedListener {
+        void onSaved(ApiService.PosAccountDto savedAccount);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pos_account_management);
 
         tvUserCount = findViewById(R.id.tvUserCount);
+        tvHeaderSubtitle = findViewById(R.id.tvHeaderSubtitle);
+        tvBackendSource = findViewById(R.id.tvBackendSource);
         layoutEmpty = findViewById(R.id.layoutEmpty);
         etSearch = findViewById(R.id.etSearch);
         rvUsers = findViewById(R.id.rvUsers);
@@ -87,6 +105,14 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
         tvEmptyTitle = findViewById(R.id.tvEmptyTitle);
         tvEmptySubtitle = findViewById(R.id.tvEmptySubtitle);
         btnRetryConnection = findViewById(R.id.btnRetryConnection);
+
+        if (tvHeaderSubtitle != null) {
+            tvHeaderSubtitle.setText(R.string.user_mgmt_subtitle);
+        }
+        if (tvBackendSource != null) {
+            String baseUrl = ApiClient.getBaseUrl(this);
+            tvBackendSource.setText(getString(R.string.user_mgmt_backend_source_format, baseUrl));
+        }
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
@@ -160,7 +186,7 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
     private void loadMerchants() {
         mainHandler.removeCallbacks(retryLoadRunnable);
 
-        if (!isNetworkAvailable()) {
+        if (hasNoNetworkConnection()) {
             tokenWaitRetryCount = 0;
             showOfflineState();
             return;
@@ -213,7 +239,7 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
                 showNonContentState(getString(R.string.user_mgmt_state_backend_unavailable_title),
                         getString(R.string.user_mgmt_state_load_users_network_subtitle), true);
                 Toast.makeText(PosAccountManagementActivity.this,
-                        getString(R.string.user_mgmt_network_error, t.getMessage()), Toast.LENGTH_SHORT).show();
+                        buildAdminNetworkErrorMessage(t), Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -260,7 +286,7 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
 
     @Override
     public void onMerchantClick(ApiService.MerchantDto merchant) {
-        if (!isNetworkAvailable()) {
+        if (hasNoNetworkConnection()) {
             showOfflineState();
             return;
         }
@@ -268,31 +294,13 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
     }
 
     @Override
-    public void onMerchantLongClick(ApiService.MerchantDto merchant) {
-        showMerchantActionsDialog(merchant);
+    public void onMerchantEdit(ApiService.MerchantDto merchant) {
+        showMerchantEditorDialog(merchant);
     }
 
-    private void showMerchantActionsDialog(ApiService.MerchantDto merchant) {
-        String[] actions = new String[] {
-                getString(R.string.user_mgmt_action_view_accounts),
-                getString(R.string.common_edit),
-                getString(R.string.common_delete)
-        };
-        new AlertDialog.Builder(this)
-                .setTitle(resolveMerchantName(merchant))
-                .setItems(actions, (dialog, which) -> {
-                    if (which == 0) {
-                        onMerchantClick(merchant);
-                        return;
-                    }
-                    if (which == 1) {
-                        showMerchantEditorDialog(merchant);
-                        return;
-                    }
-                    confirmDeleteMerchant(merchant);
-                })
-                .setNegativeButton(android.R.string.cancel, null)
-                .show();
+    @Override
+    public void onMerchantDelete(ApiService.MerchantDto merchant) {
+        confirmDeleteMerchant(merchant);
     }
 
     private void showMerchantBranchesDialog(ApiService.MerchantDto merchant) {
@@ -328,7 +336,10 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
 
         View content = getLayoutInflater().inflate(R.layout.dialog_branch_picker, null, false);
         RecyclerView rvBranchPicker = content.findViewById(R.id.rvBranchPicker);
+        TextView tvBranchPickerTitle = content.findViewById(R.id.tvBranchPickerTitle);
         TextView tvBranchPickerHint = content.findViewById(R.id.tvBranchPickerHint);
+        MaterialButton btnBranchPickerCancel = content.findViewById(R.id.btnBranchPickerCancel);
+        tvBranchPickerTitle.setText(getString(R.string.user_mgmt_branch_dialog_title, merchantName));
         tvBranchPickerHint.setText(getString(R.string.user_mgmt_branch_picker_hint));
 
         rvBranchPicker.setLayoutManager(new LinearLayoutManager(this));
@@ -343,11 +354,16 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
         rvBranchPicker.setAdapter(pickerAdapter);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.user_mgmt_branch_dialog_title, merchantName))
                 .setView(content)
-                .setNegativeButton(android.R.string.cancel, null)
                 .create();
         dialogHolder[0] = dialog;
+        if (btnBranchPickerCancel != null) {
+            btnBranchPickerCancel.setOnClickListener(v -> {
+                if (dialogHolder[0] != null && dialogHolder[0].isShowing()) {
+                    dialogHolder[0].dismiss();
+                }
+            });
+        }
         dialog.show();
         applyModernDialogStyle(dialog);
     }
@@ -472,6 +488,7 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
         TextView tvAccountsEmpty = content.findViewById(R.id.tvAccountsEmpty);
         RecyclerView rvAccounts = content.findViewById(R.id.rvAccounts);
         View btnAddAccount = content.findViewById(R.id.btnAddAccount);
+        View btnCloseAccounts = content.findViewById(R.id.btnCloseAccounts);
 
         String branchSuffix = "";
         if (branch != null) {
@@ -486,40 +503,103 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
         tvAccountsEmpty.setVisibility(accountUsers.isEmpty() ? View.VISIBLE : View.GONE);
 
         rvAccounts.setLayoutManager(new LinearLayoutManager(this));
+        final MerchantAccountAdapter[] accountAdapterHolder = new MerchantAccountAdapter[1];
         MerchantAccountAdapter accountAdapter = new MerchantAccountAdapter(new MerchantAccountAdapter.OnAccountActionListener() {
             @Override
             public void onEdit(ApiService.PosAccountDto user) {
-                showAccountEditorDialog(merchant, user);
+                showAccountEditorDialog(merchant, branch, user, savedAccount -> {
+                    upsertAccountInList(accountUsers, savedAccount);
+                    if (accountAdapterHolder[0] != null) {
+                        accountAdapterHolder[0].setHostPreviews(new HashMap<>(hostPreviewByAccountId));
+                        accountAdapterHolder[0].setPasswordPreviews(new HashMap<>(passwordPreviewByAccountId));
+                        accountAdapterHolder[0].submit(new ArrayList<>(accountUsers));
+                    }
+                    tvAccountsEmpty.setVisibility(accountUsers.isEmpty() ? View.VISIBLE : View.GONE);
+                    fetchTerminalMappingsForMerchant(merchant, branch, () -> {
+                        if (accountAdapterHolder[0] != null) {
+                            accountAdapterHolder[0]
+                                    .setTerminalMappings(new HashMap<>(terminalByPosAccountId), new HashMap<>(terminalByTid));
+                            accountAdapterHolder[0].setHostPreviews(new HashMap<>(hostPreviewByAccountId));
+                            accountAdapterHolder[0].setPasswordPreviews(new HashMap<>(passwordPreviewByAccountId));
+                            accountAdapterHolder[0].submit(new ArrayList<>(accountUsers));
+                        }
+                    });
+                });
             }
 
             @Override
             public void onDelete(ApiService.PosAccountDto user) {
                 confirmDeleteAccount(merchant, user);
             }
+
+            @Override
+            public void onResetPassword(ApiService.PosAccountDto user) {
+                showResetPasswordDialog(user);
+            }
         });
+        accountAdapter.setTerminalMappings(new HashMap<>(), new HashMap<>());
+        accountAdapter.setHostPreviews(new HashMap<>(hostPreviewByAccountId));
+        accountAdapter.setPasswordPreviews(new HashMap<>(passwordPreviewByAccountId));
         accountAdapter.submit(accountUsers);
+        accountAdapterHolder[0] = accountAdapter;
         rvAccounts.setAdapter(accountAdapter);
+
+        fetchTerminalMappingsForMerchant(merchant, branch, () -> {
+            accountAdapter.setTerminalMappings(new HashMap<>(terminalByPosAccountId), new HashMap<>(terminalByTid));
+            accountAdapter.setHostPreviews(new HashMap<>(hostPreviewByAccountId));
+            accountAdapter.setPasswordPreviews(new HashMap<>(passwordPreviewByAccountId));
+            accountAdapter.submit(accountUsers);
+        });
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.user_mgmt_accounts_dialog_title) + " - " + resolveMerchantName(merchant) + branchSuffix)
                 .setView(content)
-                .setNegativeButton(android.R.string.cancel, null)
                 .create();
 
-        btnAddAccount.setOnClickListener(v -> showAccountEditorDialog(merchant, null));
+        btnAddAccount.setOnClickListener(v -> showAccountEditorDialog(merchant, branch, null, savedAccount -> {
+            upsertAccountInList(accountUsers, savedAccount);
+            accountAdapter.setHostPreviews(new HashMap<>(hostPreviewByAccountId));
+            accountAdapter.setPasswordPreviews(new HashMap<>(passwordPreviewByAccountId));
+            accountAdapter.submit(new ArrayList<>(accountUsers));
+            tvAccountsEmpty.setVisibility(accountUsers.isEmpty() ? View.VISIBLE : View.GONE);
+            fetchTerminalMappingsForMerchant(merchant, branch, () -> {
+                accountAdapter.setTerminalMappings(new HashMap<>(terminalByPosAccountId), new HashMap<>(terminalByTid));
+                accountAdapter.setHostPreviews(new HashMap<>(hostPreviewByAccountId));
+                accountAdapter.setPasswordPreviews(new HashMap<>(passwordPreviewByAccountId));
+                accountAdapter.submit(new ArrayList<>(accountUsers));
+            });
+        }));
+        if (btnCloseAccounts != null) {
+            btnCloseAccounts.setOnClickListener(v -> dialog.dismiss());
+        }
         dialog.show();
         applyModernDialogStyle(dialog);
     }
 
     private void showMerchantEditorDialog(ApiService.MerchantDto merchant) {
         View content = getLayoutInflater().inflate(R.layout.dialog_merchant_form, null, false);
+        TextView tvMerchantEditorTitle = content.findViewById(R.id.tvMerchantEditorTitle);
+        TextView tvMerchantEditorSubtitle = content.findViewById(R.id.tvMerchantEditorSubtitle);
         EditText etMerchantCode = content.findViewById(R.id.etMerchantCode);
         EditText etMerchantName = content.findViewById(R.id.etMerchantName);
         EditText etBankName = content.findViewById(R.id.etBankName);
         EditText etBusinessType = content.findViewById(R.id.etBusinessType);
         EditText etStoreAddress = content.findViewById(R.id.etStoreAddress);
+        TextInputLayout tilMerchantCode = content.findViewById(R.id.tilMerchantCode);
+        TextInputLayout tilMerchantName = content.findViewById(R.id.tilMerchantName);
+        TextInputLayout tilBankName = content.findViewById(R.id.tilBankName);
+        TextInputLayout tilBusinessType = content.findViewById(R.id.tilBusinessType);
+        TextInputLayout tilStoreAddress = content.findViewById(R.id.tilStoreAddress);
+        MaterialButton btnCancel = content.findViewById(R.id.btnMerchantCancel);
+        MaterialButton btnSave = content.findViewById(R.id.btnMerchantSave);
 
         boolean isCreate = merchant == null;
+        if (tvMerchantEditorTitle != null) {
+            tvMerchantEditorTitle.setText(isCreate ? R.string.user_mgmt_add_merchant : R.string.user_mgmt_edit_merchant);
+        }
+        if (tvMerchantEditorSubtitle != null) {
+            tvMerchantEditorSubtitle.setText(R.string.user_mgmt_subtitle);
+        }
         if (!isCreate) {
             etMerchantCode.setText(safe(merchant.merchantCode));
             etMerchantCode.setEnabled(false);
@@ -529,31 +609,53 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
             etStoreAddress.setText(safe(merchant.storeAddress));
         }
 
+        bindNextFocus(etMerchantCode, etMerchantName);
+        bindNextFocus(etMerchantName, etBankName);
+        bindNextFocus(etBankName, etBusinessType);
+        bindNextFocus(etBusinessType, etStoreAddress);
+
+        clearErrorOnInput(etMerchantCode, tilMerchantCode);
+        clearErrorOnInput(etMerchantName, tilMerchantName);
+        clearErrorOnInput(etBankName, tilBankName);
+        clearErrorOnInput(etBusinessType, tilBusinessType);
+        clearErrorOnInput(etStoreAddress, tilStoreAddress);
+
         AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle(isCreate ? R.string.user_mgmt_add_merchant : R.string.user_mgmt_edit_merchant)
                 .setView(content)
-                .setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton(R.string.common_save, null)
                 .create();
         dialog.setOnShowListener(d -> {
-            Button saveBtn = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-            saveBtn.setOnClickListener(v -> {
+            if (btnCancel != null) {
+                btnCancel.setOnClickListener(v -> dialog.dismiss());
+            }
+
+            if (btnSave == null) {
+                return;
+            }
+
+            btnSave.setOnClickListener(v -> {
                 String token = ApiClient.bearerToken(this);
                 if (token.isEmpty() || "Bearer ".equals(token)) {
                     Toast.makeText(this, R.string.user_mgmt_state_backend_session_unavailable_title, Toast.LENGTH_SHORT).show();
                     return;
                 }
 
+                clearFieldError(tilMerchantCode);
+                clearFieldError(tilMerchantName);
+                clearFieldError(tilBankName);
+                clearFieldError(tilBusinessType);
+                clearFieldError(tilStoreAddress);
+
                 String merchantCode = safe(etMerchantCode.getText().toString()).toUpperCase(Locale.ROOT);
                 String merchantName = safe(etMerchantName.getText().toString());
                 String bankName = safe(etBankName.getText().toString()).toUpperCase(Locale.ROOT);
+
                 if (merchantName.isEmpty()) {
-                    etMerchantName.setError(getString(R.string.common_required));
+                    setFieldError(tilMerchantName, getString(R.string.common_required));
                     etMerchantName.requestFocus();
                     return;
                 }
                 if (isCreate && merchantCode.isEmpty()) {
-                    etMerchantCode.setError(getString(R.string.common_required));
+                    setFieldError(tilMerchantCode, getString(R.string.common_required));
                     etMerchantCode.requestFocus();
                     return;
                 }
@@ -567,13 +669,22 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
                 body.put("businessType", safe(etBusinessType.getText().toString()));
                 body.put("storeAddress", safe(etStoreAddress.getText().toString()));
 
-                setDialogButtonsEnabled(dialog, false);
+                btnSave.setEnabled(false);
+                btnSave.setText(R.string.user_mgmt_account_editor_saving);
+                if (btnCancel != null) {
+                    btnCancel.setEnabled(false);
+                }
+
                 if (isCreate) {
                     ApiClient.getService(this).createMerchant(token, body).enqueue(new Callback<>() {
                         @Override
                         public void onResponse(@NonNull Call<ApiService.MerchantDto> call,
                                 @NonNull Response<ApiService.MerchantDto> response) {
-                            setDialogButtonsEnabled(dialog, true);
+                            btnSave.setEnabled(true);
+                            btnSave.setText(R.string.common_save);
+                            if (btnCancel != null) {
+                                btnCancel.setEnabled(true);
+                            }
                             if (!response.isSuccessful()) {
                                 Toast.makeText(PosAccountManagementActivity.this,
                                         getString(R.string.user_mgmt_error_code, response.code()),
@@ -586,9 +697,13 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
 
                         @Override
                         public void onFailure(@NonNull Call<ApiService.MerchantDto> call, @NonNull Throwable t) {
-                            setDialogButtonsEnabled(dialog, true);
+                            btnSave.setEnabled(true);
+                            btnSave.setText(R.string.common_save);
+                            if (btnCancel != null) {
+                                btnCancel.setEnabled(true);
+                            }
                             Toast.makeText(PosAccountManagementActivity.this,
-                                    getString(R.string.user_mgmt_network_error, t.getMessage()),
+                                    buildAdminNetworkErrorMessage(t),
                                     Toast.LENGTH_LONG).show();
                         }
                     });
@@ -599,7 +714,11 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
                     @Override
                     public void onResponse(@NonNull Call<ApiService.MerchantDto> call,
                             @NonNull Response<ApiService.MerchantDto> response) {
-                        setDialogButtonsEnabled(dialog, true);
+                        btnSave.setEnabled(true);
+                        btnSave.setText(R.string.common_save);
+                        if (btnCancel != null) {
+                            btnCancel.setEnabled(true);
+                        }
                         if (!response.isSuccessful()) {
                             Toast.makeText(PosAccountManagementActivity.this,
                                     getString(R.string.user_mgmt_error_code, response.code()),
@@ -612,9 +731,13 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
 
                     @Override
                     public void onFailure(@NonNull Call<ApiService.MerchantDto> call, @NonNull Throwable t) {
-                        setDialogButtonsEnabled(dialog, true);
+                        btnSave.setEnabled(true);
+                        btnSave.setText(R.string.common_save);
+                        if (btnCancel != null) {
+                            btnCancel.setEnabled(true);
+                        }
                         Toast.makeText(PosAccountManagementActivity.this,
-                                getString(R.string.user_mgmt_network_error, t.getMessage()),
+                                buildAdminNetworkErrorMessage(t),
                                 Toast.LENGTH_LONG).show();
                     }
                 });
@@ -662,14 +785,18 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
             @Override
             public void onFailure(@NonNull Call<Map<String, String>> call, @NonNull Throwable t) {
                 Toast.makeText(PosAccountManagementActivity.this,
-                        getString(R.string.user_mgmt_network_error, t.getMessage()),
+                        buildAdminNetworkErrorMessage(t),
                         Toast.LENGTH_LONG).show();
             }
         });
     }
 
-    private void showAccountEditorDialog(ApiService.MerchantDto merchant, ApiService.PosAccountDto user) {
+    private void showAccountEditorDialog(ApiService.MerchantDto merchant,
+            ApiService.BranchDto branch,
+            ApiService.PosAccountDto user,
+            OnPosAccountSavedListener onSavedListener) {
         View content = getLayoutInflater().inflate(R.layout.dialog_merchant_account_form, null, false);
+        NestedScrollView svAccountEditor = content.findViewById(R.id.svAccountEditor);
         EditText etFullName = content.findViewById(R.id.etAccountFullName);
         EditText etPhone = content.findViewById(R.id.etAccountPhone);
         EditText etEmail = content.findViewById(R.id.etAccountEmail);
@@ -677,63 +804,157 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
         EditText etTid = content.findViewById(R.id.etAccountTid);
         EditText etServerIp = content.findViewById(R.id.etAccountServerIp);
         EditText etServerPort = content.findViewById(R.id.etAccountServerPort);
-        View tilPassword = content.findViewById(R.id.tilAccountPassword);
+        TextInputLayout tilFullName = content.findViewById(R.id.tilAccountFullName);
+        TextInputLayout tilPhone = content.findViewById(R.id.tilAccountPhone);
+        TextInputLayout tilEmail = content.findViewById(R.id.tilAccountEmail);
+        TextInputLayout tilPassword = content.findViewById(R.id.tilAccountPassword);
+        TextInputLayout tilTid = content.findViewById(R.id.tilAccountTid);
+        TextInputLayout tilServerIp = content.findViewById(R.id.tilAccountServerIp);
+        TextInputLayout tilServerPort = content.findViewById(R.id.tilAccountServerPort);
+        MaterialButton btnCancel = content.findViewById(R.id.btnAccountCancel);
+        MaterialButton btnSave = content.findViewById(R.id.btnAccountSave);
+        MaterialButton btnTest = content.findViewById(R.id.btnAccountTestConnection);
 
         boolean isCreate = user == null;
         if (!isCreate) {
             etFullName.setText(safe(user.fullName));
-            etPhone.setText(safe(user.phone));
+            String accountLogin = safe(user.username);
+            etPhone.setText(!accountLogin.isEmpty() ? accountLogin : safe(user.phone));
             etEmail.setText(safe(user.email));
-            etTid.setText(normalizeTid(user.terminalId));
+            String accountTid = normalizeTid(user.terminalId);
+            etTid.setText(accountTid);
+            ApiService.TerminalDto mappedTerminal = resolveMappedTerminal(user);
+            if (mappedTerminal != null) {
+                if (accountTid.isEmpty()) {
+                    String mappedTid = normalizeTid(mappedTerminal.terminalCode);
+                    if (!mappedTid.isEmpty()) {
+                        etTid.setText(mappedTid);
+                    }
+                }
+                if (safe(etServerIp.getText().toString()).isEmpty() && !safe(mappedTerminal.serverIp).isEmpty()) {
+                    etServerIp.setText(safe(mappedTerminal.serverIp));
+                }
+                if (safe(etServerPort.getText().toString()).isEmpty() && mappedTerminal.serverPort != null) {
+                    etServerPort.setText(String.valueOf(mappedTerminal.serverPort));
+                }
+            }
             if (tilPassword != null) {
                 tilPassword.setVisibility(View.GONE);
             }
         }
 
+        bindNextFocus(etFullName, etPhone);
+        bindNextFocus(etPhone, etEmail);
+        bindNextFocus(etEmail, isCreate ? etPassword : etTid);
+        if (isCreate) {
+            bindNextFocus(etPassword, etTid);
+        }
+        bindNextFocus(etTid, etServerIp);
+        bindNextFocus(etServerIp, etServerPort);
+
+        clearErrorOnInput(etFullName, tilFullName);
+        clearErrorOnInput(etPhone, tilPhone);
+        clearErrorOnInput(etEmail, tilEmail);
+        clearErrorOnInput(etPassword, tilPassword);
+        clearErrorOnInput(etTid, tilTid);
+        clearErrorOnInput(etServerIp, tilServerIp);
+        clearErrorOnInput(etServerPort, tilServerPort);
+
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(isCreate ? R.string.user_mgmt_add_account : R.string.user_mgmt_edit_account)
                 .setView(content)
-                .setNegativeButton(android.R.string.cancel, null)
-                .setNeutralButton(R.string.user_mgmt_account_editor_test, null)
-                .setPositiveButton(R.string.common_save, null)
                 .create();
         dialog.setOnShowListener(d -> {
-            Button saveBtn = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-            Button testBtn = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
-            saveBtn.setOnClickListener(v -> {
+            if (btnCancel != null) {
+                btnCancel.setOnClickListener(v -> dialog.dismiss());
+            }
+            if (btnTest != null) {
+                btnTest.setOnClickListener(v -> testAccountConnection(
+                        svAccountEditor,
+                        etServerIp,
+                        etServerPort,
+                        tilServerIp,
+                        tilServerPort,
+                        btnTest,
+                        btnSave,
+                        btnCancel));
+            }
+            if (btnSave == null) {
+                return;
+            }
+
+            etServerPort.setOnEditorActionListener((TextView v, int actionId, KeyEvent event) -> {
+                boolean imeDone = actionId == EditorInfo.IME_ACTION_DONE;
+                boolean enterUp = event != null
+                        && event.getKeyCode() == KeyEvent.KEYCODE_ENTER
+                        && event.getAction() == KeyEvent.ACTION_UP;
+                if (imeDone || enterUp) {
+                    btnSave.performClick();
+                    return true;
+                }
+                return false;
+            });
+
+            btnSave.setOnClickListener(v -> {
                 String token = ApiClient.bearerToken(this);
                 if (token.isEmpty() || "Bearer ".equals(token)) {
                     Toast.makeText(this, R.string.user_mgmt_state_backend_session_unavailable_title, Toast.LENGTH_SHORT).show();
                     return;
                 }
 
+                clearFieldError(tilFullName);
+                clearFieldError(tilPhone);
+                clearFieldError(tilEmail);
+                clearFieldError(tilPassword);
+                clearFieldError(tilTid);
+                clearFieldError(tilServerIp);
+                clearFieldError(tilServerPort);
+
                 String fullName = safe(etFullName.getText().toString());
                 String phone = safe(etPhone.getText().toString());
                 String email = safe(etEmail.getText().toString());
                 String password = safe(etPassword.getText().toString());
                 String tid = normalizeTid(etTid.getText().toString());
-                if (!tid.isEmpty() && !tid.matches(TID_REGEX)) {
-                    etTid.setError(getString(R.string.user_mgmt_accounts_dialog_tid_invalid, 1));
-                    etTid.requestFocus();
-                    return;
-                }
                 if (fullName.isEmpty()) {
-                    etFullName.setError(getString(R.string.common_required));
-                    etFullName.requestFocus();
+                    focusFirstError(svAccountEditor, etFullName, tilFullName, getString(R.string.common_required));
                     return;
                 }
                 if (phone.isEmpty()) {
-                    etPhone.setError(getString(R.string.common_required));
-                    etPhone.requestFocus();
+                    focusFirstError(svAccountEditor, etPhone, tilPhone, getString(R.string.common_required));
                     return;
                 }
                 if (isCreate && password.isEmpty()) {
-                    etPassword.setError(getString(R.string.common_required));
-                    etPassword.requestFocus();
+                    focusFirstError(svAccountEditor, etPassword, tilPassword, getString(R.string.common_required));
+                    return;
+                }
+                if (!tid.isEmpty() && !tid.matches(TID_REGEX)) {
+                    focusFirstError(svAccountEditor, etTid, tilTid,
+                            getString(R.string.user_mgmt_accounts_dialog_tid_invalid, 1));
                     return;
                 }
 
-                // Server validation for Terminals logic removed from Account form
+                String serverIp = safe(etServerIp.getText().toString());
+                Integer serverPort = parseServerPort(etServerPort, tilServerPort, svAccountEditor);
+                if (serverPort != null && serverPort == Integer.MIN_VALUE) {
+                    return;
+                }
+                if ((serverIp.isEmpty() && serverPort != null) || (!serverIp.isEmpty() && serverPort == null)) {
+                    if (serverIp.isEmpty()) {
+                        focusFirstError(svAccountEditor, etServerIp, tilServerIp, getString(R.string.common_required));
+                    } else {
+                        focusFirstError(svAccountEditor, etServerPort, tilServerPort, getString(R.string.common_required));
+                    }
+                    return;
+                }
+                if (!serverIp.isEmpty() && tid.isEmpty()) {
+                    focusFirstError(svAccountEditor, etTid, tilTid, getString(R.string.common_required));
+                    return;
+                }
+                if (hasInvalidHost(serverIp)) {
+                    focusFirstError(svAccountEditor, etServerIp, tilServerIp,
+                            getString(R.string.user_mgmt_account_editor_invalid_host));
+                    return;
+                }
 
                 ApiService.CreatePosAccountRequest body = new ApiService.CreatePosAccountRequest(
                         isCreate ? password : null,
@@ -746,31 +967,38 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
                         safe(merchant.businessType),
                         safe(merchant.storeAddress),
                         merchant.id,
-                        isCreate ? null : user.branchId,
+                        branch != null ? Long.valueOf(branch.id) : (isCreate ? null : user.branchId),
                         tid,
-                        etServerIp.getText().toString(),
-                        parseServerPort(etServerPort));
+                        serverIp,
+                        serverPort);
 
-                setDialogButtonsEnabled(dialog, false);
+                setAccountEditorLoadingState(btnSave, btnTest, btnCancel, true, false);
                 if (isCreate) {
                     enqueueCreatePosAccount(token, body, new Callback<>() {
                         @Override
                         public void onResponse(@NonNull Call<ApiService.PosAccountDto> call,
                                 @NonNull Response<ApiService.PosAccountDto> response) {
-                            setDialogButtonsEnabled(dialog, true);
+                            setAccountEditorLoadingState(btnSave, btnTest, btnCancel, false, false);
                             if (!response.isSuccessful()) {
                                 showAccountApiError(response, true);
                                 return;
                             }
+                            Toast.makeText(PosAccountManagementActivity.this,
+                                    R.string.user_mgmt_user_created,
+                                    Toast.LENGTH_SHORT).show();
+                            if (response.body() != null && onSavedListener != null) {
+                                rememberPasswordPreview(response.body().id, password);
+                                rememberHostPreview(response.body().id, serverIp, serverPort);
+                                onSavedListener.onSaved(response.body());
+                            }
                             dialog.dismiss();
-                            showMerchantAccountsDialog(merchant);
                         }
 
                         @Override
                         public void onFailure(@NonNull Call<ApiService.PosAccountDto> call, @NonNull Throwable t) {
-                            setDialogButtonsEnabled(dialog, true);
+                            setAccountEditorLoadingState(btnSave, btnTest, btnCancel, false, false);
                             Toast.makeText(PosAccountManagementActivity.this,
-                                    getString(R.string.user_mgmt_network_error, t.getMessage()),
+                                    buildAdminNetworkErrorMessage(t),
                                     Toast.LENGTH_LONG).show();
                         }
                     });
@@ -780,41 +1008,165 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
                 enqueueUpdatePosAccount(token, user.id, body, new Callback<>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiService.PosAccountDto> call,
-                            @NonNull Response<ApiService.PosAccountDto> response) {
-                        setDialogButtonsEnabled(dialog, true);
+                                           @NonNull Response<ApiService.PosAccountDto> response) {
+                        setAccountEditorLoadingState(btnSave, btnTest, btnCancel, false, false);
                         if (!response.isSuccessful()) {
                             showAccountApiError(response, false);
                             return;
                         }
+                        Toast.makeText(PosAccountManagementActivity.this,
+                                R.string.user_mgmt_account_editor_save_success,
+                                Toast.LENGTH_SHORT).show();
+                        ApiService.PosAccountDto saved = response.body();
+                        if (saved != null && onSavedListener != null) {
+                            rememberPasswordPreview(saved.id, password);
+                            rememberHostPreview(saved.id, serverIp, serverPort);
+                            onSavedListener.onSaved(saved);
+                        }
                         dialog.dismiss();
-                        showMerchantAccountsDialog(merchant);
                     }
+
 
                     @Override
                     public void onFailure(@NonNull Call<ApiService.PosAccountDto> call, @NonNull Throwable t) {
-                        setDialogButtonsEnabled(dialog, true);
+                        setAccountEditorLoadingState(btnSave, btnTest, btnCancel, false, false);
                         Toast.makeText(PosAccountManagementActivity.this,
-                                getString(R.string.user_mgmt_network_error, t.getMessage()),
+                                buildAdminNetworkErrorMessage(t),
                                 Toast.LENGTH_LONG).show();
                     }
                 });
             });
         });
         dialog.show();
-        applyModernDialogStyle(dialog);
+        applyTallDialogStyle(dialog);
     }
 
     private void applyModernDialogStyle(AlertDialog dialog) {
-        if (dialog == null || dialog.getWindow() == null) {
+        if (dialog == null) {
             return;
         }
-        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        dialog.getWindow().getAttributes().windowAnimations = R.style.MerchantDialogAnimation;
+        Window window = dialog.getWindow();
+        if (window == null) {
+            return;
+        }
+        window.setBackgroundDrawableResource(android.R.color.transparent);
         int width = (int) (getResources().getDisplayMetrics().widthPixels * 0.92f);
-        dialog.getWindow().setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+        window.setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
     }
 
-    private Integer parseServerPort(EditText etServerPort) {
+    private void applyTallDialogStyle(AlertDialog dialog) {
+        if (dialog == null) {
+            return;
+        }
+        Window window = dialog.getWindow();
+        if (window == null) {
+            return;
+        }
+        window.setBackgroundDrawableResource(android.R.color.transparent);
+        int width = (int) (getResources().getDisplayMetrics().widthPixels * 0.94f);
+        int height = (int) (getResources().getDisplayMetrics().heightPixels * 0.88f);
+        window.setLayout(width, height);
+    }
+
+    private void setAccountEditorButtonsEnabled(View save, View cancel, View test, boolean enabled) {
+        if (save != null) {
+            save.setEnabled(enabled);
+        }
+        if (cancel != null) {
+            cancel.setEnabled(enabled);
+        }
+        if (test != null) {
+            test.setEnabled(enabled);
+        }
+    }
+
+    private void setAccountEditorLoadingState(MaterialButton btnSave,
+            MaterialButton btnTest,
+            MaterialButton btnCancel,
+            boolean isSaving,
+            boolean isTesting) {
+        if (btnSave != null) {
+            btnSave.setText(isSaving ? R.string.user_mgmt_account_editor_saving : R.string.user_mgmt_account_editor_save_label);
+            btnSave.setIcon(null);
+        }
+        if (btnTest != null) {
+            btnTest.setText(isTesting ? R.string.user_mgmt_account_editor_testing : R.string.user_mgmt_account_editor_test_label);
+            btnTest.setIcon(null);
+        }
+        boolean enabled = !isSaving && !isTesting;
+        setAccountEditorButtonsEnabled(btnSave, btnCancel, btnTest, enabled);
+    }
+
+
+    private void setFieldError(TextInputLayout til, String message) {
+        if (til == null) {
+            return;
+        }
+        til.setErrorEnabled(true);
+        til.setError(message);
+    }
+
+    private void clearFieldError(TextInputLayout til) {
+        if (til == null) {
+            return;
+        }
+        til.setError(null);
+        til.setErrorEnabled(false);
+    }
+
+    private void clearErrorOnInput(EditText input, TextInputLayout til) {
+        if (input == null || til == null) {
+            return;
+        }
+        input.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                clearFieldError(til);
+            }
+        });
+    }
+
+    private void bindNextFocus(EditText current, View next) {
+        if (current == null || next == null) {
+            return;
+        }
+        current.setOnEditorActionListener((TextView v, int actionId, KeyEvent event) -> {
+            boolean imeNext = actionId == EditorInfo.IME_ACTION_NEXT;
+            boolean enterUp = event != null
+                    && event.getKeyCode() == KeyEvent.KEYCODE_ENTER
+                    && event.getAction() == KeyEvent.ACTION_UP;
+            if (imeNext || enterUp) {
+                next.requestFocus();
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void focusFirstError(NestedScrollView scrollView,
+            EditText field,
+            TextInputLayout container,
+            String message) {
+        setFieldError(container, message);
+        if (field != null) {
+            field.requestFocus();
+            if (scrollView != null) {
+                scrollView.post(() -> scrollView.smoothScrollTo(0, field.getTop()));
+            }
+        }
+    }
+
+    private Integer parseServerPort(EditText etServerPort,
+            TextInputLayout tilServerPort,
+            NestedScrollView scrollView) {
         String portText = safe(etServerPort.getText().toString());
         if (portText.isEmpty()) {
             return null;
@@ -822,14 +1174,14 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
         try {
             int parsed = Integer.parseInt(portText);
             if (parsed <= 0 || parsed > 65535) {
-                etServerPort.setError(getString(R.string.user_mgmt_account_editor_invalid_port));
-                etServerPort.requestFocus();
+                focusFirstError(scrollView, etServerPort, tilServerPort,
+                        getString(R.string.user_mgmt_account_editor_invalid_port));
                 return Integer.MIN_VALUE;
             }
             return parsed;
         } catch (NumberFormatException ex) {
-            etServerPort.setError(getString(R.string.user_mgmt_account_editor_invalid_port));
-            etServerPort.requestFocus();
+            focusFirstError(scrollView, etServerPort, tilServerPort,
+                    getString(R.string.user_mgmt_account_editor_invalid_port));
             return Integer.MIN_VALUE;
         }
     }
@@ -864,18 +1216,97 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
             @Override
             public void onFailure(@NonNull Call<Map<String, String>> call, @NonNull Throwable t) {
                 Toast.makeText(PosAccountManagementActivity.this,
-                        getString(R.string.user_mgmt_network_error, t.getMessage()),
+                        buildAdminNetworkErrorMessage(t),
                         Toast.LENGTH_LONG).show();
             }
         });
     }
 
-    private void testAccountConnection(EditText etServerIp, EditText etServerPort) {
+    private void showResetPasswordDialog(ApiService.PosAccountDto user) {
+        if (user == null) {
+            return;
+        }
+        final EditText input = new EditText(this);
+        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+                | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        input.setHint(R.string.user_mgmt_reset_password);
+
+        String identity = safe(user.username);
+        if (identity.isEmpty()) {
+            identity = resolveAccountIdentity(user);
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.user_mgmt_reset_password_confirm)
+                .setMessage(getString(R.string.user_mgmt_reset_password_prompt, identity))
+                .setView(input)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.common_save,
+                        (dialog, which) -> resetAccountPassword(user, safe(input.getText().toString())))
+                .show();
+    }
+
+    private void resetAccountPassword(ApiService.PosAccountDto user, String newPassword) {
+        if (user == null) {
+            return;
+        }
+        if (newPassword.length() < 8) {
+            Toast.makeText(this, R.string.user_mgmt_error_password_required_create, Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        String token = ApiClient.bearerToken(this);
+        if (token.isEmpty() || "Bearer ".equals(token)) {
+            Toast.makeText(this, R.string.user_mgmt_state_backend_session_unavailable_title, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Map<String, String> body = new HashMap<>();
+        body.put("newPassword", newPassword);
+        ApiClient.getService(this).resetPosAccountPassword(token, user.id, body).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<Map<String, String>> call,
+                                   @NonNull Response<Map<String, String>> response) {
+                if (!response.isSuccessful()) {
+                    showAccountApiError(response, false);
+                    return;
+                }
+                rememberPasswordPreview(user.id, newPassword);
+                Toast.makeText(PosAccountManagementActivity.this,
+                        R.string.user_mgmt_reset_password_success,
+                        Toast.LENGTH_SHORT).show();
+                loadMerchants();
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Map<String, String>> call, @NonNull Throwable t) {
+                Toast.makeText(PosAccountManagementActivity.this,
+                        buildAdminNetworkErrorMessage(t),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void testAccountConnection(NestedScrollView scrollView,
+            EditText etServerIp,
+            EditText etServerPort,
+            TextInputLayout tilServerIp,
+            TextInputLayout tilServerPort,
+            MaterialButton btnTest,
+            MaterialButton btnSave,
+            MaterialButton btnCancel) {
+        clearFieldError(tilServerIp);
+        clearFieldError(tilServerPort);
+
         String ip = safe(etServerIp.getText().toString());
         String portText = safe(etServerPort.getText().toString());
         if (ip.isEmpty()) {
-            etServerIp.setError(getString(R.string.common_required));
-            etServerIp.requestFocus();
+            focusFirstError(scrollView, etServerIp, tilServerIp, getString(R.string.common_required));
+            return;
+        }
+        if (hasInvalidHost(ip)) {
+            focusFirstError(scrollView, etServerIp, tilServerIp,
+                    getString(R.string.user_mgmt_account_editor_invalid_host));
             return;
         }
         int port;
@@ -885,12 +1316,12 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
                 throw new NumberFormatException();
             }
         } catch (Exception ex) {
-            etServerPort.setError(getString(R.string.user_mgmt_account_editor_invalid_port));
-            etServerPort.requestFocus();
+            focusFirstError(scrollView, etServerPort, tilServerPort,
+                    getString(R.string.user_mgmt_account_editor_invalid_port));
             return;
         }
 
-        Toast.makeText(this, R.string.processing, Toast.LENGTH_SHORT).show();
+        setAccountEditorLoadingState(btnSave, btnTest, btnCancel, false, true);
         accountNetworkExecutor.execute(() -> {
             boolean connected = false;
             String reason = null;
@@ -903,6 +1334,7 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
             final boolean ok = connected;
             final String failureReason = reason;
             runOnUiThread(() -> {
+                setAccountEditorLoadingState(btnSave, btnTest, btnCancel, false, false);
                 if (ok) {
                     Toast.makeText(this, R.string.user_mgmt_account_editor_test_success, Toast.LENGTH_SHORT).show();
                 } else {
@@ -917,15 +1349,147 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
         });
     }
 
+    private void fetchTerminalMappingsForMerchant(ApiService.MerchantDto merchant,
+            ApiService.BranchDto branch,
+            Runnable onComplete) {
+        terminalByPosAccountId.clear();
+        terminalByTid.clear();
+
+        String token = ApiClient.bearerToken(this);
+        if (token.isEmpty() || "Bearer ".equals(token)) {
+            if (onComplete != null) {
+                onComplete.run();
+            }
+            return;
+        }
+
+        ApiClient.getService(this).getTerminals(token).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<List<ApiService.TerminalDto>> call,
+                    @NonNull Response<List<ApiService.TerminalDto>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    for (ApiService.TerminalDto terminal : response.body()) {
+                        if (terminal.merchant == null || terminal.merchant.id != merchant.id) {
+                            continue;
+                        }
+                        if (branch != null && terminal.branchId != null && !terminal.branchId.equals(branch.id)) {
+                            continue;
+                        }
+                        if (terminal.posAccountId != null) {
+                            terminalByPosAccountId.put(terminal.posAccountId, terminal);
+                        }
+                        String tid = normalizeTid(terminal.terminalCode);
+                        if (!tid.isEmpty()) {
+                            terminalByTid.put(tid, terminal);
+                        }
+                    }
+                }
+                if (onComplete != null) {
+                    onComplete.run();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<List<ApiService.TerminalDto>> call, @NonNull Throwable t) {
+                if (onComplete != null) {
+                    onComplete.run();
+                }
+            }
+        });
+    }
+
+    private ApiService.TerminalDto resolveMappedTerminal(ApiService.PosAccountDto user) {
+        if (user == null) {
+            return null;
+        }
+        ApiService.TerminalDto byAccount = terminalByPosAccountId.get(user.id);
+        if (byAccount != null) {
+            return byAccount;
+        }
+        String tid = normalizeTid(user.terminalId);
+        if (tid.isEmpty()) {
+            return null;
+        }
+        return terminalByTid.get(tid);
+    }
+
+    private boolean hasInvalidHost(String host) {
+        String normalized = safe(host);
+        if (normalized.isEmpty()) {
+            return true;
+        }
+        if (normalized.contains(" ") || normalized.contains("/") || normalized.contains("://")) {
+            return true;
+        }
+        return !isValidIpv4(normalized) && !isValidHostname(normalized);
+    }
+
+    private boolean isValidIpv4(String host) {
+        String[] parts = host.split("\\.");
+        if (parts.length != 4) {
+            return false;
+        }
+        for (String part : parts) {
+            if (part.isEmpty() || part.length() > 3) {
+                return false;
+            }
+            for (int i = 0; i < part.length(); i++) {
+                if (!Character.isDigit(part.charAt(i))) {
+                    return false;
+                }
+            }
+            try {
+                int value = Integer.parseInt(part);
+                if (value < 0 || value > 255) {
+                    return false;
+                }
+            } catch (NumberFormatException ex) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isValidHostname(String host) {
+        String normalized = host.endsWith(".") ? host.substring(0, host.length() - 1) : host;
+        if (normalized.isEmpty() || normalized.length() > 253) {
+            return false;
+        }
+        if ("localhost".equalsIgnoreCase(normalized)) {
+            return true;
+        }
+        String[] labels = normalized.split("\\.");
+        for (String label : labels) {
+            if (label.isEmpty() || label.length() > 63) {
+                return false;
+            }
+            if (!Character.isLetterOrDigit(label.charAt(0))
+                    || !Character.isLetterOrDigit(label.charAt(label.length() - 1))) {
+                return false;
+            }
+            for (int i = 0; i < label.length(); i++) {
+                char c = label.charAt(i);
+                if (!(Character.isLetterOrDigit(c) || c == '-')) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     private void showAccountApiError(Response<?> response, boolean isCreate) {
         String backendError = extractBackendError(response).toLowerCase(Locale.ROOT);
         int messageRes = 0;
         if (backendError.contains("phone number already registered")) {
             messageRes = R.string.user_mgmt_error_phone_exists;
+        } else if (backendError.contains("username already registered")) {
+            messageRes = R.string.user_mgmt_error_phone_exists;
         } else if (backendError.contains("email already registered")) {
             messageRes = R.string.user_mgmt_error_email_exists;
         } else if (backendError.contains("password is required")) {
             messageRes = R.string.user_mgmt_error_password_required_create;
+        } else if (backendError.contains("terminal code already exists")) {
+            messageRes = R.string.user_mgmt_error_tid_invalid_strict;
         } else if (backendError.contains("terminal id") && backendError.contains("8")) {
             messageRes = R.string.user_mgmt_error_tid_invalid_strict;
         } else if (backendError.contains("merchant not found")) {
@@ -934,12 +1498,18 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
             messageRes = R.string.user_mgmt_error_access_denied;
         } else if (backendError.contains("branch not found") || backendError.contains("branch does not belong")) {
             messageRes = R.string.user_mgmt_error_branch_invalid;
-        } else if (backendError.contains("user not found")) {
+        } else if (backendError.contains("pos account not found") || backendError.contains("user not found")) {
             messageRes = R.string.user_mgmt_error_account_not_found;
         }
 
         if (messageRes != 0) {
             Toast.makeText(this, messageRes, Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        String rawError = extractBackendError(response);
+        if (!safe(rawError).isEmpty()) {
+            Toast.makeText(this, rawError, Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -951,31 +1521,29 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
     }
 
     private String extractBackendError(Response<?> response) {
-        if (response == null || response.errorBody() == null) {
+        if (response == null) {
             return "";
         }
-        try {
-            String raw = response.errorBody().string();
-            if (raw == null || raw.trim().isEmpty()) {
+        okhttp3.ResponseBody responseBody = response.errorBody();
+        if (responseBody == null) {
+            return "";
+        }
+        try (okhttp3.ResponseBody errorBody = responseBody) {
+            String raw = errorBody.string();
+            if (raw.trim().isEmpty()) {
                 return "";
             }
             JSONObject json = new JSONObject(raw);
-            return json.optString("error", "");
+            String value = json.optString("error", "");
+            if (!value.trim().isEmpty()) {
+                return value;
+            }
+            return json.optString("message", "");
         } catch (Exception ignore) {
             return "";
         }
     }
 
-    private void setDialogButtonsEnabled(AlertDialog dialog, boolean enabled) {
-        Button positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-        Button negative = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
-        if (positive != null) {
-            positive.setEnabled(enabled);
-        }
-        if (negative != null) {
-            negative.setEnabled(enabled);
-        }
-    }
 
     private String resolveAccountIdentity(ApiService.PosAccountDto user) {
         if (user == null) {
@@ -1017,6 +1585,20 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
         return value == null ? "" : value.trim();
     }
 
+    private String buildAdminNetworkErrorMessage(Throwable throwable) {
+        if (throwable == null) {
+            return getString(R.string.user_mgmt_network_error_generic);
+        }
+        if (throwable instanceof SocketTimeoutException) {
+            return getString(R.string.err_timeout_waiting);
+        }
+        String reason = safe(throwable.getMessage());
+        if (reason.isEmpty()) {
+            return getString(R.string.user_mgmt_network_error_generic);
+        }
+        return getString(R.string.user_mgmt_network_error, reason);
+    }
+
     private void enqueueUpdatePosAccount(String token,
             long userId,
             ApiService.CreatePosAccountRequest body,
@@ -1035,6 +1617,7 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
             Callback<Map<String, String>> callback) {
         ApiClient.getService(this).deletePosAccount(token, userId).enqueue(callback);
     }
+
 
     private void showMerchantAccountsMessage(ApiService.MerchantDto merchant, List<String> lines) {
         String merchantName = merchant.merchantName != null && !merchant.merchantName.trim().isEmpty()
@@ -1064,6 +1647,43 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
                 .setMessage(message.toString().trim())
                 .setPositiveButton(android.R.string.ok, null)
                 .show();
+    }
+
+    private void upsertAccountInList(List<ApiService.PosAccountDto> accountUsers, ApiService.PosAccountDto savedAccount) {
+        if (accountUsers == null || savedAccount == null) {
+            return;
+        }
+        for (int i = 0; i < accountUsers.size(); i++) {
+            ApiService.PosAccountDto existing = accountUsers.get(i);
+            if (existing != null && existing.id == savedAccount.id) {
+                accountUsers.set(i, savedAccount);
+                return;
+            }
+        }
+        accountUsers.add(0, savedAccount);
+    }
+
+    private void rememberPasswordPreview(long accountId, String password) {
+        if (accountId <= 0) {
+            return;
+        }
+        String normalized = safe(password);
+        if (normalized.isEmpty()) {
+            return;
+        }
+        passwordPreviewByAccountId.put(accountId, normalized);
+    }
+
+    private void rememberHostPreview(long accountId, String serverIp, Integer serverPort) {
+        if (accountId <= 0) {
+            return;
+        }
+        String normalizedIp = safe(serverIp);
+        if (normalizedIp.isEmpty() && serverPort == null) {
+            hostPreviewByAccountId.remove(accountId);
+            return;
+        }
+        hostPreviewByAccountId.put(accountId, new MerchantAccountAdapter.HostPreview(normalizedIp, serverPort));
     }
 
     private void showOfflineState() {
@@ -1189,16 +1809,17 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
         }
     }
 
-    private boolean isNetworkAvailable() {
+    private boolean hasNoNetworkConnection() {
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
         if (connectivityManager == null) {
-            return false;
+            return true;
         }
         NetworkCapabilities capabilities = connectivityManager
                 .getNetworkCapabilities(connectivityManager.getActiveNetwork());
-        return capabilities != null && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+        boolean connected = capabilities != null && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
                 || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
                 || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
+        return !connected;
     }
 
     private void initNetworkCallback() {

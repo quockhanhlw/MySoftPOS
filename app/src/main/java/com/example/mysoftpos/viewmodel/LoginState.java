@@ -46,9 +46,8 @@ public class LoginState {
         return new LoginState(Type.ERROR, message, -1, null, null, null, null);
     }
 
-    public static LoginState locked(int remainingMinutes) {
-        return new LoginState(Type.LOCKED,
-                "Account locked. Try again in " + remainingMinutes + " minutes.",
+    public static LoginState locked(String message) {
+        return new LoginState(Type.LOCKED, message,
                 -1, null, null, null, null);
     }
 }

@@ -56,6 +56,9 @@ public class PosAccountRepositoryImpl implements PosAccountRepository {
             MerchantDao merchantDao = db.merchantDao();
             String resolvedUsername = userDto.username != null ? userDto.username : username;
             String usernameHash = PasswordUtils.hashSHA256(resolvedUsername);
+            String passwordHash = (password != null && !password.trim().isEmpty())
+                    ? PasswordUtils.hashPassword(password)
+                    : "";
             String normalizedBusinessType = BusinessTypeMccMapper.toMcc(userDto.businessType);
 
             PosAccountEntity existing = dao.findByUsername(resolvedUsername);
@@ -66,6 +69,9 @@ public class PosAccountRepositoryImpl implements PosAccountRepository {
             if (existing != null) {
                 existing.username = resolvedUsername;
                 existing.usernameHash = usernameHash;
+                if (!passwordHash.isEmpty()) {
+                    existing.passwordHash = passwordHash;
+                }
                 existing.role = userDto.role;
                 existing.merchantBackendId = userDto.merchantId != null ? userDto.merchantId : 0L;
                 existing.branchBackendId = userDto.branchId != null ? userDto.branchId : 0L;
@@ -77,6 +83,7 @@ public class PosAccountRepositoryImpl implements PosAccountRepository {
                 dao.update(existing);
             } else {
                 PosAccountEntity newUser = new PosAccountEntity(usernameHash,
+                        passwordHash,
                         userDto.role != null ? userDto.role : "USER");
                 newUser.username = resolvedUsername;
                 newUser.merchantBackendId = userDto.merchantId != null ? userDto.merchantId : 0L;

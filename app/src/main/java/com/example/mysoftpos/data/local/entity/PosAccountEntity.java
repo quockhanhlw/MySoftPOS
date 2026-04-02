@@ -25,8 +25,8 @@ public class PosAccountEntity {
     @ColumnInfo(name = "username")
     public String username; // Plain username for backend contract parity
 
-    @Ignore
-    public String passwordHash; // Deprecated local cache field (not persisted)
+    @ColumnInfo(name = "password_hash")
+    public String passwordHash; // Local credential cache for offline login
 
     @ColumnInfo(name = "merchant_backend_id", defaultValue = "0")
     public long merchantBackendId;
@@ -74,7 +74,7 @@ public class PosAccountEntity {
     public PosAccountEntity(String usernameHash, String role) {
         this.usernameHash = usernameHash;
         this.username = "";
-        this.passwordHash = null;
+        this.passwordHash = "";
         this.role = role;
         this.merchantBackendId = 0L;
         this.branchBackendId = 0L;
@@ -90,6 +90,6 @@ public class PosAccountEntity {
     @Ignore
     public PosAccountEntity(String usernameHash, String passwordHash, String role) {
         this(usernameHash, role);
-        this.passwordHash = null;
+        this.passwordHash = passwordHash;
     }
 }

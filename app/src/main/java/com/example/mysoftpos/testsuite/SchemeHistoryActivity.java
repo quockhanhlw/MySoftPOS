@@ -23,6 +23,7 @@ import com.example.mysoftpos.testsuite.storage.SchemeRepository;
 import com.example.mysoftpos.ui.dashboard.TransactionDetailActivity;
 import com.example.mysoftpos.ui.BaseActivity;
 import com.example.mysoftpos.utils.IntentKeys;
+import com.example.mysoftpos.utils.security.PasswordUtils;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -95,12 +96,22 @@ public class SchemeHistoryActivity extends BaseActivity {
         }
 
         // Observe ALL transactions, filter by BIN prefix in-memory
-        AppDatabase.getInstance(this).transactionDao()
-                .getAllTransactionsLive()
+        String adminIdentifier = getIntent().getStringExtra(IntentKeys.USERNAME);
+        if (adminIdentifier == null || adminIdentifier.trim().isEmpty()) {
+            adminIdentifier = com.example.mysoftpos.data.remote.api.ApiClient.getUsername(this);
+        }
+        String adminHash = adminIdentifier != null ? PasswordUtils.hashSHA256(adminIdentifier.trim()) : "";
+
+        androidx.lifecycle.LiveData<List<TransactionEntity>> source =
+                (adminHash.isEmpty())
+                        ? AppDatabase.getInstance(this).transactionDao().getAllTransactionsLive()
+                        : AppDatabase.getInstance(this).transactionDao().getTransactionsByAdminHashLive(adminHash);
+
+        source
                 .observe(this, allTxns -> {
                     transactions.clear();
                     try {
-                        if (allTxns != null && !schemePrefix.isEmpty()) {
+                        if (allTxns != null) {
                             for (TransactionEntity t : allTxns) {
                                 // Skip zero-amount (balance inquiry)
                                 if (t.amount == null || "0".equals(t.amount) || "000000000000".equals(t.amount)) {
@@ -127,6 +138,9 @@ public class SchemeHistoryActivity extends BaseActivity {
 
     /** Check if transaction is a Purchase (DE 3 starts with 00) */
     private boolean isPurchaseTransaction(TransactionEntity txn) {
+        if (txn.processingCode != null && !txn.processingCode.trim().isEmpty()) {
+            return txn.processingCode.startsWith("00");
+        }
         try {
             if (txn.requestHex == null)
                 return false;
@@ -143,6 +157,29 @@ public class SchemeHistoryActivity extends BaseActivity {
 
     /** Check if transaction's PAN starts with scheme prefix */
     private boolean matchesScheme(TransactionEntity txn) {
+        String schemeNorm = normalizeScheme(schemeName);
+
+        // 1) Prefer persisted metadata (cardScheme)
+        if (txn.cardScheme != null && !txn.cardScheme.trim().isEmpty()) {
+            if (normalizeScheme(txn.cardScheme).equals(schemeNorm)) {
+                return true;
+            }
+        }
+
+        // 2) Fallback to persisted masked PAN prefix if available
+        if (schemePrefix != null && !schemePrefix.isEmpty() && txn.maskedPan != null) {
+            String digits = txn.maskedPan.replaceAll("[^0-9]", "");
+            if (digits.length() >= schemePrefix.length()) {
+                if (digits.substring(0, schemePrefix.length()).equals(schemePrefix)) {
+                    return true;
+                }
+            }
+        }
+
+        // 3) Legacy fallback: parse DE2 from requestHex
+        if (schemePrefix == null || schemePrefix.isEmpty()) {
+            return false;
+        }
         try {
             if (txn.requestHex == null)
                 return false;
@@ -156,6 +193,23 @@ public class SchemeHistoryActivity extends BaseActivity {
         } catch (Exception ignored) {
         }
         return false;
+    }
+
+    private String normalizeScheme(String value) {
+        if (value == null) {
+            return "";
+        }
+        String s = value.trim().toUpperCase(Locale.ROOT);
+        if (s.contains("MASTER")) {
+            return "MASTERCARD";
+        }
+        if (s.contains("VISA")) {
+            return "VISA";
+        }
+        if (s.contains("NAPAS")) {
+            return "NAPAS";
+        }
+        return s;
     }
 
     // ── Adapter ──

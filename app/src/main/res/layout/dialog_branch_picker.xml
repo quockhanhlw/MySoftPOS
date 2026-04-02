@@ -4,15 +4,24 @@
     android:layout_height="wrap_content"
     android:background="@drawable/bg_dialog_rounded"
     android:orientation="vertical"
-    android:paddingStart="20dp"
+    android:paddingStart="16dp"
     android:paddingTop="14dp"
-    android:paddingEnd="20dp"
-    android:paddingBottom="8dp">
+    android:paddingEnd="16dp"
+    android:paddingBottom="12dp">
+
+    <TextView
+        android:id="@+id/tvBranchPickerTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#0F172A"
+        android:textSize="20sp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/tvBranchPickerHint"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
         android:text="@string/user_mgmt_branch_picker_hint"
         android:textColor="#64748B"
         android:textSize="@dimen/merchant_dialog_meta_text_size" />
@@ -20,10 +29,21 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvBranchPicker"
         android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:layout_marginTop="10dp"
+        android:layout_height="320dp"
+        android:layout_marginTop="12dp"
         android:clipToPadding="false"
         android:paddingBottom="4dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnBranchPickerCancel"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginTop="8dp"
+        android:minHeight="40dp"
+        android:text="@string/common_cancel"
+        android:textAllCaps="false" />
 
 </LinearLayout>
 

@@ -101,7 +101,8 @@ public class PurchaseViewModel extends BaseViewModel {
                 ctx.posEntryMode22 = card.getPosEntryMode();
                 ctx.country19 = ctx.currency49; // VN uses same code for country and currency
                 if (card.getTrack2() != null && !card.getTrack2().isEmpty()) {
-                    ctx.track2_35 = card.getTrack2().replace('=', 'D');
+                    // Keep canonical '=' separator in Track 2. Do not replace with 'D'.
+                    ctx.track2_35 = card.getTrack2();
                 }
                 if (card.getExpiryDate() != null) {
                     ctx.expiry14 = card.getExpiryDate();
@@ -194,7 +195,7 @@ public class PurchaseViewModel extends BaseViewModel {
 
             } catch (Exception e) {
                 Log.e(TAG, "Error", e);
-                postError("Error: " + e.getMessage());
+                postError(getApplication().getString(R.string.common_error_with_reason, e.getMessage()));
             }
         });
     }

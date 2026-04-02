@@ -27,6 +27,7 @@ import com.example.mysoftpos.data.local.entity.PosAccountEntity;
 import com.example.mysoftpos.data.remote.api.ApiClient;
 import com.example.mysoftpos.data.remote.api.ApiService;
 import com.example.mysoftpos.ui.BaseActivity;
+import com.example.mysoftpos.utils.IntentKeys;
 import com.example.mysoftpos.utils.security.PasswordUtils;
 
 import java.time.LocalDateTime;
@@ -56,6 +57,7 @@ public class TransactionManagementActivity extends BaseActivity {
     private TxnAdapter adapter;
     private TextView tvTxnCount, tvApprovedCount, tvDeclinedCount, tvOtherCount;
     private Spinner spinnerUserFilter;
+    private Spinner spinnerStoreFilter;
     private View layoutEmpty;
     private RecyclerView rvTransactions;
     private View layoutStats;
@@ -63,13 +65,17 @@ public class TransactionManagementActivity extends BaseActivity {
     private TextView tvEmptyTitle;
     private TextView tvEmptySubtitle;
     private View btnRetryConnection;
+    private View btnBackfillTransactions;
 
     private List<ApiService.TransactionSummaryDto> userTransactions = new ArrayList<>();
     private final Map<Long, String> userIdToName = new LinkedHashMap<>();
+    private final Map<Long, String> accountIdToStoreName = new LinkedHashMap<>();
     private int tokenWaitRetryCount = 0;
     private boolean backendTransactionsAvailable = false;
     private boolean networkCallbackRegistered = false;
     private ConnectivityManager.NetworkCallback networkCallback;
+    private Long filterMerchantId;
+    private Long filterTerminalId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +87,7 @@ public class TransactionManagementActivity extends BaseActivity {
         tvDeclinedCount = findViewById(R.id.tvDeclinedCount);
         tvOtherCount = findViewById(R.id.tvOtherCount);
         spinnerUserFilter = findViewById(R.id.spinnerUserFilter);
+        spinnerStoreFilter = findViewById(R.id.spinnerStoreFilter);
         layoutEmpty = findViewById(R.id.layoutEmpty);
         rvTransactions = findViewById(R.id.rvTransactions);
         layoutStats = findViewById(R.id.layoutStats);
@@ -88,7 +95,13 @@ public class TransactionManagementActivity extends BaseActivity {
         tvEmptyTitle = findViewById(R.id.tvEmptyTitle);
         tvEmptySubtitle = findViewById(R.id.tvEmptySubtitle);
         btnRetryConnection = findViewById(R.id.btnRetryConnection);
+        btnBackfillTransactions = findViewById(R.id.btnBackfillTransactions);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+
+        long merchantIdArg = getIntent().getLongExtra(IntentKeys.MERCHANT_ID, -1L);
+        long terminalIdArg = getIntent().getLongExtra(IntentKeys.TERMINAL_NUMERIC_ID, -1L);
+        filterMerchantId = merchantIdArg > 0 ? merchantIdArg : null;
+        filterTerminalId = terminalIdArg > 0 ? terminalIdArg : null;
 
         rvTransactions.setLayoutManager(new LinearLayoutManager(this));
         adapter = new TxnAdapter();
@@ -97,17 +110,33 @@ public class TransactionManagementActivity extends BaseActivity {
         if (btnRetryConnection != null) {
             btnRetryConnection.setOnClickListener(v -> loadUsersAndTransactions());
         }
+        if (btnBackfillTransactions != null) {
+            btnBackfillTransactions.setOnClickListener(v -> triggerBackfillAction());
+        }
 
         spinnerUserFilter.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                filterByUser((String) parent.getItemAtPosition(pos));
+                applyCurrentFilter();
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
+
+        if (spinnerStoreFilter != null) {
+            spinnerStoreFilter.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+                    applyCurrentFilter();
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {
+                }
+            });
+        }
 
         initNetworkCallback();
         loadUsersAndTransactions();
@@ -171,9 +200,14 @@ public class TransactionManagementActivity extends BaseActivity {
                     @NonNull Response<List<ApiService.PosAccountDto>> resp) {
                 if (resp.isSuccessful() && resp.body() != null) {
                     userIdToName.clear();
+                    accountIdToStoreName.clear();
                     for (ApiService.PosAccountDto u : resp.body()) {
                         String displayName = u.fullName != null && !u.fullName.isEmpty() ? u.fullName : u.phone;
                         userIdToName.put(u.id, displayName);
+                        String storeName = (u.storeName != null && !u.storeName.trim().isEmpty())
+                                ? u.storeName.trim()
+                                : getString(R.string.txn_mgmt_filter_unknown_store);
+                        accountIdToStoreName.put(u.id, storeName);
                     }
                     syncUsersToLocal(resp.body());
                     loadTransactions(token);
@@ -203,7 +237,7 @@ public class TransactionManagementActivity extends BaseActivity {
     }
 
     private void loadTransactions(String token) {
-        ApiClient.getService(this).getAllTransactions(token).enqueue(
+        ApiClient.getService(this).getAllTransactions(token, filterMerchantId, filterTerminalId).enqueue(
                 new Callback<>() {
                     @Override
                     public void onResponse(@NonNull Call<List<ApiService.TransactionSummaryDto>> call,
@@ -212,15 +246,19 @@ public class TransactionManagementActivity extends BaseActivity {
                             List<ApiService.TransactionSummaryDto> rawTransactions = resp.body();
                             userTransactions = new ArrayList<>();
                             for (ApiService.TransactionSummaryDto txn : rawTransactions) {
-                                if (txn.userId != null && userIdToName.containsKey(txn.userId)) {
-                                    ApiService.TransactionSummaryDto displayTxn = copyTransaction(txn);
-                                    displayTxn.username = userIdToName.get(txn.userId);
-                                    userTransactions.add(displayTxn);
+                                Long accountId = resolveTxnAccountId(txn);
+                                ApiService.TransactionSummaryDto displayTxn = copyTransaction(txn);
+                                if (accountId != null && userIdToName.containsKey(accountId)) {
+                                    displayTxn.username = userIdToName.get(accountId);
+                                } else if (displayTxn.username == null || displayTxn.username.trim().isEmpty()) {
+                                    displayTxn.username = getString(R.string.txn_detail_unknown);
                                 }
+                                userTransactions.add(displayTxn);
                             }
                             backendTransactionsAvailable = true;
                             syncTransactionsToLocal(rawTransactions);
                             populateUserFilter();
+                            populateStoreFilter();
                             showContentChrome();
                             applyCurrentFilter();
                         } else {
@@ -303,11 +341,8 @@ public class TransactionManagementActivity extends BaseActivity {
                 TransactionDao transactionDao = db.transactionDao();
 
                 for (ApiService.TransactionSummaryDto txn : remoteTransactions) {
-                    if (txn.userId == null || !userIdToName.containsKey(txn.userId)) {
-                        continue;
-                    }
-
-                    PosAccountEntity localAccount = posAccountDao.findByBackendId(txn.userId);
+                    Long accountId = resolveTxnAccountId(txn);
+                    PosAccountEntity localAccount = accountId != null ? posAccountDao.findByBackendId(accountId) : null;
                     TransactionEntity localTxn = transactionDao.getByTraceNumber(txn.traceNumber);
                     if (localTxn == null) {
                         localTxn = new TransactionEntity();
@@ -318,13 +353,18 @@ public class TransactionManagementActivity extends BaseActivity {
                     localTxn.status = txn.status;
                     localTxn.timestamp = parseBackendTimestamp(txn.txnTimestamp);
                     localTxn.userId = localAccount != null ? localAccount.id : null;
+                    localTxn.requestHex = txn.requestHex;
+                    localTxn.responseHex = txn.responseHex;
+                    localTxn.processingCode = txn.processingCode;
+                    localTxn.currencyCode = txn.currencyCode;
+                    localTxn.rrn = txn.rrn;
                     localTxn.ownerUsername = txn.username;
                     localTxn.maskedPan = txn.maskedPan;
                     localTxn.cardScheme = txn.cardScheme;
                     localTxn.terminalCode = txn.terminalCode;
                     localTxn.deviceId = txn.deviceId;
                     localTxn.syncedAt = txn.syncedAt;
-                    localTxn.backendUserId = txn.userId;
+                    localTxn.backendUserId = accountId;
                     localTxn.backendUsername = txn.username;
 
                     if (localTxn.id > 0) {
@@ -337,6 +377,13 @@ public class TransactionManagementActivity extends BaseActivity {
                 android.util.Log.w("TxnMgmt", "Failed to cache transactions: " + e.getMessage());
             }
         }).start();
+    }
+
+    private Long resolveTxnAccountId(ApiService.TransactionSummaryDto txn) {
+        if (txn == null) {
+            return null;
+        }
+        return txn.posAccountId != null ? txn.posAccountId : txn.userId;
     }
 
     private void populateUserFilter() {
@@ -361,7 +408,32 @@ public class TransactionManagementActivity extends BaseActivity {
         spinnerUserFilter.setSelection(selectedIndex >= 0 ? selectedIndex : 0, false);
     }
 
+    private void populateStoreFilter() {
+        if (!backendTransactionsAvailable || spinnerStoreFilter == null) {
+            return;
+        }
+        String selectedStore = getSelectedStoreFilter();
+        List<String> stores = new ArrayList<>();
+        stores.add(getString(R.string.txn_mgmt_filter_all_stores));
+        Map<String, Boolean> seen = new LinkedHashMap<>();
+        for (ApiService.TransactionSummaryDto txn : userTransactions) {
+            seen.put(getTxnStoreName(txn), true);
+        }
+        stores.addAll(seen.keySet());
+
+        ArrayAdapter<String> a = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, stores);
+        a.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerStoreFilter.setAdapter(a);
+
+        int selectedIndex = stores.indexOf(selectedStore);
+        spinnerStoreFilter.setSelection(selectedIndex >= 0 ? selectedIndex : 0, false);
+    }
+
     private void filterByUser(String selectedUser) {
+        filterByUserAndStore(selectedUser, getSelectedStoreFilter());
+    }
+
+    private void filterByUserAndStore(String selectedUser, String selectedStore) {
         if (!backendTransactionsAvailable) {
             return;
         }
@@ -377,6 +449,17 @@ public class TransactionManagementActivity extends BaseActivity {
                     filtered.add(txn);
             }
         }
+
+        if (selectedStore != null && !getString(R.string.txn_mgmt_filter_all_stores).equals(selectedStore)) {
+            List<ApiService.TransactionSummaryDto> narrowed = new ArrayList<>();
+            for (ApiService.TransactionSummaryDto txn : filtered) {
+                if (selectedStore.equals(getTxnStoreName(txn))) {
+                    narrowed.add(txn);
+                }
+            }
+            filtered = narrowed;
+        }
+
         adapter.setData(filtered);
         updateStats(filtered);
         tvTxnCount.setText(String.valueOf(filtered.size()));
@@ -387,11 +470,22 @@ public class TransactionManagementActivity extends BaseActivity {
                         getString(R.string.txn_mgmt_empty_no_transactions_subtitle), false);
             } else {
                 showEmptyMessage(getString(R.string.txn_mgmt_empty_filter_title),
-                        getString(R.string.txn_mgmt_empty_filter_subtitle), false);
+                        getString(R.string.txn_mgmt_empty_filter_subtitle_store), false);
             }
         } else {
             layoutEmpty.setVisibility(View.GONE);
         }
+    }
+
+    private String getTxnStoreName(ApiService.TransactionSummaryDto txn) {
+        Long accountId = resolveTxnAccountId(txn);
+        if (accountId != null) {
+            String mapped = accountIdToStoreName.get(accountId);
+            if (mapped != null && !mapped.trim().isEmpty()) {
+                return mapped;
+            }
+        }
+        return getString(R.string.txn_mgmt_filter_unknown_store);
     }
 
     private void updateStats(List<ApiService.TransactionSummaryDto> txns) {
@@ -421,8 +515,14 @@ public class TransactionManagementActivity extends BaseActivity {
         copy.deviceId = source.deviceId;
         copy.txnTimestamp = source.txnTimestamp;
         copy.syncedAt = source.syncedAt;
+        copy.posAccountId = source.posAccountId;
         copy.userId = source.userId;
         copy.username = source.username;
+        copy.requestHex = source.requestHex;
+        copy.responseHex = source.responseHex;
+        copy.processingCode = source.processingCode;
+        copy.currencyCode = source.currencyCode;
+        copy.rrn = source.rrn;
         return copy;
     }
 
@@ -464,6 +564,14 @@ public class TransactionManagementActivity extends BaseActivity {
         return selected != null ? selected.toString() : getString(R.string.txn_mgmt_filter_all_users);
     }
 
+    private String getSelectedStoreFilter() {
+        if (spinnerStoreFilter == null) {
+            return getString(R.string.txn_mgmt_filter_all_stores);
+        }
+        Object selected = spinnerStoreFilter.getSelectedItem();
+        return selected != null ? selected.toString() : getString(R.string.txn_mgmt_filter_all_stores);
+    }
+
     private void applyCurrentFilter() {
         if (!backendTransactionsAvailable) {
             return;
@@ -471,7 +579,11 @@ public class TransactionManagementActivity extends BaseActivity {
         if (spinnerUserFilter.getAdapter() == null || spinnerUserFilter.getAdapter().getCount() == 0) {
             populateUserFilter();
         }
-        filterByUser(getSelectedUserFilter());
+        if (spinnerStoreFilter != null &&
+                (spinnerStoreFilter.getAdapter() == null || spinnerStoreFilter.getAdapter().getCount() == 0)) {
+            populateStoreFilter();
+        }
+        filterByUserAndStore(getSelectedUserFilter(), getSelectedStoreFilter());
     }
 
     private void showOfflineState() {
@@ -491,6 +603,9 @@ public class TransactionManagementActivity extends BaseActivity {
         if (spinnerUserFilter != null) {
             spinnerUserFilter.setEnabled(true);
         }
+        if (spinnerStoreFilter != null) {
+            spinnerStoreFilter.setEnabled(true);
+        }
         if (rvTransactions != null) {
             rvTransactions.setVisibility(View.VISIBLE);
         }
@@ -500,11 +615,15 @@ public class TransactionManagementActivity extends BaseActivity {
         backendTransactionsAvailable = false;
         userTransactions = new ArrayList<>();
         userIdToName.clear();
+        accountIdToStoreName.clear();
         adapter.setData(new ArrayList<>());
         tvTxnCount.setText(R.string.common_zero);
         updateStats(new ArrayList<>());
         if (spinnerUserFilter != null) {
             spinnerUserFilter.setAdapter(null);
+        }
+        if (spinnerStoreFilter != null) {
+            spinnerStoreFilter.setAdapter(null);
         }
     }
 
@@ -517,6 +636,9 @@ public class TransactionManagementActivity extends BaseActivity {
         }
         if (spinnerUserFilter != null) {
             spinnerUserFilter.setEnabled(false);
+        }
+        if (spinnerStoreFilter != null) {
+            spinnerStoreFilter.setEnabled(false);
         }
         if (rvTransactions != null) {
             rvTransactions.setVisibility(View.GONE);
@@ -535,6 +657,61 @@ public class TransactionManagementActivity extends BaseActivity {
         if (btnRetryConnection != null) {
             btnRetryConnection.setVisibility(showRetry ? View.VISIBLE : View.GONE);
         }
+    }
+
+    private void triggerBackfillAction() {
+        if (!isNetworkAvailable()) {
+            Toast.makeText(this, R.string.txn_mgmt_backfill_requires_network, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String token = ApiClient.bearerToken(this);
+        if (token.isEmpty() || "Bearer ".equals(token) || !ApiClient.isLoggedIn(this)) {
+            Toast.makeText(this, R.string.txn_mgmt_backfill_session_required, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (btnBackfillTransactions != null) {
+            btnBackfillTransactions.setEnabled(false);
+        }
+
+        ApiClient.getService(this).backfillAdminTransactions(token, filterMerchantId)
+                .enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(@NonNull Call<Map<String, Integer>> call,
+                            @NonNull Response<Map<String, Integer>> response) {
+                        if (btnBackfillTransactions != null) {
+                            btnBackfillTransactions.setEnabled(true);
+                        }
+
+                        if (response.isSuccessful() && response.body() != null) {
+                            int relinked = response.body().get("relinked") != null
+                                    ? response.body().get("relinked")
+                                    : 0;
+                            int total = response.body().get("totalScoped") != null
+                                    ? response.body().get("totalScoped")
+                                    : 0;
+                            Toast.makeText(TransactionManagementActivity.this,
+                                    getString(R.string.txn_mgmt_backfill_success, relinked, total),
+                                    Toast.LENGTH_LONG).show();
+                            loadUsersAndTransactions();
+                        } else {
+                            Toast.makeText(TransactionManagementActivity.this,
+                                    extractBackendError(response, getString(R.string.txn_mgmt_backfill_failed)),
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<Map<String, Integer>> call, @NonNull Throwable t) {
+                        if (btnBackfillTransactions != null) {
+                            btnBackfillTransactions.setEnabled(true);
+                        }
+                        Toast.makeText(TransactionManagementActivity.this,
+                                getString(R.string.common_error_with_reason, t.getMessage()),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private String extractBackendError(Response<?> response, String fallback) {

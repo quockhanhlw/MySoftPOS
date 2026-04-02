@@ -59,12 +59,21 @@
                         android:textStyle="bold" />
 
                     <TextView
+                        android:id="@+id/tvHeaderSubtitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="1dp"
                         android:text="@string/user_mgmt_subtitle"
                         android:textColor="#94A3B8"
                         android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tvBackendSource"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:textColor="#94A3B8"
+                        android:textSize="11sp" />
                 </LinearLayout>
 
                 <TextView

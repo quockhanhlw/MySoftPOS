@@ -31,6 +31,8 @@ import java.util.Locale;
 
 public class TransactionDetailActivity extends BaseActivity {
 
+    private static final long VOID_WINDOW_MS = 24L * 60L * 60L * 1000L;
+
     public static final String EXTRA_TRANSACTION_ID = "EXTRA_TRANSACTION_ID";
 
     private TransactionDetailViewModel viewModel;
@@ -229,36 +231,29 @@ public class TransactionDetailActivity extends BaseActivity {
     private void updateUI(TransactionWithDetails txnDetails) {
         TransactionEntity txn = txnDetails.transaction;
 
-        // Amount
+        // Amount: for Balance Inquiry, prefer DE54 balance over stored amount (often 0)
         try {
-            long amt = Long.parseLong(txn.amount);
+            long amt = Long.parseLong(resolveDisplayAmount(txn));
             java.text.DecimalFormatSymbols symbols = new java.text.DecimalFormatSymbols(Locale.getDefault());
             symbols.setGroupingSeparator(',');
             java.text.DecimalFormat bucket = new java.text.DecimalFormat("#,###", symbols);
             tvAmount.setText(bucket.format(amt));
         } catch (Exception e) {
-            tvAmount.setText(txn.amount);
+            tvAmount.setText(resolveDisplayAmount(txn));
         }
 
         // Status
         tvStatus.setText(txn.status);
 
         // Determine if this is a Purchase transaction (only purchases can be voided)
-        boolean isPurchase = false;
-        try {
-            if (txn.requestHex != null) {
-                com.example.mysoftpos.iso8583.message.IsoMessage reqMsg = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
-                        .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
-                                .hexToBytes(txn.requestHex));
-                String processingCode = reqMsg.hasField(3) ? reqMsg.getField(3) : "";
-                // Purchase = 000000, Cash = 010000; Balance = 300000
-                isPurchase = processingCode.startsWith("00");
-            }
-        } catch (Exception e) {
-            Log.e("TxnDetail", "Parse DE3 for void check", e);
-        }
+        boolean isPurchase = isPurchaseTransaction(txn);
 
-        if (("APPROVED".equals(txn.status) || "SUCCESS".equals(txn.status)) && isPurchase) {
+        boolean withinVoidWindow = isWithinVoidWindow(txn.timestamp);
+
+        boolean hasVoidPayload = hasVoidRequestPayload(txn);
+
+        if (("APPROVED".equals(txn.status) || "SUCCESS".equals(txn.status))
+                && isPurchase && withinVoidWindow && hasVoidPayload) {
             tvStatus.setBackgroundResource(R.drawable.bg_status_pill_success);
             tvStatus.setTextColor(0xFF4CAF50);
             btnVoid.setVisibility(View.VISIBLE);
@@ -330,7 +325,97 @@ public class TransactionDetailActivity extends BaseActivity {
         valRrn.setText(rrn);
     }
 
+    private boolean isPurchaseTransaction(TransactionEntity txn) {
+        if (txn.processingCode != null && !txn.processingCode.trim().isEmpty()) {
+            return txn.processingCode.startsWith("00");
+        }
+        try {
+            if (txn.requestHex != null) {
+                com.example.mysoftpos.iso8583.message.IsoMessage reqMsg = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                        .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
+                                .hexToBytes(txn.requestHex));
+                String processingCode = reqMsg.hasField(3) ? reqMsg.getField(3) : "";
+                return processingCode.startsWith("00");
+            }
+        } catch (Exception e) {
+            Log.e("TxnDetail", "Parse DE3 for void check", e);
+        }
+        return false;
+    }
+
+    private boolean isBalanceTransaction(TransactionEntity txn) {
+        if (txn.processingCode != null && !txn.processingCode.trim().isEmpty()) {
+            return txn.processingCode.startsWith("30");
+        }
+        try {
+            if (txn.requestHex != null) {
+                com.example.mysoftpos.iso8583.message.IsoMessage reqMsg = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                        .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
+                                .hexToBytes(txn.requestHex));
+                String processingCode = reqMsg.hasField(3) ? reqMsg.getField(3) : "";
+                return processingCode.startsWith("30");
+            }
+        } catch (Exception ignored) {
+        }
+        return false;
+    }
+
+    private String resolveDisplayAmount(TransactionEntity txn) {
+        if (!isBalanceTransaction(txn)) {
+            return txn.amount != null ? txn.amount : "0";
+        }
+
+        try {
+            if (txn.responseHex == null || txn.responseHex.isEmpty()) {
+                return txn.amount != null ? txn.amount : "0";
+            }
+            com.example.mysoftpos.iso8583.message.IsoMessage resp = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                    .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker.hexToBytes(txn.responseHex));
+            String de54 = resp.getField(54);
+            if (de54 == null || de54.length() < 20) {
+                return txn.amount != null ? txn.amount : "0";
+            }
+
+            String available = null;
+            String ledger = null;
+            for (int i = 0; i + 20 <= de54.length(); i += 20) {
+                String block = de54.substring(i, i + 20);
+                String amountType = block.substring(2, 4);
+                char sign = block.charAt(7);
+                String raw = block.substring(8, 20);
+                if (sign == 'D') {
+                    raw = "-" + raw;
+                }
+                if ("02".equals(amountType)) {
+                    available = raw;
+                } else if ("01".equals(amountType)) {
+                    ledger = raw;
+                }
+            }
+
+            String chosen = available != null ? available : ledger;
+            if (chosen != null) {
+                return String.valueOf(Long.parseLong(chosen));
+            }
+        } catch (Exception ignored) {
+        }
+        return txn.amount != null ? txn.amount : "0";
+    }
+
     private void showVoidConfirmation() {
+        if (cachedTxnDetails == null || cachedTxnDetails.transaction == null
+                || !isPurchaseTransaction(cachedTxnDetails.transaction)) {
+            Toast.makeText(this, R.string.void_only_purchase, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!isWithinVoidWindow(cachedTxnDetails.transaction.timestamp)) {
+            Toast.makeText(this, R.string.txn_void_expired_24h, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!hasVoidRequestPayload(cachedTxnDetails.transaction)) {
+            Toast.makeText(this, R.string.txn_error_original_request_missing, Toast.LENGTH_SHORT).show();
+            return;
+        }
         new AlertDialog.Builder(this)
                 .setTitle(R.string.void_confirm_title)
                 .setMessage(R.string.void_confirm_message)
@@ -340,5 +425,26 @@ public class TransactionDetailActivity extends BaseActivity {
                 })
                 .setNegativeButton(R.string.void_confirm_no, null)
                 .show();
+    }
+
+    private boolean isWithinVoidWindow(long txnTimestamp) {
+        long ageMs = System.currentTimeMillis() - txnTimestamp;
+        return ageMs >= 0 && ageMs <= VOID_WINDOW_MS;
+    }
+
+    private boolean hasVoidRequestPayload(TransactionEntity txn) {
+        if (txn == null || txn.requestHex == null) {
+            return false;
+        }
+        String hex = txn.requestHex.trim();
+        if (hex.isEmpty() || (hex.length() % 2 != 0)) {
+            return false;
+        }
+        for (int i = 0; i < hex.length(); i++) {
+            if (Character.digit(hex.charAt(i), 16) < 0) {
+                return false;
+            }
+        }
+        return true;
     }
 }

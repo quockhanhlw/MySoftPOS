@@ -54,7 +54,7 @@ public class TestDataProvider {
         List<TestScenario> list = new ArrayList<>();
 
         String[] codes = {
-                "022", "011", "012", "021", "071", "072"
+                "011", "012", "021", "022", "051", "052", "071", "072"
         };
 
         for (String code : codes) {
@@ -70,6 +70,7 @@ public class TestDataProvider {
             }
 
             TestScenario s = new TestScenario("0200", desc);
+            s.setDefaultCase(true);
 
             // Common Fields
             // Do not hardcode DE3 here.
@@ -103,6 +104,16 @@ public class TestDataProvider {
             case "022": // Magstripe without PIN
                 s.setField(35, TRACK2_1);
                 s.setField(14, EXP_1);
+                break;
+            case "051": // Chip/contact with PIN
+                s.setField(2, PAN_3);
+                s.setField(14, EXP_3);
+                s.setField(35, null);
+                break;
+            case "052": // Chip/contact without PIN
+                s.setField(2, PAN_3);
+                s.setField(14, EXP_3);
+                s.setField(35, null);
                 break;
             case "071": // Contactless with PIN
                 s.setField(2, PAN_2);
@@ -141,6 +152,8 @@ public class TestDataProvider {
             return context.getString(R.string.testsuite_mode_magstripe_swipe);
         if (code.startsWith("01"))
             return context.getString(R.string.testsuite_mode_manual_keyin);
+        if (code.startsWith("05"))
+            return context.getString(R.string.testsuite_mode_chip_contact);
         if (code.startsWith("07"))
             return context.getString(R.string.testsuite_mode_contactless);
         if (code.startsWith("03"))

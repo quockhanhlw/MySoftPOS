@@ -21,7 +21,7 @@ import com.example.mysoftpos.data.local.dao.*;
         TerminalEntity.class,
         BranchEntity.class,
         CardEntity.class
-}, version = 25, exportSchema = true)
+}, version = 28, exportSchema = true)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract TransactionDao transactionDao();
@@ -568,6 +568,34 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /**
+     * Migration 26 -> 27:
+     * Restore local credential cache column for offline login reliability.
+     */
+    static final Migration MIGRATION_26_27 = new Migration(26, 27) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE pos_accounts ADD COLUMN password_hash TEXT");
+            db.execSQL("UPDATE pos_accounts SET password_hash = '' WHERE password_hash IS NULL");
+        }
+    };
+
+    /**
+     * Migration 27 -> 28:
+     * - test_cases: add backend_id, is_default for API sync + immutable default marking.
+     * - cards: add backend/owner mapping columns for backend card catalog sync.
+     */
+    static final Migration MIGRATION_27_28 = new Migration(27, 28) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE test_cases ADD COLUMN backend_id INTEGER NOT NULL DEFAULT 0");
+            db.execSQL("ALTER TABLE test_cases ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0");
+            db.execSQL("ALTER TABLE cards ADD COLUMN backend_id INTEGER NOT NULL DEFAULT 0");
+            db.execSQL("ALTER TABLE cards ADD COLUMN admin_backend_id INTEGER NOT NULL DEFAULT 0");
+            db.execSQL("ALTER TABLE cards ADD COLUMN pos_account_backend_id INTEGER NOT NULL DEFAULT 0");
+        }
+    };
+
     // ──────────────────────────────────────────────────────────────────────────
     // Singleton
     // ──────────────────────────────────────────────────────────────────────────
@@ -591,7 +619,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             .addMigrations(MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
                                     MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21,
                                     MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25,
-                                    MIGRATION_25_26)
+                                    MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28)
                             // WAL (Write-Ahead Logging): cải thiện hiệu năng đọc/ghi
                             // đồng thời, thay thế TRUNCATE.
                             .setJournalMode(RoomDatabase.JournalMode.AUTOMATIC)

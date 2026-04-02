@@ -109,8 +109,10 @@ public class TransactionRepositoryImpl implements TransactionRepository {
             txn.traceNumber = record.traceNumber;
             txn.amount = record.amount;
             txn.status = record.status;
-            txn.requestHex = maskingService.maskIsoHex(record.reqHex);
-            txn.responseHex = maskingService.maskIsoHex(record.respHex);
+            // Keep raw ISO locally so void-from-history can rebuild original reversal context.
+            // Sensitive masking is applied at sync/log boundaries instead.
+            txn.requestHex = record.reqHex;
+            txn.responseHex = record.respHex;
             txn.timestamp = record.timestamp;
             txn.terminalId = terminalId > 0 ? terminalId : null;
             txn.cardId = cardId > 0 ? cardId : null;
@@ -137,14 +139,14 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     @Override
     public void updateTransactionResponse(String traceNumber, String responseHex, String status) {
         dispatchers.io().execute(() -> {
-            db.transactionDao().updateResponse(traceNumber, maskingService.maskIsoHex(responseHex), status);
+            db.transactionDao().updateResponse(traceNumber, responseHex, status);
         });
     }
 
     @Override
     public void updateTransactionResponseHex(String traceNumber, String responseHex) {
         dispatchers.io().execute(() -> {
-            db.transactionDao().updateResponseHex(traceNumber, maskingService.maskIsoHex(responseHex));
+            db.transactionDao().updateResponseHex(traceNumber, responseHex);
         });
     }
 
