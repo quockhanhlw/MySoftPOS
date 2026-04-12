@@ -177,31 +177,12 @@ public class TransactionDetailActivity extends BaseActivity {
 
         // Pass transaction data if available
         if (cachedTxnDetails != null && cachedTxnDetails.transaction != null) {
-            // Parse currency from requestHex DE 49
-            String currencyCode = "704";
-            String currencyLabel = getString(R.string.currency_vnd);
-            String realAmount = cachedTxnDetails.transaction.amount;
-            try {
-                if (cachedTxnDetails.transaction.requestHex != null) {
-                    com.example.mysoftpos.iso8583.message.IsoMessage req = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
-                            .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
-                                    .hexToBytes(cachedTxnDetails.transaction.requestHex));
-                    if (req.hasField(49)) {
-                        currencyCode = req.getField(49).trim();
-                        if ("840".equals(currencyCode))
-                            currencyLabel = getString(R.string.currency_usd);
-                    }
-                    // Use DE 4 for accurate amount, convert to real value
-                    if (req.hasField(4)) {
-                        long rawDe4 = Long.parseLong(req.getField(4).trim());
-                        if ("704".equals(currencyCode)) {
-                            rawDe4 = rawDe4 / 100; // VND: remove 2 trailing zeros
-                        }
-                        realAmount = String.valueOf(rawDe4);
-                    }
-                }
-            } catch (Exception e) {
-                /* ignore */ }
+            TransactionEntity txn = cachedTxnDetails.transaction;
+            String currencyCode = resolveCurrencyCode(txn);
+            String realAmount = resolveDisplayAmount(txn);
+            String currencyLabel = "840".equals(currencyCode)
+                    ? getString(R.string.currency_usd)
+                    : getString(R.string.currency_vnd);
 
             intent.putExtra(com.example.mysoftpos.utils.IntentKeys.AMOUNT, realAmount);
             intent.putExtra(IntentKeys.CURRENCY_CODE, currencyCode);

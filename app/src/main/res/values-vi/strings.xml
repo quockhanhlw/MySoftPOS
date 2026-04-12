@@ -43,7 +43,7 @@
     <string name="register_dob_hint">DD/MM/YYYY</string>
     
     <string name="register_phone">Số điện thoại</string>
-    <string name="register_phone_hint">Nhập số điện thoại di động</string>
+    <string name="register_phone_hint">Nhập số điện thoại 10 chữ số</string>
 
     <string name="register_address">Địa chỉ</string>
     <string name="register_address_hint">Nhập địa chỉ của bạn</string>
@@ -136,7 +136,7 @@
     <string name="register_email_hint_user">tenban@example.com</string>
     <string name="register_security_section_title">Bảo mật tài khoản</string>
     <string name="register_security_section_subtitle">Tạo mật khẩu mạnh để bảo vệ tài khoản của bạn.</string>
-    <string name="register_invalid_phone">Vui lòng nhập số điện thoại hợp lệ</string>
+    <string name="register_invalid_phone">Số điện thoại phải đúng 10 chữ số</string>
     <string name="register_invalid_email">Vui lòng nhập địa chỉ email hợp lệ</string>
     <string name="register_invalid_business_type">Vui lòng chọn loại hình kinh doanh hợp lệ từ danh sách</string>
     <string name="register_password_policy">Mật khẩu phải có ít nhất 8 ký tự và gồm cả chữ lẫn số</string>

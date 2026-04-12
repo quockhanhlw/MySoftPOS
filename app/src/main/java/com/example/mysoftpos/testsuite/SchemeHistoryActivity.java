@@ -23,10 +23,9 @@ import com.example.mysoftpos.testsuite.storage.SchemeRepository;
 import com.example.mysoftpos.ui.dashboard.TransactionDetailActivity;
 import com.example.mysoftpos.ui.BaseActivity;
 import com.example.mysoftpos.utils.IntentKeys;
+import com.example.mysoftpos.utils.format.AmountFormatUtils;
 import com.example.mysoftpos.utils.security.PasswordUtils;
 
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -212,17 +211,50 @@ public class SchemeHistoryActivity extends BaseActivity {
         return s;
     }
 
+    private String resolveTxnCurrencyCodeForDisplay(TransactionEntity txn) {
+        if (txn != null && txn.currencyCode != null && !txn.currencyCode.trim().isEmpty()) {
+            return txn.currencyCode.trim();
+        }
+        try {
+            if (txn != null && txn.requestHex != null && !txn.requestHex.trim().isEmpty()) {
+                com.example.mysoftpos.iso8583.message.IsoMessage req = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                        .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker.hexToBytes(txn.requestHex));
+                if (req.hasField(49)) {
+                    String de49 = req.getField(49);
+                    if (de49 != null && !de49.trim().isEmpty()) {
+                        return de49.trim();
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return "704";
+    }
+
+    private String resolveTxnAmountForDisplay(TransactionEntity txn) {
+        if (txn != null && txn.amount != null && !txn.amount.trim().isEmpty()) {
+            return txn.amount.trim();
+        }
+        try {
+            if (txn != null && txn.requestHex != null && !txn.requestHex.trim().isEmpty()) {
+                com.example.mysoftpos.iso8583.message.IsoMessage req = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                        .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker.hexToBytes(txn.requestHex));
+                if (req.hasField(4)) {
+                    return req.getField(4).trim();
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return "0";
+    }
+
     // ── Adapter ──
 
     private class TxnAdapter extends RecyclerView.Adapter<TxnAdapter.VH> {
 
-        private final DecimalFormat amountFmt;
         private final SimpleDateFormat dateFmt;
 
         TxnAdapter() {
-            DecimalFormatSymbols s = new DecimalFormatSymbols(Locale.getDefault());
-            s.setGroupingSeparator(',');
-            amountFmt = new DecimalFormat("#,###", s);
             dateFmt = new SimpleDateFormat("HH:mm dd/MM/yyyy", Locale.getDefault());
         }
 
@@ -262,33 +294,11 @@ public class SchemeHistoryActivity extends BaseActivity {
             dot.setColor(color);
             h.statusDot.setBackground(dot);
 
-            // Amount — parse DE 4 from request hex, divide by 100 for VND
-            String amountDisplay = getString(R.string.txn_detail_placeholder_dash);
-            try {
-                if (txn.requestHex != null) {
-                    com.example.mysoftpos.iso8583.message.IsoMessage reqMsg = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
-                            .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker
-                                    .hexToBytes(txn.requestHex));
-                    if (reqMsg.hasField(4)) {
-                        long rawAmt = Long.parseLong(reqMsg.getField(4));
-                        // DE 49 currency: 704=VND (minor=00, divide by 100), 840=USD (keep as cents)
-                        String currency = reqMsg.hasField(49) ? reqMsg.getField(49).trim() : "704";
-                        if ("704".equals(currency)) {
-                            rawAmt = rawAmt / 100;
-                        }
-                        amountDisplay = amountFmt.format(rawAmt)
-                                + ("704".equals(currency)
-                                ? " " + getString(R.string.currency_vnd)
-                                : " " + getString(R.string.currency_usd));
-                    }
-                }
-            } catch (Exception e) {
-                // Fallback: try amount field directly
-                try {
-                    long amt = Long.parseLong(txn.amount);
-                    amountDisplay = amountFmt.format(amt) + " " + getString(R.string.currency_vnd);
-                } catch (Exception ignored) {
-                }
+            String amountRaw = resolveTxnAmountForDisplay(txn);
+            String currencyCode = resolveTxnCurrencyCodeForDisplay(txn);
+            String amountDisplay = AmountFormatUtils.formatAmountDisplay(amountRaw, currencyCode);
+            if ("-".equals(amountDisplay)) {
+                amountDisplay = getString(R.string.txn_detail_placeholder_dash);
             }
             h.tvAmount.setText(amountDisplay);
 

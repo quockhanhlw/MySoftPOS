@@ -81,6 +81,7 @@ public class PurchaseCardActivity extends BaseCardEntryActivity {
         intent.putExtra(TransactionResultActivity.EXTRA_MESSAGE, msg);
         intent.putExtra(com.example.mysoftpos.utils.IntentKeys.AMOUNT, amount);
         intent.putExtra(com.example.mysoftpos.utils.IntentKeys.CURRENCY, currency);
+        intent.putExtra(com.example.mysoftpos.utils.IntentKeys.CURRENCY_CODE, currencyCode);
 
         // Masked PAN
         String maskedPan = "**** 0000";

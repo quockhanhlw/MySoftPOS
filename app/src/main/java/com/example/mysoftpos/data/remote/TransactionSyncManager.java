@@ -52,13 +52,14 @@ public class TransactionSyncManager {
             try {
                 AppDatabase db = AppDatabase.getInstance(context);
                 com.example.mysoftpos.data.local.entity.PosAccountEntity currentUser = db.posAccountDao().findByBackendId(backendUserId);
-                if (currentUser == null) {
-                    Log.w(TAG, "No local pos_account mapped for backend user id=" + backendUserId);
-                    return;
+                List<TransactionEntity> allTxns;
+                if (currentUser != null) {
+                    allTxns = db.transactionDao().getCompletedTransactionsForSync(currentUser.id, backendUserId);
+                } else {
+                    Log.w(TAG, "No local pos_account mapped for backend user id=" + backendUserId
+                            + ", fallback sync by legacy user_id");
+                    allTxns = db.transactionDao().getCompletedTransactionsByLegacyUserIdSync(backendUserId);
                 }
-
-                List<TransactionEntity> allTxns = db.transactionDao()
-                        .getCompletedTransactionsByUserIdSync(currentUser.id);
 
                 if (allTxns == null || allTxns.isEmpty()) {
                     Log.d(TAG, "No transactions to sync");
@@ -80,7 +81,7 @@ public class TransactionSyncManager {
                     item.currencyCode = txn.currencyCode;
                     item.rrn = txn.rrn;
                     item.cardId = txn.cardId;
-                    item.terminalId = txn.terminalId;
+                    item.terminalId = null;
 
                     // Get card and terminal info from transaction details
                     try {
@@ -90,7 +91,11 @@ public class TransactionSyncManager {
                             item.maskedPan = details.card.panMasked;
                             item.cardScheme = details.card.scheme;
                         }
-                        // terminal/card ids are preferred; codes are legacy fallback.
+                        if (details != null && details.terminal != null
+                                && details.terminal.terminalCode != null
+                                && !details.terminal.terminalCode.trim().isEmpty()) {
+                            item.terminalCode = details.terminal.terminalCode.trim();
+                        }
                     } catch (Exception e) {
                         Log.w(TAG, "Failed to get transaction details: " + e.getMessage());
                     }

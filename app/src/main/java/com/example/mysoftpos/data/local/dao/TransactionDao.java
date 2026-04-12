@@ -41,6 +41,12 @@ public interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE user_id = :userId AND status IS NOT NULL AND status != 'PENDING' ORDER BY txn_timestamp DESC")
     List<TransactionEntity> getCompletedTransactionsByUserIdSync(long userId);
 
+    @Query("SELECT * FROM transactions WHERE (user_id = :userId OR user_id = :legacyBackendUserId) AND status IS NOT NULL AND status != 'PENDING' ORDER BY txn_timestamp DESC")
+    List<TransactionEntity> getCompletedTransactionsForSync(long userId, long legacyBackendUserId);
+
+    @Query("SELECT * FROM transactions WHERE user_id = :legacyBackendUserId AND status IS NOT NULL AND status != 'PENDING' ORDER BY txn_timestamp DESC")
+    List<TransactionEntity> getCompletedTransactionsByLegacyUserIdSync(long legacyBackendUserId);
+
     @Query("SELECT * FROM transactions ORDER BY txn_timestamp DESC")
     androidx.lifecycle.LiveData<List<TransactionEntity>> getAllTransactionsLive();
 

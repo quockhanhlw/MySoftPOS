@@ -915,6 +915,7 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
                 String email = safe(etEmail.getText().toString());
                 String password = safe(etPassword.getText().toString());
                 String tid = normalizeTid(etTid.getText().toString());
+                etTid.setText(tid);
                 if (fullName.isEmpty()) {
                     focusFirstError(svAccountEditor, etFullName, tilFullName, getString(R.string.common_required));
                     return;
@@ -927,9 +928,14 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
                     focusFirstError(svAccountEditor, etPassword, tilPassword, getString(R.string.common_required));
                     return;
                 }
-                if (!tid.isEmpty() && !tid.matches(TID_REGEX)) {
+                if (tid.isEmpty()) {
                     focusFirstError(svAccountEditor, etTid, tilTid,
-                            getString(R.string.user_mgmt_accounts_dialog_tid_invalid, 1));
+                            getString(R.string.user_mgmt_error_tid_invalid_strict));
+                    return;
+                }
+                if (!tid.matches(TID_REGEX)) {
+                    focusFirstError(svAccountEditor, etTid, tilTid,
+                            getString(R.string.user_mgmt_error_tid_invalid_strict));
                     return;
                 }
 

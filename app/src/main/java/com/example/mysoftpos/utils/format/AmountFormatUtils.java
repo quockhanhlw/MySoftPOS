@@ -44,8 +44,9 @@ public final class AmountFormatUtils {
             }
 
             if ("704".equals(normalizedCurrency)) {
-                // Backward-compatible: some old DE4-like values contain 2 trailing minor-unit zeros.
-                if (!negative && absDigits.length() > 2 && absDigits.endsWith("00")) {
+                // Only convert legacy ISO DE4-like fixed-width values (12 digits) for VND.
+                // Normal entered/display amounts (e.g. 100000) must stay unchanged.
+                if (!negative && absDigits.length() == 12 && absDigits.endsWith("00")) {
                     amount = amount.movePointLeft(2);
                 }
                 NumberFormat nf = NumberFormat.getNumberInstance(Locale.US);

@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import com.example.mysoftpos.ui.BaseActivity;
+import com.example.mysoftpos.utils.format.AmountFormatUtils;
 
 /**
  * Main Dashboard - Redesigned based on User Sketch.
@@ -413,10 +414,6 @@ public class MainDashboardActivity extends BaseActivity {
         int limit = isHistoryExpanded ? 50 : 1;
 
         int count = 0;
-        java.text.DecimalFormatSymbols symbols = new java.text.DecimalFormatSymbols(Locale.getDefault());
-        symbols.setGroupingSeparator(',');
-        java.text.DecimalFormat currencyFmt = new java.text.DecimalFormat("#,###", symbols);
-
         for (TransactionEntity txn : currentTransactions) {
             if (count >= limit)
                 break;
@@ -479,24 +476,11 @@ public class MainDashboardActivity extends BaseActivity {
             // dp helper
             float density = getResources().getDisplayMetrics().density;
 
-            // Amount + Currency — read from denormalized column (no hex unpacking!)
+            // Amount + Currency — normalized by shared formatter to keep screens consistent.
             TextView tvAmount = new TextView(this);
             String amtStr = resolveHistoryAmount(txn);
-            String currencyLabel = "VND";
-            if (txn.currencyCode != null) {
-                if ("840".equals(txn.currencyCode))
-                    currencyLabel = "USD";
-                else if ("704".equals(txn.currencyCode))
-                    currencyLabel = "VND";
-                else
-                    currencyLabel = txn.currencyCode;
-            }
-            try {
-                long amtVal = Long.parseLong(amtStr);
-                tvAmount.setText(currencyFmt.format(amtVal) + " " + currencyLabel);
-            } catch (NumberFormatException e) {
-                tvAmount.setText(amtStr);
-            }
+            String currencyCode = resolveHistoryCurrencyCode(txn);
+            tvAmount.setText(AmountFormatUtils.formatAmountDisplay(amtStr, currencyCode));
             tvAmount.setTextSize(14f);
             tvAmount.setTextColor(Color.parseColor("#0A2463"));
             tvAmount.setTypeface(null, android.graphics.Typeface.BOLD);
@@ -597,5 +581,25 @@ public class MainDashboardActivity extends BaseActivity {
         }
         String v = value.trim();
         return v.contains("@") || v.matches("^[+]?\\d{8,15}$");
+    }
+
+    private String resolveHistoryCurrencyCode(TransactionEntity txn) {
+        if (txn != null && txn.currencyCode != null && !txn.currencyCode.trim().isEmpty()) {
+            return txn.currencyCode.trim();
+        }
+        try {
+            if (txn != null && txn.requestHex != null && !txn.requestHex.trim().isEmpty()) {
+                com.example.mysoftpos.iso8583.message.IsoMessage req = new com.example.mysoftpos.iso8583.util.StandardIsoPacker()
+                        .unpack(com.example.mysoftpos.iso8583.util.StandardIsoPacker.hexToBytes(txn.requestHex));
+                if (req.hasField(49)) {
+                    String de49 = req.getField(49);
+                    if (de49 != null && !de49.trim().isEmpty()) {
+                        return de49.trim();
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return "704";
     }
 }

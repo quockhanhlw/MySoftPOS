@@ -568,6 +568,7 @@
                             android:layout_height="wrap_content"
                             android:hint="@string/register_phone_hint"
                             android:inputType="phone"
+                            android:maxLength="10"
                             android:minHeight="52dp"
                             android:paddingHorizontal="4dp"
                             android:textColor="#0F172A"

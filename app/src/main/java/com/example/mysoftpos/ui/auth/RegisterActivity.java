@@ -569,7 +569,7 @@ public class RegisterActivity extends BaseActivity {
             setFieldError(etPhone, R.string.common_required);
             return false;
         }
-        if (!normalizedPhone.matches("^\\+?[0-9]{9,15}$")) {
+        if (!normalizedPhone.matches("^[0-9]{10}$")) {
             setFieldError(etPhone, R.string.register_invalid_phone);
             return false;
         }
@@ -992,14 +992,8 @@ public class RegisterActivity extends BaseActivity {
     }
 
     private String normalizePhone(String phone) {
-        String normalized = phone.replaceAll("[\\s()-]", "");
-        if (normalized.startsWith("00")) {
-            normalized = "+" + normalized.substring(2);
-        }
-        if (normalized.indexOf('+') > 0) {
-            normalized = normalized.replace("+", "");
-        }
-        return normalized;
+        // Keep phone normalization strict and deterministic for 10-digit validation.
+        return phone == null ? "" : phone.replaceAll("[^0-9]", "");
     }
 
     private String getTrimmedText(TextView editText) {

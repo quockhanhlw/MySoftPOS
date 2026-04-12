@@ -18,6 +18,12 @@ public interface TransactionRepository {
 
     void updateTransactionStatus(String traceNumber, String status);
 
+    /**
+     * Synchronous variant for callers already running on a background thread.
+     * Helps guarantee state is persisted before triggering dependent work.
+     */
+    void updateTransactionStatusSync(String traceNumber, String status);
+
     void updateTransactionResponse(String traceNumber, String responseHex, String status);
 
     // ISO Operations (Future: Move from Activity to here)
@@ -25,5 +31,15 @@ public interface TransactionRepository {
 
     void updateTransactionResponseHex(String traceNumber, String responseHex);
 
+    /**
+     * Synchronous variant for callers already running on a background thread.
+     */
+    void updateTransactionResponseHexSync(String traceNumber, String responseHex);
+
     void updateTransactionRrn(String traceNumber, String rrn);
+
+    /**
+     * Synchronous variant for callers already running on a background thread.
+     */
+    void updateTransactionRrnSync(String traceNumber, String rrn);
 }

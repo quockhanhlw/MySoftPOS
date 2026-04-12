@@ -158,7 +158,7 @@ public class PurchaseViewModel extends BaseViewModel {
                 // Process Response
                 String responseHex = StandardIsoPacker.bytesToHex(resp);
                 FileLogger.logPacket(getApplication(), "RECV 0210", resp);
-                repository.updateTransactionResponseHex(ctx.stan11, responseHex);
+                repository.updateTransactionResponseHexSync(ctx.stan11, responseHex);
 
                 IsoMessage respMsg = new StandardIsoPacker().unpack(resp);
                 FileLogger.logString(getApplication(), "RECV DETAIL", StandardIsoPacker.logIsoMessage(respMsg));
@@ -168,11 +168,11 @@ public class PurchaseViewModel extends BaseViewModel {
                 entity.status = isApproved ? "APPROVED" : "DECLINED " + rc;
                 entity.responseHex = responseHex;
 
-                repository.updateTransactionStatus(ctx.stan11, entity.status);
+                repository.updateTransactionStatusSync(ctx.stan11, entity.status);
 
                 // Save denormalized RRN from response (performance optimization)
                 if (respMsg.hasField(37)) {
-                    repository.updateTransactionRrn(ctx.stan11, respMsg.getField(37).trim());
+                    repository.updateTransactionRrnSync(ctx.stan11, respMsg.getField(37).trim());
                 }
 
                 // Sync to backend via WorkManager (reliable, survives process death)
@@ -209,7 +209,7 @@ public class PurchaseViewModel extends BaseViewModel {
             FileLogger.logString(getApplication(), "SEND 0420 DETAIL", StandardIsoPacker.logIsoMessage(rev));
 
             entity.status = "TIMEOUT_REVERSAL_INIT";
-            repository.updateTransactionStatus(ctx.stan11, entity.status);
+            repository.updateTransactionStatusSync(ctx.stan11, entity.status);
 
             try {
                 // Use injected client
@@ -226,20 +226,20 @@ public class PurchaseViewModel extends BaseViewModel {
                 }
 
                 entity.status = "TIMEOUT_REVERSED";
-                repository.updateTransactionStatus(ctx.stan11, entity.status);
+                repository.updateTransactionStatusSync(ctx.stan11, entity.status);
                 com.example.mysoftpos.data.remote.SyncWorker.enqueueOneTime(getApplication());
                 postError(getApplication().getString(R.string.err_timeout_reversed));
 
             } catch (SocketTimeoutException e) {
                 entity.status = "TIMEOUT_REVERSAL_NO_RSP";
-                repository.updateTransactionStatus(ctx.stan11, entity.status);
+                repository.updateTransactionStatusSync(ctx.stan11, entity.status);
                 postError(getApplication().getString(R.string.err_timeout_generic));
             }
 
         } catch (Exception e) {
             Log.e(TAG, "Reversal Failed", e);
             entity.status = "TIMEOUT_REVERSAL_FAILED";
-            repository.updateTransactionStatus(ctx.stan11, entity.status);
+            repository.updateTransactionStatusSync(ctx.stan11, entity.status);
             postError(getApplication().getString(R.string.err_timeout_generic));
         }
     }

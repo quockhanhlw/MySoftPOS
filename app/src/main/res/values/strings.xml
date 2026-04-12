@@ -40,7 +40,7 @@
     <string name="register_dob_hint">DD/MM/YYYY</string>
     
     <string name="register_phone">Phone Number</string>
-    <string name="register_phone_hint">Enter your phone number</string>
+    <string name="register_phone_hint">Enter a 10-digit phone number</string>
 
     <string name="register_address">Address</string>
     <string name="register_address_hint">Enter your address</string>
@@ -116,7 +116,7 @@
     <string name="register_email_hint_user">name@example.com</string>
     <string name="register_security_section_title">Account Security</string>
     <string name="register_security_section_subtitle">Create a strong password to protect your account.</string>
-    <string name="register_invalid_phone">Please enter a valid phone number</string>
+    <string name="register_invalid_phone">Phone number must be exactly 10 digits</string>
     <string name="register_invalid_email">Please enter a valid email address</string>
     <string name="register_invalid_business_type">Please select a valid business type from the list</string>
     <string name="register_password_policy">Password must be at least 8 characters and include both letters and numbers</string>

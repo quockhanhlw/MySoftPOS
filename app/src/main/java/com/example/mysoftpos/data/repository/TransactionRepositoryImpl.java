@@ -137,6 +137,11 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     }
 
     @Override
+    public void updateTransactionStatusSync(String traceNumber, String status) {
+        db.transactionDao().updateStatus(traceNumber, status);
+    }
+
+    @Override
     public void updateTransactionResponse(String traceNumber, String responseHex, String status) {
         dispatchers.io().execute(() -> {
             db.transactionDao().updateResponse(traceNumber, responseHex, status);
@@ -151,9 +156,19 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     }
 
     @Override
+    public void updateTransactionResponseHexSync(String traceNumber, String responseHex) {
+        db.transactionDao().updateResponseHex(traceNumber, responseHex);
+    }
+
+    @Override
     public void updateTransactionRrn(String traceNumber, String rrn) {
         dispatchers.io().execute(() -> {
             db.transactionDao().updateRrn(traceNumber, rrn);
         });
+    }
+
+    @Override
+    public void updateTransactionRrnSync(String traceNumber, String rrn) {
+        db.transactionDao().updateRrn(traceNumber, rrn);
     }
 }
