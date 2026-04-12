@@ -69,7 +69,7 @@ public class TransactionManagementActivity extends BaseActivity {
     private View btnRetryConnection;
     private View btnBackfillTransactions;
 
-    private List<ApiService.TransactionSummaryDto> userTransactions = new ArrayList<>();
+    private List<ApiService.TransactionRecordDto> userTransactions = new ArrayList<>();
     private final Map<Long, String> userIdToName = new LinkedHashMap<>();
     private final Map<Long, String> accountIdToStoreName = new LinkedHashMap<>();
     private int tokenWaitRetryCount = 0;
@@ -78,6 +78,7 @@ public class TransactionManagementActivity extends BaseActivity {
     private ConnectivityManager.NetworkCallback networkCallback;
     private Long filterMerchantId;
     private Long filterTerminalId;
+    private boolean autoBackfillAttempted = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -242,14 +243,19 @@ public class TransactionManagementActivity extends BaseActivity {
         ApiClient.getService(this).getAllTransactions(token, filterMerchantId, filterTerminalId).enqueue(
                 new Callback<>() {
                     @Override
-                    public void onResponse(@NonNull Call<List<ApiService.TransactionSummaryDto>> call,
-                            @NonNull Response<List<ApiService.TransactionSummaryDto>> resp) {
+                    public void onResponse(@NonNull Call<List<ApiService.TransactionRecordDto>> call,
+                            @NonNull Response<List<ApiService.TransactionRecordDto>> resp) {
                         if (resp.isSuccessful() && resp.body() != null) {
-                            List<ApiService.TransactionSummaryDto> rawTransactions = resp.body();
+                            List<ApiService.TransactionRecordDto> rawTransactions = resp.body();
+                            if (rawTransactions.isEmpty() && !autoBackfillAttempted) {
+                                autoBackfillAttempted = true;
+                                triggerBackfillAndReload(token);
+                                return;
+                            }
                             userTransactions = new ArrayList<>();
-                            for (ApiService.TransactionSummaryDto txn : rawTransactions) {
+                            for (ApiService.TransactionRecordDto txn : rawTransactions) {
                                 Long accountId = resolveTxnAccountId(txn);
-                                ApiService.TransactionSummaryDto displayTxn = copyTransaction(txn);
+                                ApiService.TransactionRecordDto displayTxn = copyTransaction(txn);
                                 if (accountId != null && userIdToName.containsKey(accountId)) {
                                     displayTxn.username = userIdToName.get(accountId);
                                 } else if (displayTxn.username == null || displayTxn.username.trim().isEmpty()) {
@@ -275,7 +281,7 @@ public class TransactionManagementActivity extends BaseActivity {
                     }
 
                     @Override
-                    public void onFailure(@NonNull Call<List<ApiService.TransactionSummaryDto>> call, @NonNull Throwable t) {
+                    public void onFailure(@NonNull Call<List<ApiService.TransactionRecordDto>> call, @NonNull Throwable t) {
                         clearRenderedTransactions();
                         showNonContentState(getString(R.string.txn_mgmt_state_backend_unavailable_title),
                                 getString(R.string.txn_mgmt_state_load_txn_network_subtitle), true);
@@ -336,14 +342,14 @@ public class TransactionManagementActivity extends BaseActivity {
         }).start();
     }
 
-    private void syncTransactionsToLocal(List<ApiService.TransactionSummaryDto> remoteTransactions) {
+    private void syncTransactionsToLocal(List<ApiService.TransactionRecordDto> remoteTransactions) {
         new Thread(() -> {
             try {
                 AppDatabase db = AppDatabase.getInstance(TransactionManagementActivity.this);
                 PosAccountDao posAccountDao = db.posAccountDao();
                 TransactionDao transactionDao = db.transactionDao();
 
-                for (ApiService.TransactionSummaryDto txn : remoteTransactions) {
+                for (ApiService.TransactionRecordDto txn : remoteTransactions) {
                     Long accountId = resolveTxnAccountId(txn);
                     PosAccountEntity localAccount = accountId != null ? posAccountDao.findByBackendId(accountId) : null;
                     TransactionEntity localTxn = transactionDao.getByTraceNumber(txn.traceNumber);
@@ -382,7 +388,7 @@ public class TransactionManagementActivity extends BaseActivity {
         }).start();
     }
 
-    private Long resolveTxnAccountId(ApiService.TransactionSummaryDto txn) {
+    private Long resolveTxnAccountId(ApiService.TransactionRecordDto txn) {
         if (txn == null) {
             return null;
         }
@@ -397,7 +403,7 @@ public class TransactionManagementActivity extends BaseActivity {
         List<String> names = new ArrayList<>();
         names.add(getString(R.string.txn_mgmt_filter_all_users));
         Map<String, Boolean> seen = new LinkedHashMap<>();
-        for (ApiService.TransactionSummaryDto txn : userTransactions) {
+        for (ApiService.TransactionRecordDto txn : userTransactions) {
             String name = txn.username != null ? txn.username : getString(R.string.txn_detail_unknown);
             seen.put(name, true);
         }
@@ -419,7 +425,7 @@ public class TransactionManagementActivity extends BaseActivity {
         List<String> stores = new ArrayList<>();
         stores.add(getString(R.string.txn_mgmt_filter_all_stores));
         Map<String, Boolean> seen = new LinkedHashMap<>();
-        for (ApiService.TransactionSummaryDto txn : userTransactions) {
+        for (ApiService.TransactionRecordDto txn : userTransactions) {
             seen.put(getTxnStoreName(txn), true);
         }
         stores.addAll(seen.keySet());
@@ -441,12 +447,12 @@ public class TransactionManagementActivity extends BaseActivity {
             return;
         }
 
-        List<ApiService.TransactionSummaryDto> filtered;
+        List<ApiService.TransactionRecordDto> filtered;
         if (selectedUser == null || getString(R.string.txn_mgmt_filter_all_users).equals(selectedUser)) {
             filtered = userTransactions;
         } else {
             filtered = new ArrayList<>();
-            for (ApiService.TransactionSummaryDto txn : userTransactions) {
+            for (ApiService.TransactionRecordDto txn : userTransactions) {
                 String name = txn.username != null ? txn.username : getString(R.string.txn_detail_unknown);
                 if (name.equals(selectedUser))
                     filtered.add(txn);
@@ -454,8 +460,8 @@ public class TransactionManagementActivity extends BaseActivity {
         }
 
         if (selectedStore != null && !getString(R.string.txn_mgmt_filter_all_stores).equals(selectedStore)) {
-            List<ApiService.TransactionSummaryDto> narrowed = new ArrayList<>();
-            for (ApiService.TransactionSummaryDto txn : filtered) {
+            List<ApiService.TransactionRecordDto> narrowed = new ArrayList<>();
+            for (ApiService.TransactionRecordDto txn : filtered) {
                 if (selectedStore.equals(getTxnStoreName(txn))) {
                     narrowed.add(txn);
                 }
@@ -480,7 +486,7 @@ public class TransactionManagementActivity extends BaseActivity {
         }
     }
 
-    private String getTxnStoreName(ApiService.TransactionSummaryDto txn) {
+    private String getTxnStoreName(ApiService.TransactionRecordDto txn) {
         Long accountId = resolveTxnAccountId(txn);
         if (accountId != null) {
             String mapped = accountIdToStoreName.get(accountId);
@@ -491,9 +497,9 @@ public class TransactionManagementActivity extends BaseActivity {
         return getString(R.string.txn_mgmt_filter_unknown_store);
     }
 
-    private void updateStats(List<ApiService.TransactionSummaryDto> txns) {
+    private void updateStats(List<ApiService.TransactionRecordDto> txns) {
         int approved = 0, declined = 0, other = 0;
-        for (ApiService.TransactionSummaryDto t : txns) {
+        for (ApiService.TransactionRecordDto t : txns) {
             if ("APPROVED".equalsIgnoreCase(t.status))
                 approved++;
             else if (t.status != null && t.status.toUpperCase().startsWith("DECLINED"))
@@ -506,8 +512,8 @@ public class TransactionManagementActivity extends BaseActivity {
         tvOtherCount.setText(String.valueOf(other));
     }
 
-    private ApiService.TransactionSummaryDto copyTransaction(ApiService.TransactionSummaryDto source) {
-        ApiService.TransactionSummaryDto copy = new ApiService.TransactionSummaryDto();
+    private ApiService.TransactionRecordDto copyTransaction(ApiService.TransactionRecordDto source) {
+        ApiService.TransactionRecordDto copy = new ApiService.TransactionRecordDto();
         copy.id = source.id;
         copy.traceNumber = source.traceNumber;
         copy.amount = source.amount;
@@ -717,6 +723,22 @@ public class TransactionManagementActivity extends BaseActivity {
                 });
     }
 
+    private void triggerBackfillAndReload(String token) {
+        ApiClient.getService(this).backfillAdminTransactions(token, filterMerchantId)
+                .enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(@NonNull Call<Map<String, Integer>> call,
+                            @NonNull Response<Map<String, Integer>> response) {
+                        loadTransactions(token);
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<Map<String, Integer>> call, @NonNull Throwable t) {
+                        loadTransactions(token);
+                    }
+                });
+    }
+
     private String extractBackendError(Response<?> response, String fallback) {
         if (response == null) {
             return fallback;
@@ -799,9 +821,9 @@ public class TransactionManagementActivity extends BaseActivity {
 
     // ====== Adapter ======
     static class TxnAdapter extends RecyclerView.Adapter<TxnAdapter.VH> {
-        private List<ApiService.TransactionSummaryDto> data = new ArrayList<>();
+        private List<ApiService.TransactionRecordDto> data = new ArrayList<>();
 
-        void setData(List<ApiService.TransactionSummaryDto> data) {
+        void setData(List<ApiService.TransactionRecordDto> data) {
             this.data = data != null ? data : new ArrayList<>();
             notifyDataSetChanged();
         }
@@ -839,7 +861,7 @@ public class TransactionManagementActivity extends BaseActivity {
                 tvStore = v.findViewById(R.id.tvStore);
             }
 
-            void bind(ApiService.TransactionSummaryDto txn) {
+            void bind(ApiService.TransactionRecordDto txn) {
                 String trace = txn.traceNumber != null ? txn.traceNumber :
                         itemView.getContext().getString(R.string.txn_mgmt_placeholder_dash);
                 tvTrace.setText(itemView.getContext().getString(R.string.txn_mgmt_trace_format, trace));

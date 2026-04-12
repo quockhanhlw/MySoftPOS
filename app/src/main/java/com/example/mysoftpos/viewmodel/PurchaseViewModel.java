@@ -10,6 +10,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import com.example.mysoftpos.data.local.entity.TransactionEntity;
 import com.example.mysoftpos.data.remote.IsoNetworkClient;
+import com.example.mysoftpos.data.remote.TransactionSyncManager;
 import com.example.mysoftpos.data.repository.TransactionRepository;
 import com.example.mysoftpos.domain.model.CardInputData;
 import com.example.mysoftpos.iso8583.builder.Iso8583Builder;
@@ -175,6 +176,10 @@ public class PurchaseViewModel extends BaseViewModel {
                     repository.updateTransactionRrnSync(ctx.stan11, respMsg.getField(37).trim());
                 }
 
+                // Real-time push: try syncing immediately after transaction finalization.
+                // WorkManager below remains the resilient retry mechanism.
+                new TransactionSyncManager(getApplication()).syncUnsynced();
+
                 // Sync to backend via WorkManager (reliable, survives process death)
                 com.example.mysoftpos.data.remote.SyncWorker.enqueueOneTime(getApplication());
 
@@ -227,6 +232,7 @@ public class PurchaseViewModel extends BaseViewModel {
 
                 entity.status = "TIMEOUT_REVERSED";
                 repository.updateTransactionStatusSync(ctx.stan11, entity.status);
+                new TransactionSyncManager(getApplication()).syncUnsynced();
                 com.example.mysoftpos.data.remote.SyncWorker.enqueueOneTime(getApplication());
                 postError(getApplication().getString(R.string.err_timeout_reversed));
 

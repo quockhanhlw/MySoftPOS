@@ -97,7 +97,7 @@ public interface ApiService {
                         @Body TransactionSyncRequest request);
 
         @GET("/api/transactions")
-        Call<List<TransactionSummaryDto>> getAllTransactions(@Header("Authorization") String token,
+        Call<List<TransactionRecordDto>> getAllTransactions(@Header("Authorization") String token,
                         @Query("merchantId") Long merchantId,
                         @Query("terminalId") Long terminalId);
 
@@ -106,11 +106,11 @@ public interface ApiService {
                         @Query("merchantId") Long merchantId);
 
         @GET("/api/transactions/terminal/{code}")
-        Call<List<TransactionSummaryDto>> getByTerminal(@Header("Authorization") String token,
+        Call<List<TransactionRecordDto>> getByTerminal(@Header("Authorization") String token,
                         @Path("code") String code);
 
         @GET("/api/transactions/pos-accounts/{id}")
-        Call<List<TransactionSummaryDto>> getByPosAccount(@Header("Authorization") String token,
+        Call<List<TransactionRecordDto>> getByPosAccount(@Header("Authorization") String token,
                         @Path("id") long id);
 
         // ==================== Test Suites (Admin) ====================
@@ -468,7 +468,7 @@ public interface ApiService {
                 public long txnTimestamp;
         }
 
-        class TransactionSummaryDto {
+        class TransactionRecordDto {
                 public long id;
                 public String traceNumber;
                 public String amount;
