@@ -57,4 +57,7 @@ public interface PosAccountDao {
 
     @Query("SELECT * FROM pos_accounts WHERE backend_id = :backendId LIMIT 1")
     PosAccountEntity findByBackendId(long backendId);
+
+    @Query("SELECT * FROM pos_accounts WHERE id = :id LIMIT 1")
+    PosAccountEntity getByIdSync(long id);
 }

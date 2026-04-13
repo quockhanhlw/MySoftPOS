@@ -16,6 +16,11 @@ public interface TransactionRepository {
 
     void saveTransaction(com.example.mysoftpos.domain.model.TransactionRecord record);
 
+    /**
+     * Synchronous save for flows that immediately update the same trace number.
+     */
+    void saveTransactionSync(com.example.mysoftpos.domain.model.TransactionRecord record);
+
     void updateTransactionStatus(String traceNumber, String status);
 
     /**

@@ -41,11 +41,14 @@ public interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE user_id = :userId AND status IS NOT NULL AND status != 'PENDING' ORDER BY txn_timestamp DESC")
     List<TransactionEntity> getCompletedTransactionsByUserIdSync(long userId);
 
-    @Query("SELECT * FROM transactions WHERE (user_id = :userId OR user_id = :legacyBackendUserId) AND status IS NOT NULL AND status != 'PENDING' ORDER BY txn_timestamp DESC")
+    @Query("SELECT * FROM transactions WHERE (user_id = :userId OR user_id = :legacyBackendUserId OR backend_user_id = :legacyBackendUserId) AND status IS NOT NULL AND status != 'PENDING' AND (synced_at IS NULL OR synced_at = '') ORDER BY txn_timestamp DESC")
     List<TransactionEntity> getCompletedTransactionsForSync(long userId, long legacyBackendUserId);
 
-    @Query("SELECT * FROM transactions WHERE user_id = :legacyBackendUserId AND status IS NOT NULL AND status != 'PENDING' ORDER BY txn_timestamp DESC")
+    @Query("SELECT * FROM transactions WHERE user_id = :legacyBackendUserId AND status IS NOT NULL AND status != 'PENDING' AND (synced_at IS NULL OR synced_at = '') ORDER BY txn_timestamp DESC")
     List<TransactionEntity> getCompletedTransactionsByLegacyUserIdSync(long legacyBackendUserId);
+
+    @Query("UPDATE transactions SET synced_at = :syncedAt WHERE trace_number IN (:traceNumbers)")
+    void markSyncedAtByTraceNumbers(List<String> traceNumbers, String syncedAt);
 
     @Query("SELECT * FROM transactions ORDER BY txn_timestamp DESC")
     androidx.lifecycle.LiveData<List<TransactionEntity>> getAllTransactionsLive();

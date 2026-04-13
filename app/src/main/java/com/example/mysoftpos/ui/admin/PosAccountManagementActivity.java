@@ -5,6 +5,7 @@ import android.net.NetworkCapabilities;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
@@ -51,6 +52,7 @@ import retrofit2.Response;
  */
 public class PosAccountManagementActivity extends BaseActivity implements PosAccountAdapter.OnMerchantListener {
 
+    private static final String TAG = "PosAccountMgmt";
     private static final int MAX_TOKEN_WAIT_RETRIES = 15;
     private static final long TOKEN_WAIT_RETRY_DELAY_MS = 1200L;
     private static final String TID_REGEX = "^[A-Z0-9]{8}$";
@@ -1207,23 +1209,124 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
             Toast.makeText(this, R.string.user_mgmt_state_backend_session_unavailable_title, Toast.LENGTH_SHORT).show();
             return;
         }
+        deleteAccountWithCleanup(token, merchant, user, false);
+    }
+
+    private void deleteAccountWithCleanup(String token,
+            ApiService.MerchantDto merchant,
+            ApiService.PosAccountDto user,
+            boolean alreadyRetried) {
+        Log.d(TAG, "Delete account requested: accountId=" + user.id
+                + ", merchantId=" + (merchant != null ? merchant.id : -1)
+                + ", retry=" + alreadyRetried);
+        cleanupLinkedTerminals(token, user, () -> performDeleteAccount(token, merchant, user, alreadyRetried));
+    }
+
+    private void performDeleteAccount(String token,
+            ApiService.MerchantDto merchant,
+            ApiService.PosAccountDto user,
+            boolean alreadyRetried) {
         enqueueDeletePosAccount(token, user.id, new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<Map<String, String>> call,
                     @NonNull Response<Map<String, String>> response) {
                 if (!response.isSuccessful()) {
+                    if (response.code() == 500 && !alreadyRetried) {
+                        // Some backend deployments keep terminal -> account FK constraints.
+                        // Retry once after a fresh terminal cleanup to avoid false deletion failures.
+                        Log.w(TAG, "Delete account returned 500, retrying after cleanup: accountId=" + user.id);
+                        deleteAccountWithCleanup(token, merchant, user, true);
+                        return;
+                    }
+                    Log.w(TAG, "Delete account failed: accountId=" + user.id + ", http=" + response.code());
                     showAccountApiError(response, false);
                     return;
                 }
+                Log.i(TAG, "Delete account success: accountId=" + user.id);
                 Toast.makeText(PosAccountManagementActivity.this, R.string.user_mgmt_delete_success, Toast.LENGTH_SHORT).show();
                 showMerchantAccountsDialog(merchant);
             }
 
             @Override
             public void onFailure(@NonNull Call<Map<String, String>> call, @NonNull Throwable t) {
+                Log.w(TAG, "Delete account network failure: accountId=" + user.id + ", error=" + t.getMessage());
                 Toast.makeText(PosAccountManagementActivity.this,
                         buildAdminNetworkErrorMessage(t),
                         Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void cleanupLinkedTerminals(String token,
+            ApiService.PosAccountDto user,
+            Runnable onComplete) {
+        ApiClient.getService(this).getTerminals(token).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<List<ApiService.TerminalDto>> call,
+                    @NonNull Response<List<ApiService.TerminalDto>> response) {
+                if (!response.isSuccessful() || response.body() == null) {
+                    Log.w(TAG, "Cannot read terminals for cleanup, skipping terminal cleanup. accountId=" + user.id
+                            + ", http=" + response.code());
+                    onComplete.run();
+                    return;
+                }
+
+                List<Long> terminalIds = new ArrayList<>();
+                for (ApiService.TerminalDto terminal : response.body()) {
+                    if (terminal == null) {
+                        continue;
+                    }
+                    if (terminal.posAccountId != null && terminal.posAccountId == user.id) {
+                        terminalIds.add(terminal.id);
+                    }
+                }
+
+                if (terminalIds.isEmpty()) {
+                    Log.d(TAG, "No linked terminals found for account cleanup: accountId=" + user.id);
+                    onComplete.run();
+                    return;
+                }
+
+                Log.d(TAG, "Linked terminals to delete for accountId=" + user.id + ": " + terminalIds);
+                Log.d(TAG, "First terminal delete order: terminalId=" + terminalIds.get(0));
+
+                deleteTerminalsSequentially(token, terminalIds, 0, onComplete);
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<List<ApiService.TerminalDto>> call, @NonNull Throwable t) {
+                Log.w(TAG, "Failed to load terminals for cleanup, continue delete account. accountId=" + user.id
+                        + ", error=" + t.getMessage());
+                onComplete.run();
+            }
+        });
+    }
+
+    private void deleteTerminalsSequentially(String token,
+            List<Long> terminalIds,
+            int index,
+            Runnable onComplete) {
+        if (index >= terminalIds.size()) {
+            onComplete.run();
+            return;
+        }
+
+        long terminalId = terminalIds.get(index);
+        Log.d(TAG, "Deleting linked terminal before account delete: order=" + (index + 1)
+                + "/" + terminalIds.size() + ", terminalId=" + terminalId);
+        ApiClient.getService(this).deleteTerminal(token, terminalId).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<Map<String, String>> call,
+                    @NonNull Response<Map<String, String>> response) {
+                Log.d(TAG, "Delete terminal response: terminalId=" + terminalId + ", http=" + response.code());
+                deleteTerminalsSequentially(token, terminalIds, index + 1, onComplete);
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Map<String, String>> call, @NonNull Throwable t) {
+                Log.w(TAG, "Delete terminal network failure: terminalId=" + terminalId
+                        + ", error=" + t.getMessage());
+                deleteTerminalsSequentially(token, terminalIds, index + 1, onComplete);
             }
         });
     }

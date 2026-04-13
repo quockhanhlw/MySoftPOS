@@ -135,7 +135,7 @@ public class PurchaseViewModel extends BaseViewModel {
                         .setProcessingCode(ctx.processingCode3)
                         .setCurrencyCode(ctx.currency49)
                         .build();
-                repository.saveTransaction(record);
+                repository.saveTransactionSync(record);
 
                 // Mark entity state before network call — ensures handleAutoReversal
                 // never operates on an entity with null status (fixes C-1).
@@ -194,6 +194,14 @@ public class PurchaseViewModel extends BaseViewModel {
 
             } catch (Exception e) {
                 Log.e(TAG, "Error", e);
+                if (ctx.stan11 != null && !ctx.stan11.trim().isEmpty()) {
+                    try {
+                        repository.updateTransactionStatusSync(ctx.stan11, "FAILED_LOCAL");
+                        new TransactionSyncManager(getApplication()).syncUnsynced();
+                        com.example.mysoftpos.data.remote.SyncWorker.enqueueOneTime(getApplication());
+                    } catch (Exception ignored) {
+                    }
+                }
                 postError(getApplication().getString(R.string.common_error_with_reason, e.getMessage()));
             }
         });

@@ -12,9 +12,8 @@ import com.example.mysoftpos.data.remote.api.ApiService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.time.Instant;
 
-import retrofit2.Call;
-import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
@@ -66,13 +65,14 @@ public class TransactionSyncManager {
                     return;
                 }
 
-                List<ApiService.TxnItem> items = new ArrayList<>();
+                int successCount = 0;
+                int failureCount = 0;
                 for (TransactionEntity txn : allTxns) {
 
                     ApiService.TxnItem item = new ApiService.TxnItem();
                     item.traceNumber = txn.traceNumber;
                     item.amount = txn.amount;
-                    item.status = txn.status;
+                    item.status = normalizeStatusForBackend(txn.status);
                     item.deviceId = android.os.Build.MODEL;
                     item.txnTimestamp = txn.timestamp;
                     item.requestHex = maskingService.maskIsoHex(txn.requestHex);
@@ -101,40 +101,65 @@ public class TransactionSyncManager {
                     }
 
 
-                    items.add(item);
+                    String token = ApiClient.bearerToken(context);
+                    ApiService.TransactionSyncRequest request = new ApiService.TransactionSyncRequest(
+                            java.util.Collections.singletonList(item));
+
+                    try {
+                        Response<Map<String, Integer>> response =
+                                ApiClient.getService(context).syncTransactions(token, request).execute();
+                        if (response.isSuccessful() && response.body() != null) {
+                            Integer syncedCount = response.body().get("syncedCount");
+                            int accepted = syncedCount != null ? syncedCount : 0;
+                            if (accepted > 0) {
+                                markLocalSynced(java.util.Collections.singletonList(txn.traceNumber), Instant.now().toString());
+                                successCount++;
+                                Log.i(TAG, "Synced trace=" + txn.traceNumber
+                                        + ", scheme=" + item.cardScheme + ", maskedPan=" + item.maskedPan);
+                            } else {
+                                failureCount++;
+                                Log.w(TAG, "Backend returned syncedCount=0 for trace=" + txn.traceNumber
+                                        + ", scheme=" + item.cardScheme + ", maskedPan=" + item.maskedPan);
+                            }
+                        } else {
+                            failureCount++;
+                            Log.w(TAG, "Sync failed for trace=" + txn.traceNumber
+                                    + ", http=" + response.code());
+                        }
+                    } catch (Exception ex) {
+                        failureCount++;
+                        Log.w(TAG, "Sync exception for trace=" + txn.traceNumber + ": " + ex.getMessage());
+                    }
                 }
 
-                if (items.isEmpty()) {
-                    Log.d(TAG, "No completed transactions to sync");
-                    return;
-                }
-
-                String token = ApiClient.bearerToken(context);
-                ApiService.TransactionSyncRequest request = new ApiService.TransactionSyncRequest(items);
-
-                ApiClient.getService(context).syncTransactions(token, request)
-                        .enqueue(new Callback<Map<String, Integer>>() {
-                            @Override
-                            public void onResponse(Call<Map<String, Integer>> call,
-                                    Response<Map<String, Integer>> response) {
-                                if (response.isSuccessful() && response.body() != null) {
-                                    Integer count = response.body().get("syncedCount");
-                                    Log.i(TAG, "Synced " + count + " transactions to backend");
-                                } else {
-                                    Log.w(TAG, "Sync failed: HTTP " + response.code());
-                                }
-                            }
-
-                            @Override
-                            public void onFailure(Call<Map<String, Integer>> call, Throwable t) {
-                                Log.w(TAG, "Sync network error: " + t.getMessage());
-                            }
-                        });
+                Log.i(TAG, "Sync finished. success=" + successCount + ", failed=" + failureCount);
 
             } catch (Exception e) {
                 Log.e(TAG, "Sync error: " + e.getMessage(), e);
             }
         }).start();
+    }
+
+    private void markLocalSynced(List<String> traceNumbers, String syncedAt) {
+        if (traceNumbers == null || traceNumbers.isEmpty()) {
+            return;
+        }
+        try {
+            AppDatabase.getInstance(context).transactionDao()
+                    .markSyncedAtByTraceNumbers(traceNumbers, syncedAt);
+            Log.d(TAG, "Updated local synced_at for " + traceNumbers.size() + " transactions");
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to update local synced_at: " + e.getMessage());
+        }
+    }
+
+    private String normalizeStatusForBackend(String status) {
+        if (status == null) {
+            return null;
+        }
+        String normalized = status.trim();
+        // Keep compatibility with backend schemas that still define status as VARCHAR(20).
+        return normalized.length() > 20 ? normalized.substring(0, 20) : normalized;
     }
 }
 
