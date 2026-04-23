@@ -20,7 +20,6 @@
     <string name="login_username_hint">Enter your username</string>
     <string name="login_password_label">Password</string>
     <string name="login_password_hint">Enter your password</string>
-    <string name="login_forgot_password">Forgot Password?</string>
     <string name="login_button">Log In</string>
 
     <!-- Register Screen -->
@@ -54,19 +53,6 @@
     <string name="register_terms_text">By registering, you agree to our Terms &amp; Conditions and Privacy Policy</string>
     <string name="register_button">Create Account</string>
     <string name="register_email_hint">Business Email</string>
-
-    <!-- Forgot Password Screen -->
-    <string name="forgot_password_title">Reset Password</string>
-    <string name="forgot_password_description">Enter your new password below. It must be at least 8 characters.</string>
-    <string name="forgot_password_new">New Password</string>
-    <string name="forgot_password_confirm">Confirm New Password</string>
-    <string name="forgot_password_hint">········</string>
-    <string name="forgot_password_button">Reset Password</string>
-    <string name="forgot_password_subtitle">Enter your registered email or phone to receive a code</string>
-    <string name="forgot_verify_subtitle" translatable="false">Enter the 6-digit code we sent to your email</string>
-    <string name="forgot_new_password_title" translatable="false">New Password</string>
-    <string name="forgot_timeout" translatable="false">Server response timed out. Please try again.</string>
-    <string name="forgot_retrying" translatable="false">Server is waking up, retrying…</string>
 
     <!-- Missing Register Strings -->
     <string name="register_subtitle">Please fill in your details</string>
@@ -137,24 +123,6 @@
     <string name="login_no_account">Don\'t have an account?</string>
     <string name="login_sign_up">Sign Up</string>
 
-    <!-- Forgot Password Extras -->
-    <string name="forgot_email_label">Email or Phone</string>
-    <string name="forgot_code_label">Verification Code</string>
-    <string name="forgot_send_code">Send Verification Code</string>
-    <string name="forgot_verify">Verify Code</string>
-    <string name="forgot_resend_code">Resend Code</string>
-    <string name="forgot_remember_password">Remember your password?</string>
-    <string name="forgot_back_to_login">Log In</string>
-    <string name="forgot_invalid_email">Please enter a valid email address</string>
-    <string name="forgot_network_required">Internet connection is required for password reset</string>
-    <string name="forgot_code_sent">Verification code sent to your email</string>
-    <string name="forgot_send_code_failed">Unable to send verification code</string>
-    <string name="forgot_email_missing">Please enter your email again</string>
-    <string name="forgot_code_verified">Verification code accepted</string>
-    <string name="forgot_invalid_code">Invalid or expired verification code</string>
-    <string name="forgot_password_reset_success">Password reset successfully</string>
-    <string name="forgot_reset_failed">Unable to reset password</string>
-    <string name="forgot_resend_in_seconds">Resend code in %1$s</string>
 
     <!-- Welcome Features -->
     <string name="feature_contactless">Contactless</string>

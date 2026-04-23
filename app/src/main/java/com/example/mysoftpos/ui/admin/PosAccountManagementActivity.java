@@ -147,7 +147,6 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
         if (swipeRefresh != null) {
             swipeRefresh.setOnRefreshListener(() -> {
                 loadMerchants();
-                swipeRefresh.setRefreshing(false);
             });
         }
 
@@ -187,6 +186,7 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
 
     private void loadMerchants() {
         mainHandler.removeCallbacks(retryLoadRunnable);
+        stopRefreshIndicator();
 
         if (hasNoNetworkConnection()) {
             tokenWaitRetryCount = 0;
@@ -217,6 +217,10 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
             @Override
             public void onResponse(@NonNull Call<List<ApiService.MerchantDto>> call,
                     @NonNull Response<List<ApiService.MerchantDto>> response) {
+                stopRefreshIndicator();
+                if (isFinishing() || isDestroyed()) {
+                    return;
+                }
                 if (!response.isSuccessful() || response.body() == null) {
                     clearRenderedMerchants();
                     showNonContentState(getString(R.string.user_mgmt_state_backend_unavailable_title),
@@ -237,6 +241,10 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
 
             @Override
             public void onFailure(@NonNull Call<List<ApiService.MerchantDto>> call, @NonNull Throwable t) {
+                stopRefreshIndicator();
+                if (isFinishing() || isDestroyed()) {
+                    return;
+                }
                 clearRenderedMerchants();
                 showNonContentState(getString(R.string.user_mgmt_state_backend_unavailable_title),
                         getString(R.string.user_mgmt_state_load_users_network_subtitle), true);
@@ -253,11 +261,14 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
 
         List<ApiService.MerchantDto> display;
         if (query.isEmpty()) {
-            display = new ArrayList<>(allMerchants);
+            display = sanitizeMerchants(allMerchants);
         } else {
             String q = query.toLowerCase();
             display = new ArrayList<>();
             for (ApiService.MerchantDto merchant : allMerchants) {
+                if (merchant == null) {
+                    continue;
+                }
                 String name = merchant.merchantName != null ? merchant.merchantName.toLowerCase() : "";
                 String mid = merchant.merchantCode != null ? merchant.merchantCode.toLowerCase() : "";
                 String address = merchant.storeAddress != null ? merchant.storeAddress.toLowerCase() : "";
@@ -1817,6 +1828,9 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
         }
 
         for (ApiService.MerchantDto merchant : merchants) {
+            if (merchant == null) {
+                continue;
+            }
             ApiClient.getService(this).getMerchantAccounts(token, merchant.id).enqueue(new Callback<>() {
                 @Override
                 public void onResponse(@NonNull Call<List<ApiService.PosAccountDto>> call,
@@ -1894,6 +1908,30 @@ public class PosAccountManagementActivity extends BaseActivity implements PosAcc
         if (btnRetryConnection != null) {
             btnRetryConnection.setVisibility(showRetryButton ? View.VISIBLE : View.GONE);
         }
+    }
+
+    private List<ApiService.MerchantDto> sanitizeMerchants(List<ApiService.MerchantDto> source) {
+        List<ApiService.MerchantDto> sanitized = new ArrayList<>();
+        if (source == null) {
+            return sanitized;
+        }
+        for (ApiService.MerchantDto merchant : source) {
+            if (merchant != null) {
+                sanitized.add(merchant);
+            }
+        }
+        return sanitized;
+    }
+
+    private void stopRefreshIndicator() {
+        if (swipeRefresh == null) {
+            return;
+        }
+        swipeRefresh.post(() -> {
+            if (!isFinishing() && !isDestroyed()) {
+                swipeRefresh.setRefreshing(false);
+            }
+        });
     }
 
     private void showContentChrome() {

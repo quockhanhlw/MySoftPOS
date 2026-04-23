@@ -101,6 +101,9 @@ public class PosAccountAdapter extends RecyclerView.Adapter<PosAccountAdapter.Vi
             String name = merchant.merchantName != null && !merchant.merchantName.trim().isEmpty()
                     ? merchant.merchantName
                     : merchant.merchantCode;
+            if (name == null || name.trim().isEmpty()) {
+                name = itemView.getContext().getString(R.string.txn_detail_placeholder_dash);
+            }
             tvName.setText(name);
             String mid = merchant.merchantCode != null && !merchant.merchantCode.trim().isEmpty()
                     ? merchant.merchantCode

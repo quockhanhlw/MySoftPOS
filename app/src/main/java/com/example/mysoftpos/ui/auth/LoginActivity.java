@@ -78,7 +78,6 @@ public class LoginActivity extends BaseActivity {
             return false;
         });
 
-        TextView tvForgotPassword = findViewById(R.id.tvForgotPassword);
         View btnLogin = findViewById(R.id.btnLogin);
         View btnBack = findViewById(R.id.btnBack);
         TextView tvSignUp = findViewById(R.id.tvSignUp);
@@ -87,10 +86,6 @@ public class LoginActivity extends BaseActivity {
             btnBack.setOnClickListener(v -> finish());
         }
 
-        tvForgotPassword.setOnClickListener(v -> {
-            Intent intent = new Intent(LoginActivity.this, ForgotPasswordActivity.class);
-            startActivity(intent);
-        });
 
         if (tvSignUp != null) {
             tvSignUp.setOnClickListener(v -> {

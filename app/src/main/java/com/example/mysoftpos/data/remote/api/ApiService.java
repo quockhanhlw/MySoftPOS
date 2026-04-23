@@ -26,16 +26,6 @@ public interface ApiService {
         Call<Map<String, String>> changePassword(@Header("Authorization") String token,
                         @Body ChangePasswordRequest request);
 
-        @POST("/api/auth/forgot-password/request-code")
-        Call<Map<String, String>> requestForgotPasswordCode(@Body ForgotPasswordRequest request);
-
-        @POST("/api/auth/forgot-password/verify-code")
-        Call<Map<String, String>> verifyForgotPasswordCode(@Body ForgotPasswordVerifyCodeRequest request);
-
-        @POST("/api/auth/forgot-password/reset")
-        Call<Map<String, String>> resetForgotPassword(@Body ForgotPasswordResetRequest request);
-
-
         // ==================== Merchants (Admin) ====================
 
         @GET("/api/merchants")
@@ -338,37 +328,6 @@ public interface ApiService {
                 }
         }
 
-        class ForgotPasswordRequest {
-                public String email;
-
-                public ForgotPasswordRequest(String email) {
-                        this.email = email;
-                }
-        }
-
-        class ForgotPasswordVerifyCodeRequest {
-                public String email;
-                public String code;
-
-                public ForgotPasswordVerifyCodeRequest(String email, String code) {
-                        this.email = email;
-                        this.code = code;
-                }
-        }
-
-        class ForgotPasswordResetRequest {
-                public String email;
-                public String code;
-                public String newPassword;
-                public String confirmPassword;
-
-                public ForgotPasswordResetRequest(String email, String code, String newPassword, String confirmPassword) {
-                        this.email = email;
-                        this.code = code;
-                        this.newPassword = newPassword;
-                        this.confirmPassword = confirmPassword;
-                }
-        }
 
         class LoginResponse {
                 public String accessToken;

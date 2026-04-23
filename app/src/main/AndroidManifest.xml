@@ -32,9 +32,6 @@
             android:name=".ui.auth.LoginActivity"
             android:exported="false" />
 
-        <activity
-            android:name=".ui.auth.ForgotPasswordActivity"
-            android:exported="false" />
 
         <activity
             android:name=".ui.auth.RegisterActivity"
@@ -61,7 +58,6 @@
         <activity android:name=".testsuite.RunnerActivity" android:label="@string/label_test_runner" />
         <activity android:name=".testsuite.BatchRunnerActivity" android:label="@string/label_batch_runner" />
         <activity android:name=".testsuite.ChannelSelectActivity" android:label="@string/label_select_channel" />
-        <activity android:name=".testsuite.PerformanceSelectActivity" android:label="@string/label_select_performance" />
         <activity android:name=".testsuite.TransactionSelectActivity" android:label="@string/label_select_transaction" />
         <activity android:name=".testsuite.SchemeSelectActivity" android:label="@string/label_select_scheme" />
         <activity android:name=".testsuite.SchemeHistoryActivity" android:label="@string/label_scheme_history" />

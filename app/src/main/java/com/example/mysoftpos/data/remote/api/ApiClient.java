@@ -50,14 +50,8 @@ public final class ApiClient {
     private static final long REGISTER_READ_TIMEOUT_SECONDS = 70;
     private static final long REGISTER_WRITE_TIMEOUT_SECONDS = 30;
     private static final long REGISTER_CALL_TIMEOUT_SECONDS = 75;
-    private static final long FORGOT_CONNECT_TIMEOUT_SECONDS = 25;
-    private static final long FORGOT_READ_TIMEOUT_SECONDS = 110;
-    private static final long FORGOT_WRITE_TIMEOUT_SECONDS = 30;
-    private static final long FORGOT_CALL_TIMEOUT_SECONDS = 120;
-
     private static volatile ApiService apiService;
     private static volatile ApiService authApiService;
-    private static volatile ApiService forgotPasswordApiService;
     private static volatile ApiService registerApiService;
 
     /** Single master OkHttpClient — all variants share its connection pool & dispatcher */
@@ -150,23 +144,6 @@ public final class ApiClient {
         return authApiService;
     }
 
-    public static ApiService getForgotPasswordService(Context context) {
-        if (forgotPasswordApiService == null) {
-            synchronized (ApiClient.class) {
-                if (forgotPasswordApiService == null) {
-                    OkHttpClient client = deriveClient(
-                            FORGOT_CONNECT_TIMEOUT_SECONDS,
-                            FORGOT_READ_TIMEOUT_SECONDS,
-                            FORGOT_WRITE_TIMEOUT_SECONDS,
-                            FORGOT_CALL_TIMEOUT_SECONDS);
-                    forgotPasswordApiService = buildRetrofit(getBaseUrl(context), client)
-                            .create(ApiService.class);
-                }
-            }
-        }
-        return forgotPasswordApiService;
-    }
-
     public static ApiService getRegisterService(Context context) {
         if (registerApiService == null) {
             synchronized (ApiClient.class) {
@@ -189,7 +166,6 @@ public final class ApiClient {
         synchronized (ApiClient.class) {
             apiService = null;
             authApiService = null;
-            forgotPasswordApiService = null;
             registerApiService = null;
             // masterClient is NOT reset — its pool remains valid for any base URL
         }
