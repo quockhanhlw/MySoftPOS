@@ -1,18 +1,17 @@
 package com.example.mysoftpos.data.repository;
 
-import com.example.mysoftpos.data.local.dao.TransactionDao;
-
 import androidx.lifecycle.LiveData;
+
 import com.example.mysoftpos.data.local.AppDatabase;
 import com.example.mysoftpos.data.local.entity.TransactionEntity;
 import com.example.mysoftpos.utils.threading.DispatcherProvider;
+
 import java.util.List;
 
 public class TransactionRepositoryImpl implements TransactionRepository {
 
     private final AppDatabase db;
     private final DispatcherProvider dispatchers;
-    private final SensitiveDataMaskingService maskingService = new SensitiveDataMaskingService();
 
     public TransactionRepositoryImpl(AppDatabase db, DispatcherProvider dispatchers) {
         this.db = db;
@@ -143,6 +142,18 @@ public class TransactionRepositoryImpl implements TransactionRepository {
         dispatchers.io().execute(() -> {
             db.transactionDao().updateStatus(traceNumber, status);
         });
+    }
+
+    @Override
+    public void updateTransactionStatusAndClearSync(String traceNumber, String status) {
+        dispatchers.io().execute(() -> {
+            db.transactionDao().updateStatusAndClearSyncedAt(traceNumber, status);
+        });
+    }
+
+    @Override
+    public void updateTransactionStatusAndClearSyncSync(String traceNumber, String status) {
+        db.transactionDao().updateStatusAndClearSyncedAt(traceNumber, status);
     }
 
     @Override

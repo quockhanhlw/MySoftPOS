@@ -247,7 +247,7 @@
     <string name="status_declined">TỪ CHỐI</string>
     <string name="status_pending">ĐANG XỬ LÝ</string>
     <string name="status_timeout">HẾT GIỜ</string>
-    <string name="status_reversed">ĐẢO GIAO DỊCH</string>
+    <string name="status_reversed">HUY</string>
 
     <!-- Card Fields -->
     <string name="card_pan">Số thẻ</string>

@@ -254,7 +254,7 @@
     <string name="status_declined">DECLINED</string>
     <string name="status_pending">PENDING</string>
     <string name="status_timeout">TIMEOUT</string>
-    <string name="status_reversed">REVERSED</string>
+    <string name="status_reversed">VOID</string>
 
     <!-- Card Fields -->
     <string name="card_pan">Card Number</string>
@@ -1025,3 +1025,4 @@
     <string name="runner_saved_to_history_format">Saved transaction to history (Trace: %1$s)</string>
     <string name="runner_save_db_error_format">Database save error: %1$s</string>
 </resources>
+

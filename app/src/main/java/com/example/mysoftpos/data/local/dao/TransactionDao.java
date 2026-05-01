@@ -75,4 +75,7 @@ public interface TransactionDao {
     @Transaction
     @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")
     com.example.mysoftpos.data.local.entity.TransactionWithDetails getTransactionWithDetailsByIdSync(long id);
+
+    @Query("UPDATE transactions SET status = :newStatus, synced_at = NULL WHERE trace_number = :traceNumber")
+    void updateStatusAndClearSyncedAt(String traceNumber, String newStatus);
 }

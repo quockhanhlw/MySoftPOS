@@ -2,8 +2,6 @@ package com.example.mysoftpos.data.repository;
 
 import androidx.lifecycle.LiveData;
 import com.example.mysoftpos.data.local.entity.TransactionEntity;
-import com.example.mysoftpos.iso8583.message.IsoMessage;
-import com.example.mysoftpos.domain.model.CardInputData;
 import java.util.List;
 
 public interface TransactionRepository {
@@ -22,6 +20,13 @@ public interface TransactionRepository {
     void saveTransactionSync(com.example.mysoftpos.domain.model.TransactionRecord record);
 
     void updateTransactionStatus(String traceNumber, String status);
+
+    void updateTransactionStatusAndClearSync(String traceNumber, String status);
+
+    /**
+     * Synchronous variant for callers already running on a background thread.
+     */
+    void updateTransactionStatusAndClearSyncSync(String traceNumber, String status);
 
     /**
      * Synchronous variant for callers already running on a background thread.

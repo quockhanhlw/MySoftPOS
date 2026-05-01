@@ -21,6 +21,8 @@ import com.example.mysoftpos.iso8583.spec.IsoField;
 
 import com.example.mysoftpos.testsuite.storage.SchemeRepository;
 import com.example.mysoftpos.testsuite.model.Scheme;
+import com.example.mysoftpos.data.remote.TransactionSyncManager;
+import com.example.mysoftpos.data.remote.SyncWorker;
 
 public class TransactionDetailViewModel extends BaseViewModel {
 
@@ -202,8 +204,10 @@ public class TransactionDetailViewModel extends BaseViewModel {
                 String rc = respMsg.getField(IsoField.RESPONSE_CODE_39);
 
                 if ("00".equals(rc)) {
-                    repository.updateTransactionStatus(txnDetails.transaction.traceNumber, "REVERSED");
-                     if (schemeName != null) {
+                    repository.updateTransactionStatusAndClearSyncSync(txnDetails.transaction.traceNumber, "REVERSED");
+                    new TransactionSyncManager(getApplication()).syncUnsynced();
+                    SyncWorker.enqueueOneTime(getApplication());
+                    if (schemeName != null) {
                         com.example.mysoftpos.utils.logging.FileLogger.logTestSuiteString(getApplication(), "VOID APPROVED", "RC: 00 | Trace: " + txnDetails.transaction.traceNumber);
                     }
                       launchUi(() -> state.setValue(TransactionState.success(
